@@ -28,6 +28,8 @@ def run_match(
     replay_path: Path | None = None,
     render: bool = False,
     verbose: bool = True,
+    coach_file_blue: Path | None = None,
+    coach_file_red: Path | None = None,
 ) -> dict:
     state = load_scenario(game)
     if max_turns is not None:
@@ -36,6 +38,17 @@ def run_match(
 
     blue.on_match_start(session, Team.BLUE)
     red.on_match_start(session, Team.RED)
+
+    # Coach file watchers (optional).
+    coaches = []
+    if coach_file_blue is not None:
+        from clash_of_robots.renderer.coach_input import CoachFileWatcher
+
+        coaches.append(CoachFileWatcher(coach_file_blue, Team.BLUE))
+    if coach_file_red is not None:
+        from clash_of_robots.renderer.coach_input import CoachFileWatcher
+
+        coaches.append(CoachFileWatcher(coach_file_red, Team.RED))
 
     tui = None
     if render:
@@ -51,6 +64,12 @@ def run_match(
     safety_counter = 0
     try:
         while session.state.status is GameStatus.IN_PROGRESS:
+            # Poll coach files before each turn.
+            for coach in coaches:
+                msgs = coach.poll(session)
+                if msgs and verbose:
+                    print(f"[coach->{coach.team.value}] {len(msgs)} message(s)")
+
             active = blue if session.state.active_player is Team.BLUE else red
             viewer = session.state.active_player
             t0 = time.time()
@@ -115,6 +134,13 @@ def main() -> int:
     p.add_argument("--replay", type=Path, default=None)
     p.add_argument("--render", action="store_true")
     p.add_argument("--seed", type=int, default=None, help="seed for random providers")
+    p.add_argument(
+        "--coach-file-blue",
+        type=Path,
+        default=None,
+        help="path to a text file; append lines during the match to advise blue",
+    )
+    p.add_argument("--coach-file-red", type=Path, default=None)
     args = p.parse_args()
 
     blue = make_provider(args.blue, seed=args.seed, strategy_path=args.blue_strategy)
@@ -127,6 +153,8 @@ def main() -> int:
         max_turns=args.max_turns,
         replay_path=args.replay,
         render=args.render,
+        coach_file_blue=args.coach_file_blue,
+        coach_file_red=args.coach_file_red,
     )
     return 0
 
