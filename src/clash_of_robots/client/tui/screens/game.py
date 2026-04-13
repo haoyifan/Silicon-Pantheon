@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections import deque
 from typing import Any
 
 from rich.align import Align
@@ -51,6 +52,12 @@ class GameScreen(Screen):
         # them to see the new content; when the user has scrolled back,
         # we increase the offset so the panel stays visually stable.
         self._last_thought_count = 0
+        # Coach input mode: "normal" for game keys, "coach" for text entry.
+        self._input_mode: str = "normal"
+        self._coach_buffer: str = ""
+        # Ring buffer of recently-sent coach messages so the user can
+        # see what they've already said without scrolling.
+        self._coach_sent: deque[str] = deque(maxlen=5)
 
     async def on_enter(self, app: TUIApp) -> None:
         log.info("GameScreen.on_enter: starting")
@@ -153,15 +160,22 @@ class GameScreen(Screen):
             style="dim",
         )
 
-        keys = Text(
-            "e end_turn   k/j scroll reasoning   0 jump-latest   x concede   q quit",
-            style="dim",
-        )
+        if self._input_mode == "coach":
+            keys = Text(
+                "typing coach message — Enter send   Esc cancel   Backspace delete",
+                style="yellow",
+            )
+        else:
+            keys = Text(
+                "e end_turn   c coach   k/j scroll reasoning   0 jump-latest   x concede   q quit",
+                style="dim",
+            )
         status_line = Text("")
         if self.app.state.error_message:
             status_line.append(self.app.state.error_message, style="red")
 
         thoughts_panel = self._render_thoughts()
+        coach_panel = self._render_coach()
 
         agent_line = Text("")
         if self.app.state.agent is not None:
@@ -182,6 +196,7 @@ class GameScreen(Screen):
             units,
             Text(""),
             thoughts_panel,
+            coach_panel,
             Text(""),
             you_info,
             agent_line,
@@ -273,6 +288,41 @@ class GameScreen(Screen):
             height=height,
         )
 
+    def _render_coach(self) -> RenderableType:
+        """Coach input + history panel.
+
+        - When in coach input mode, shows a '> <buffer>_' prompt so the
+          user sees exactly what they've typed.
+        - Below, a one-line history of the last few sent messages so
+          they don't need to remember what they already said.
+        - When neither has content (no history, not typing), returns a
+          blank Text so the surrounding Group layout stays stable.
+        """
+        has_history = bool(self._coach_sent)
+        typing = self._input_mode == "coach"
+        if not (has_history or typing):
+            return Text("")
+
+        lines: list[Text] = []
+        if typing:
+            prompt = Text()
+            prompt.append("coach> ", style="yellow bold")
+            prompt.append(self._coach_buffer, style="white")
+            prompt.append("▌", style="yellow")  # non-blinking cursor
+            lines.append(prompt)
+        if has_history:
+            recent = " · ".join(
+                f'"{m}"' for m in list(self._coach_sent)[-3:]
+            )
+            lines.append(Text(f"recently sent: {recent}", style="dim"))
+        body = Group(*lines) if len(lines) > 1 else lines[0]
+        return Panel(
+            body,
+            title=("coach input" if typing else "coach"),
+            border_style="yellow" if typing else "dim",
+            height=4 if len(lines) > 1 else 3,
+        )
+
     def _render_board(self, gs: dict[str, Any]) -> RenderableType:
         board = gs.get("board", {})
         w = int(board.get("width", 0))
@@ -345,6 +395,12 @@ class GameScreen(Screen):
             await self._refresh_state()
 
     async def handle_key(self, key: str) -> Screen | None:
+        # All keys route through the coach handler while in input mode
+        # (so typing 'q' in a message doesn't quit, typing 'e' doesn't
+        # end_turn, etc.).
+        if self._input_mode == "coach":
+            return await self._handle_coach_key(key)
+
         if key == "q":
             self.app.exit()
             return None
@@ -352,6 +408,10 @@ class GameScreen(Screen):
             return await self._call("end_turn")
         if key == "x":
             return await self._call("concede")
+        if key == "c":
+            self._input_mode = "coach"
+            self._coach_buffer = ""
+            return None
         # Scroll the reasoning panel. vim-style: k = older, j = newer,
         # 0 jumps back to the bottom (latest). Also accept arrow keys.
         if key in ("k", "up"):
@@ -364,6 +424,57 @@ class GameScreen(Screen):
             self._reasoning_offset = 0
             return None
         return None
+
+    async def _handle_coach_key(self, key: str) -> Screen | None:
+        """Keys while the coach-input prompt is active.
+
+        Esc cancels, Enter sends. Any printable single char extends
+        the buffer; Backspace deletes the tail. Every other key token
+        (arrow keys, etc.) is ignored inside the input.
+        """
+        if key == "esc":
+            self._input_mode = "normal"
+            self._coach_buffer = ""
+            return None
+        if key == "enter":
+            text = self._coach_buffer.strip()
+            self._input_mode = "normal"
+            self._coach_buffer = ""
+            if not text:
+                return None
+            await self._send_coach_message(text)
+            return None
+        if key == "backspace":
+            self._coach_buffer = self._coach_buffer[:-1]
+            return None
+        # Only accept ordinary printable characters — avoid eating
+        # multi-character tokens like "up" / "down" that aren't real
+        # single keystrokes.
+        if len(key) == 1 and key.isprintable():
+            self._coach_buffer += key
+        return None
+
+    async def _send_coach_message(self, text: str) -> None:
+        """Send a coach message to THIS player's own agent."""
+        gs = self._state or {}
+        my_team = gs.get("you")
+        if not my_team or self.app.client is None:
+            return
+        try:
+            r = await self.app.client.call(
+                "send_to_agent", team=my_team, text=text
+            )
+        except Exception as e:
+            log.exception("send_to_agent raised")
+            self.app.state.error_message = f"send_to_agent failed: {e}"
+            return
+        if r.get("ok"):
+            self._coach_sent.append(text)
+            self.app.state.error_message = ""
+        else:
+            self.app.state.error_message = r.get("error", {}).get(
+                "message", "send_to_agent rejected"
+            )
 
     # ---- actions ----
 
