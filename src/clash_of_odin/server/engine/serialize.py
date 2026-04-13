@@ -11,13 +11,17 @@ def state_to_dict(state: GameState, viewer: Team | None = None) -> dict:
     `viewer` is reserved for future fog-of-war support; currently ignored
     (full state is returned regardless).
     """
-    terrain_grid = []
+    # Flat list of {x, y, type} — matches what the viewer-filter
+    # writes when masking for fog, and what the TUI expects. Earlier
+    # versions emitted a nested list under the key "terrain", which
+    # nothing in the current codebase reads — the old consumers
+    # worked around it by only looking at units/forts, and the TUI
+    # would fall through to "unknown" for every cell (rendered as "?").
+    tiles = []
     for y in range(state.board.height):
-        row = []
         for x in range(state.board.width):
             tile = state.board.tile(Pos(x, y))
-            row.append({"x": x, "y": y, "type": tile.type.value})
-        terrain_grid.append(row)
+            tiles.append({"x": x, "y": y, "type": tile.type.value})
 
     forts = []
     for pos, tile in state.board.tiles.items():
@@ -66,7 +70,7 @@ def state_to_dict(state: GameState, viewer: Team | None = None) -> dict:
         "board": {
             "width": state.board.width,
             "height": state.board.height,
-            "terrain": terrain_grid,
+            "tiles": tiles,
             "forts": forts,
         },
         "units": units_payload,
