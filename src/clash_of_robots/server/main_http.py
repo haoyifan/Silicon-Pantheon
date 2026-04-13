@@ -44,23 +44,41 @@ def _configure_server_logging(level: str, log_file: Path | None) -> Path:
     fh = logging.FileHandler(log_file, mode="w", encoding="utf-8")
     fh.setFormatter(fmt)
 
-    # Attach to the `clash` namespace so everything under clash.*
-    # (clash.lobby, clash.game, clash-serve alias below) gets captured,
-    # survives uvicorn's basicConfig reset, and doesn't double-log via
-    # root.
-    clash_logger = logging.getLogger("clash")
-    clash_logger.setLevel(getattr(logging, level))
-    clash_logger.addHandler(stream)
-    clash_logger.addHandler(fh)
-    clash_logger.propagate = False
-
-    # The existing `clash-serve` and uvicorn/mcp/httpx loggers aren't
-    # under the `clash` prefix, so attach the same handlers directly to
-    # the ones we care about.
-    for name in ("clash-serve", "uvicorn", "uvicorn.error", "mcp"):
+    # Attach handlers directly to every logger we care about, rather
+    # than relying on parent-propagation.  The previous attempt put
+    # handlers on `clash` and relied on `clash.lobby` etc. to propagate
+    # upward — but empirically `clash.lobby` lines never reached the
+    # file even though `mcp.server.lowlevel.server` lines did. Direct
+    # attachment plus propagate=False is the bulletproof version.
+    for name in (
+        "clash",
+        "clash.lobby",
+        "clash.game",
+        "clash-serve",
+        "uvicorn",
+        "uvicorn.error",
+        "uvicorn.access",
+        "mcp",
+        "mcp.server",
+        "mcp.server.lowlevel.server",
+    ):
         lg = logging.getLogger(name)
         lg.setLevel(getattr(logging, level))
-        lg.addHandler(fh)  # file only; stderr handled by uvicorn config
+        lg.addHandler(stream)
+        lg.addHandler(fh)
+        lg.propagate = False
+
+    # Diagnostic: prove the handler is wired up before we hand off to
+    # uvicorn/anyio. If this line is missing from the log file, the
+    # issue is in configure_server_logging itself; if it's there but
+    # subsequent clash.lobby lines aren't, some later code is detaching
+    # / overriding the handler.
+    logging.getLogger("clash.lobby").info(
+        "_configure_server_logging: clash.lobby wired up (pid=%d)", os.getpid()
+    )
+    logging.getLogger("clash.game").info(
+        "_configure_server_logging: clash.game wired up (pid=%d)", os.getpid()
+    )
     return log_file
 
 

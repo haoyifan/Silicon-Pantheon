@@ -317,13 +317,21 @@ class GameScreen(Screen):
             return
         my_team = (gs.get("you") or {}).get("team")
         active = gs.get("active_player")
-        if not my_team or active != my_team:
-            log.debug(
-                "agent not triggered: my_team=%s active=%s status=%s",
+        # Don't spam every tick — but log the first time a new (my_team,
+        # active) pair fails to match so we can see whether it's a
+        # missing 'you' key, a missing 'team', or an active_player
+        # mismatch.
+        key = (my_team, active, gs.get("status"))
+        if getattr(self, "_last_guard_log_key", None) != key:
+            self._last_guard_log_key = key  # type: ignore[attr-defined]
+            log.info(
+                "agent guard: my_team=%r active=%r status=%r keys=%s",
                 my_team,
                 active,
                 gs.get("status"),
+                sorted(list(gs.keys())),
             )
+        if not my_team or active != my_team:
             return
         log.info("triggering agent.play_turn for team=%s turn=%s", my_team, gs.get("turn"))
 
