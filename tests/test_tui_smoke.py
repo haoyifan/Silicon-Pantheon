@@ -122,7 +122,7 @@ def test_post_match_screen_renders_winner() -> None:
         "winner": "blue",
         "turn": 12,
         "max_turns": 20,
-        "you": {"team": "blue"},
+        "you": "blue",  # server emits just the team string, not a dict
         "last_action": {"reason": "seize"},
         "units": [{"owner": "blue"}, {"owner": "red"}],
     }
