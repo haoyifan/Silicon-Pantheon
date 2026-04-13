@@ -101,8 +101,11 @@ class SharedState:
     # and the player declared themselves as ai/hybrid with a provider+model.
     agent: "NetworkedAgent | None" = None
     agent_task: asyncio.Task | None = None
-    # Live reasoning stream from the agent (newest last).
-    thoughts: deque[str] = field(
+    # Live reasoning stream from the agent (newest last). Each entry is
+    # (timestamp_iso_local, text) so the panel can render a colored
+    # clock prefix; helpful for correlating reasoning with server-side
+    # turn boundaries at a glance.
+    thoughts: deque[tuple[str, str]] = field(
         default_factory=lambda: deque(maxlen=THOUGHTS_BUFFER_SIZE)
     )
 

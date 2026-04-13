@@ -112,7 +112,10 @@ class GameScreen(Screen):
         async def on_thought(text: str) -> None:
             collapsed = " ".join(text.split())
             if collapsed:
-                app.state.thoughts.append(collapsed)
+                from datetime import datetime
+
+                ts = datetime.now().strftime("%H:%M:%S")
+                app.state.thoughts.append((ts, collapsed))
 
         app.state.agent = NetworkedAgent(
             client=app.client,
@@ -258,16 +261,19 @@ class GameScreen(Screen):
         # Walk thoughts from newest to oldest, starting `offset` back.
         end = total - self._reasoning_offset
         for i in range(end - 1, -1, -1):
-            t = thoughts[i]
-            est_rows = max(1, (len(t) + approx_cols - 1) // approx_cols)
+            ts, t = thoughts[i]
+            est_rows = max(
+                1, (len(ts) + 3 + len(t) + approx_cols - 1) // approx_cols
+            )
             if rows_used + est_rows > inner_rows and window:
                 break
-            window.append(t)
+            window.append((ts, t))
             rows_used += est_rows
         window.reverse()
 
         body = Text(no_wrap=False, overflow="fold")
-        for i, t in enumerate(window):
+        for i, (ts, t) in enumerate(window):
+            body.append(f"[{ts}] ", style="cyan")
             body.append(t)
             if i != len(window) - 1:
                 body.append("\n")
