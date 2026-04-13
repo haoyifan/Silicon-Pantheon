@@ -74,12 +74,12 @@ Goal: host + join via lobby, ready up, auto-start, game runs.
 
 ## Sub-phase 1d — TUI client
 
-- [ ] **1d.1** Login screen.
-- [ ] **1d.2** Lobby screen with refresh.
-- [ ] **1d.3** Room/preview screen with ready toggle and countdown.
-- [ ] **1d.4** In-game screen (reuses board renderer, fog-aware).
-- [ ] **1d.5** Post-match screen with replay download prompt.
-- [ ] **1d.6** Screen transitions + error-state handling.
+- [x] **1d.1** Login screen.
+- [x] **1d.2** Lobby screen with refresh.
+- [x] **1d.3** Room/preview screen with ready toggle and countdown.
+- [x] **1d.4** In-game screen (reuses board renderer, fog-aware).
+- [x] **1d.5** Post-match screen with replay download prompt.
+- [x] **1d.6** Screen transitions + error-state handling.
 
 ## Sub-phase 1e — disconnect + replay download
 
