@@ -39,6 +39,11 @@ def render_units_table(state: GameState) -> Table:
 def render_header(state: GameState) -> Text:
     t = Text()
     t.append(f"Turn {state.turn}/{state.max_turns}  ", style="bold")
+    # Each turn has two halves (first_player then the other). Surface which
+    # half we're in so the header lines up with thought-panel tags like
+    # "T1 red" / "T2 blue".
+    half = "1st" if state.active_player is state.first_player else "2nd"
+    t.append(f"Half: {half}  ", style="dim")
     t.append("Active: ")
     active_style = "cyan" if state.active_player is Team.BLUE else "red"
     t.append(state.active_player.value, style=active_style + " bold")

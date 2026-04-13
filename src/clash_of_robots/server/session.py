@@ -58,12 +58,18 @@ class Session:
                 # Never let a hook break the game loop.
                 pass
 
-    def add_thought(self, team: Team, text: str) -> None:
+    def add_thought(self, team: Team, text: str, *, turn: int | None = None) -> None:
         text = text.strip()
         if not text:
             return
-        self.thoughts.append(AgentThought(turn=self.state.turn, team=team, text=text))
-        self.log("agent_thought", {"team": team.value, "text": text})
+        # Allow the caller to pin the turn number. The Claude SDK sometimes
+        # streams trailing AssistantMessage text AFTER the agent's end_turn
+        # tool call has flipped state.active_player and bumped state.turn,
+        # which would otherwise cause that trailing reasoning to be tagged
+        # with the next turn number.
+        effective_turn = turn if turn is not None else self.state.turn
+        self.thoughts.append(AgentThought(turn=effective_turn, team=team, text=text))
+        self.log("agent_thought", {"team": team.value, "text": text, "turn": effective_turn})
         # Intentionally NOT calling notify_action here: rich.Live's own
         # ~10fps auto-refresh picks up new deque entries. Forcing a refresh
         # on every thought caused visible flicker on tall frames.

@@ -74,6 +74,11 @@ def run_match(
 
             active = blue if session.state.active_player is Team.BLUE else red
             viewer = session.state.active_player
+            # Snapshot turn number BEFORE decide_turn runs. decide_turn ends
+            # by calling end_turn, which may bump state.turn (when the second
+            # player finishes a round), so reading state.turn afterwards is
+            # off-by-one for that player.
+            turn_at_start = session.state.turn
             t0 = time.time()
             try:
                 active.decide_turn(session, viewer)
@@ -90,7 +95,8 @@ def run_match(
                     break
             if verbose:
                 print(
-                    f"[T{session.state.turn}] {viewer.value} done in {time.time() - t0:.2f}s "
+                    f"[T{turn_at_start} {viewer.value} half] done in "
+                    f"{time.time() - t0:.2f}s "
                     f"(units: B={len(session.state.units_of(Team.BLUE))} "
                     f"R={len(session.state.units_of(Team.RED))})"
                 )

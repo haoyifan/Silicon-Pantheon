@@ -108,7 +108,10 @@ class AnthropicProvider(Provider):
                 if isinstance(msg, AssistantMessage):
                     for block in msg.content:
                         if isinstance(block, TextBlock) and block.text.strip():
-                            session.add_thought(viewer, block.text)
+                            # Pin to the turn this provider was invoked on so
+                            # the tag matches the action the text describes,
+                            # not whatever turn state has advanced to by now.
+                            session.add_thought(viewer, block.text, turn=turn_at_start)
                 if isinstance(msg, ResultMessage):
                     break
                 # If the agent already called end_turn, state has flipped.
