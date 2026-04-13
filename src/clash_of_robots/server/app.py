@@ -68,6 +68,10 @@ class App:
         # Hook fired by the lobby when a countdown completes; the
         # game_tools layer installs its "promote room to IN_GAME" callback.
         self.on_countdown_complete: Callable[[str], None] | None = None
+        # Per-connection heartbeat bookkeeping (soft-disconnect timers).
+        # Keyed by connection_id; the type is imported lazily in the
+        # heartbeat module to avoid a circular import.
+        self.heartbeat_state: dict[str, object] = {}
         self._connections: dict[str, Connection] = {}
         self._conn_lock = Lock()
 

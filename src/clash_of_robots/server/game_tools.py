@@ -326,3 +326,72 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
     def send_to_agent(connection_id: str, team: str, text: str) -> dict:
         """(Coach) Queue a message for a team, delivered next turn."""
         return _dispatch(app, connection_id, "send_to_agent", {"team": team, "text": text})
+
+    @mcp.tool()
+    def download_replay(connection_id: str) -> dict:
+        """Fetch this connection's match replay as JSONL text.
+
+        Available while the connection is IN_GAME (including after
+        the game has ended; token stays valid briefly so clients can
+        download before state is purged).
+        """
+        conn = app.get_connection(connection_id)
+        if conn is None:
+            return _error(ErrorCode.TOKEN_INVALID, "unknown connection_id")
+        if conn.state != ConnectionState.IN_GAME:
+            return _error(
+                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                "download_replay requires state=in_game",
+            )
+        info = app.conn_to_room.get(connection_id)
+        if info is None:
+            return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
+        room_id, _slot = info
+        session = app.sessions.get(room_id)
+        if session is None:
+            return _error(ErrorCode.GAME_NOT_STARTED, "no session for this room")
+        # Read the replay file if one was configured; otherwise we
+        # reconstruct from the session's in-memory event log (not
+        # implemented yet — Phase 1a sessions write nothing).
+        if session.replay is None:
+            return _error(
+                ErrorCode.BAD_INPUT,
+                "this match was not configured with a replay writer",
+            )
+        try:
+            with open(session.replay.path, encoding="utf-8") as f:
+                body = f.read()
+        except OSError as e:
+            return _error(ErrorCode.INTERNAL, f"failed to read replay: {e}")
+        return _ok({"replay_jsonl": body, "path": str(session.replay.path)})
+
+    @mcp.tool()
+    def concede(connection_id: str) -> dict:
+        """Resign the match — opponent wins immediately."""
+        conn = app.get_connection(connection_id)
+        if conn is None or conn.state != ConnectionState.IN_GAME:
+            return _error(
+                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                "concede requires state=in_game",
+            )
+        info = app.conn_to_room.get(connection_id)
+        if info is None:
+            return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
+        room_id, slot = info
+        session = app.sessions.get(room_id)
+        if session is None:
+            return _error(ErrorCode.GAME_NOT_STARTED, "no session")
+        from clash_of_robots.server.engine.state import GameStatus
+
+        team_map = app.slot_to_team.get(room_id, {})
+        my_team = team_map.get(slot)
+        if my_team is None:
+            return _error(ErrorCode.INTERNAL, "no team mapping")
+        opponent = my_team.other()
+        session.state.status = GameStatus.GAME_OVER
+        session.state.winner = opponent
+        session.log(
+            "concede",
+            {"by": my_team.value, "winner": opponent.value},
+        )
+        return _ok({"winner": opponent.value})
