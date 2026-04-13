@@ -108,8 +108,22 @@ def start_game_for_room(app: App, room_id: str) -> None:
         return
     state = load_scenario(room.config.scenario)
     state.max_turns = room.config.max_turns
+    # Give each match its own per-run directory so the replay + any
+    # future artifacts live together. Used directly by download_replay.
+    from datetime import datetime
+    from pathlib import Path as _Path
+
+    runs_dir = _Path("runs-server")
+    ts = datetime.now().strftime("%Y%m%dT%H%M%S")
+    run_dir = runs_dir / f"{ts}_{room.config.scenario}_{room_id}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    replay_path = run_dir / "replay.jsonl"
+    log.info("start_game_for_room: run_dir=%s", run_dir)
     session = new_session(
-        state, scenario=room.config.scenario, fog_of_war=room.config.fog_of_war
+        state,
+        replay_path=replay_path,
+        scenario=room.config.scenario,
+        fog_of_war=room.config.fog_of_war,
     )
     app.sessions[room_id] = session
     if room.config.team_assignment == "fixed":
