@@ -116,6 +116,128 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"rooms": rooms})
 
     @mcp.tool()
+    def list_scenarios(connection_id: str) -> dict:
+        """Enumerate scenarios available on this server.
+
+        Walks the packaged `games/` directory and returns the
+        sub-directory names that have a readable `config.yaml`. The
+        client uses this to populate the 'change scenario' dropdown in
+        the room screen.
+        """
+        conn = app.get_connection(connection_id)
+        if conn is None or conn.state == ConnectionState.ANONYMOUS:
+            return _error(
+                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                "set_player_metadata first",
+            )
+        from pathlib import Path
+
+        # The scenarios live at repo-root/games. Mirror the logic in
+        # engine/scenarios.load_scenario which imports from this path.
+        candidates: list[str] = []
+        games_root = Path("games")
+        if games_root.is_dir():
+            for sub in sorted(games_root.iterdir()):
+                if sub.is_dir() and (sub / "config.yaml").is_file():
+                    candidates.append(sub.name)
+        return _ok({"scenarios": candidates})
+
+    @mcp.tool()
+    async def update_room_config(
+        connection_id: str,
+        scenario: str | None = None,
+        team_assignment: str | None = None,
+        host_team: str | None = None,
+        fog_of_war: str | None = None,
+        max_turns: int | None = None,
+    ) -> dict:
+        """Host-only: tweak room config while still in the lobby.
+
+        Only fields passed (non-None) are updated. Any change resets
+        both seats' ready flags — if readiness was previously agreed
+        upon, the config shift might change the deal. Fails outside
+        the pre-game states (COUNTING_DOWN, IN_GAME, FINISHED).
+        """
+        conn = app.get_connection(connection_id)
+        if conn is None or conn.state != ConnectionState.IN_ROOM:
+            return _error(
+                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                "update_room_config requires state=in_room",
+            )
+        info = app.conn_to_room.get(connection_id)
+        if info is None:
+            return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
+        room_id, slot = info
+        room = app.rooms.get(room_id)
+        if room is None:
+            return _error(ErrorCode.ROOM_NOT_FOUND, f"room {room_id} vanished")
+        if slot != Slot.A:
+            return _error(
+                ErrorCode.BAD_INPUT, "only the host (slot A) can update room config"
+            )
+        if room.status not in (
+            RoomStatus.WAITING_FOR_PLAYERS,
+            RoomStatus.WAITING_READY,
+        ):
+            return _error(
+                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                f"room is in {room.status.value}; config locked",
+            )
+
+        # Validate every proposed field before mutating so we don't
+        # end up with a partial update on reject.
+        if scenario is not None:
+            try:
+                load_scenario(scenario)
+            except Exception as e:
+                return _error(ErrorCode.BAD_INPUT, f"scenario load failed: {e}")
+        if team_assignment is not None and team_assignment not in ("fixed", "random"):
+            return _error(
+                ErrorCode.BAD_INPUT, "team_assignment must be 'fixed' or 'random'"
+            )
+        if host_team is not None and host_team not in ("blue", "red"):
+            return _error(ErrorCode.BAD_INPUT, "host_team must be 'blue' or 'red'")
+        if fog_of_war is not None and fog_of_war not in (
+            "none",
+            "classic",
+            "line_of_sight",
+        ):
+            return _error(
+                ErrorCode.BAD_INPUT,
+                "fog_of_war must be 'none' | 'classic' | 'line_of_sight'",
+            )
+
+        if scenario is not None:
+            room.config.scenario = scenario
+        if team_assignment is not None:
+            room.config.team_assignment = team_assignment  # type: ignore[assignment]
+        if host_team is not None:
+            room.config.host_team = host_team  # type: ignore[assignment]
+        if fog_of_war is not None:
+            room.config.fog_of_war = fog_of_war  # type: ignore[assignment]
+        if max_turns is not None:
+            if max_turns < 1 or max_turns > 200:
+                return _error(
+                    ErrorCode.BAD_INPUT, "max_turns must be between 1 and 200"
+                )
+            room.config.max_turns = max_turns
+
+        # Config change resets readiness so both sides explicitly
+        # re-agree on the new terms.
+        for seat in room.seats.values():
+            seat.ready = False
+        room.recompute_status()
+        log.info(
+            "update_room_config: room=%s scenario=%s fog=%s teams=%s host_team=%s",
+            room_id,
+            room.config.scenario,
+            room.config.fog_of_war,
+            room.config.team_assignment,
+            room.config.host_team,
+        )
+        return _ok({})
+
+    @mcp.tool()
     def preview_room(connection_id: str, room_id: str) -> dict:
         """Show scenario map + seat occupancy for a room."""
         conn = app.get_connection(connection_id)

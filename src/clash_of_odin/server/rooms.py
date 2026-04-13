@@ -36,9 +36,14 @@ HostTeam = Literal["blue", "red"]
 FogMode = Literal["none", "classic", "line_of_sight"]
 
 
-@dataclass(frozen=True)
+@dataclass
 class RoomConfig:
-    """Configuration pinned when a room is created; immutable afterward.
+    """Per-room configuration. Mutable pre-game so the host can tweak it.
+
+    Frozen semantics would be nicer for safety, but the UX is that the
+    host can flip scenario / fog / team mode in the lobby before both
+    players press ready. `update_room_config` is the single write path
+    (host-only, refuses once COUNTING_DOWN/IN_GAME/FINISHED).
 
     - team_assignment="fixed":  host gets host_team; joiner gets the other.
     - team_assignment="random": coin-flipped at game-start time.
