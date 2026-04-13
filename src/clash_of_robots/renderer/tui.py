@@ -15,7 +15,12 @@ from rich.panel import Panel
 from clash_of_robots.server.session import Session
 
 from .board_view import render_board
-from .sidebar import render_header, render_last_action, render_units_table
+from .sidebar import (
+    render_header,
+    render_last_action,
+    render_thoughts_panel,
+    render_units_table,
+)
 
 
 class TUIRenderer:
@@ -32,6 +37,7 @@ class TUIRenderer:
             Panel(render_board(state), title="Board", border_style="dim"),
             render_units_table(state),
             render_last_action(state),
+            render_thoughts_panel(self.session),
         )
 
     def start(self) -> None:

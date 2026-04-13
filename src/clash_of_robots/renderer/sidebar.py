@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
 from clash_of_robots.server.engine.state import GameState, Team
+from clash_of_robots.server.session import Session
+
+THOUGHTS_PANEL_HEIGHT = 12  # fixed rows so the board doesn't shift around
 
 
 def render_units_table(state: GameState) -> Table:
@@ -42,6 +46,29 @@ def render_header(state: GameState) -> Text:
     if state.winner:
         t.append(f"   WINNER: {state.winner.value}", style="bold green")
     return t
+
+
+def render_thoughts_panel(session: Session, height: int = THOUGHTS_PANEL_HEIGHT) -> Panel:
+    """Fixed-height panel of recent agent reasoning. Newest at the bottom.
+
+    The fixed height keeps the rest of the layout (board, units table) from
+    shifting as new thoughts arrive.
+    """
+    inner = height - 2  # account for panel borders
+    body = Text()
+    thoughts = list(session.thoughts)[-inner:] if inner > 0 else []
+    if not thoughts:
+        body.append("(no agent reasoning yet)", style="dim italic")
+    else:
+        for i, th in enumerate(thoughts):
+            style = "cyan" if th.team is Team.BLUE else "red"
+            body.append(f"T{th.turn} {th.team.value}: ", style=style + " bold")
+            # Collapse whitespace; one thought per line so the panel stays bounded.
+            collapsed = " ".join(th.text.split())
+            body.append(collapsed)
+            if i != len(thoughts) - 1:
+                body.append("\n")
+    return Panel(body, title="Agent reasoning", border_style="dim", height=height)
 
 
 def render_last_action(state: GameState) -> Text:

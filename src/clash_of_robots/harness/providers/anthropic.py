@@ -20,8 +20,10 @@ import time
 from pathlib import Path
 
 from claude_agent_sdk import (
+    AssistantMessage,
     ClaudeAgentOptions,
     ResultMessage,
+    TextBlock,
     create_sdk_mcp_server,
     query,
     tool,
@@ -103,6 +105,10 @@ class AnthropicProvider(Provider):
 
         try:
             async for msg in query(prompt=turn_prompt, options=opts):
+                if isinstance(msg, AssistantMessage):
+                    for block in msg.content:
+                        if isinstance(block, TextBlock) and block.text.strip():
+                            session.add_thought(viewer, block.text)
                 if isinstance(msg, ResultMessage):
                     break
                 # If the agent already called end_turn, state has flipped.
