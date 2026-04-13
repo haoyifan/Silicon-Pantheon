@@ -94,6 +94,37 @@ pattern already provides discoverability.
 **Reversal cost:** Trivial — move functions into per-tool files if one ever
 grows large.
 
+## 2026-04-12 — Agents are fresh-per-turn, not persistent sessions
+**Decision:** `AnthropicProvider.decide_turn` calls the SDK's one-shot `query()`
+each turn. No conversation history carries between turns — the agent is
+re-spawned fresh every turn with the same system prompt (rules + strategy) and
+a new per-turn prompt containing a current state snapshot.
+
+Cross-turn continuity is provided by the **server-side state**, not the
+agent's context: the `GameState`, coach message queue, and action history
+(retrievable via `get_history`) persist across turns. What does *not* persist
+is the agent's chain-of-thought, multi-turn plans, or internal reasoning.
+
+**Why:**
+- No context bloat — a 30-turn match stays ~20-30k tokens per turn instead of
+  ballooning to ~450k by turn 30.
+- No compaction required — summarizing tactical reasoning is hard and easy to
+  get wrong.
+- Failure isolation — a bad turn (e.g., tool-call loop) doesn't poison
+  subsequent turns.
+- Board state often *is* the plan's memory: a cavalry 2 tiles from the enemy
+  fort telegraphs its own intent.
+
+**Reversal cost:** Low-medium. Swap `query()` → `ClaudeSDKClient` (persistent),
+instantiate once per match in `__init__`, send a "your turn" message per
+`decide_turn`. Add compaction when context nears 80% full. ~50 lines in
+`anthropic.py`.
+
+**TODO for future evaluation:** Once real agent matches have been played,
+decide whether tactical incoherence across turns justifies the switch. If
+agents seem to "forget what they were doing," flip to persistent sessions. If
+they play coherently, stay fresh-per-turn.
+
 ## 2026-04-12 — Python 3.13 in practice (pyproject requires ≥3.12)
 **Decision:** uv selected Python 3.13.5 on this machine; pyproject pins ≥3.12.
 No code changes needed; 3.12-only features (match, generic syntax) all work.

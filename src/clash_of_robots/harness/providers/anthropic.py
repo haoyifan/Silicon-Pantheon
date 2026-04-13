@@ -2,6 +2,14 @@
 
 Wraps the in-process tool layer as SDK MCP tools and drives a one-shot `query`
 per turn. Uses the user's existing Claude subscription auth via the Claude CLI.
+
+Memory model: **fresh-per-turn**. Each `decide_turn` call starts a new
+conversation with only the system prompt (rules + strategy) and a snapshot of
+current state. No chain-of-thought or plans carry between turns. Cross-turn
+continuity comes from the server-side state, coach queue, and get_history
+tool — not the agent's context window. See DECISIONS.md for rationale and the
+recipe for switching to persistent sessions (ClaudeSDKClient) if agents seem
+tactically incoherent across turns.
 """
 
 from __future__ import annotations
