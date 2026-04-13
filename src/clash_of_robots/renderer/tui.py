@@ -24,20 +24,24 @@ from .sidebar import (
 
 
 class TUIRenderer:
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, thoughts_height: int | None = None):
         self.session = session
         self.console = Console()
         self._live: Live | None = None
         self._tty = sys.stdout.isatty()
+        self.thoughts_height = thoughts_height
 
     def _frame(self):
         state = self.session.state
+        thoughts_kwargs = {}
+        if self.thoughts_height is not None:
+            thoughts_kwargs["height"] = self.thoughts_height
         return Group(
             render_header(state),
             Panel(render_board(state), title="Board", border_style="dim"),
             render_units_table(state),
             render_last_action(state),
-            render_thoughts_panel(self.session),
+            render_thoughts_panel(self.session, **thoughts_kwargs),
         )
 
     def start(self) -> None:

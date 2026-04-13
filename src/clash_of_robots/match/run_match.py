@@ -57,6 +57,7 @@ def run_match(
     coach_file_red: Path | None = None,
     lessons_dir: Path | None = Path("lessons"),
     run_dir: Path | None = None,
+    thoughts_height: int | None = None,
 ) -> dict:
     state = load_scenario(game)
     if max_turns is not None:
@@ -95,7 +96,7 @@ def run_match(
         except ImportError:
             tui = None
         else:
-            tui = TUIRenderer(session)
+            tui = TUIRenderer(session, thoughts_height=thoughts_height)
             tui.start()
             # Real-time updates: refresh after each action as the agent calls tools.
             session.action_hooks.append(lambda _s, _r: tui.refresh())
@@ -215,6 +216,13 @@ def main() -> int:
     p.add_argument("--render", action="store_true")
     p.add_argument("--seed", type=int, default=None, help="seed for random providers")
     p.add_argument(
+        "--thoughts-height",
+        type=int,
+        default=None,
+        help="rows to reserve for the agent-reasoning panel in --render mode "
+        "(default: 12)",
+    )
+    p.add_argument(
         "--coach-file-blue",
         type=Path,
         default=None,
@@ -282,6 +290,7 @@ def main() -> int:
         coach_file_red=args.coach_file_red,
         lessons_dir=effective_lessons_dir,
         run_dir=run_dir,
+        thoughts_height=args.thoughts_height,
     )
     return 0
 
