@@ -29,16 +29,22 @@ from __future__ import annotations
 
 import asyncio
 import sys
+from collections import deque
 from dataclasses import dataclass, field
-from typing import Any, Awaitable, Callable
+from pathlib import Path
+from typing import Any, Awaitable, Callable, TYPE_CHECKING
 
 from rich.console import Console, RenderableType
 from rich.live import Live
 
 from clash_of_robots.client.transport import ServerClient
 
+if TYPE_CHECKING:
+    from clash_of_robots.client.agent_bridge import NetworkedAgent
+
 TICK_INTERVAL_S = 0.25
 POLL_INTERVAL_S = 1.0  # lobby / room state polling cadence
+THOUGHTS_BUFFER_SIZE = 100
 
 
 class Screen:
@@ -85,6 +91,17 @@ class SharedState:
     last_game_state: dict[str, Any] | None = None
     status_message: str = ""
     error_message: str = ""
+    # Optional path to a pre-written STRATEGY.md; read at game start.
+    strategy_path: Path | None = None
+    strategy_text: str | None = None
+    # Agent bridge for in-game play — populated when GameScreen enters
+    # and the player declared themselves as ai/hybrid with a provider+model.
+    agent: "NetworkedAgent | None" = None
+    agent_task: asyncio.Task | None = None
+    # Live reasoning stream from the agent (newest last).
+    thoughts: deque[str] = field(
+        default_factory=lambda: deque(maxlen=THOUGHTS_BUFFER_SIZE)
+    )
 
 
 class TUIApp:

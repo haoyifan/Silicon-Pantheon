@@ -1,17 +1,21 @@
-"""In-game screen — server-authoritative state display, fog aware.
+"""In-game screen — server-authoritative state display + agent bridge.
 
-Phase 1d scope: the TUI is primarily a spectator/observer view of the
-authoritative server state. The client polls get_state each tick,
-renders the filtered board + units table, and surfaces turn info.
+Two sources of game actions:
 
-Manual commands (useful while agent integration is still TODO):
-  e        call end_turn
-  c        concede
-  q        quit
+1. **Agent-driven** (when the player declared themselves as
+   `kind in {"ai", "hybrid"}` with provider="anthropic" and a model
+   set): GameScreen spawns a NetworkedAgent at on_enter and, on every
+   tick, triggers `agent.play_turn()` whenever `active_player` matches
+   the viewer's team and no agent task is already running. The agent
+   drives move/attack/end_turn directly over the ServerClient; the
+   TUI just renders + surfaces reasoning.
 
-A future agent-bridge (Phase 2) will drive end_turn / move / attack /
-etc. via an LLM provider using the same ServerClient, leaving the
-TUI as the display layer.
+2. **Manual** (human, or agent disabled): the player hits keys.
+
+Common keys:
+  e   call end_turn
+  c   concede
+  q   quit
 """
 
 from __future__ import annotations
@@ -35,6 +39,43 @@ class GameScreen(Screen):
 
     async def on_enter(self, app: TUIApp) -> None:
         await self._refresh_state()
+        # Build the agent bridge once we know the scenario (which is
+        # pulled from the room state we observed before transitioning).
+        if app.state.agent is None:
+            await self._maybe_build_agent(app)
+
+    async def on_exit(self, app: TUIApp) -> None:
+        # Cancel any in-flight agent turn when leaving the screen.
+        if app.state.agent_task is not None and not app.state.agent_task.done():
+            app.state.agent_task.cancel()
+        app.state.agent_task = None
+
+    async def _maybe_build_agent(self, app: TUIApp) -> None:
+        """Construct a NetworkedAgent if the login declared an LLM."""
+        if app.state.kind not in ("ai", "hybrid"):
+            return
+        if app.state.provider != "anthropic" or not app.state.model:
+            return  # only claude is wired up today
+        if app.client is None:
+            return
+        scenario = (app.state.last_room_state or {}).get("scenario") or ""
+        if not scenario:
+            return
+
+        from clash_of_robots.client.agent_bridge import NetworkedAgent
+
+        async def on_thought(text: str) -> None:
+            collapsed = " ".join(text.split())
+            if collapsed:
+                app.state.thoughts.append(collapsed)
+
+        app.state.agent = NetworkedAgent(
+            client=app.client,
+            model=app.state.model,
+            scenario=scenario,
+            strategy=app.state.strategy_text,
+            thoughts_callback=on_thought,
+        )
 
     def render(self) -> RenderableType:
         gs = self._state or {}
@@ -78,6 +119,19 @@ class GameScreen(Screen):
         if self.app.state.error_message:
             status_line.append(self.app.state.error_message, style="red")
 
+        thoughts_panel = self._render_thoughts()
+
+        agent_line = Text("")
+        if self.app.state.agent is not None:
+            busy = (
+                self.app.state.agent_task is not None
+                and not self.app.state.agent_task.done()
+            )
+            agent_line.append(
+                f"agent: {self.app.state.model} {'[thinking...]' if busy else '[idle]'}",
+                style="yellow" if busy else "dim",
+            )
+
         body = Group(
             header,
             Text(""),
@@ -85,12 +139,31 @@ class GameScreen(Screen):
             Text(""),
             units,
             Text(""),
+            thoughts_panel,
+            Text(""),
             you_info,
+            agent_line,
             Text(""),
             keys,
             status_line,
         )
         return Panel(body, title="game", border_style="red")
+
+    def _render_thoughts(self) -> RenderableType:
+        """Fixed-height panel of the last few reasoning snippets."""
+        thoughts = list(self.app.state.thoughts)
+        height = 10
+        inner = height - 2
+        body = Text(no_wrap=True, overflow="ellipsis")
+        visible = thoughts[-inner:] if inner > 0 else []
+        if not visible:
+            body.append("(no reasoning yet)", style="dim italic")
+        else:
+            for i, t in enumerate(visible):
+                body.append(t)
+                if i != len(visible) - 1:
+                    body.append("\n")
+        return Panel(body, title="agent reasoning", border_style="dim", height=height)
 
     def _render_board(self, gs: dict[str, Any]) -> RenderableType:
         board = gs.get("board", {})
@@ -194,6 +267,13 @@ class GameScreen(Screen):
         self.app.state.error_message = ""
         self._state = r.get("result", {})
         self.app.state.last_game_state = self._state
+
+        # Agent-driven play: on our turn, kick off agent.play_turn if
+        # none is already running. Async-fire-and-forget — the agent
+        # drives tool calls directly; subsequent ticks will observe the
+        # resulting state.
+        await self._maybe_trigger_agent()
+
         # Auto-transition on game over.
         if self._state.get("status") == "game_over":
             from clash_of_robots.client.tui.screens.post_match import PostMatchScreen
@@ -202,6 +282,39 @@ class GameScreen(Screen):
             await self.app.transition(next_screen)
             return next_screen
         return None
+
+    async def _maybe_trigger_agent(self) -> None:
+        """Launch agent.play_turn() if it's our turn and none is running."""
+        if self.app.state.agent is None:
+            return
+        if self.app.state.agent_task is not None and not self.app.state.agent_task.done():
+            return
+        gs = self._state or {}
+        if gs.get("status") == "game_over":
+            return
+        my_team = (gs.get("you") or {}).get("team")
+        active = gs.get("active_player")
+        if not my_team or active != my_team:
+            return
+
+        from clash_of_robots.server.engine.state import Team
+
+        viewer = Team.BLUE if my_team == "blue" else Team.RED
+        max_turns = int(
+            gs.get("max_turns")
+            or (gs.get("rules", {}) or {}).get("max_turns")
+            or 20
+        )
+
+        async def _run() -> None:
+            try:
+                await self.app.state.agent.play_turn(viewer, max_turns=max_turns)
+            except asyncio.CancelledError:
+                pass
+            except Exception as e:
+                self.app.state.error_message = f"agent error: {e}"
+
+        self.app.state.agent_task = asyncio.create_task(_run())
 
     async def _call(self, tool: str) -> Screen | None:
         if self.app.client is None:
