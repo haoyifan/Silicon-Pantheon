@@ -1,15 +1,23 @@
 # Usage guide
 
-A hands-on reference for the three CLIs shipped with this repo
-(`clash-match` and `clash-play`) and the supporting
-concepts: run directories, lessons, real-time reasoning, and coaching.
+A hands-on reference for the CLIs shipped with this repo. Two modes
+of play:
+
+- **Local** (single process): `clash-match` runs both agents in one
+  Python process; `clash-play` replays the result.
+- **Networked** (backend + clients): `clash-serve` hosts matches;
+  `clash-join` connects a TUI client. Supports lobby, host/join,
+  ready-up, fog of war, disconnect handling, and replay download.
+
+Sections:
 
 - [Quick start](#quick-start)
-- [`clash-match` — run a match](#clash-match--run-a-match)
+- [`clash-match` — run a local match](#clash-match--run-a-match)
 - [Lessons](#lessons)
 - [Real-time reasoning](#real-time-reasoning)
 - [Coaching during a match](#coaching-during-a-match)
 - [`clash-play` — interactive step-through replayer](#clash-play--interactive-step-through-replayer)
+- [**Networked play: `clash-serve` + `clash-join`**](#networked-play-clash-serve--clash-join)
 - [Complete example workflows](#complete-example-workflows)
 
 ---
@@ -303,6 +311,119 @@ uv run clash-play runs/20260412T143022_01_tiny_skirmish
 If the replay is older than the `match_start` metadata event
 (commit `1deb07a`, 2026-04-12), the replayer will refuse with a clear
 error — re-record the match to get the metadata.
+
+---
+
+## Networked play: `clash-serve` + `clash-join`
+
+Two processes, one machine or many:
+
+- **`clash-serve`** runs the authoritative backend over MCP + streamable
+  HTTP (SSE). Holds the engine, rooms, tokens, heartbeat sweeper,
+  replay storage. Stateless across restarts today; in-memory only.
+- **`clash-join`** is the client — full TUI by default, with a
+  `--smoke` fallback for connectivity testing.
+
+### Start the backend
+
+```bash
+uv run clash-serve --host 127.0.0.1 --port 8080
+# Prints:  clash-serve starting on http://127.0.0.1:8080
+```
+
+Remote access: point `--host 0.0.0.0` (public bind) and make sure the
+port is reachable. For friends-only matches on a VPS this is enough;
+public deployment needs more (auth, rate limits) and is out of scope
+for Phase 1.
+
+### Connect a client
+
+```bash
+uv run clash-join                     # TUI prompts for everything
+uv run clash-join --url http://<host>:8080/mcp/ --name alice --kind ai
+```
+
+TUI flow:
+
+| Screen | What it does | Keys |
+|---|---|---|
+| **login** | enter server URL, display name, kind (ai/human/hybrid), optional provider/model | Tab/↓ next field, Shift-Tab/↑ prev, ←/→ cycle kind, Enter submit, q quit |
+| **lobby** | list open rooms, host a new one, join, preview | j/k or ↓/↑ select, Enter join, p preview, n new room, r refresh, q quit |
+| **room** | preview the scenario, see seats + readiness, toggle ready and wait for auto-start | r toggle ready, l leave, q quit |
+| **game** | live board view of the server-authoritative state (fog-masked if enabled) | e end_turn, c concede, q quit |
+| **post-match** | winner banner + survivor summary; download replay locally | d download replay, l back to lobby, Enter same, q quit |
+
+### Lobby flow
+
+The server promotes the room to `in_game` ten seconds after both
+players press `r`. The countdown resets if either player unreadies,
+leaves, or disconnects.
+
+Team assignment is picked at room-creation time:
+- `--team_assignment fixed` (default) → host gets `host_team`, joiner gets the other.
+- `--team_assignment random` → coin flip at game start; recorded in
+  the replay.
+
+### Fog of war
+
+Per-room setting. Three modes:
+
+- `none` — no filtering; both sides see everything. Good for
+  debugging.
+- `classic` (default) — tiles revealed once stay visible; enemy
+  units only while currently in sight. The Session tracks per-team
+  `ever_seen` across half-turns.
+- `line_of_sight` — only currently visible tiles show anything.
+
+Sight stats per class: Knight 2, Archer 4, Cavalry 3, Mage 3.
+Forest + Mountain block line-of-sight past them unless adjacent.
+
+### Disconnects + reconnects
+
+Server runs a heartbeat sweeper every second:
+
+| Context | Grace window | Effect |
+|---|---|---|
+| any state | 30s no heartbeat | → soft_disconnect |
+| in_lobby soft 30s | 60s total idle | connection dropped |
+| in_room soft 30s | 60s total idle | seat vacated; room reverts to waiting |
+| in_game soft 60s | 90s total idle | opponent notified (log only) |
+| in_game soft 120s | 150s total idle | auto-concede; opponent wins by disconnect_forfeit |
+
+Clients send `heartbeat` every 10s automatically (via
+`ServerClient.start_heartbeat`, started by the TUI on login).
+
+Reconnect-mid-match (Phase 1d+) isn't wired yet — if your client
+drops during a game, you lose. Rejoining as a fresh connection will
+find the seat already vacated.
+
+### Replay download
+
+On the post-match screen, `d` calls the `download_replay` tool and
+saves the result to
+`~/.clash-of-robots/replays/<room_id>.jsonl`. Feed it to `clash-play`
+locally to scroll through the match:
+
+```bash
+uv run clash-play --replay ~/.clash-of-robots/replays/<room_id>.jsonl
+```
+
+The post-match token is valid for about a minute after `game_over`;
+download before leaving the screen.
+
+### Smoke test the transport without the TUI
+
+```bash
+uv run clash-join --smoke --name alice --kind ai \
+  --url http://127.0.0.1:8080/mcp/
+# → connected: connection_id=...
+#   whoami (pre): {...}
+#   set_player_metadata: {...}
+#   heartbeat: {...}
+#   whoami (post): {...}
+```
+
+Useful for verifying auth / state transitions in isolation.
 
 ---
 
