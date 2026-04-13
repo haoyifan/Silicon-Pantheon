@@ -134,6 +134,13 @@ class TUIApp:
                 await self.client.stop_heartbeat()
             except Exception:
                 pass
+        # Tear down the transport context opened by the login screen.
+        cleanup = getattr(self, "_transport_cleanup", None)
+        if cleanup is not None:
+            try:
+                await cleanup()
+            except Exception:
+                pass
         return 0
 
     def exit(self) -> None:
