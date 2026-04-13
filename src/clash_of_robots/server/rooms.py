@@ -50,7 +50,7 @@ class RoomConfig:
     max_turns: int = 20
     team_assignment: TeamAssignment = "fixed"
     host_team: HostTeam = "blue"
-    fog_of_war: FogMode = "classic"
+    fog_of_war: FogMode = "none"  # easier onboarding; bump to "classic" per-room
     turn_time_limit_s: int = 180
 
 

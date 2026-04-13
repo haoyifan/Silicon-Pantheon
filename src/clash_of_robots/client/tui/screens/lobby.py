@@ -142,7 +142,7 @@ class LobbyScreen(Screen):
                 scenario="01_tiny_skirmish",
                 team_assignment="fixed",
                 host_team="blue",
-                fog_of_war="classic",
+                fog_of_war="none",
             )
         except Exception as e:
             self.app.state.error_message = f"create_room failed: {e}"
