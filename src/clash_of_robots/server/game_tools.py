@@ -25,9 +25,65 @@ from clash_of_robots.server.app import App, Connection, _error, _ok
 from clash_of_robots.server.engine.scenarios import load_scenario
 from clash_of_robots.server.engine.state import Team
 from clash_of_robots.server.rooms import RoomConfig, RoomStatus, Slot
-from clash_of_robots.server.session import new_session
+from clash_of_robots.server.session import Session, new_session
 from clash_of_robots.server.tools import ToolError, call_tool
 from clash_of_robots.shared.protocol import ConnectionState, ErrorCode
+from clash_of_robots.shared.viewer_filter import (
+    ViewerContext,
+    filter_state,
+    filter_threat_map,
+    filter_unit,
+    update_ever_seen,
+)
+
+
+# Tools whose dict result is the full state snapshot or a per-unit view;
+# these must be passed through the viewer filter before returning.
+_FILTERED_STATE_TOOLS = frozenset({"get_state"})
+_FILTERED_UNIT_TOOLS = frozenset({"get_unit"})
+_FILTERED_THREAT_TOOLS = frozenset({"get_threat_map"})
+
+
+def _viewer_context(session: Session, viewer: Team) -> ViewerContext:
+    return ViewerContext(
+        team=viewer,
+        fog_mode=session.fog_of_war,  # type: ignore[arg-type]
+        ever_seen=session.ever_seen.get(viewer, frozenset()),
+    )
+
+
+def _apply_filter(
+    tool_name: str, result: dict, session: Session, viewer: Team
+) -> dict:
+    """Pass state-revealing tool results through the viewer filter.
+
+    Only tools that return state / unit / threat-map info need filtering;
+    action results (move/attack/heal/wait/end_turn) are always safe to
+    echo back because they describe the caller's own action.
+    """
+    if session.fog_of_war == "none":
+        return result
+    ctx = _viewer_context(session, viewer)
+    if tool_name in _FILTERED_STATE_TOOLS:
+        return filter_state(session.state, ctx)
+    if tool_name in _FILTERED_UNIT_TOOLS:
+        filtered = filter_unit(result.get("id", ""), result, session.state, ctx)
+        return filtered if filtered is not None else {"error": "unit not visible"}
+    if tool_name in _FILTERED_THREAT_TOOLS:
+        return filter_threat_map(result, session.state, ctx)
+    return result
+
+
+def _maybe_update_ever_seen(session: Session, result: dict, viewer: Team) -> None:
+    """After a half-turn ends, grow this team's ever_seen for classic mode."""
+    if session.fog_of_war != "classic":
+        return
+    if not isinstance(result, dict):
+        return
+    if result.get("type") == "end_turn":
+        session.ever_seen[viewer] = update_ever_seen(
+            session.state, viewer, session.ever_seen[viewer]
+        )
 
 
 def start_game_for_room(app: App, room_id: str) -> None:
@@ -48,7 +104,9 @@ def start_game_for_room(app: App, room_id: str) -> None:
         return
     state = load_scenario(room.config.scenario)
     state.max_turns = room.config.max_turns
-    session = new_session(state, scenario=room.config.scenario)
+    session = new_session(
+        state, scenario=room.config.scenario, fog_of_war=room.config.fog_of_war
+    )
     app.sessions[room_id] = session
     if room.config.team_assignment == "fixed":
         host_team = Team.BLUE if room.config.host_team == "blue" else Team.RED
@@ -109,7 +167,13 @@ def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
         result = call_tool(session, viewer, tool_name, args)
     except ToolError as e:
         return _error(ErrorCode.BAD_INPUT, str(e))
-    return _ok({"result": result})
+    # Grow ever_seen *before* filtering the response so the viewer sees
+    # tiles they just observed at the boundary. Currently only end_turn
+    # updates ever_seen; if we later want live memory during a turn we
+    # can expand this.
+    _maybe_update_ever_seen(session, result, viewer)
+    filtered = _apply_filter(tool_name, result, session, viewer)
+    return _ok({"result": filtered})
 
 
 def register_game_tools(mcp: FastMCP, app: App) -> None:

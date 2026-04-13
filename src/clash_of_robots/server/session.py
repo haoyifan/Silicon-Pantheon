@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import TextIO
 
 from .engine.replay import ReplayWriter
-from .engine.state import GameState, Team
+from .engine.state import GameState, Pos, Team
 
 ActionHook = Callable[["Session", dict], None]
 
@@ -77,6 +77,13 @@ class Session:
     )
     # Optional live plain-text log of thoughts (tailable with `less +F`).
     thoughts_log: ThoughtsLogWriter | None = None
+    # Fog-of-war mode for this session. "none" = no filtering.
+    fog_of_war: str = "none"
+    # Per-team memory of tiles ever seen (classic mode). Kept frozen
+    # so consumers can share references without fear of mutation.
+    ever_seen: dict[Team, frozenset[Pos]] = field(
+        default_factory=lambda: {Team.BLUE: frozenset(), Team.RED: frozenset()}
+    )
 
     def log(self, kind: str, payload: dict) -> None:
         if self.replay is not None:
@@ -126,11 +133,16 @@ def new_session(
     *,
     scenario: str | None = None,
     thoughts_log_path: str | Path | None = None,
+    fog_of_war: str = "none",
 ) -> Session:
     writer = ReplayWriter(replay_path) if replay_path else None
     thoughts_log = ThoughtsLogWriter(thoughts_log_path) if thoughts_log_path else None
     session = Session(
-        state=state, replay=writer, scenario=scenario, thoughts_log=thoughts_log
+        state=state,
+        replay=writer,
+        scenario=scenario,
+        thoughts_log=thoughts_log,
+        fog_of_war=fog_of_war,
     )
     # Write a single metadata line at the top of the replay so downstream
     # tools (interactive replayer, analytics) can reconstruct the match
