@@ -109,9 +109,15 @@ class Session:
             except Exception:
                 # Never let a log failure break the match loop.
                 pass
-        # Intentionally NOT calling notify_action here: rich.Live's own
-        # ~10fps auto-refresh picks up new deque entries. Forcing a refresh
-        # on every thought caused visible flicker on tall frames.
+        # Fire action hooks so the TUI refreshes as reasoning arrives,
+        # not only on tool calls. rich.Live's auto-refresh thread only
+        # repaints whatever renderable was last passed to Live.update();
+        # without this, thoughts arriving between tool calls would
+        # only appear in the panel after the NEXT tool call. Flicker
+        # is not a concern here because the TUI uses screen=True
+        # (alternate screen buffer) and rich.Live throttles repaints
+        # to its configured frame rate regardless of update() frequency.
+        self.notify_action({"kind": "agent_thought", "team": team.value, "text": text})
 
 
 def new_session(
