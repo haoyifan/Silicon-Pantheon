@@ -28,11 +28,14 @@ Key returns from the reader mirror `clash-play`'s:
 from __future__ import annotations
 
 import asyncio
+import logging
 import sys
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Awaitable, Callable, TYPE_CHECKING
+
+_log = logging.getLogger("clash.tui.app")
 
 from rich.console import Console, RenderableType
 from rich.live import Live
@@ -169,12 +172,14 @@ class TUIApp:
         if self._screen is not None:
             try:
                 await self._screen.on_exit(self)
-            except Exception as e:  # pragma: no cover - defensive
+            except Exception as e:
+                _log.exception("on_exit raised")
                 self.state.error_message = f"on_exit error: {e}"
         self._screen = next_screen
         try:
             await self._screen.on_enter(self)
-        except Exception as e:  # pragma: no cover - defensive
+        except Exception as e:
+            _log.exception("on_enter raised")
             self.state.error_message = f"on_enter error: {e}"
         self._refresh()
 
@@ -182,7 +187,8 @@ class TUIApp:
         if self._live is not None and self._screen is not None:
             try:
                 self._live.update(self._screen.render())
-            except Exception as e:  # pragma: no cover - defensive
+            except Exception as e:
+                _log.exception("render raised")
                 self.state.error_message = f"render error: {e}"
 
     # ---- input ----
@@ -206,6 +212,7 @@ class TUIApp:
                 try:
                     nxt = await self._screen.handle_key(key)
                 except Exception as e:
+                    _log.exception("handle_key raised")
                     self.state.error_message = f"key handler error: {e}"
                     self._refresh()
                     continue
@@ -225,6 +232,7 @@ class TUIApp:
                 try:
                     await self._screen.tick()
                 except Exception as e:
+                    _log.exception("tick raised")
                     self.state.error_message = f"tick error: {e}"
                 self._refresh()
         except asyncio.CancelledError:

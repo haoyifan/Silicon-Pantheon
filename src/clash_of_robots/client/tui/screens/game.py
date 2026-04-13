@@ -108,7 +108,7 @@ class GameScreen(Screen):
         status = gs.get("status", "?")
         winner = gs.get("winner")
         you = self.app.state.slot or "?"
-        my_team = (gs.get("you") or {}).get("team", "?")
+        my_team = gs.get("you") or "?"
 
         header = Text()
         header.append(f"Turn {turn}/{max_turns}   ", style="bold")
@@ -315,7 +315,7 @@ class GameScreen(Screen):
         gs = self._state or {}
         if gs.get("status") == "game_over":
             return
-        my_team = (gs.get("you") or {}).get("team")
+        my_team = gs.get("you")
         active = gs.get("active_player")
         # Don't spam every tick — but log the first time a new (my_team,
         # active) pair fails to match so we can see whether it's a

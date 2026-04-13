@@ -39,7 +39,7 @@ class PostMatchScreen(Screen):
 
         async def _summarize() -> None:
             gs = app.state.last_game_state or {}
-            my_team = (gs.get("you") or {}).get("team") or "blue"
+            my_team = gs.get("you") or "blue"
             from clash_of_robots.server.engine.state import Team
 
             viewer = Team.BLUE if my_team == "blue" else Team.RED
@@ -65,7 +65,7 @@ class PostMatchScreen(Screen):
     def render(self) -> RenderableType:
         gs = self.app.state.last_game_state or {}
         winner = gs.get("winner")
-        my_team = (gs.get("you") or {}).get("team")
+        my_team = gs.get("you")
         reason = (gs.get("last_action") or {}).get("reason", "")
 
         if winner is None:
