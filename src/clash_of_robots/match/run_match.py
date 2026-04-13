@@ -162,25 +162,38 @@ def run_match(
 
     # Post-match reflections: ask each provider for a lesson, persist via
     # LessonStore. Providers that don't implement summarize_match return
-    # None and are silently skipped.
+    # None and are silently skipped. Summarization can take 30+ seconds per
+    # team (an SDK call), so display a live spinner so the user knows the
+    # process is still working rather than hung.
     lesson_paths: list[str] = []
     if lessons_dir is not None:
         store = LessonStore(lessons_dir)
-        for provider, team in ((blue, Team.BLUE), (red, Team.RED)):
-            try:
-                lesson = provider.summarize_match(session, team, scenario=game)
-            except Exception as e:
+        from rich.console import Console as _Console
+
+        _console = _Console()
+        spinner_ctx = _console.status(
+            "[bold]Players reviewing the match…[/bold]", spinner="dots"
+        )
+        with spinner_ctx as status:
+            for provider, team in ((blue, Team.BLUE), (red, Team.RED)):
+                status.update(
+                    f"[bold]{team.value.capitalize()} reviewing the match…[/bold]"
+                )
+                try:
+                    lesson = provider.summarize_match(session, team, scenario=game)
+                except Exception as e:
+                    if verbose:
+                        print(
+                            f"[{team.value}] summarize_match error: {e}",
+                            file=sys.stderr,
+                        )
+                    lesson = None
+                if lesson is None:
+                    continue
+                path = store.save(lesson)
+                lesson_paths.append(str(path))
                 if verbose:
-                    print(
-                        f"[{team.value}] summarize_match error: {e}", file=sys.stderr
-                    )
-                lesson = None
-            if lesson is None:
-                continue
-            path = store.save(lesson)
-            lesson_paths.append(str(path))
-            if verbose:
-                print(f"[{team.value}] lesson saved: {path}")
+                    _console.print(f"[{team.value}] lesson saved: {path}")
 
     result = {
         "winner": session.state.winner.value if session.state.winner else None,
