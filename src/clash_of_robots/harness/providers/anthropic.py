@@ -31,11 +31,41 @@ from claude_agent_sdk import (
 
 from clash_of_robots.harness.prompts import build_system_prompt, build_turn_prompt, load_strategy
 from clash_of_robots.harness.providers.base import Provider
+from clash_of_robots.lessons import Lesson, slugify
 from clash_of_robots.server.engine.state import Team
 from clash_of_robots.server.session import Session
 from clash_of_robots.server.tools import TOOL_REGISTRY, ToolError, call_tool
 
 MCP_SERVER_NAME = "clash"
+
+
+def _parse_lesson_json(text: str) -> dict | None:
+    """Extract a {title, slug, body} object from model output.
+
+    Tolerates surrounding prose or markdown code fences by locating the
+    outermost JSON object. Returns None if nothing parseable was found.
+    """
+    if not text:
+        return None
+    # Strip common code-fence wrappers.
+    stripped = text.strip()
+    if stripped.startswith("```"):
+        # drop first fence line and a trailing fence
+        stripped = stripped.split("\n", 1)[1] if "\n" in stripped else ""
+        if stripped.endswith("```"):
+            stripped = stripped[: -len("```")]
+    # Find the first '{' and the matching last '}'.
+    start = stripped.find("{")
+    end = stripped.rfind("}")
+    if start == -1 or end == -1 or end < start:
+        return None
+    try:
+        data = json.loads(stripped[start : end + 1])
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    return data
 
 
 def _sdk_tools_for(session: Session, viewer: Team):
@@ -129,6 +159,121 @@ class AnthropicProvider(Provider):
         # If the agent didn't end its turn, force it.
         if session.state.active_player is viewer and session.state.turn == turn_at_start:
             self._force_end_turn(session, viewer)
+
+    # ---- post-match reflection ----
+
+    def summarize_match(
+        self, session: Session, viewer: Team, scenario: str
+    ) -> Lesson | None:
+        """Ask the model for one lesson learned from this team's perspective.
+
+        Uses a tool-less `query()` call so the model only produces text. We
+        request a JSON object {title, slug, body} and parse it; on any
+        parse failure we fall back to a best-effort slug.
+        """
+        try:
+            return asyncio.run(self._async_summarize(session, viewer, scenario))
+        except Exception as e:
+            session.log("summarize_error", {"team": viewer.value, "error": str(e)})
+            return None
+
+    async def _async_summarize(
+        self, session: Session, viewer: Team, scenario: str
+    ) -> Lesson | None:
+        winner = session.state.winner
+        if winner is None:
+            outcome = "draw"
+        else:
+            outcome = "win" if winner is viewer else "loss"
+
+        last = session.state.last_action or {}
+        reason = str(last.get("reason", "")) if isinstance(last, dict) else ""
+
+        own_thoughts = [
+            {"turn": t.turn, "text": t.text}
+            for t in session.thoughts
+            if t.team is viewer
+        ]
+        history = session.state.history  # full action log (both teams)
+
+        context = {
+            "scenario": scenario,
+            "you": viewer.value,
+            "outcome": outcome,
+            "reason": reason,
+            "turns_played": session.state.turn,
+            "max_turns": session.state.max_turns,
+            "final_units": {
+                "blue": [
+                    {"id": u.id, "class": u.class_.value, "hp": u.hp}
+                    for u in session.state.units_of(Team.BLUE)
+                ],
+                "red": [
+                    {"id": u.id, "class": u.class_.value, "hp": u.hp}
+                    for u in session.state.units_of(Team.RED)
+                ],
+            },
+            "your_reasoning": own_thoughts[-40:],  # cap for prompt size
+            "action_history": history[-60:],
+        }
+
+        prompt = (
+            f"You just finished a Clash Of Robots match as {viewer.value} on scenario "
+            f"'{scenario}'. Outcome: {outcome}"
+            + (f" by {reason}" if reason else "")
+            + ".\n\n"
+            "Reflect on ONE key decision or pattern that drove the outcome — "
+            "something a future player of this scenario should internalize. "
+            "Focus on generalizable tactical principle, not play-by-play narration.\n\n"
+            "Respond with ONLY a JSON object (no prose, no code fences) with fields:\n"
+            '  "title": short human title (<= 80 chars)\n'
+            '  "slug":  filesystem-safe kebab-case phrase (<= 60 chars) that names the lesson\n'
+            '  "body":  markdown, <= 400 words, with a "Situation" and "Lesson" section\n\n'
+            "Match context (JSON):\n"
+            f"```json\n{json.dumps(context, indent=2, default=str)}\n```\n"
+        )
+
+        opts = ClaudeAgentOptions(
+            model=self.model,
+            system_prompt="You are a tactical post-mortem writer. Return JSON only.",
+            max_turns=1,
+        )
+
+        text = ""
+        try:
+            async for msg in query(prompt=prompt, options=opts):
+                if isinstance(msg, AssistantMessage):
+                    for block in msg.content:
+                        if isinstance(block, TextBlock):
+                            text += block.text
+                if isinstance(msg, ResultMessage):
+                    break
+        except Exception as e:
+            session.log("summarize_error", {"team": viewer.value, "error": str(e)})
+            return None
+
+        parsed = _parse_lesson_json(text)
+        if parsed is None:
+            return None
+
+        title = parsed.get("title", "Untitled lesson").strip() or "Untitled lesson"
+        slug_raw = parsed.get("slug", "").strip()
+        slug = slugify(slug_raw or title)
+        body = parsed.get("body", "").strip()
+        if not body:
+            return None
+
+        return Lesson(
+            slug=slug,
+            title=title,
+            scenario=scenario,
+            team=viewer.value,
+            model=self.model,
+            outcome=outcome,
+            reason=reason,
+            created_at=Lesson.now_iso(),
+            body=body,
+        )
 
     def _force_end_turn(self, session: Session, viewer: Team) -> None:
         # Wait any mid-action units, then end turn.
