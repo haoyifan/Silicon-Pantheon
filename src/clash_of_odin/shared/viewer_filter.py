@@ -67,7 +67,16 @@ def filter_state(state: GameState, ctx: ViewerContext) -> dict[str, Any]:
         owner = u.get("owner")
         pos = u.get("pos") or {}
         ux, uy = int(pos.get("x", -1)), int(pos.get("y", -1))
+        alive = u.get("alive", u.get("hp", 0) > 0)
         if owner == ctx.team.value:
+            filtered_units.append(_filtered_unit_dict(u))
+            continue
+        # Dead enemy units are known history — once you killed them
+        # they're on the record; showing the corpse doesn't leak any
+        # live intel. This avoids making dead enemies vanish from a
+        # team's units table when they happen to die on a tile that
+        # isn't in current sight.
+        if not alive:
             filtered_units.append(_filtered_unit_dict(u))
             continue
         if Pos(ux, uy) in visible:

@@ -36,8 +36,9 @@ def state_to_dict(state: GameState, viewer: Team | None = None) -> dict:
 
     units_payload = []
     for u in state.units.values():
-        if not u.alive:
-            continue
+        # Include dead units (hp=0) so clients can show them dim in
+        # the units table without losing the record; the `alive` flag
+        # lets the client skip them on the board itself.
         units_payload.append(
             {
                 "id": u.id,
@@ -55,6 +56,7 @@ def state_to_dict(state: GameState, viewer: Team | None = None) -> dict:
                 "is_magic": u.stats.is_magic,
                 "can_heal": u.stats.can_heal,
                 "status": u.status.value,
+                "alive": u.alive,
             }
         )
 

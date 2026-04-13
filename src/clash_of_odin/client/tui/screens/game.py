@@ -355,9 +355,13 @@ class GameScreen(Screen):
         tiles = board.get("tiles", [])
         units = gs.get("units", [])
         tile_by_pos = {(int(t.get("x", 0)), int(t.get("y", 0))): t for t in tiles}
+        # Dead units stay in the payload so the units table can show
+        # them dim, but the board itself should treat their tile as
+        # empty — they're corpses, not blockers.
         unit_by_pos = {
             (int((u.get("pos") or {}).get("x", 0)), int((u.get("pos") or {}).get("y", 0))): u
             for u in units
+            if u.get("alive", u.get("hp", 0) > 0)
         }
 
         text = Text()
@@ -401,14 +405,25 @@ class GameScreen(Screen):
         for u in gs.get("units", []):
             pos = u.get("pos") or {}
             team = u.get("owner", "")
-            style = "cyan" if team == "blue" else "red"
+            alive = u.get("alive", u.get("hp", 0) > 0)
+            if alive:
+                team_style = "cyan" if team == "blue" else "red"
+                status_text = u.get("status", "")
+                row_style = None
+            else:
+                # Dead unit: light gray across the row, status replaced
+                # with 'dead'. HP shown as 0/<max> for clarity.
+                team_style = "bright_black"
+                status_text = "dead"
+                row_style = "bright_black"
             t.add_row(
                 u.get("id", ""),
-                Text(team, style=style),
+                Text(team, style=team_style),
                 u.get("class", ""),
                 f"({pos.get('x', '?')},{pos.get('y', '?')})",
-                f"{u.get('hp', '?')}/{u.get('hp_max', '?')}",
-                u.get("status", ""),
+                f"{u.get('hp', 0)}/{u.get('hp_max', '?')}",
+                status_text,
+                style=row_style,
             )
         return t
 
