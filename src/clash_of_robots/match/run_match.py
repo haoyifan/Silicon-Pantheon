@@ -8,7 +8,9 @@ the `end_turn` tool). We loop until `status` is GAME_OVER.
 from __future__ import annotations
 
 import argparse
+import datetime as _dt
 import logging
+import re
 import sys
 import time
 from pathlib import Path
@@ -19,6 +21,27 @@ from clash_of_robots.server.engine.scenarios import load_scenario
 from clash_of_robots.server.engine.state import GameStatus, Team
 from clash_of_robots.server.session import new_session
 from clash_of_robots.server.tools import call_tool
+
+_FS_SAFE = re.compile(r"[^A-Za-z0-9_.-]+")
+
+
+def _make_run_dir(parent: Path, scenario: str) -> Path:
+    """Create and return a new per-match run directory under `parent`.
+
+    Naming: {timestamp}_{scenario}. Timestamp is a filesystem-safe local
+    timestamp (YYYYMMDDTHHMMSS). If the directory already exists (two
+    matches started in the same second), appends -2, -3, ... until free.
+    """
+    ts = _dt.datetime.now().strftime("%Y%m%dT%H%M%S")
+    safe_scenario = _FS_SAFE.sub("-", scenario).strip("-") or "match"
+    base = parent / f"{ts}_{safe_scenario}"
+    candidate = base
+    i = 2
+    while candidate.exists():
+        candidate = parent / f"{ts}_{safe_scenario}-{i}"
+        i += 1
+    candidate.mkdir(parents=True, exist_ok=False)
+    return candidate
 
 
 def run_match(
@@ -33,10 +56,16 @@ def run_match(
     coach_file_blue: Path | None = None,
     coach_file_red: Path | None = None,
     lessons_dir: Path | None = Path("lessons"),
+    run_dir: Path | None = None,
 ) -> dict:
     state = load_scenario(game)
     if max_turns is not None:
         state.max_turns = max_turns
+    # If a run directory is provided and the caller didn't pick an explicit
+    # replay path, default the replay into that directory so all artifacts
+    # from one match live together.
+    if run_dir is not None and replay_path is None:
+        replay_path = run_dir / "replay.jsonl"
     session = new_session(state, replay_path=replay_path, scenario=game)
 
     blue.on_match_start(session, Team.BLUE)
@@ -151,6 +180,7 @@ def run_match(
         "blue_survivors": len(session.state.units_of(Team.BLUE)),
         "red_survivors": len(session.state.units_of(Team.RED)),
         "lessons": lesson_paths,
+        "run_dir": str(run_dir) if run_dir is not None else None,
     }
     if verbose:
         print(f"\n=== match result: {result}")
@@ -184,6 +214,19 @@ def main() -> int:
     )
     p.add_argument("--coach-file-red", type=Path, default=None)
     p.add_argument(
+        "--runs-dir",
+        type=Path,
+        default=Path("runs"),
+        help="parent directory under which a per-match folder is auto-created "
+        "(default: ./runs). The folder gathers replay.jsonl + thoughts.log + "
+        "future artifacts from one match.",
+    )
+    p.add_argument(
+        "--no-run-dir",
+        action="store_true",
+        help="skip creating the per-match run folder",
+    )
+    p.add_argument(
         "--lessons-dir",
         type=Path,
         default=Path("lessons"),
@@ -199,6 +242,12 @@ def main() -> int:
     # --no-lessons disables both the producer (run_match) and the consumer
     # (provider-side prompt injection) by threading None through both.
     effective_lessons_dir = None if args.no_lessons else args.lessons_dir
+
+    # Auto-create a per-match run folder unless the user opted out.
+    run_dir: Path | None = None
+    if not args.no_run_dir:
+        run_dir = _make_run_dir(args.runs_dir, args.game)
+        print(f"run directory: {run_dir}")
 
     blue = make_provider(
         args.blue,
@@ -223,6 +272,7 @@ def main() -> int:
         coach_file_blue=args.coach_file_blue,
         coach_file_red=args.coach_file_red,
         lessons_dir=effective_lessons_dir,
+        run_dir=run_dir,
     )
     return 0
 
