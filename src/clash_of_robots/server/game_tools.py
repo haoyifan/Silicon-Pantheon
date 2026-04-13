@@ -192,12 +192,31 @@ def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
     try:
         result = call_tool(session, viewer, tool_name, args)
     except ToolError as e:
+        log.info(
+            "tool rejected: tool=%s viewer=%s err=%s",
+            tool_name,
+            viewer.value,
+            e,
+        )
         return _error(ErrorCode.BAD_INPUT, str(e))
     # Grow ever_seen *before* filtering the response so the viewer sees
     # tiles they just observed at the boundary. Currently only end_turn
     # updates ever_seen; if we later want live memory during a turn we
     # can expand this.
     _maybe_update_ever_seen(session, result, viewer)
+    # Log the authoritative unit statuses around state-revealing tools
+    # so we can tell if any client is confused about unit readiness.
+    if tool_name in _FILTERED_STATE_TOOLS or tool_name == "end_turn":
+        log.info(
+            "post-%s viewer=%s active=%s turn=%s units=%s",
+            tool_name,
+            viewer.value,
+            session.state.active_player.value,
+            session.state.turn,
+            ",".join(
+                f"{u.id}={u.status.value}" for u in session.state.units.values()
+            ),
+        )
     filtered = _apply_filter(tool_name, result, session, viewer)
     return _ok({"result": filtered})
 

@@ -314,11 +314,21 @@ def _apply_end_turn(state: GameState) -> dict:
     # 4. Start-of-turn effects for the incoming player:
     #    - reset unit statuses to READY
     #    - apply fort heal
+    reset_ids = []
     for u in state.units_of(state.active_player):
         u.status = UnitStatus.READY
+        reset_ids.append(u.id)
         tile = state.board.tile(u.pos)
         if tile.is_fort and tile.fort_owner is state.active_player and u.hp < u.stats.hp_max:
             u.hp = min(u.stats.hp_max, u.hp + 3)
+    import logging as _logging
+
+    _logging.getLogger("clash.engine").info(
+        "end_turn: active now=%s turn=%s reset_to_ready=%s",
+        state.active_player.value,
+        state.turn,
+        reset_ids,
+    )
 
     # 5. Check elimination win (opponent has no units after our turn ends).
     if not state.units_of(state.active_player):

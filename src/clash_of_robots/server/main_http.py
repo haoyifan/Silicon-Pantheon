@@ -54,6 +54,7 @@ def _configure_server_logging(level: str, log_file: Path | None) -> Path:
         "clash",
         "clash.lobby",
         "clash.game",
+        "clash.engine",
         "clash-serve",
         "uvicorn",
         "uvicorn.error",
