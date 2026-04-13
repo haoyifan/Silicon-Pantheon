@@ -28,6 +28,39 @@ class PostMatchScreen(Screen):
         self.app = app
         self._downloaded_path: Path | None = None
         self._download_error: str | None = None
+        self._summary_state: str = ""  # "", "pending", "done", "failed"
+        self._summary_path: Path | None = None
+
+    async def on_enter(self, app: TUIApp) -> None:
+        # Kick off a background summary if an agent is attached.
+        if app.state.agent is None:
+            return
+        self._summary_state = "pending"
+
+        async def _summarize() -> None:
+            gs = app.state.last_game_state or {}
+            my_team = (gs.get("you") or {}).get("team") or "blue"
+            from clash_of_robots.server.engine.state import Team
+
+            viewer = Team.BLUE if my_team == "blue" else Team.RED
+            try:
+                lesson = await app.state.agent.summarize_match(viewer)
+            except Exception:
+                self._summary_state = "failed"
+                return
+            if lesson is None:
+                self._summary_state = "failed"
+                return
+            self._summary_state = "done"
+            # summarize_match already saved it if lessons_dir was set;
+            # expose the agent-reported title for the TUI.
+            self._summary_path = Path(
+                f"lessons/{lesson.scenario}/{lesson.slug}.md"
+            )
+
+        import asyncio as _asyncio
+
+        _asyncio.create_task(_summarize())
 
     def render(self) -> RenderableType:
         gs = self.app.state.last_game_state or {}
@@ -66,12 +99,21 @@ class PostMatchScreen(Screen):
             style="dim",
         )
 
+        summary_line = Text("")
+        if self._summary_state == "pending":
+            summary_line.append("agent reviewing the match…", style="yellow")
+        elif self._summary_state == "done" and self._summary_path is not None:
+            summary_line.append(f"lesson saved: {self._summary_path}", style="green")
+        elif self._summary_state == "failed":
+            summary_line.append("lesson summary failed", style="dim red")
+
         body = Group(
             banner,
             Text(""),
             summary,
             Text(""),
             download_line,
+            summary_line,
             Text(""),
             keys,
         )

@@ -54,13 +54,35 @@ from clash_of_robots.harness.prompts import (
     build_turn_prompt_from_state_dict,
     load_strategy,
 )
-from clash_of_robots.lessons import LessonStore
+from clash_of_robots.lessons import Lesson, LessonStore, slugify
 from clash_of_robots.server.engine.state import Team
 
 # The tools we expose to the agent. Each entry:
 #   (name, description, {arg_name: jsonschema_fragment})
 # `connection_id` is injected by ServerClient.call, not part of the
 # schema the agent sees.
+def _parse_lesson_json(text: str) -> dict | None:
+    """Extract {title, slug, body} from model output; tolerant of
+    code-fence wrappers and surrounding prose (mirrors the helper used
+    by the local AnthropicProvider)."""
+    if not text:
+        return None
+    stripped = text.strip()
+    if stripped.startswith("```"):
+        stripped = stripped.split("\n", 1)[1] if "\n" in stripped else ""
+        if stripped.endswith("```"):
+            stripped = stripped[: -len("```")]
+    start = stripped.find("{")
+    end = stripped.rfind("}")
+    if start == -1 or end == -1 or end < start:
+        return None
+    try:
+        data = json.loads(stripped[start : end + 1])
+    except json.JSONDecodeError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
 GAME_TOOLS: list[tuple[str, str, dict[str, Any]]] = [
     (
         "get_state",
@@ -227,6 +249,89 @@ class NetworkedAgent:
         self.thoughts_callback = thoughts_callback
         self.time_budget_s = time_budget_s
         self.max_iterations = max_iterations
+
+    async def summarize_match(self, viewer: Team) -> Lesson | None:
+        """Ask the model for one lesson reflecting on the finished match.
+
+        Mirrors the local AnthropicProvider.summarize_match but sources
+        the final state + action history from the server via
+        get_state / get_history instead of a local Session.
+        """
+        state = await self._fetch_state()
+        history_r = await self.client.call("get_history", last_n=60)
+        history = (history_r.get("result") or {}).get("history", [])
+        winner = state.get("winner")
+        if winner is None:
+            outcome = "draw"
+        else:
+            outcome = "win" if winner == viewer.value else "loss"
+        last = state.get("last_action") or {}
+        reason = str(last.get("reason", "")) if isinstance(last, dict) else ""
+
+        context = {
+            "scenario": self.scenario,
+            "you": viewer.value,
+            "outcome": outcome,
+            "reason": reason,
+            "turns_played": state.get("turn"),
+            "max_turns": state.get("max_turns"),
+            "action_history": history[-60:],
+            "final_units": state.get("units", []),
+        }
+        prompt = (
+            f"You just finished a Clash Of Robots match as {viewer.value} on scenario "
+            f"'{self.scenario}'. Outcome: {outcome}"
+            + (f" by {reason}" if reason else "")
+            + ".\n\nReflect on ONE key decision or pattern that drove the outcome. "
+            "Focus on generalizable tactical principle, not play-by-play.\n\n"
+            "Respond with ONLY a JSON object (no prose, no code fences) with fields:\n"
+            '  "title": short human title (<=80 chars)\n'
+            '  "slug":  kebab-case phrase (<=60 chars)\n'
+            '  "body":  markdown, <=400 words, with Situation and Lesson sections\n\n'
+            f"Match context (JSON):\n```json\n{json.dumps(context, indent=2, default=str)}\n```\n"
+        )
+        opts = ClaudeAgentOptions(
+            model=self.model,
+            system_prompt="You are a tactical post-mortem writer. Return JSON only.",
+            max_turns=1,
+        )
+        text = ""
+        try:
+            async for msg in query(prompt=prompt, options=opts):
+                if isinstance(msg, AssistantMessage):
+                    for block in msg.content:
+                        if isinstance(block, TextBlock):
+                            text += block.text
+                if isinstance(msg, ResultMessage):
+                    break
+        except Exception:
+            return None
+        parsed = _parse_lesson_json(text)
+        if parsed is None:
+            return None
+        title = parsed.get("title", "Untitled").strip() or "Untitled lesson"
+        slug = slugify(parsed.get("slug", "").strip() or title)
+        body = parsed.get("body", "").strip()
+        if not body:
+            return None
+        lesson = Lesson(
+            slug=slug,
+            title=title,
+            scenario=self.scenario,
+            team=viewer.value,
+            model=self.model,
+            outcome=outcome,
+            reason=reason,
+            created_at=Lesson.now_iso(),
+            body=body,
+        )
+        # Persist locally so priors accumulate across matches.
+        if self.lessons_dir is not None:
+            try:
+                LessonStore(self.lessons_dir).save(lesson)
+            except Exception:
+                pass
+        return lesson
 
     async def play_turn(self, viewer: Team, *, max_turns: int) -> dict:
         """Play one full turn. Returns the last get_state snapshot seen.
