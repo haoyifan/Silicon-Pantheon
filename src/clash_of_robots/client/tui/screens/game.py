@@ -175,7 +175,10 @@ class GameScreen(Screen):
             keys,
             status_line,
         )
-        return Panel(body, title="game", border_style="red")
+        # No outer frame — the inner Panels (board / reasoning) are
+        # enough structure. A full-screen red border was visually
+        # noisy and easy to mistake for a danger / error indicator.
+        return body
 
     def _render_thoughts(self) -> RenderableType:
         """Fixed-height panel of the last few reasoning snippets."""
