@@ -105,6 +105,15 @@ class AnthropicProvider(Provider):
 
         try:
             async for msg in query(prompt=turn_prompt, options=opts):
+                # Guard FIRST, process second. If the agent's end_turn has
+                # already flipped state or we've blown the time budget, any
+                # further AssistantMessage is post-turn chatter and must not
+                # be rendered as "this team's reasoning" — otherwise it looks
+                # like the opponent is narrating while it's not their turn.
+                if session.state.active_player is not viewer:
+                    break
+                if time.time() - start > self.time_budget_s:
+                    break
                 if isinstance(msg, AssistantMessage):
                     for block in msg.content:
                         if isinstance(block, TextBlock) and block.text.strip():
@@ -113,12 +122,6 @@ class AnthropicProvider(Provider):
                             # not whatever turn state has advanced to by now.
                             session.add_thought(viewer, block.text, turn=turn_at_start)
                 if isinstance(msg, ResultMessage):
-                    break
-                # If the agent already called end_turn, state has flipped.
-                if session.state.active_player is not viewer:
-                    break
-                # Time budget
-                if time.time() - start > self.time_budget_s:
                     break
         except Exception as e:
             session.log("agent_error", {"team": viewer.value, "error": str(e)})
