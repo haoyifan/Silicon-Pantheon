@@ -14,6 +14,7 @@ import time
 from pathlib import Path
 
 from clash_of_robots.harness.providers import Provider, make_provider
+from clash_of_robots.lessons import LessonStore
 from clash_of_robots.server.engine.scenarios import load_scenario
 from clash_of_robots.server.engine.state import GameStatus, Team
 from clash_of_robots.server.session import new_session
@@ -31,6 +32,7 @@ def run_match(
     verbose: bool = True,
     coach_file_blue: Path | None = None,
     coach_file_red: Path | None = None,
+    lessons_dir: Path | None = Path("lessons"),
 ) -> dict:
     state = load_scenario(game)
     if max_turns is not None:
@@ -120,12 +122,35 @@ def run_match(
     if session.replay is not None:
         session.replay.close()
 
+    # Post-match reflections: ask each provider for a lesson, persist via
+    # LessonStore. Providers that don't implement summarize_match return
+    # None and are silently skipped.
+    lesson_paths: list[str] = []
+    if lessons_dir is not None:
+        store = LessonStore(lessons_dir)
+        for provider, team in ((blue, Team.BLUE), (red, Team.RED)):
+            try:
+                lesson = provider.summarize_match(session, team, scenario=game)
+            except Exception as e:
+                if verbose:
+                    print(
+                        f"[{team.value}] summarize_match error: {e}", file=sys.stderr
+                    )
+                lesson = None
+            if lesson is None:
+                continue
+            path = store.save(lesson)
+            lesson_paths.append(str(path))
+            if verbose:
+                print(f"[{team.value}] lesson saved: {path}")
+
     result = {
         "winner": session.state.winner.value if session.state.winner else None,
         "turns": session.state.turn,
         "duration_s": time.time() - start,
         "blue_survivors": len(session.state.units_of(Team.BLUE)),
         "red_survivors": len(session.state.units_of(Team.RED)),
+        "lessons": lesson_paths,
     }
     if verbose:
         print(f"\n=== match result: {result}")
