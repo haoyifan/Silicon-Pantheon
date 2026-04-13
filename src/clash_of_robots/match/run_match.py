@@ -66,7 +66,13 @@ def run_match(
     # from one match live together.
     if run_dir is not None and replay_path is None:
         replay_path = run_dir / "replay.jsonl"
-    session = new_session(state, replay_path=replay_path, scenario=game)
+    thoughts_log_path = run_dir / "thoughts.log" if run_dir is not None else None
+    session = new_session(
+        state,
+        replay_path=replay_path,
+        scenario=game,
+        thoughts_log_path=thoughts_log_path,
+    )
 
     blue.on_match_start(session, Team.BLUE)
     red.on_match_start(session, Team.RED)
@@ -150,6 +156,8 @@ def run_match(
 
     if session.replay is not None:
         session.replay.close()
+    if session.thoughts_log is not None:
+        session.thoughts_log.close()
 
     # Post-match reflections: ask each provider for a lesson, persist via
     # LessonStore. Providers that don't implement summarize_match return
@@ -248,6 +256,7 @@ def main() -> int:
     if not args.no_run_dir:
         run_dir = _make_run_dir(args.runs_dir, args.game)
         print(f"run directory: {run_dir}")
+        print(f"  tail thoughts with: less +F {run_dir / 'thoughts.log'}")
 
     blue = make_provider(
         args.blue,

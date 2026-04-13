@@ -8,6 +8,7 @@ from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TextIO
 
 from .engine.replay import ReplayWriter
 from .engine.state import GameState, Team
@@ -15,6 +16,32 @@ from .engine.state import GameState, Team
 ActionHook = Callable[["Session", dict], None]
 
 THOUGHT_BUFFER_SIZE = 100
+
+
+class ThoughtsLogWriter:
+    """Append-only, line-oriented plain-text log of agent reasoning.
+
+    Meant to be tailed live with `less +F <path>` during a match. One
+    thought per line, whitespace collapsed, tagged with turn + team so
+    each line is self-describing. `flush()` after every write so the
+    pager sees updates with no buffering lag.
+    """
+
+    def __init__(self, path: Path | str):
+        self.path = Path(path)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._fh: TextIO = open(self.path, "a", encoding="utf-8", buffering=1)
+
+    def write(self, thought: "AgentThought") -> None:
+        collapsed = " ".join(thought.text.split())
+        self._fh.write(f"[T{thought.turn} {thought.team.value}] {collapsed}\n")
+        self._fh.flush()
+
+    def close(self) -> None:
+        try:
+            self._fh.close()
+        except Exception:
+            pass
 
 
 @dataclass
@@ -48,6 +75,8 @@ class Session:
     thoughts: deque[AgentThought] = field(
         default_factory=lambda: deque(maxlen=THOUGHT_BUFFER_SIZE)
     )
+    # Optional live plain-text log of thoughts (tailable with `less +F`).
+    thoughts_log: ThoughtsLogWriter | None = None
 
     def log(self, kind: str, payload: dict) -> None:
         if self.replay is not None:
@@ -71,8 +100,15 @@ class Session:
         # which would otherwise cause that trailing reasoning to be tagged
         # with the next turn number.
         effective_turn = turn if turn is not None else self.state.turn
-        self.thoughts.append(AgentThought(turn=effective_turn, team=team, text=text))
+        thought = AgentThought(turn=effective_turn, team=team, text=text)
+        self.thoughts.append(thought)
         self.log("agent_thought", {"team": team.value, "text": text, "turn": effective_turn})
+        if self.thoughts_log is not None:
+            try:
+                self.thoughts_log.write(thought)
+            except Exception:
+                # Never let a log failure break the match loop.
+                pass
         # Intentionally NOT calling notify_action here: rich.Live's own
         # ~10fps auto-refresh picks up new deque entries. Forcing a refresh
         # on every thought caused visible flicker on tall frames.
@@ -83,6 +119,10 @@ def new_session(
     replay_path: str | Path | None = None,
     *,
     scenario: str | None = None,
+    thoughts_log_path: str | Path | None = None,
 ) -> Session:
     writer = ReplayWriter(replay_path) if replay_path else None
-    return Session(state=state, replay=writer, scenario=scenario)
+    thoughts_log = ThoughtsLogWriter(thoughts_log_path) if thoughts_log_path else None
+    return Session(
+        state=state, replay=writer, scenario=scenario, thoughts_log=thoughts_log
+    )
