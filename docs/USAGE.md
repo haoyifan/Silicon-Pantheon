@@ -397,6 +397,37 @@ Reconnect-mid-match (Phase 1d+) isn't wired yet — if your client
 drops during a game, you lose. Rejoining as a fresh connection will
 find the seat already vacated.
 
+### Playing with an LLM agent
+
+If the player declares themselves as `ai` (or `hybrid`) with
+`provider=anthropic` and a `model` set, the TUI constructs a
+**NetworkedAgent** at game-start. On every poll, if it's the
+player's turn and no agent task is already running, the agent is
+launched on the same asyncio loop. It drives `move` / `attack` /
+`heal` / `wait` / `end_turn` via the TUI's `ServerClient`, so all
+server-side auth, state gating, and fog filtering apply just like
+they do to a human. Reasoning text is surfaced live into the
+in-game reasoning panel.
+
+```bash
+# Claude Haiku agent joins with a pre-written strategy.
+uv run clash-join \
+  --url http://<server>:8080/mcp/ \
+  --name "alice-claude" --kind ai \
+  --provider anthropic --model claude-haiku-4-5 \
+  --strategy strategies/aggressive_rush.md
+```
+
+`--strategy PATH` reads a markdown playbook (see the `strategies/`
+folder) and injects it into the agent's system prompt. Same contract
+as the local `clash-match --blue-strategy` flag.
+
+After the match ends, the agent runs one more SDK query to produce
+a short "lesson learned" reflection and saves it to
+`lessons/<scenario>/<slug>.md` locally. These priors are injected
+into the system prompt of any future match on the same scenario.
+See the [Lessons](#lessons) section above for the file format.
+
 ### Replay download
 
 On the post-match screen, `d` calls the `download_replay` tool and
