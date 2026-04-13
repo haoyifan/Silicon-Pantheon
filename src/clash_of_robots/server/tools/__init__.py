@@ -175,6 +175,7 @@ def _record_action(session: Session, result: dict) -> None:
     session.state.last_action = result
     session.state.history.append(result)
     session.log("action", result)
+    session.notify_action(result)
 
 
 def move(session: Session, viewer: Team, unit_id: str, dest: dict) -> dict:

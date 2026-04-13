@@ -59,6 +59,8 @@ def run_match(
         else:
             tui = TUIRenderer(session)
             tui.start()
+            # Real-time updates: refresh after each action as the agent calls tools.
+            session.action_hooks.append(lambda _s, _r: tui.refresh())
 
     start = time.time()
     safety_counter = 0
