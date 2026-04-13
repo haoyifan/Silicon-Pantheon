@@ -23,6 +23,7 @@ dev = [
 clash-match = "clash_of_robots.match.run_match:main"
 clash-server = "clash_of_robots.server.main:main"
 clash-replay = "clash_of_robots.match.replay_viewer:main"
+clash-play = "clash_of_robots.match.interactive_replay:main"
 
 [build-system]
 requires = ["hatchling"]
