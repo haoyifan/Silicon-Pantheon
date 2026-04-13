@@ -64,8 +64,9 @@ class Session:
             return
         self.thoughts.append(AgentThought(turn=self.state.turn, team=team, text=text))
         self.log("agent_thought", {"team": team.value, "text": text})
-        # Reuse action hooks so the TUI refreshes in real time.
-        self.notify_action({"kind": "agent_thought", "team": team.value, "text": text})
+        # Intentionally NOT calling notify_action here: rich.Live's own
+        # ~10fps auto-refresh picks up new deque entries. Forcing a refresh
+        # on every thought caused visible flicker on tall frames.
 
 
 def new_session(state: GameState, replay_path: str | Path | None = None) -> Session:
