@@ -145,6 +145,11 @@ def _auto_concede(app: App, cid: str) -> None:
             {"by": my_team.value if my_team else None,
              "winner": opponent.value if opponent else None},
         )
+        # Reflect the game_over on the Room object so list_rooms hides
+        # the finished match and leave_room accepts.
+        from clash_of_robots.server.game_tools import _note_game_over_if_needed
+
+        _note_game_over_if_needed(app, room_id)
     app.drop_connection(cid)
 
 

@@ -153,6 +153,28 @@ def start_game_for_room(app: App, room_id: str) -> None:
     )
 
 
+def _note_game_over_if_needed(app: App, room_id: str) -> None:
+    """If the engine has flipped to GAME_OVER, mark the room FINISHED.
+
+    Called after every game-tool dispatch and any other code path that
+    might cause termination (concede, auto-concede). Idempotent.
+    """
+    from clash_of_robots.server.engine.state import GameStatus
+
+    session = app.sessions.get(room_id)
+    if session is None:
+        return
+    if session.state.status != GameStatus.GAME_OVER:
+        return
+    room = app.rooms.get(room_id)
+    if room is None:
+        return
+    if room.status == RoomStatus.FINISHED:
+        return
+    log.info("room %s transitioning IN_GAME -> FINISHED (game_over)", room_id)
+    room.status = RoomStatus.FINISHED
+
+
 def _viewer_for(conn: Connection, app: App) -> tuple[Any, Team] | None:
     """Resolve (session, viewer) for a connection currently in a game.
 
@@ -218,6 +240,12 @@ def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
             ),
         )
     filtered = _apply_filter(tool_name, result, session, viewer)
+    # After any tool that could flip status (end_turn / concede), make
+    # sure the room object reflects the game_over state so list_rooms
+    # can hide it and leave_room can accept.
+    info = app.conn_to_room.get(connection_id)
+    if info is not None:
+        _note_game_over_if_needed(app, info[0])
     return _ok({"result": filtered})
 
 
@@ -439,4 +467,5 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
             "concede",
             {"by": my_team.value, "winner": opponent.value},
         )
+        _note_game_over_if_needed(app, room_id)
         return _ok({"winner": opponent.value})

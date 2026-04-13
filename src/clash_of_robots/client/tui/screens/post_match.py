@@ -170,9 +170,18 @@ class PostMatchScreen(Screen):
         self._download_error = None
 
     async def _back_to_lobby(self) -> Screen | None:
-        # The in-game connection state is terminal for the match; going
-        # back to the lobby isn't guaranteed to succeed because the token
-        # typically expires shortly after game_over. Attempt anyway.
+        # Tell the server we're leaving — this flips our connection
+        # back to IN_LOBBY and lets the server tear down the (now
+        # FINISHED) room. Without this, creating a new room fails
+        # with 'requires state=in_lobby' because the server still
+        # thinks we're IN_GAME, and the zombie room stays listed.
+        if self.app.client is not None:
+            try:
+                await self.app.client.call("leave_room")
+            except Exception:
+                # Non-fatal — the heartbeat sweeper will eventually
+                # evict us anyway.
+                pass
         self.app.state.room_id = None
         self.app.state.slot = None
         self.app.state.last_game_state = None

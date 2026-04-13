@@ -97,14 +97,22 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def list_rooms(connection_id: str) -> dict:
-        """List rooms currently open. Available in any post-anonymous state."""
+        """List rooms currently open. Available in any post-anonymous state.
+
+        FINISHED rooms are excluded — they're rubble waiting to be
+        vacated and have no relevance to someone picking a match.
+        """
         conn = app.get_connection(connection_id)
         if conn is None or conn.state == ConnectionState.ANONYMOUS:
             return _error(
                 ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
                 "set_player_metadata first",
             )
-        rooms = [_serialize_room_summary(r) for r in app.rooms.list()]
+        rooms = [
+            _serialize_room_summary(r)
+            for r in app.rooms.list()
+            if r.status != RoomStatus.FINISHED
+        ]
         return _ok({"rooms": rooms})
 
     @mcp.tool()
@@ -198,12 +206,22 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     async def leave_room(connection_id: str) -> dict:
-        """Vacate this connection's seat. Cancels any autostart countdown."""
+        """Vacate this connection's seat and return the caller to the lobby.
+
+        Accepts from IN_ROOM (pre-game) OR IN_GAME (mid-match or
+        post-match). Mid-match departures are treated as a hard exit —
+        the opponent will auto-concede via the heartbeat sweeper if
+        they don't press anything. Post-match departures are the
+        normal 'back to lobby' flow.
+        """
         conn = app.get_connection(connection_id)
-        if conn is None or conn.state != ConnectionState.IN_ROOM:
+        if conn is None or conn.state not in (
+            ConnectionState.IN_ROOM,
+            ConnectionState.IN_GAME,
+        ):
             return _error(
                 ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
-                "leave_room requires state=in_room",
+                "leave_room requires state=in_room or in_game",
             )
         info = app.conn_to_room.pop(connection_id, None)
         if info is None:
@@ -212,6 +230,13 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         _cancel_countdown(app, room_id)
         app.rooms.leave(room_id, slot)
         conn.state = ConnectionState.IN_LOBBY
+        # If the leave deleted the room (post-match + last player
+        # out), clean up the companion per-room maps so memory doesn't
+        # pile up across matches.
+        if app.rooms.get(room_id) is None:
+            app.sessions.pop(room_id, None)
+            app.slot_to_team.pop(room_id, None)
+            log.info("room %s fully cleaned up", room_id)
         return _ok({})
 
     @mcp.tool()

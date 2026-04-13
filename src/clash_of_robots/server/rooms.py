@@ -175,8 +175,15 @@ class RoomRegistry:
             seat.player = None
             seat.ready = False
             room.recompute_status()
-            # Drop entirely if now empty and not mid-game.
-            if not room.occupied_slots() and room.status != RoomStatus.IN_GAME:
+            # Drop entirely if now empty and no live game is running. A
+            # FINISHED room with nobody seated is rubble — the downloads
+            # are cached client-side already.
+            if not room.occupied_slots() and room.status in (
+                RoomStatus.WAITING_FOR_PLAYERS,
+                RoomStatus.WAITING_READY,
+                RoomStatus.COUNTING_DOWN,
+                RoomStatus.FINISHED,
+            ):
                 self._rooms.pop(room_id, None)
             return True
 
