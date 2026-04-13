@@ -21,26 +21,26 @@ Branch: `phase1`. Worktree: `/home/pringles/dev/agent-game-phase1/`.
 Goal: two `clash-join` processes can connect to `clash-serve` and run
 one hard-coded match end-to-end (random bots, no lobby, no fog).
 
-- [ ] **1a.1** Scaffold `shared/` package with `__init__.py`.
-- [ ] **1a.2** Move `match/replay_schema.py` → `shared/replay_schema.py`;
+- [x] **1a.1** Scaffold `shared/` package with `__init__.py`.
+- [x] **1a.2** Move `match/replay_schema.py` → `shared/replay_schema.py`;
       re-export from old path for compat.
-- [ ] **1a.3** Add `shared/player_metadata.py` (PlayerMetadata dataclass).
-- [ ] **1a.4** Add `shared/protocol.py` — enums for connection state,
+- [x] **1a.3** Add `shared/player_metadata.py` (PlayerMetadata dataclass).
+- [x] **1a.4** Add `shared/protocol.py` — enums for connection state,
       error codes, tool namespaces.
-- [ ] **1a.5** Add `server/auth.py` — TokenRegistry with tests.
-- [ ] **1a.6** Add `server/rooms.py` — minimal Room + RoomRegistry
+- [x] **1a.5** Add `server/auth.py` — TokenRegistry with tests.
+- [x] **1a.6** Add `server/rooms.py` — minimal Room + RoomRegistry
       (single-game hardcoded for now).
-- [ ] **1a.7** Add `server/app.py` — FastMCP HTTP+SSE server scaffold
+- [x] **1a.7** Add `server/app.py` — FastMCP HTTP+SSE server scaffold
       exposing `set_player_metadata`, `heartbeat`, `whoami`.
-- [ ] **1a.8** Add `client/transport.py` — MCP+SSE client wrapper.
-- [ ] **1a.9** Add `clash-serve` CLI entry wired to `server/app.py`.
-- [ ] **1a.10** Add `clash-join` CLI entry with minimal "connect +
+- [x] **1a.8** Add `client/transport.py` — MCP+SSE client wrapper.
+- [x] **1a.9** Add `clash-serve` CLI entry wired to `server/app.py`.
+- [x] **1a.10** Add `clash-join` CLI entry with minimal "connect +
       metadata + whoami" smoke flow.
-- [ ] **1a.11** Integration test: start server in-process, run two
+- [x] **1a.11** Integration test: start server in-process, run two
       clients, verify metadata round-trip.
-- [ ] **1a.12** Wire the existing 13 game tools into the server under
+- [x] **1a.12** Wire the existing 13 game tools into the server under
       a hardcoded-single-game session.
-- [ ] **1a.13** End-to-end test: two random clients play a full 1v1
+- [x] **1a.13** End-to-end test: two random clients play a full 1v1
       match via the server.
 
 ## Sub-phase 1b — lobby
