@@ -47,29 +47,29 @@ one hard-coded match end-to-end (random bots, no lobby, no fog).
 
 Goal: host + join via lobby, ready up, auto-start, game runs.
 
-- [ ] **1b.1** Extend `Room` with config, seats, ready flags.
-- [ ] **1b.2** Implement `list_rooms`.
-- [ ] **1b.3** Implement `create_room` (issues token).
-- [ ] **1b.4** Implement `preview_room` (scenario config + seats).
-- [ ] **1b.5** Implement `join_room` (issues token for second slot).
-- [ ] **1b.6** Implement `leave_room`.
-- [ ] **1b.7** Implement `set_ready` + auto-start countdown (10s).
-- [ ] **1b.8** Implement `get_room_state`.
-- [ ] **1b.9** Game runner transitions room → `in_game` at countdown.
-- [ ] **1b.10** Finalize team assignment (fixed / random) at game start.
-- [ ] **1b.11** Integration test: full host/join/ready/auto-start flow.
+- [x] **1b.1** Extend `Room` with config, seats, ready flags.
+- [x] **1b.2** Implement `list_rooms`.
+- [x] **1b.3** Implement `create_room` (issues token).
+- [x] **1b.4** Implement `preview_room` (scenario config + seats).
+- [x] **1b.5** Implement `join_room` (issues token for second slot).
+- [x] **1b.6** Implement `leave_room`.
+- [x] **1b.7** Implement `set_ready` + auto-start countdown (10s).
+- [x] **1b.8** Implement `get_room_state`.
+- [x] **1b.9** Game runner transitions room → `in_game` at countdown.
+- [x] **1b.10** Finalize team assignment (fixed / random) at game start.
+- [x] **1b.11** Integration test: full host/join/ready/auto-start flow.
 
 ## Sub-phase 1c — fog of war
 
-- [ ] **1c.1** Add `sight` stat per unit class with engine defaults.
-- [ ] **1c.2** Extend scenario YAML loader to parse `fog_of_war`.
-- [ ] **1c.3** Add `shared/fog.py` — `visible_tiles(state, team)` with
+- [x] **1c.1** Add `sight` stat per unit class with engine defaults.
+- [x] **1c.2** Extend scenario YAML loader to parse `fog_of_war`.
+- [x] **1c.3** Add `shared/fog.py` — `visible_tiles(state, team)` with
       LOS + opaque terrain.
-- [ ] **1c.4** Add `shared/viewer_filter.py` — `filter_state`,
+- [x] **1c.4** Add `shared/viewer_filter.py` — `filter_state`,
       `filter_unit`, `filter_threat_map`.
-- [ ] **1c.5** Wire the filter into every game tool that returns state.
-- [ ] **1c.6** Classic-mode memory (`ever_seen`) tracked on Session.
-- [ ] **1c.7** Invariant tests (no-leak, subset relations, none-mode
+- [x] **1c.5** Wire the filter into every game tool that returns state.
+- [x] **1c.6** Classic-mode memory (`ever_seen`) tracked on Session.
+- [x] **1c.7** Invariant tests (no-leak, subset relations, none-mode
       identity).
 
 ## Sub-phase 1d — TUI client
@@ -83,16 +83,16 @@ Goal: host + join via lobby, ready up, auto-start, game runs.
 
 ## Sub-phase 1e — disconnect + replay download
 
-- [ ] **1e.1** Client heartbeat task on transport.
-- [ ] **1e.2** Server heartbeat-sweep task with the timer table.
-- [ ] **1e.3** Disconnect transitions implemented per table.
+- [x] **1e.1** Client heartbeat task on transport.
+- [x] **1e.2** Server heartbeat-sweep task with the timer table.
+- [x] **1e.3** Disconnect transitions implemented per table.
 - [ ] **1e.4** `resume_session` + event-stream replay.
-- [ ] **1e.5** `download_replay` tool.
-- [ ] **1e.6** Fault-injection tests for each disconnect path.
+- [x] **1e.5** `download_replay` tool.
+- [x] **1e.6** Fault-injection tests for each disconnect path.
 
 ## Cross-cutting
 
-- [ ] **X.1** `pyproject.toml`: add `clash-serve` and `clash-join` CLI
+- [x] **X.1** `pyproject.toml`: add `clash-serve` and `clash-join` CLI
       entries; add any new deps (httpx-sse or mcp's http transport).
 - [ ] **X.2** Structured JSON logger module used by all new server code.
 - [ ] **X.3** README pointer to `docs/USAGE.md` with the new commands
