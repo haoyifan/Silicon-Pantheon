@@ -1,7 +1,7 @@
 # Usage guide
 
 A hands-on reference for the three CLIs shipped with this repo
-(`clash-match`, `clash-replay`, `clash-play`) and the supporting
+(`clash-match` and `clash-play`) and the supporting
 concepts: run directories, lessons, real-time reasoning, and coaching.
 
 - [Quick start](#quick-start)
@@ -9,7 +9,6 @@ concepts: run directories, lessons, real-time reasoning, and coaching.
 - [Lessons](#lessons)
 - [Real-time reasoning](#real-time-reasoning)
 - [Coaching during a match](#coaching-during-a-match)
-- [`clash-replay` — scrollable timeline](#clash-replay--scrollable-timeline)
 - [`clash-play` — interactive step-through replayer](#clash-play--interactive-step-through-replayer)
 - [Complete example workflows](#complete-example-workflows)
 
@@ -236,8 +235,9 @@ Three ways to watch the agent think:
    #   Ctrl-C in less to pause following; / to search; q to quit.
    ```
 
-3. **`clash-replay` pager** (post-match only). Renders the full timeline
-   — thoughts + actions interleaved — through `$PAGER`. See below.
+3. **`clash-play`** (post-match). Interactive step-through visual
+   replayer — see the section below for a full walkthrough of the board
+   alongside each thought and action.
 
 ---
 
@@ -263,33 +263,10 @@ echo "fall back to the fort, they're breaking through" >> coach_blue.txt
 
 The agent calls `get_coach_messages` at the start of each turn and
 drains the queue. Messages logged to the replay as `coach_message`
-events (visible in `clash-replay` / `clash-play`).
+events (visible in `clash-play`).
 
 Tip: create the coach files before starting the match (`touch
 coach_blue.txt`) so the watcher has something to follow from turn one.
-
----
-
-## `clash-replay` — scrollable timeline
-
-```
-clash-replay [run_dir] [--replay PATH] [--no-pager]
-```
-
-Post-match only. Pipes the full event timeline through `$PAGER`
-(usually `less`) so you get bidirectional scroll, `/` search, and `q`
-quit for free. Events shown: match_start, agent thoughts, actions,
-coach messages, forced end_turns, errors.
-
-```bash
-uv run clash-replay runs/20260412T143022_01_tiny_skirmish
-
-# Grep for all seizes across a run:
-uv run clash-replay --no-pager runs/... | grep seize
-
-# Point at an arbitrary replay file:
-uv run clash-replay --replay path/to/replay.jsonl
-```
 
 ---
 
@@ -373,10 +350,7 @@ files print once saved:
 ### 2. Replay that match as a human
 
 ```bash
-# Scrollable timeline log (fast skim, search, grep).
-uv run clash-replay runs/20260412T143022_02_basic_mirror
-
-# Interactive step-through (press Enter to advance).
+# Interactive step-through (keys: Enter/k=next, j=prev, s=skip, q=quit).
 uv run clash-play runs/20260412T143022_02_basic_mirror
 ```
 
