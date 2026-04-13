@@ -7,6 +7,7 @@ transitions to GameScreen.
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from rich.align import Align
@@ -16,6 +17,8 @@ from rich.table import Table
 from rich.text import Text
 
 from clash_of_robots.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
+
+log = logging.getLogger("clash.tui.room")
 
 
 class RoomScreen(Screen):
@@ -189,10 +192,18 @@ class RoomScreen(Screen):
             self.app.state.error_message = r.get("error", {}).get(
                 "message", "get_room_state rejected"
             )
+            log.warning("get_room_state rejected: %s", r)
             return None
         self.app.state.error_message = ""
         room = r.get("room", {})
         self.app.state.last_room_state = room
+        log.info(
+            "poll room=%s status=%s autostart_in_s=%s seats=%s",
+            room.get("room_id"),
+            room.get("status"),
+            room.get("autostart_in_s"),
+            {k: v.get("ready") for k, v in (room.get("seats") or {}).items()},
+        )
         # Did the match just start? Transition to GameScreen.
         if room.get("status") == "in_game":
             from clash_of_robots.client.tui.screens.game import GameScreen
@@ -206,11 +217,14 @@ class RoomScreen(Screen):
         if self.app.client is None:
             return None
         self._ready_local = not self._ready_local
+        log.info("toggle_ready: sending ready=%s", self._ready_local)
         try:
             r = await self.app.client.call("set_ready", ready=self._ready_local)
         except Exception as e:
+            log.exception("set_ready raised")
             self.app.state.error_message = f"set_ready failed: {e}"
             return None
+        log.info("toggle_ready: response=%s", r)
         if not r.get("ok"):
             self._ready_local = not self._ready_local  # revert on failure
             self.app.state.error_message = r.get("error", {}).get(

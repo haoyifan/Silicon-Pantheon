@@ -47,6 +47,31 @@ async def _smoke(
     return 0
 
 
+def _configure_client_logging() -> None:
+    """TUI takes over the terminal (screen=True), so logs must go to a
+    file instead of stderr or they'd be invisible. Caller does not
+    need to care about this — we always open the same path in append
+    mode and every module's logger inherits it via the root logger."""
+    import logging
+    from pathlib import Path
+
+    log_path = Path.home() / ".clash-of-robots" / "client.log"
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    handler = logging.FileHandler(log_path, mode="a", encoding="utf-8")
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+    )
+    root = logging.getLogger()
+    # Avoid duplicate handlers if called twice (pytest reruns, etc.).
+    if not any(getattr(h, "baseFilename", None) == str(log_path) for h in root.handlers):
+        root.addHandler(handler)
+    root.setLevel(logging.INFO)
+    # Quieter-third-party spam.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("mcp").setLevel(logging.INFO)
+    logging.getLogger("clash").info("---- clash-join session started (log=%s) ----", log_path)
+
+
 def _run_tui(
     url: str | None,
     name: str | None,
@@ -60,6 +85,8 @@ def _run_tui(
     from clash_of_robots.client.tui.app import TUIApp
     from clash_of_robots.client.tui.screens.login import LoginScreen
     from clash_of_robots.harness.prompts import load_strategy
+
+    _configure_client_logging()
 
     app = TUIApp(initial_screen_factory=LoginScreen)
     if url:

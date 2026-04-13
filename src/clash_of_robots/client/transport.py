@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import secrets
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
@@ -19,7 +20,22 @@ from typing import Any, AsyncIterator
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
+log = logging.getLogger("clash.transport")
+
 CLIENT_HEARTBEAT_INTERVAL_S = 10.0
+
+# Tool calls we log each roundtrip at INFO. Everything else logs at DEBUG
+# so the file doesn't get overwhelmed with per-second heartbeats.
+_VERBOSE_TOOLS = frozenset({
+    "set_player_metadata",
+    "create_room",
+    "join_room",
+    "leave_room",
+    "set_ready",
+    "get_room_state",
+    "concede",
+    "download_replay",
+})
 
 
 class RemoteToolError(RuntimeError):
@@ -61,11 +77,21 @@ class ServerClient:
         automatically so callers can focus on tool-specific args.
         """
         args = {"connection_id": self.connection_id, **kwargs}
+        level = logging.INFO if tool_name in _VERBOSE_TOOLS else logging.DEBUG
+        log.log(level, "call -> %s args=%s", tool_name, {k: v for k, v in kwargs.items()})
         result = await self._session.call_tool(tool_name, args)
         for block in result.content:
             text = getattr(block, "text", None)
             if text is not None:
-                return json.loads(text)
+                parsed = json.loads(text)
+                log.log(
+                    level,
+                    "call <- %s ok=%s keys=%s",
+                    tool_name,
+                    parsed.get("ok"),
+                    list(parsed.keys())[:8],
+                )
+                return parsed
         raise RemoteToolError(
             f"tool {tool_name} returned no text block: {result!r}"
         )

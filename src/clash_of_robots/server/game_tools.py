@@ -16,10 +16,13 @@ single transform that every game tool output passes through.
 
 from __future__ import annotations
 
+import logging
 import random
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+
+log = logging.getLogger("clash.game")
 
 from clash_of_robots.server.app import App, Connection, _error, _ok
 from clash_of_robots.server.engine.scenarios import load_scenario
@@ -87,6 +90,7 @@ def _maybe_update_ever_seen(session: Session, result: dict, viewer: Team) -> Non
 
 
 def start_game_for_room(app: App, room_id: str) -> None:
+    log.info("start_game_for_room: room=%s", room_id)
     """Promote a room from COUNTING_DOWN to IN_GAME.
 
     Builds the engine Session from the room's scenario, pins the
@@ -120,11 +124,19 @@ def start_game_for_room(app: App, room_id: str) -> None:
             else {Slot.A: Team.RED, Slot.B: Team.BLUE}
         )
     room.status = RoomStatus.IN_GAME
+    promoted = []
     for cid, (rid, _slot) in app.conn_to_room.items():
         if rid == room_id:
             c = app.get_connection(cid)
             if c is not None:
                 c.state = ConnectionState.IN_GAME
+                promoted.append(cid[:8])
+    log.info(
+        "start_game_for_room: room=%s promoted connections=%s slot_to_team=%s",
+        room_id,
+        promoted,
+        {s.value: t.value for s, t in app.slot_to_team.get(room_id, {}).items()},
+    )
 
 
 def _viewer_for(conn: Connection, app: App) -> tuple[Any, Team] | None:

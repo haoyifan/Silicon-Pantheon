@@ -15,6 +15,7 @@ game runner will later use for per-turn scheduling.
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -30,6 +31,8 @@ from clash_of_robots.server.rooms import (
     TeamAssignment,
 )
 from clash_of_robots.shared.protocol import ConnectionState, ErrorCode
+
+log = logging.getLogger("clash.lobby")
 
 AUTOSTART_DELAY_S = 10.0
 
@@ -274,6 +277,16 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         seat = room.seats[slot]
         seat.ready = ready
 
+        log.info(
+            "set_ready: room=%s cid=%s slot=%s ready=%s all_ready=%s seats=%s",
+            room_id,
+            connection_id[:8],
+            slot.value,
+            ready,
+            room.all_ready(),
+            {s.value: (room.seats[s].ready, room.seats[s].player is not None) for s in room.seats},
+        )
+
         response: dict[str, Any] = {}
         if room.all_ready():
             _start_countdown(app, room_id)
@@ -297,31 +310,59 @@ def _start_countdown(app: App, room_id: str) -> None:
     import time
 
     _cancel_countdown(app, room_id)
-    app.autostart_deadlines[room_id] = time.time() + AUTOSTART_DELAY_S
-    task = asyncio.create_task(_run_countdown(app, room_id))
+    deadline = time.time() + AUTOSTART_DELAY_S
+    app.autostart_deadlines[room_id] = deadline
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    log.info(
+        "start_countdown: room=%s deadline=%.2f delay=%.2f loop=%s",
+        room_id,
+        deadline,
+        AUTOSTART_DELAY_S,
+        loop,
+    )
+    try:
+        task = asyncio.create_task(_run_countdown(app, room_id))
+    except Exception as e:
+        log.exception("start_countdown: create_task failed: %s", e)
+        return
     app.autostart_tasks[room_id] = task
 
 
 def _cancel_countdown(app: App, room_id: str) -> None:
     task = app.autostart_tasks.pop(room_id, None)
     if task is not None and not task.done():
+        log.info("cancel_countdown: room=%s (task was running)", room_id)
         task.cancel()
+    elif room_id in app.autostart_deadlines:
+        log.info("cancel_countdown: room=%s (no live task)", room_id)
     app.autostart_deadlines.pop(room_id, None)
 
 
 async def _run_countdown(app: App, room_id: str) -> None:
+    log.info("run_countdown: room=%s sleeping %.2fs", room_id, AUTOSTART_DELAY_S)
     try:
         await asyncio.sleep(AUTOSTART_DELAY_S)
     except asyncio.CancelledError:
+        log.info("run_countdown: room=%s cancelled", room_id)
         return
-    # Countdown survived to the end — tell the app to promote the room
-    # to IN_GAME. Delegated to a hook so game_tools / game_runner
-    # machinery can own the actual session creation.
+    log.info("run_countdown: room=%s slept through; checking room", room_id)
     room = app.rooms.get(room_id)
     if room is None or not room.all_ready():
+        log.info(
+            "run_countdown: room=%s not promoting (room=%s all_ready=%s)",
+            room_id,
+            room,
+            room and room.all_ready(),
+        )
         return
     if app.on_countdown_complete is not None:
+        log.info("run_countdown: room=%s firing on_countdown_complete", room_id)
         app.on_countdown_complete(room_id)
+    else:
+        log.warning("run_countdown: room=%s on_countdown_complete is None", room_id)
 
 
 def _maybe_promote_on_deadline(app: App, room_id: str) -> None:
@@ -335,11 +376,22 @@ def _maybe_promote_on_deadline(app: App, room_id: str) -> None:
     deadline = app.autostart_deadlines.get(room_id)
     if deadline is None:
         return
-    if time.time() < deadline:
+    now = time.time()
+    if now < deadline:
         return
     room = app.rooms.get(room_id)
     if room is None or not room.all_ready():
+        log.info(
+            "maybe_promote: room=%s deadline passed but not all ready; clearing",
+            room_id,
+        )
+        app.autostart_deadlines.pop(room_id, None)
         return
+    log.info(
+        "maybe_promote: room=%s fallback firing (deadline %.2fs ago)",
+        room_id,
+        now - deadline,
+    )
     # Clear deadline so we don't double-promote.
     app.autostart_deadlines.pop(room_id, None)
     task = app.autostart_tasks.pop(room_id, None)
