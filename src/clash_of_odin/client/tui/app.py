@@ -286,22 +286,32 @@ def _read_key_blocking() -> str:
         tty.setcbreak(fd)
         ch = sys.stdin.read(1)
         if ch == "\x1b":
-            # Escape sequence; try to read up to 2 more bytes.
-            # In cbreak mode read(1) will block, so only consume if
-            # there is buffered input.
+            # Escape sequence: read continuation bytes with a short
+            # timeout each. Terminals can delay the follow-up bytes
+            # of an arrow key (ESC, '[', 'A') by tens of milliseconds;
+            # the previous 10 ms window was too tight and the 2nd/3rd
+            # bytes were routed to the next _read_key_blocking call,
+            # showing up as stray '[' / 'A' characters in the login
+            # fields. 50 ms is well below perceptual ESC latency.
             import select
 
-            r, _, _ = select.select([sys.stdin], [], [], 0.01)
-            if r:
-                seq = sys.stdin.read(2)
-                if seq == "[A":
-                    return "up"
-                if seq == "[B":
-                    return "down"
-                if seq == "[C":
-                    return "right"
-                if seq == "[D":
-                    return "left"
+            def _peek(timeout: float) -> str:
+                r, _, _ = select.select([sys.stdin], [], [], timeout)
+                return sys.stdin.read(1) if r else ""
+
+            c1 = _peek(0.05)
+            if not c1:
+                return "esc"
+            c2 = _peek(0.02)
+            seq = c1 + c2
+            if seq == "[A":
+                return "up"
+            if seq == "[B":
+                return "down"
+            if seq == "[C":
+                return "right"
+            if seq == "[D":
+                return "left"
             return "esc"
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
