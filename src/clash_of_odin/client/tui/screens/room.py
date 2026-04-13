@@ -1,14 +1,33 @@
-"""Room screen — preview the scenario, toggle ready, wait for auto-start.
+"""Room screen — button-driven UI with dropdown modals.
 
-Polls get_room_state every POLL_INTERVAL_S. When the server promotes
-the room to IN_GAME (countdown complete, session created), the ticker
-transitions to GameScreen.
+Layout
+------
+
+  header ......................................  scenario / fog / teams
+  seats table .................................  who's occupying each slot
+  status banner ...............................  countdown / waiting / starting
+  scenario preview panel ......................  mini ascii board
+  actions panel ...............................  highlighted list of buttons
+
+Navigation
+----------
+
+The action panel shows one button per row with a ➤ marker on the
+currently focused one. Tab / ↓ / j moves down; Shift-Tab / ↑ / k moves
+up; Enter activates the focused button; Esc does nothing when no
+modal is open.
+
+Buttons that need a choice (Scenario, Fog, Teams, Host Team) open a
+full-screen dropdown modal when activated. The modal is navigated the
+same way — arrows or j/k, Enter confirms, Esc cancels. Host-only
+buttons are hidden for non-host players (slot B).
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Awaitable, Callable
 
 from rich.align import Align
 from rich.console import Group, RenderableType
@@ -21,22 +40,90 @@ from clash_of_odin.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
 log = logging.getLogger("clash.tui.room")
 
 
+@dataclass
+class Button:
+    label: str
+    action: str  # identifier dispatched to _run_action
+    enabled: bool = True
+    # For value-display buttons (Scenario / Fog / Teams / Host Team),
+    # `value` is displayed to the right of the label.
+    value: str | None = None
+
+
+@dataclass
+class Dropdown:
+    """Modal single-select list. Enter confirms, Esc cancels."""
+
+    title: str
+    options: list[str]
+    selected_idx: int
+    on_confirm: Callable[[str], Awaitable[None]]
+
+    def render(self) -> RenderableType:
+        lines: list[Text] = []
+        for i, opt in enumerate(self.options):
+            marker = "➤ " if i == self.selected_idx else "  "
+            style = "bold cyan" if i == self.selected_idx else "white"
+            lines.append(Text(f"{marker}{opt}", style=style))
+        footer = Text(
+            "\n↑/k up   ↓/j down   Enter select   Esc cancel",
+            style="dim",
+        )
+        body = Group(*(lines + [footer]))
+        return Align.center(
+            Panel(body, title=self.title, border_style="cyan", padding=(1, 3)),
+            vertical="middle",
+        )
+
+    async def handle_key(self, key: str) -> bool:
+        """Return True if the modal should close after this keypress."""
+        if key == "esc":
+            return True
+        if key in ("up", "k"):
+            self.selected_idx = (self.selected_idx - 1) % len(self.options)
+            return False
+        if key in ("down", "j"):
+            self.selected_idx = (self.selected_idx + 1) % len(self.options)
+            return False
+        if key == "enter":
+            chosen = self.options[self.selected_idx]
+            await self.on_confirm(chosen)
+            return True
+        return False
+
+
+_FOG_OPTIONS = ("none", "classic", "line_of_sight")
+_TEAM_MODE_OPTIONS = ("fixed", "random")
+_HOST_TEAM_OPTIONS = ("blue", "red")
+
+
 class RoomScreen(Screen):
     def __init__(self, app: TUIApp):
         self.app = app
-        self._preview_loaded = False
         self._last_poll = 0.0
         self._scenario_preview: dict[str, Any] | None = None
-        self._ready_local = False
+        # Button navigation state.
+        self._focus = 0
+        self._modal: Dropdown | None = None
+        # Cache scenarios list; fetched once on entry.
+        self._scenarios: list[str] = []
 
     async def on_enter(self, app: TUIApp) -> None:
         await self._load_preview()
         await self._refresh_state()
+        await self._load_scenarios()
+
+    # ---- render ----
 
     def render(self) -> RenderableType:
+        # Modal overlays the whole screen when active.
+        if self._modal is not None:
+            return self._modal.render()
+        return self._render_main()
+
+    def _render_main(self) -> RenderableType:
         rs = self.app.state.last_room_state or {}
         room_id = rs.get("room_id") or self.app.state.room_id or "?"
-        status = rs.get("status", "?")
 
         header = Text(
             f"Room {room_id[:10]} — {rs.get('scenario', '?')}   "
@@ -44,7 +131,6 @@ class RoomScreen(Screen):
             style="bold cyan",
         )
 
-        # Seats table.
         seats = rs.get("seats", {})
         seat_table = Table(expand=False, show_header=True, header_style="bold")
         seat_table.add_column("Slot")
@@ -59,9 +145,9 @@ class RoomScreen(Screen):
                 "✓" if seat.get("ready") else "…",
             )
 
-        # Countdown / status banner.
         banner = Text("")
         countdown = rs.get("autostart_in_s")
+        status = rs.get("status", "?")
         if countdown is not None:
             banner = Text(
                 f"Match auto-starts in {countdown:.1f}s …", style="yellow bold"
@@ -69,23 +155,23 @@ class RoomScreen(Screen):
         elif status == "waiting_for_players":
             banner = Text("waiting for opponent…", style="dim")
         elif status == "waiting_ready":
-            banner = Text("both players present — press r to ready", style="cyan")
+            banner = Text(
+                "both players present — select Toggle Ready and press Enter",
+                style="cyan",
+            )
         elif status == "in_game":
             banner = Text("starting match…", style="green bold")
 
-        # Scenario preview box.
-        preview = self._render_preview() if self._scenario_preview else Text(
-            "(loading preview…)", style="dim italic"
+        preview = (
+            self._render_preview()
+            if self._scenario_preview
+            else Text("(loading preview…)", style="dim italic")
         )
 
-        keys = Text(
-            "r toggle ready   l leave room   q quit",
-            style="dim",
-        )
-
-        status_line = Text("")
+        actions_panel = self._render_actions(rs)
+        error_line = Text("")
         if self.app.state.error_message:
-            status_line.append(self.app.state.error_message, style="red")
+            error_line.append(self.app.state.error_message, style="red")
 
         body = Group(
             header,
@@ -96,12 +182,92 @@ class RoomScreen(Screen):
             Text(""),
             Panel(preview, title="scenario preview", border_style="dim"),
             Text(""),
-            keys,
-            status_line,
+            actions_panel,
+            error_line,
         )
         return Align.center(
             Panel(body, title="room", border_style="yellow"), vertical="top"
         )
+
+    def _render_actions(self, rs: dict[str, Any]) -> RenderableType:
+        """Vertical button list with a focus marker on the highlighted row."""
+        buttons = self._build_buttons(rs)
+        lines: list[Text] = []
+        for i, btn in enumerate(buttons):
+            is_focused = i == self._focus
+            marker = "➤ " if is_focused else "  "
+            label = btn.label
+            if btn.value is not None:
+                label = f"{btn.label}: {btn.value}"
+            if not btn.enabled:
+                style = "dim strike" if is_focused else "dim"
+            elif is_focused:
+                style = "bold cyan"
+            else:
+                style = "white"
+            lines.append(Text(f"{marker}{label}", style=style))
+        lines.append(
+            Text(
+                "\n↑/k up   ↓/j (or Tab) down   Enter activate   q quit",
+                style="dim",
+            )
+        )
+        return Panel(
+            Group(*lines), title="actions", border_style="bright_black"
+        )
+
+    def _build_buttons(self, rs: dict[str, Any]) -> list[Button]:
+        """Return the buttons visible in the current state.
+
+        Host-only controls are hidden for slot B. Buttons whose action
+        doesn't apply in the current state are kept but disabled so
+        the layout doesn't shift around as readiness toggles.
+        """
+        is_host = self.app.state.slot == "a"
+        editable = rs.get("status") in (
+            "waiting_for_players",
+            "waiting_ready",
+        )
+        buttons: list[Button] = [
+            Button(label="Toggle Ready", action="toggle_ready", enabled=editable),
+        ]
+        if is_host:
+            buttons.extend(
+                [
+                    Button(
+                        label="Change Scenario",
+                        action="change_scenario",
+                        value=rs.get("scenario", "?"),
+                        enabled=editable and bool(self._scenarios),
+                    ),
+                    Button(
+                        label="Change Fog",
+                        action="change_fog",
+                        value=rs.get("fog_of_war", "?"),
+                        enabled=editable,
+                    ),
+                    Button(
+                        label="Change Team Mode",
+                        action="change_teams",
+                        value=rs.get("team_assignment", "?"),
+                        enabled=editable,
+                    ),
+                    Button(
+                        label="Change Host Team",
+                        action="change_host_team",
+                        value=rs.get("host_team", "?"),
+                        enabled=editable
+                        and rs.get("team_assignment") == "fixed",
+                    ),
+                ]
+            )
+        buttons.extend(
+            [
+                Button(label="Leave Room", action="leave"),
+                Button(label="Quit", action="quit"),
+            ]
+        )
+        return buttons
 
     def _render_preview(self) -> RenderableType:
         p = self._scenario_preview or {}
@@ -109,7 +275,6 @@ class RoomScreen(Screen):
         h = int(p.get("height", 0))
         units = p.get("units", [])
         forts = p.get("forts", [])
-        # Build an ascii grid: '.'=plain, '*'=fort, letters for units.
         grid = [["." for _ in range(w)] for _ in range(h)]
         for f in forts:
             pos = f.get("pos") or {}
@@ -136,7 +301,7 @@ class RoomScreen(Screen):
                 elif g.islower() and g.isalpha():
                     text.append(f" {g}", style="bold red")
                 elif g == "*":
-                    text.append(f" *", style="yellow")
+                    text.append(" *", style="yellow")
                 else:
                     text.append(" .", style="dim")
                 text.append(" ")
@@ -144,24 +309,119 @@ class RoomScreen(Screen):
         text.append(f"\n{w}x{h} board · {len(units)} units · {len(forts)} forts")
         return text
 
-    async def tick(self) -> None:
-        import time
-
-        now = time.time()
-        if now - self._last_poll >= POLL_INTERVAL_S:
-            await self._refresh_state()
+    # ---- input ----
 
     async def handle_key(self, key: str) -> Screen | None:
+        if self._modal is not None:
+            close = await self._modal.handle_key(key)
+            if close:
+                self._modal = None
+                await self._refresh_state()
+            return None
+
         if key == "q":
             self.app.exit()
             return None
-        if key == "l":
-            return await self._leave()
-        if key == "r":
-            return await self._toggle_ready()
+        buttons = self._build_buttons(self.app.state.last_room_state or {})
+        if not buttons:
+            return None
+        if key in ("down", "j") or key == "\t":
+            self._focus = (self._focus + 1) % len(buttons)
+            return None
+        if key in ("up", "k"):
+            self._focus = (self._focus - 1) % len(buttons)
+            return None
+        if key == "enter":
+            btn = buttons[self._focus]
+            if not btn.enabled:
+                return None
+            return await self._run_action(btn.action)
         return None
 
-    # ---- actions ----
+    async def _run_action(self, action: str) -> Screen | None:
+        if action == "toggle_ready":
+            await self._toggle_ready()
+            return None
+        if action == "leave":
+            return await self._leave()
+        if action == "quit":
+            self.app.exit()
+            return None
+        if action == "change_scenario":
+            self._open_scenario_modal()
+            return None
+        if action == "change_fog":
+            self._open_fog_modal()
+            return None
+        if action == "change_teams":
+            self._open_teams_modal()
+            return None
+        if action == "change_host_team":
+            self._open_host_team_modal()
+            return None
+        return None
+
+    # ---- modal openers ----
+
+    def _open_scenario_modal(self) -> None:
+        current = (self.app.state.last_room_state or {}).get("scenario")
+        options = list(self._scenarios) or [current or "01_tiny_skirmish"]
+        idx = options.index(current) if current in options else 0
+        self._modal = Dropdown(
+            title="Change Scenario",
+            options=options,
+            selected_idx=idx,
+            on_confirm=lambda v: self._apply_config({"scenario": v}),
+        )
+
+    def _open_fog_modal(self) -> None:
+        current = (self.app.state.last_room_state or {}).get("fog_of_war", "none")
+        idx = _FOG_OPTIONS.index(current) if current in _FOG_OPTIONS else 0
+        self._modal = Dropdown(
+            title="Change Fog of War",
+            options=list(_FOG_OPTIONS),
+            selected_idx=idx,
+            on_confirm=lambda v: self._apply_config({"fog_of_war": v}),
+        )
+
+    def _open_teams_modal(self) -> None:
+        current = (self.app.state.last_room_state or {}).get(
+            "team_assignment", "fixed"
+        )
+        idx = (
+            _TEAM_MODE_OPTIONS.index(current)
+            if current in _TEAM_MODE_OPTIONS
+            else 0
+        )
+        self._modal = Dropdown(
+            title="Change Team Assignment",
+            options=list(_TEAM_MODE_OPTIONS),
+            selected_idx=idx,
+            on_confirm=lambda v: self._apply_config({"team_assignment": v}),
+        )
+
+    def _open_host_team_modal(self) -> None:
+        current = (self.app.state.last_room_state or {}).get("host_team", "blue")
+        idx = (
+            _HOST_TEAM_OPTIONS.index(current)
+            if current in _HOST_TEAM_OPTIONS
+            else 0
+        )
+        self._modal = Dropdown(
+            title="Change Host Team",
+            options=list(_HOST_TEAM_OPTIONS),
+            selected_idx=idx,
+            on_confirm=lambda v: self._apply_config({"host_team": v}),
+        )
+
+    # ---- server interactions ----
+
+    async def tick(self) -> None:
+        import time as _time
+
+        now = _time.time()
+        if now - self._last_poll >= POLL_INTERVAL_S:
+            await self._refresh_state()
 
     async def _load_preview(self) -> None:
         if self.app.client is None or self.app.state.room_id is None:
@@ -176,10 +436,20 @@ class RoomScreen(Screen):
         if r.get("ok"):
             self._scenario_preview = (r.get("room") or {}).get("scenario_preview", {})
 
-    async def _refresh_state(self) -> Screen | None:
-        import time
+    async def _load_scenarios(self) -> None:
+        if self.app.client is None:
+            return
+        try:
+            r = await self.app.client.call("list_scenarios")
+        except Exception:
+            return
+        if r.get("ok"):
+            self._scenarios = r.get("scenarios", [])
 
-        self._last_poll = time.time()
+    async def _refresh_state(self) -> Screen | None:
+        import time as _time
+
+        self._last_poll = _time.time()
         if self.app.client is None:
             return None
         try:
@@ -188,7 +458,6 @@ class RoomScreen(Screen):
             self.app.state.error_message = f"get_room_state failed: {e}"
             return None
         if not r.get("ok"):
-            # A room that vanished is fatal for this screen.
             self.app.state.error_message = r.get("error", {}).get(
                 "message", "get_room_state rejected"
             )
@@ -196,6 +465,7 @@ class RoomScreen(Screen):
             return None
         self.app.state.error_message = ""
         room = r.get("room", {})
+        prior_scenario = (self.app.state.last_room_state or {}).get("scenario")
         self.app.state.last_room_state = room
         log.info(
             "poll room=%s status=%s autostart_in_s=%s seats=%s",
@@ -204,7 +474,10 @@ class RoomScreen(Screen):
             room.get("autostart_in_s"),
             {k: v.get("ready") for k, v in (room.get("seats") or {}).items()},
         )
-        # Did the match just start? Transition to GameScreen.
+        # Clamp focus so it stays on a valid button.
+        button_count = len(self._build_buttons(room))
+        if self._focus >= button_count:
+            self._focus = max(0, button_count - 1)
         if room.get("status") == "in_game":
             log.info("room status is in_game; transitioning to GameScreen")
             from clash_of_odin.client.tui.screens.game import GameScreen
@@ -214,29 +487,52 @@ class RoomScreen(Screen):
             await self.app.transition(next_screen)
             log.info("app.transition(GameScreen) returned")
             return next_screen
+        # If the host changed the scenario since our last refresh,
+        # reload the mini-map preview so the ASCII board matches.
+        if prior_scenario and room.get("scenario") != prior_scenario:
+            await self._load_preview()
         return None
 
-    async def _toggle_ready(self) -> Screen | None:
+    async def _apply_config(self, fields: dict[str, Any]) -> None:
+        """Send update_room_config with the given fields and refresh."""
         if self.app.client is None:
-            return None
-        self._ready_local = not self._ready_local
-        log.info("toggle_ready: sending ready=%s", self._ready_local)
+            return
         try:
-            r = await self.app.client.call("set_ready", ready=self._ready_local)
+            r = await self.app.client.call("update_room_config", **fields)
+        except Exception as e:
+            self.app.state.error_message = f"update_room_config failed: {e}"
+            return
+        if not r.get("ok"):
+            self.app.state.error_message = r.get("error", {}).get(
+                "message", "update_room_config rejected"
+            )
+            return
+        self.app.state.error_message = ""
+        if "scenario" in fields:
+            await self._load_preview()
+        await self._refresh_state()
+
+    async def _toggle_ready(self) -> None:
+        if self.app.client is None:
+            return
+        rs = self.app.state.last_room_state or {}
+        my_slot = self.app.state.slot
+        current = (rs.get("seats") or {}).get(my_slot, {}).get("ready", False)
+        log.info("toggle_ready: sending ready=%s", not current)
+        try:
+            r = await self.app.client.call("set_ready", ready=(not current))
         except Exception as e:
             log.exception("set_ready raised")
             self.app.state.error_message = f"set_ready failed: {e}"
-            return None
+            return
         log.info("toggle_ready: response=%s", r)
         if not r.get("ok"):
-            self._ready_local = not self._ready_local  # revert on failure
             self.app.state.error_message = r.get("error", {}).get(
                 "message", "set_ready rejected"
             )
         else:
             self.app.state.error_message = ""
         await self._refresh_state()
-        return None
 
     async def _leave(self) -> Screen | None:
         if self.app.client is None:

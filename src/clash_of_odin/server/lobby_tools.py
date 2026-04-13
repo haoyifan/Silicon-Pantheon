@@ -48,6 +48,7 @@ def _serialize_room_summary(room: Room) -> dict[str, Any]:
         "host_name": room.host_name,
         "status": room.status.value,
         "team_assignment": room.config.team_assignment,
+        "host_team": room.config.host_team,
         "fog_of_war": room.config.fog_of_war,
         "max_turns": room.config.max_turns,
         "seats": {
