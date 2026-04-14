@@ -1,0 +1,317 @@
+schema_version: 1
+name: Troy
+description: |
+  The ninth year of the siege. Achilles, sulking in his tent over a
+  slight from Agamemnon, has stayed out of the war for weeks. Hector
+  of Troy has driven the Greeks back to their beached ships. When
+  Hector kills Patroclus — Achilles's closest friend, fighting in
+  Achilles's borrowed armor — Achilles returns to the field. The
+  two greatest warriors of the age, who have avoided each other for
+  nine years, finally meet outside the Scaean Gate.
+
+board:
+  width: 16
+  height: 12
+  terrain:
+    # Troy's walls — a fort line on the east edge with the Scaean
+    # Gate as a fort tile. Flanking walls impassable.
+    - {x: 14, y: 1, type: troy_wall}
+    - {x: 14, y: 2, type: troy_wall}
+    - {x: 14, y: 3, type: troy_wall}
+    - {x: 14, y: 4, type: troy_wall}
+    - {x: 14, y: 5, type: troy_wall}
+    - {x: 14, y: 7, type: troy_wall}
+    - {x: 14, y: 8, type: troy_wall}
+    - {x: 14, y: 9, type: troy_wall}
+    - {x: 14, y: 10, type: troy_wall}
+    - {x: 15, y: 1, type: troy_wall}
+    - {x: 15, y: 2, type: troy_wall}
+    - {x: 15, y: 3, type: troy_wall}
+    - {x: 15, y: 4, type: troy_wall}
+    - {x: 15, y: 5, type: troy_wall}
+    - {x: 15, y: 6, type: troy_wall}
+    - {x: 15, y: 7, type: troy_wall}
+    - {x: 15, y: 8, type: troy_wall}
+    - {x: 15, y: 9, type: troy_wall}
+    - {x: 15, y: 10, type: troy_wall}
+    # The Xanthus river — splits the map north-south at x=7, with
+    # a ford at (7, 6).
+    - {x: 7, y: 0, type: xanthus}
+    - {x: 7, y: 1, type: xanthus}
+    - {x: 7, y: 2, type: xanthus}
+    - {x: 7, y: 3, type: xanthus}
+    - {x: 7, y: 4, type: xanthus}
+    - {x: 7, y: 5, type: xanthus}
+    - {x: 7, y: 6, type: ford}
+    - {x: 7, y: 7, type: xanthus}
+    - {x: 7, y: 8, type: xanthus}
+    - {x: 7, y: 9, type: xanthus}
+    - {x: 7, y: 10, type: xanthus}
+    - {x: 7, y: 11, type: xanthus}
+    # Greek ships beached on the west edge.
+    - {x: 0, y: 4, type: greek_ship}
+    - {x: 0, y: 5, type: greek_ship}
+    - {x: 0, y: 6, type: greek_ship}
+    - {x: 0, y: 7, type: greek_ship}
+  forts:
+    - {x: 14, y: 6, owner: red}
+
+terrain_types:
+  troy_wall:
+    move_cost: 99
+    passable: false
+    defense_bonus: 5
+    glyph: "#"
+    color: yellow
+  xanthus:
+    move_cost: 99
+    passable: false
+    glyph: "~"
+    color: blue
+  ford:
+    move_cost: 2
+    glyph: "="
+    color: yellow
+  greek_ship:
+    move_cost: 1
+    defense_bonus: 2
+    glyph: "M"
+    color: yellow
+
+unit_classes:
+  achilles:
+    display_name: Achilles
+    description: |
+      Son of Peleus and the sea-nymph Thetis, dipped in the Styx as
+      an infant — invulnerable everywhere but the heel. Has the
+      armor Hephaestus forged for him after Patroclus's death.
+      Greatest warrior at Troy. Lose him and the Greek campaign
+      ends.
+    hp_max: 55
+    atk: 17
+    defense: 8
+    res: 5
+    spd: 9
+    rng_min: 1
+    rng_max: 1
+    move: 6
+    tags: [vip, hero, demigod]
+    sight: 5
+    glyph: A
+    color: bright_cyan
+
+  odysseus:
+    display_name: Odysseus
+    description: |
+      King of Ithaca. Cleverest of the Achaeans. Will spend ten
+      years getting home after this war. Useful for harassing
+      flanks where pure brute force won't do.
+    hp_max: 26
+    atk: 9
+    defense: 5
+    res: 4
+    spd: 7
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [hero]
+    sight: 4
+    glyph: O
+    color: cyan
+
+  diomedes:
+    display_name: Diomedes
+    description: |
+      Of all the Achaean kings, the one who once wounded a god
+      (Aphrodite, then Ares). Powerful, calm, second only to
+      Achilles in raw fighting ability.
+    hp_max: 28
+    atk: 10
+    defense: 6
+    res: 3
+    spd: 7
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [hero]
+    sight: 4
+    glyph: D
+    color: cyan
+
+  ajax:
+    display_name: Ajax the Greater
+    description: |
+      Son of Telamon. Tower-shield bearer, rock-solid in defense.
+      Single-handedly held off the Trojans from burning the ships.
+    hp_max: 32
+    atk: 10
+    defense: 7
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [hero]
+    sight: 3
+    glyph: J
+    color: cyan
+
+  myrmidon:
+    display_name: Myrmidon
+    description: |
+      Achilles's elite household troops — the "ant-men" of Phthia.
+      Re-enter the war when their captain returns.
+    hp_max: 20
+    atk: 8
+    defense: 5
+    res: 3
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [elite]
+    sight: 3
+    glyph: M
+    color: cyan
+
+  hector:
+    display_name: Hector
+    description: |
+      Prince of Troy, eldest son of Priam, husband to Andromache,
+      father to Astyanax. Killed Patroclus while wearing Achilles's
+      armor — and now has to face the man whose friend he killed.
+    hp_max: 50
+    atk: 15
+    defense: 8
+    res: 5
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [vip, hero, prince]
+    sight: 5
+    glyph: H
+    color: bright_red
+
+  paris:
+    display_name: Paris
+    description: |
+      Hector's brother, who started the whole mess by abducting
+      Helen from Sparta. Skilled archer; not much in melee. The
+      arrow that eventually kills Achilles is his.
+    hp_max: 18
+    atk: 9
+    defense: 3
+    res: 3
+    spd: 6
+    rng_min: 2
+    rng_max: 3
+    move: 5
+    tags: [archer, prince]
+    sight: 4
+    glyph: P
+    color: red
+
+  aeneas:
+    display_name: Aeneas
+    description: |
+      Son of Anchises and Aphrodite. Will survive Troy's fall and
+      sail to Italy to found Rome (per Virgil). Solid hero-tier
+      fighter, second-in-command behind Hector.
+    hp_max: 30
+    atk: 10
+    defense: 6
+    res: 3
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [hero]
+    sight: 4
+    glyph: E
+    color: red
+
+  trojan_guard:
+    display_name: Trojan Guard
+    description: |
+      Priam's household and the citizens of Troy who've spent nine
+      years on the walls and in the streets defending the city.
+      Spears with reach.
+    hp_max: 22
+    atk: 8
+    defense: 5
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 2
+    move: 3
+    tags: [spearman, trojan]
+    sight: 3
+    glyph: T
+    color: red
+
+armies:
+  blue:
+    # Greek camp — west of the Xanthus, near the beached ships.
+    - {class: achilles, pos: {x: 4, y: 6}}
+    - {class: ajax, pos: {x: 3, y: 6}}
+    - {class: odysseus, pos: {x: 4, y: 5}}
+    - {class: diomedes, pos: {x: 4, y: 7}}
+    - {class: myrmidon, pos: {x: 5, y: 5}}
+    - {class: myrmidon, pos: {x: 5, y: 6}}
+    - {class: myrmidon, pos: {x: 5, y: 7}}
+    - {class: myrmidon, pos: {x: 3, y: 5}}
+    - {class: myrmidon, pos: {x: 3, y: 7}}
+    - {class: myrmidon, pos: {x: 2, y: 6}}
+  red:
+    # Trojan side — east of Xanthus, in front of the gate.
+    - {class: hector, pos: {x: 11, y: 6}}
+    - {class: aeneas, pos: {x: 12, y: 5}}
+    - {class: paris, pos: {x: 13, y: 4}}
+    - {class: trojan_guard, pos: {x: 12, y: 4}}
+    - {class: trojan_guard, pos: {x: 12, y: 6}}
+    - {class: trojan_guard, pos: {x: 12, y: 7}}
+    - {class: trojan_guard, pos: {x: 13, y: 7}}
+    - {class: trojan_guard, pos: {x: 11, y: 5}}
+    - {class: trojan_guard, pos: {x: 11, y: 7}}
+
+rules:
+  max_turns: 30
+  fog_of_war: false
+  first_player: blue
+
+win_conditions:
+  # Mutual VIP: Greeks lose if Achilles dies, Trojans lose if
+  # Hector dies. Plus the symmetric objective stack.
+  - {type: protect_unit, unit_id: u_b_achilles_1, owning_team: blue}
+  - {type: protect_unit, unit_id: u_r_hector_1, owning_team: red}
+  # Greeks win additionally by seizing the Scaean Gate.
+  - {type: seize_enemy_fort}
+  # Trojans win additionally by burning a Greek ship — reaching
+  # any tile at x=0.
+  - {type: reach_goal_line, team: red, axis: x, value: 0}
+  - {type: eliminate_all_enemy_units}
+  - {type: max_turns_draw}
+
+narrative:
+  title: Troy — Achilles and Hector
+  description: |
+    The duel that ends the Iliad. Two great warriors, the river
+    Xanthus between them, the walls of Troy as backdrop.
+  intro: |
+    Dawn outside the Scaean Gate. Patroclus is dead. Achilles has
+    new armor from his mother. Hector waits before his father's
+    city. The Xanthus runs cold between them.
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: "Achilles strides toward the ford. The Greeks part to let him pass."
+    - trigger: on_turn_start
+      turn: 6
+      text: "Hector and Achilles see each other across the river."
+    - trigger: on_unit_killed
+      unit_id: u_r_hector_1
+      text: "Hector falls. Andromache cries out from the wall."
+    - trigger: on_unit_killed
+      unit_id: u_b_achilles_1
+      text: "Achilles is down. Paris's arrow found the heel after all."
