@@ -318,13 +318,43 @@ class ProviderAuthScreen(Screen):
             self._step.focused = (self._step.focused - 1) % len(PROVIDERS)
         elif key == "enter":
             p = PROVIDERS[self._step.focused]
+            # Skip the api_key step if the provider already has a
+            # resolvable credential saved — the common reason to
+            # revisit this screen after a first successful login is
+            # "I want to change model", not "I want to re-enter the
+            # key I already stored". Esc from the model picker still
+            # drops the user back here if they did want to rotate
+            # the key.
+            if p.auth_mode == "api_key" and self._has_usable_cred(p.id):
+                next_kind = "pick_model"
+            elif p.auth_mode == "api_key":
+                next_kind = "api_key"
+            else:
+                next_kind = "pick_model"
             self._step = _Step(
-                kind="api_key" if p.auth_mode == "api_key" else "pick_model",
+                kind=next_kind,
                 provider_id=p.id,
                 focused=0,
             )
             self.app.state.error_message = ""
         return None
+
+    def _has_usable_cred(self, provider_id: str) -> bool:
+        """True if credentials.json already has a credential for this
+        provider that we can resolve to an actual key right now. We
+        intentionally do NOT re-validate against the server here —
+        that would block the UI on a network round-trip every time
+        the user scrolls through providers. Stored+resolvable is
+        good enough; if auth fails later the agent surfaces the
+        error and the user can press Esc back to re-enter the key."""
+        cred = self._creds.providers.get(provider_id)
+        if cred is None:
+            return False
+        try:
+            key = resolve_key(cred)
+        except CredentialsError:
+            return False
+        return bool(key)
 
     async def _handle_api_key_key(self, key: str) -> Screen | None:
         if key == "esc":
