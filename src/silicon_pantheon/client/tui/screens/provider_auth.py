@@ -279,7 +279,16 @@ class ProviderAuthScreen(Screen):
     # ---- input ----
 
     async def handle_key(self, key: str) -> Screen | None:
-        if key == "q":
+        # Don't treat 'q' as quit while the user is typing / pasting
+        # an API key — a literal 'q' in the key would otherwise exit
+        # the app mid-paste. (The terminal-side bracketed-paste wrap
+        # usually delivers paste as a single `paste:...` event, but
+        # terminals without mode ?2004 fall back to per-char input,
+        # and this guard is what keeps that path safe too.)
+        in_paste = (
+            self._step.kind == "api_key" and self._step.focused == 1
+        )
+        if key == "q" and not in_paste:
             self.app.exit()
             return None
         if self._step.kind == "resume":
@@ -323,6 +332,24 @@ class ProviderAuthScreen(Screen):
             return None
         # When in paste mode, the buffer absorbs printable chars.
         in_paste = self._step.focused == 1
+        # Bracketed-paste delivers the whole clipboard as a single
+        # `paste:<content>` event. Dump the content into the buffer
+        # verbatim (filtering newlines / control bytes — a pasted
+        # key never legitimately contains these) regardless of which
+        # focus row we're on; that way the user doesn't have to hit
+        # "paste key" first.
+        if key.startswith("paste:"):
+            pasted = key[len("paste:"):]
+            clean = "".join(
+                c for c in pasted if c.isprintable() and c not in ("\r", "\n")
+            )
+            if clean:
+                # Auto-switch to the paste row if they pasted from the
+                # env-var row so the key lands visibly.
+                if self._step.focused != 1:
+                    self._step.focused = 1
+                self._step.key_buffer += clean
+            return None
         if in_paste and key == "enter":
             if not self._step.key_buffer:
                 self.app.state.error_message = "key is empty"

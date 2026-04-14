@@ -150,34 +150,44 @@ class TUIApp:
         # used by things like art-frame animation (1 frame / 2 s).
         # Keep the background low — a high rate showed a flickering
         # terminal cursor at the bottom-right between frames.
-        with Live(
-            self._render_with_overlay(),
-            console=self.console,
-            refresh_per_second=2,
-            screen=True,
-        ) as live:
-            # Pin the cursor off. Live already hides it when it starts
-            # but some terminals briefly re-show between screen clears;
-            # an explicit show_cursor(False) on the real console keeps
-            # it hidden throughout the app's lifetime.
-            self.console.show_cursor(False)
-            self._live = live
-            tasks = [
-                asyncio.create_task(self._key_reader()),
-                asyncio.create_task(self._ticker()),
-                asyncio.create_task(self._dispatcher()),
-            ]
-            try:
-                while not self._should_exit:
-                    await asyncio.sleep(0.05)
-            finally:
-                for t in tasks:
-                    t.cancel()
-                for t in tasks:
-                    try:
-                        await t
-                    except asyncio.CancelledError:
-                        pass
+        # Enable bracketed-paste mode on the terminal. With this on,
+        # pasting wraps the content in ESC[200~ ... ESC[201~ so the
+        # reader can treat it atomically (see _read_key_blocking).
+        # Without it, Terminal.app / iTerm / most Linux terminals just
+        # dump the pasted chars as if they were typed one at a time —
+        # which triggers global shortcuts mid-paste (e.g. 'q' → quit).
+        _enable_bracketed_paste()
+        try:
+            with Live(
+                self._render_with_overlay(),
+                console=self.console,
+                refresh_per_second=2,
+                screen=True,
+            ) as live:
+                # Pin the cursor off. Live already hides it when it starts
+                # but some terminals briefly re-show between screen clears;
+                # an explicit show_cursor(False) on the real console keeps
+                # it hidden throughout the app's lifetime.
+                self.console.show_cursor(False)
+                self._live = live
+                tasks = [
+                    asyncio.create_task(self._key_reader()),
+                    asyncio.create_task(self._ticker()),
+                    asyncio.create_task(self._dispatcher()),
+                ]
+                try:
+                    while not self._should_exit:
+                        await asyncio.sleep(0.05)
+                finally:
+                    for t in tasks:
+                        t.cancel()
+                    for t in tasks:
+                        try:
+                            await t
+                        except asyncio.CancelledError:
+                            pass
+        finally:
+            _disable_bracketed_paste()
         # Shut down the persistent agent session if one is still alive
         # (user quit mid-match, or skipped post-match).
         if self.state.agent is not None:
@@ -368,6 +378,25 @@ class TUIApp:
 # ---- key-reading helper (POSIX cbreak) ----
 
 
+def _enable_bracketed_paste() -> None:
+    """Turn on DEC mode 2004 so pastes arrive wrapped in ESC[200~/[201~."""
+    try:
+        if sys.stdout.isatty():
+            sys.stdout.write("\x1b[?2004h")
+            sys.stdout.flush()
+    except Exception:
+        pass
+
+
+def _disable_bracketed_paste() -> None:
+    try:
+        if sys.stdout.isatty():
+            sys.stdout.write("\x1b[?2004l")
+            sys.stdout.flush()
+    except Exception:
+        pass
+
+
 def _read_key_blocking() -> str:
     """Blocking one-key read. Returns a normalized key token.
 
@@ -465,17 +494,63 @@ def _read_key_blocking() -> str:
                 if c1 == "O" and final == "Q":
                     return "f2"
                 if c1 == "[" and final == "~":
-                    # Bracketed-paste delimiters. Terminals wrap
-                    # clipboard paste with ESC[200~ ... ESC[201~.
-                    # Without this branch the reader decoded both
-                    # as plain "esc", which kicked the paste field
-                    # back to the provider picker and wiped the
-                    # buffer — so a long key showed as one asterisk
-                    # because only the first char or two had been
-                    # processed before the synthetic esc fired.
-                    # Treat them as no-ops so the pasted bytes
-                    # between the markers flow through as normal keys.
-                    if params in ("200", "201"):
+                    # Bracketed-paste: terminals wrap clipboard paste
+                    # with ESC[200~ ... ESC[201~ when we enable mode
+                    # ?2004 (TUIApp.run does this on startup). Slurp
+                    # everything between the markers into one synthetic
+                    # `paste:<content>` key event. Benefits over
+                    # letting the bytes flow through as individual keys:
+                    #
+                    #   1. No per-char .lower() mangling API-key case.
+                    #   2. No intermediate char triggers a global
+                    #      shortcut mid-paste (e.g. the literal 'q' in
+                    #      an xAI key `sk-xai-...q...` was exiting the
+                    #      app because provider_auth treats 'q' as
+                    #      quit).
+                    #   3. The paste arrives atomically, so screens
+                    #      can validate / save without racing the
+                    #      char stream.
+                    if params == "200":
+                        buf: list[str] = []
+                        # Slurp until we hit the end marker. 60s cap
+                        # is there only as a runaway guard; a real
+                        # paste completes in milliseconds.
+                        import time as _time
+                        deadline = _time.monotonic() + 60.0
+                        while _time.monotonic() < deadline:
+                            nb = _peek(0.5)
+                            if not nb:
+                                continue
+                            if nb == "\x1b":
+                                # Look for [201~
+                                end_c1 = _peek(0.05)
+                                if end_c1 == "[":
+                                    end_params = ""
+                                    end_final = ""
+                                    for _ in range(8):
+                                        z = _peek(0.05)
+                                        if not z:
+                                            break
+                                        if z.isalpha() or z == "~":
+                                            end_final = z
+                                            break
+                                        end_params += z
+                                    if end_params == "201" and end_final == "~":
+                                        return "paste:" + "".join(buf)
+                                    # Not the end marker — put it back as literal text.
+                                    buf.append("\x1b")
+                                    buf.append(end_c1)
+                                    buf.append(end_params)
+                                    buf.append(end_final)
+                                else:
+                                    buf.append("\x1b")
+                                    if end_c1:
+                                        buf.append(end_c1)
+                                continue
+                            buf.append(nb)
+                        return "paste:" + "".join(buf)
+                    if params == "201":
+                        # Stray end-marker (shouldn't happen). Swallow.
                         return ""
                     if params == "12":
                         return "f2"

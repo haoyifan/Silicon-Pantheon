@@ -51,6 +51,52 @@ def test_long_paste_accumulates_into_key_buffer(fresh_home):
     assert screen._step.key_buffer == full_key
 
 
+def test_bracketed_paste_event_dumps_into_buffer(fresh_home):
+    """The key reader emits `paste:<content>` as a single event for
+    clipboard pastes (bracketed-paste mode ?2004). The screen should
+    absorb the whole thing in one shot, preserving case and surviving
+    any 'q' chars inside the key."""
+    app = _FakeApp()
+    screen = ProviderAuthScreen(app)
+    screen._step = _Step(kind="api_key", provider_id="xai", focused=1)
+
+    # A plausible xAI key: mixed case, includes a 'q' (used to exit
+    # the app under the old per-char path).
+    full_key = "sk-xai-qWeRtY" + "Z" * 60 + "abc"
+    asyncio.run(screen.handle_key(f"paste:{full_key}"))
+
+    assert screen._step.key_buffer == full_key
+    assert not app.exited
+
+
+def test_bracketed_paste_auto_switches_to_paste_row(fresh_home):
+    """User lands on the 'use env var' row by default. Pasting from
+    there should flip focus to the paste row so the key lands visibly
+    rather than being silently dropped."""
+    app = _FakeApp()
+    screen = ProviderAuthScreen(app)
+    screen._step = _Step(kind="api_key", provider_id="xai", focused=0)
+
+    asyncio.run(screen.handle_key("paste:sk-xai-abc123"))
+
+    assert screen._step.focused == 1
+    assert screen._step.key_buffer == "sk-xai-abc123"
+
+
+def test_q_during_api_key_paste_does_not_exit(fresh_home):
+    """Regression: the global 'q' → quit handler used to fire even
+    while the user was in the api_key paste row, so any 'q' inside
+    a pasted key exited the app. Now it's gated by `not in_paste`."""
+    app = _FakeApp()
+    screen = ProviderAuthScreen(app)
+    screen._step = _Step(kind="api_key", provider_id="xai", focused=1)
+
+    asyncio.run(screen.handle_key("q"))
+
+    assert not app.exited
+    assert screen._step.key_buffer == "q"
+
+
 def test_empty_key_from_reader_is_filtered_out():
     """The bracketed-paste delimiters decode to '' in the key reader;
     the reader's main loop has `if key:` before queuing, so empty
