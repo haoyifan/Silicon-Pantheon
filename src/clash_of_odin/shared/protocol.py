@@ -51,6 +51,15 @@ class ErrorCode(str, Enum):
     # Internal
     INTERNAL = "internal"
 
+    # Version handshake
+    VERSION_MISMATCH = "version_mismatch"
+
 
 # The MCP tool-namespace prefix used by the server when registering tools.
 TOOL_NAMESPACE = "clash"
+
+
+# Wire-protocol version negotiated at connect time. Bumped on
+# incompatible changes to tool shapes / response structure so the
+# server can refuse mismatched clients with a clear error.
+PROTOCOL_VERSION = 1
