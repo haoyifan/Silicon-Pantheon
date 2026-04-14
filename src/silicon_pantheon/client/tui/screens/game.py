@@ -387,15 +387,46 @@ class ReasoningPanel(Panel):
 
     def _build_all_lines(self) -> list[tuple[str, str]]:
         """Flatten thoughts into (style, text) line tuples, oldest
-        first. Each thought contributes a team-colored timestamp
-        header line followed by its content lines."""
+        first. Each entry in the result corresponds to one *display*
+        row — long paragraphs are hard-wrapped to the panel's inner
+        width before counting, so `line_offset += 3` reliably moves
+        three visible rows instead of potentially hiding an entire
+        wrapped paragraph behind a single scroll step.
+
+        Earlier versions split only on '\\n' and let Rich do the
+        wrapping, which made scrolling feel non-linear: a short
+        thought scrolled one row per step, a 500-char paragraph
+        scrolled the whole block at once.
+        """
+        import textwrap
+
+        # Reasoning panel gets ratio=2 of the bottom half's 2:1 split,
+        # so ~2/3 of the total console width. Subtract borders +
+        # padding. Fall back conservatively if the console width
+        # can't be read.
+        try:
+            cw = self.screen.app.console.width
+        except Exception:
+            cw = 80
+        inner_width = max(20, int(cw * 2 / 3) - 6)
+
         out: list[tuple[str, str]] = []
         for ts, team, t in self.screen.app.state.thoughts:
             team_style = "cyan" if team == "blue" else "red"
             out.append((team_style + " bold", f"[{ts}] ({team})"))
             for raw_line in t.splitlines() or [""]:
-                out.append(("white", raw_line))
-            out.append(("", ""))  # blank separator
+                if not raw_line.strip():
+                    out.append(("white", ""))
+                    continue
+                wrapped = textwrap.wrap(
+                    raw_line,
+                    width=inner_width,
+                    break_long_words=True,
+                    break_on_hyphens=False,
+                ) or [raw_line]
+                for w in wrapped:
+                    out.append(("white", w))
+            out.append(("", ""))  # blank separator between thoughts
         return out
 
     def render(self, focused: bool) -> RenderableType:
