@@ -1,21 +1,29 @@
-"""In-game screen — server-authoritative state display + agent bridge.
+"""In-game screen — five-panel grid mirroring the room layout.
+
+    ┌────────────┬─────────┐
+    │   Map      │ Player  │
+    │            ├─────────┤
+    │            │ Actions │
+    ├────────────┼─────────┤
+    │ Reasoning  │ Coach   │
+    └────────────┴─────────┘
+
+Tab cycles focus across focusable panels (Map / Actions / Reasoning /
+Coach). Arrows / j-k / Enter dispatch to the focused panel only.
+
+  - Map (focused): tile cursor with ←↑↓→. Enter on a unit opens its
+    UnitCard with full stats / tags / abilities / inventory.
+  - Reasoning (focused): up/down scroll the agent-thought log.
+  - Coach (focused): type freely — Enter sends, Esc clears the buffer.
+  - Actions (focused): button list — end_turn / concede / quit.
 
 Two sources of game actions:
 
-1. **Agent-driven** (when the player declared themselves as
-   `kind in {"ai", "hybrid"}` with provider="anthropic" and a model
-   set): GameScreen spawns a NetworkedAgent at on_enter and, on every
-   tick, triggers `agent.play_turn()` whenever `active_player` matches
-   the viewer's team and no agent task is already running. The agent
-   drives move/attack/end_turn directly over the ServerClient; the
-   TUI just renders + surfaces reasoning.
-
-2. **Manual** (human, or agent disabled): the player hits keys.
-
-Common keys:
-  e   call end_turn
-  c   concede
-  q   quit
+  1. **Agent-driven**: NetworkedAgent runs on every poll where the
+     active player matches the viewer's team and no agent task is
+     already running. The TUI just renders + surfaces reasoning.
+  2. **Manual**: the human focuses the Actions panel and hits Enter
+     on `End Turn` / `Concede`. Useful for hybrid / kibitzing modes.
 """
 
 from __future__ import annotations
@@ -23,46 +31,443 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections import deque
+from dataclasses import dataclass
 from typing import Any
 
 from rich.align import Align
 from rich.console import Group, RenderableType
-from rich.panel import Panel
-from rich.table import Table
+from rich.layout import Layout
+from rich.panel import Panel as RichPanel
 from rich.text import Text
 
 from clash_of_odin.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
+from clash_of_odin.client.tui.panels import Panel, border_style
+from clash_of_odin.client.tui.screens.room import (
+    UnitCard,
+    _unit_cell_style,
+    _describe_win_condition,
+)
 
 log = logging.getLogger("clash.tui.game")
 
 
-class GameScreen(Screen):
-    # Total rows reserved for the reasoning panel (including borders + title).
-    THOUGHTS_PANEL_HEIGHT = 18
+# ---- panel: Player (turn / team / agent status) ----
 
+
+class PlayerPanel(Panel):
+    title = "Player"
+
+    def __init__(self, screen: "GameScreen") -> None:
+        self.screen = screen
+
+    def can_focus(self) -> bool:
+        return False
+
+    def render(self, focused: bool) -> RenderableType:
+        gs = self.screen.state or {}
+        my_team = gs.get("you") or "?"
+        active = gs.get("active_player", "?")
+        turn = gs.get("turn", "?")
+        max_turns = gs.get("max_turns") or (gs.get("rules") or {}).get("max_turns", "?")
+        status = gs.get("status", "?")
+        winner = gs.get("winner")
+
+        rows: list[RenderableType] = []
+        rows.append(
+            Text(
+                f"You: {my_team}",
+                style="bold cyan" if my_team == "blue" else "bold red",
+            )
+        )
+        rows.append(Text(f"Turn {turn}/{max_turns}"))
+        rows.append(Text(""))
+        my_turn = active == my_team
+        rows.append(
+            Text(
+                "YOUR TURN" if my_turn else "opponent's turn",
+                style="bold green" if my_turn else "dim",
+            )
+        )
+        if status == "game_over":
+            line = Text("GAME OVER", style="bold yellow")
+            if winner:
+                line.append(
+                    f" — {winner}",
+                    style=" bold green" if winner == my_team else " bold red",
+                )
+            rows.append(line)
+        if self.screen.app.state.agent is not None:
+            busy = (
+                self.screen.app.state.agent_task is not None
+                and not self.screen.app.state.agent_task.done()
+            )
+            rows.append(Text(""))
+            rows.append(
+                Text(
+                    f"agent {'thinking…' if busy else 'idle'}",
+                    style="yellow" if busy else "dim",
+                )
+            )
+        return RichPanel(
+            Group(*rows),
+            title=self.title,
+            border_style=border_style(focused),
+            padding=(1, 2),
+        )
+
+
+# ---- panel: Actions (end_turn / concede / quit) ----
+
+
+@dataclass
+class _Btn:
+    label: str
+    action: str
+    enabled: bool = True
+
+
+class ActionsPanel(Panel):
+    title = "Actions"
+
+    def __init__(self, screen: "GameScreen") -> None:
+        self.screen = screen
+        self.focus = 0
+
+    def _buttons(self) -> list[_Btn]:
+        gs = self.screen.state or {}
+        active = gs.get("active_player")
+        my_team = gs.get("you")
+        my_turn = active == my_team and gs.get("status") != "game_over"
+        return [
+            _Btn(label="End Turn", action="end_turn", enabled=my_turn),
+            _Btn(label="Concede", action="concede", enabled=gs.get("status") != "game_over"),
+            _Btn(label="Quit", action="quit"),
+        ]
+
+    def render(self, focused: bool) -> RenderableType:
+        buttons = self._buttons()
+        self.focus = max(0, min(self.focus, len(buttons) - 1))
+        lines: list[Text] = []
+        for i, btn in enumerate(buttons):
+            is_focused = focused and i == self.focus
+            marker = "➤ " if is_focused else "  "
+            if not btn.enabled:
+                style = "dim strike" if is_focused else "dim"
+            elif is_focused:
+                style = "bold cyan"
+            else:
+                style = "white"
+            lines.append(Text(f"{marker}{btn.label}", style=style))
+        return RichPanel(
+            Group(*lines),
+            title=self.title,
+            border_style=border_style(focused),
+            padding=(1, 2),
+        )
+
+    async def handle_key(self, key: str) -> Screen | None:
+        buttons = self._buttons()
+        if not buttons:
+            return None
+        if key in ("down", "j"):
+            self.focus = (self.focus + 1) % len(buttons)
+            return None
+        if key in ("up", "k"):
+            self.focus = (self.focus - 1) % len(buttons)
+            return None
+        if key == "enter":
+            btn = buttons[self.focus]
+            if not btn.enabled:
+                return None
+            return await self.screen.run_action(btn.action)
+        return None
+
+
+# ---- panel: Map (cursor + unit card on Enter) ----
+
+
+class GameMapPanel(Panel):
+    title = "Map"
+
+    def __init__(self, screen: "GameScreen") -> None:
+        self.screen = screen
+        self.cx = 0
+        self.cy = 0
+
+    def _state(self) -> dict[str, Any]:
+        return self.screen.state or {}
+
+    def render(self, focused: bool) -> RenderableType:
+        gs = self._state()
+        board = gs.get("board") or {}
+        w = int(board.get("width", 0))
+        h = int(board.get("height", 0))
+        tiles = board.get("tiles", [])
+        units = gs.get("units", [])
+        if w > 0 and h > 0:
+            self.cx = max(0, min(self.cx, w - 1))
+            self.cy = max(0, min(self.cy, h - 1))
+
+        tile_by_pos = {(int(t.get("x", 0)), int(t.get("y", 0))): t for t in tiles}
+        unit_at: dict[tuple[int, int], dict] = {}
+        for u in units:
+            if not u.get("alive", u.get("hp", 0) > 0):
+                continue
+            pos = u.get("pos") or {}
+            unit_at[(int(pos.get("x", -1)), int(pos.get("y", -1)))] = u
+
+        text = Text()
+        text.append(
+            "   " + " ".join(f"{x:>2}" for x in range(w)) + "\n", style="dim"
+        )
+        for y in range(h):
+            text.append(f"{y:>2} ", style="dim")
+            for x in range(w):
+                u = unit_at.get((x, y))
+                if u is not None:
+                    g, st = _unit_cell_style(u)
+                else:
+                    t = tile_by_pos.get((x, y), {})
+                    g, st = _terrain_cell(t.get("type", "unknown"))
+                if focused and x == self.cx and y == self.cy:
+                    text.append(f"[{g}]", style=f"reverse {st}")
+                else:
+                    text.append(f" {g} ", style=st)
+            text.append("\n")
+        info = self._cursor_tooltip(w, h, tile_by_pos, unit_at)
+        return RichPanel(
+            Group(text, Text(""), info),
+            title=self.title,
+            border_style=border_style(focused),
+            padding=(0, 1),
+        )
+
+    def _cursor_tooltip(
+        self,
+        w: int,
+        h: int,
+        tile_by_pos: dict[tuple[int, int], dict],
+        unit_at: dict[tuple[int, int], dict],
+    ) -> RenderableType:
+        if w == 0 or h == 0:
+            return Text("(loading map…)", style="dim italic")
+        t = tile_by_pos.get((self.cx, self.cy), {})
+        terrain = str(t.get("type", "plain"))
+        u = unit_at.get((self.cx, self.cy))
+        line = Text()
+        line.append(f"({self.cx}, {self.cy}) ", style="dim")
+        line.append(f"terrain: {terrain}", style="yellow")
+        if u:
+            owner = u.get("owner", "?")
+            color = "cyan" if owner == "blue" else "red"
+            line.append("   ")
+            line.append(
+                f"{u.get('class', '?')} hp {u.get('hp', '?')}/{u.get('hp_max', '?')}",
+                style=f"bold {color}",
+            )
+            line.append("   ")
+            line.append("Enter for details", style="dim italic")
+        return line
+
+    async def handle_key(self, key: str) -> Screen | None:
+        gs = self._state()
+        board = gs.get("board") or {}
+        w = int(board.get("width", 0))
+        h = int(board.get("height", 0))
+        if w == 0 or h == 0:
+            return None
+        if key in ("up", "k"):
+            self.cy = (self.cy - 1) % h
+            return None
+        if key in ("down", "j"):
+            self.cy = (self.cy + 1) % h
+            return None
+        if key == "left":
+            self.cx = (self.cx - 1) % w
+            return None
+        if key == "right":
+            self.cx = (self.cx + 1) % w
+            return None
+        if key == "enter":
+            for u in gs.get("units", []):
+                if not u.get("alive", u.get("hp", 0) > 0):
+                    continue
+                pos = u.get("pos") or {}
+                if int(pos.get("x", -1)) == self.cx and int(pos.get("y", -1)) == self.cy:
+                    self.screen.open_unit_card(u)
+                    break
+            return None
+        return None
+
+
+def _terrain_cell(ttype: str) -> tuple[str, str]:
+    if ttype == "unknown":
+        return "?", "bright_black"
+    if ttype == "forest":
+        return "f", "green"
+    if ttype == "mountain":
+        return "^", "bright_black"
+    if ttype == "fort":
+        return "*", "yellow"
+    return ".", "dim"
+
+
+# ---- panel: Reasoning (scrollable agent thoughts) ----
+
+
+class ReasoningPanel(Panel):
+    title = "Agent Reasoning"
+
+    def __init__(self, screen: "GameScreen") -> None:
+        self.screen = screen
+        self.offset = 0
+        self._last_count = 0
+
+    def render(self, focused: bool) -> RenderableType:
+        thoughts = list(self.screen.app.state.thoughts)
+        total = len(thoughts)
+        # Pin user's view if they've scrolled back and new thoughts arrive.
+        new_count = total - self._last_count
+        if new_count > 0 and self.offset > 0:
+            self.offset += new_count
+        self._last_count = total
+
+        if total == 0:
+            body = Text("(no reasoning yet)", style="dim italic")
+            title = self.title
+        else:
+            self.offset = max(0, min(self.offset, total - 1))
+            # Greedy pack from newest backward.
+            window: list[tuple[str, str, str]] = []
+            end = total - self.offset
+            # Approximate: 6 thoughts max per panel render. Wrap handles
+            # the rest visually; the panel auto-crops.
+            for i in range(end - 1, max(-1, end - 7), -1):
+                window.append(thoughts[i])
+            window.reverse()
+            body = Text(no_wrap=False, overflow="fold")
+            for i, (ts, team, t) in enumerate(window):
+                team_style = "cyan" if team == "blue" else "red"
+                body.append(f"[{ts}] ", style=team_style)
+                body.append(t)
+                if i != len(window) - 1:
+                    body.append("\n")
+            if self.offset == 0:
+                title = f"{self.title} — latest {len(window)}/{total}"
+            else:
+                title = (
+                    f"{self.title} — scrolled {self.offset}/{total}"
+                )
+        return RichPanel(
+            body,
+            title=title,
+            border_style=border_style(focused),
+            padding=(0, 1),
+        )
+
+    async def handle_key(self, key: str) -> Screen | None:
+        if key in ("up", "k"):
+            self.offset += 1
+            return None
+        if key in ("down", "j"):
+            self.offset = max(0, self.offset - 1)
+            return None
+        if key == "0":
+            self.offset = 0
+            return None
+        return None
+
+
+# ---- panel: Coach (text input + history) ----
+
+
+class CoachPanel(Panel):
+    title = "Coach"
+
+    def __init__(self, screen: "GameScreen") -> None:
+        self.screen = screen
+        self.buffer = ""
+        self.history: deque[str] = deque(maxlen=5)
+
+    def render(self, focused: bool) -> RenderableType:
+        rows: list[RenderableType] = []
+        if focused:
+            prompt = Text(no_wrap=False, overflow="fold")
+            prompt.append("> ", style="yellow bold")
+            prompt.append(self.buffer, style="white")
+            prompt.append("▌", style="yellow")
+            rows.append(prompt)
+            rows.append(
+                Text("Enter send  Esc clear  Tab leave panel", style="dim")
+            )
+        else:
+            rows.append(
+                Text(
+                    "(Tab here to type a coach message)",
+                    style="dim italic",
+                )
+            )
+        if self.history:
+            rows.append(Text(""))
+            rows.append(Text("recent:", style="dim"))
+            for m in list(self.history)[-3:]:
+                rows.append(Text(f"  • {m}", style="dim"))
+        return RichPanel(
+            Group(*rows),
+            title=self.title,
+            border_style=border_style(focused),
+            padding=(1, 2),
+        )
+
+    async def handle_key(self, key: str) -> Screen | None:
+        if key == "esc":
+            self.buffer = ""
+            return None
+        if key == "enter":
+            text = self.buffer.strip()
+            self.buffer = ""
+            if not text:
+                return None
+            await self.screen.send_coach_message(text)
+            self.history.append(text)
+            return None
+        if key == "backspace":
+            self.buffer = self.buffer[:-1]
+            return None
+        if len(key) == 1 and key.isprintable():
+            self.buffer += key
+            return None
+        return None
+
+
+# ---- the screen ----
+
+
+class GameScreen(Screen):
     def __init__(self, app: TUIApp):
         self.app = app
+        self.state: dict[str, Any] | None = None
         self._last_poll = 0.0
-        self._state: dict[str, Any] | None = None
-        # Scroll position for the reasoning panel. 0 = newest thought visible
-        # at the bottom; +N = scrolled N thoughts toward older history.
-        self._reasoning_offset = 0
-        # Snapshot of the thoughts-deque length the last time we rendered.
-        # When new thoughts arrive AND the user is at offset=0, we want
-        # them to see the new content; when the user has scrolled back,
-        # we increase the offset so the panel stays visually stable.
-        self._last_thought_count = 0
-        # Coach input mode: "normal" for game keys, "coach" for text entry.
-        self._input_mode: str = "normal"
-        self._coach_buffer: str = ""
-        # Ring buffer of recently-sent coach messages so the user can
-        # see what they've already said without scrolling.
-        self._coach_sent: deque[str] = deque(maxlen=5)
+        self._modal: UnitCard | None = None
+
+        self.map_panel = GameMapPanel(self)
+        self.actions_panel = ActionsPanel(self)
+        self.reasoning_panel = ReasoningPanel(self)
+        self.coach_panel = CoachPanel(self)
+        self._panels: list[Panel] = [
+            self.map_panel,
+            PlayerPanel(self),
+            self.actions_panel,
+            self.reasoning_panel,
+            self.coach_panel,
+        ]
+        # Default to the Map panel so the player can immediately scan
+        # the board with the cursor.
+        self._focus_idx = 0
 
     async def on_enter(self, app: TUIApp) -> None:
         log.info("GameScreen.on_enter: starting")
         await self._refresh_state()
-        log.info("GameScreen.on_enter: initial refresh done")
         if app.state.agent is None:
             await self._maybe_build_agent(app)
         log.info(
@@ -75,53 +480,36 @@ class GameScreen(Screen):
         if app.state.agent_task is not None and not app.state.agent_task.done():
             app.state.agent_task.cancel()
         app.state.agent_task = None
-        # Note: we intentionally do NOT close `app.state.agent` here.
-        # PostMatchScreen needs the live session for summarize_match,
-        # and the TUIApp shutdown path (app.run cleanup) will close it
-        # if the user never reaches post-match.
+        # Intentionally do NOT close app.state.agent — PostMatchScreen
+        # needs the live session for summarize_match.
 
     async def _maybe_build_agent(self, app: TUIApp) -> None:
-        """Construct a NetworkedAgent if the login declared an LLM."""
         log.info(
             "maybe_build_agent: kind=%s provider=%s model=%s",
-            app.state.kind,
-            app.state.provider,
-            app.state.model,
+            app.state.kind, app.state.provider, app.state.model,
         )
         if app.state.kind not in ("ai", "hybrid"):
-            log.info("maybe_build_agent: skipping, kind not ai/hybrid")
             return
-        if app.state.provider != "anthropic" or not app.state.model:
-            log.info("maybe_build_agent: skipping, provider not anthropic or no model")
+        if not app.state.model:
             return
         if app.client is None:
-            log.warning("maybe_build_agent: skipping, app.client is None")
             return
         scenario = (app.state.last_room_state or {}).get("scenario") or ""
         if not scenario:
-            log.warning(
-                "maybe_build_agent: skipping, no scenario (last_room_state=%s)",
-                app.state.last_room_state,
-            )
+            log.warning("maybe_build_agent: no scenario")
             return
-        log.info("maybe_build_agent: importing NetworkedAgent")
 
         from clash_of_odin.client.agent_bridge import NetworkedAgent
-        log.info("maybe_build_agent: NetworkedAgent imported")
 
         async def on_thought(text: str) -> None:
             collapsed = " ".join(text.split())
-            if collapsed:
-                from datetime import datetime
+            if not collapsed:
+                return
+            from datetime import datetime
 
-                ts = datetime.now().strftime("%H:%M:%S")
-                # Stamp the emitting team. Each TUI only runs its own
-                # player's agent, so the team is whatever the latest
-                # get_state told us is 'you'. Defaults to 'blue' during
-                # the (very brief) window before the first get_state
-                # response lands.
-                team = (app.state.last_game_state or {}).get("you") or "blue"
-                app.state.thoughts.append((ts, team, collapsed))
+            ts = datetime.now().strftime("%H:%M:%S")
+            team = (app.state.last_game_state or {}).get("you") or "blue"
+            app.state.thoughts.append((ts, team, collapsed))
 
         app.state.agent = NetworkedAgent(
             client=app.client,
@@ -130,371 +518,125 @@ class GameScreen(Screen):
             strategy=app.state.strategy_text,
             thoughts_callback=on_thought,
         )
-        log.info("maybe_build_agent: NetworkedAgent constructed")
+
+    # ---- render ----
 
     def render(self) -> RenderableType:
-        gs = self._state or {}
-        turn = gs.get("turn", "?")
-        max_turns = gs.get("max_turns") or gs.get("rules", {}).get("max_turns", "?")
-        active = gs.get("active_player", "?")
-        status = gs.get("status", "?")
-        winner = gs.get("winner")
-        you = self.app.state.slot or "?"
-        my_team = gs.get("you") or "?"
+        if self._modal is not None:
+            return self._modal.render()
 
+        gs = self.state or {}
+        scenario = (gs.get("rules") or {}).get("scenario") or (
+            self.app.state.last_room_state or {}
+        ).get("scenario", "?")
         header = Text()
-        header.append(f"Turn {turn}/{max_turns}   ", style="bold")
-        header.append(f"Active: ", style="dim")
-        header.append(active, style="cyan bold" if active == "blue" else "red bold")
-        header.append("   ", style="")
-        my_turn = active == my_team
-        header.append(
-            "YOUR TURN" if my_turn else "opponent's turn",
-            style="bold green" if my_turn else "dim",
-        )
-        if status == "game_over":
-            header.append(f"   GAME OVER", style="bold yellow")
-            if winner:
-                header.append(
-                    f" — winner: {winner}",
-                    style="bold green" if winner == my_team else "bold red",
-                )
-
-        board = self._render_board(gs)
-        units = self._render_units(gs)
-
-        you_info = Text(
-            f"You are slot {you} ({my_team}). Fog visible tiles: "
-            f"{len(gs.get('_visible_tiles', []))}",
-            style="dim",
-        )
-
-        if self._input_mode == "coach":
-            keys = Text(
-                "typing coach message — Enter send   Esc cancel   Backspace delete",
-                style="yellow",
-            )
+        header.append(scenario, style="yellow bold")
+        if self.app.state.error_message:
+            footer: RenderableType = Text(self.app.state.error_message, style="red")
         else:
-            keys = Text(
-                "e end_turn   c coach   k/j scroll reasoning   0 jump-latest   x concede   q quit",
+            footer = Text(
+                "Tab cycle panels   ↑/↓/←/→ navigate focused panel   "
+                "Enter activate   q quit",
                 style="dim",
             )
-        status_line = Text("")
-        if self.app.state.error_message:
-            status_line.append(self.app.state.error_message, style="red")
+        layout = self._build_layout()
+        return Group(header, Text(""), layout, Text(""), footer)
 
-        thoughts_panel = self._render_thoughts()
-        coach_panel = self._render_coach()
-
-        agent_line = Text("")
-        if self.app.state.agent is not None:
-            busy = (
-                self.app.state.agent_task is not None
-                and not self.app.state.agent_task.done()
-            )
-            agent_line.append(
-                f"agent: {self.app.state.model} {'[thinking...]' if busy else '[idle]'}",
-                style="yellow" if busy else "dim",
-            )
-
-        body = Group(
-            header,
-            Text(""),
-            Panel(board, title="board", border_style="dim"),
-            Text(""),
-            units,
-            Text(""),
-            thoughts_panel,
-            coach_panel,
-            Text(""),
-            you_info,
-            agent_line,
-            Text(""),
-            keys,
-            status_line,
+    def _build_layout(self) -> Layout:
+        root = Layout()
+        root.split_column(
+            Layout(name="top", ratio=3),
+            Layout(name="bottom", ratio=2),
         )
-        # No outer frame — the inner Panels (board / reasoning) are
-        # enough structure. A full-screen red border was visually
-        # noisy and easy to mistake for a danger / error indicator.
-        return body
-
-    def _render_thoughts(self) -> RenderableType:
-        """Scrollable, word-wrapped panel of agent reasoning.
-
-        Each thought is rendered in full (no ellipsis truncation) with
-        word-wrap on; the panel takes a fixed number of rows and we
-        pick which slice of thoughts to render based on `_reasoning_offset`.
-
-        Scroll model: offset 0 = newest thought occupies the bottom of
-        the panel; increasing offset scrolls toward older history.
-        Because wrapped thoughts can occupy multiple rows each, we greedily
-        pack thoughts from newest to oldest until the row budget is used,
-        then skip `offset` thoughts worth from the tail before rendering.
-        """
-        thoughts = list(self.app.state.thoughts)
-        total = len(thoughts)
-        height = self.THOUGHTS_PANEL_HEIGHT
-        inner_rows = max(1, height - 2)
-
-        # If the user is scrolled back and new thoughts arrive, keep the
-        # *same historical thoughts* pinned in view by bumping the offset
-        # by however many new entries landed. Without this, new thoughts
-        # would silently push the user's window around.
-        new_count = total - self._last_thought_count
-        if new_count > 0 and self._reasoning_offset > 0:
-            self._reasoning_offset += new_count
-        self._last_thought_count = total
-
-        if total == 0:
-            body = Text("(no reasoning yet)", style="dim italic")
-            return Panel(
-                body,
-                title="agent reasoning",
-                border_style="dim",
-                height=height,
-            )
-
-        # Clamp offset to valid range so out-of-bound scrolls snap.
-        self._reasoning_offset = max(0, min(self._reasoning_offset, total - 1))
-
-        # Approximate visible window: we don't know the terminal width
-        # precisely, so assume ~80 chars/row for wrapped length budgeting.
-        # Err on the side of packing more thoughts; the Panel auto-crops
-        # if we overshoot.
-        approx_cols = 80
-        window: list[str] = []
-        rows_used = 0
-        # Walk thoughts from newest to oldest, starting `offset` back.
-        end = total - self._reasoning_offset
-        for i in range(end - 1, -1, -1):
-            ts, team, t = thoughts[i]
-            est_rows = max(
-                1, (len(ts) + 3 + len(t) + approx_cols - 1) // approx_cols
-            )
-            if rows_used + est_rows > inner_rows and window:
-                break
-            window.append((ts, team, t))
-            rows_used += est_rows
-        window.reverse()
-
-        body = Text(no_wrap=False, overflow="fold")
-        for i, (ts, team, t) in enumerate(window):
-            team_style = "cyan" if team == "blue" else "red"
-            body.append(f"[{ts}] ", style=team_style)
-            body.append(t)
-            if i != len(window) - 1:
-                body.append("\n")
-
-        # Position header: indicates where the window is within the full
-        # transcript. "latest 5/42" when at offset 0 showing 5 thoughts;
-        # "12-16/42" when scrolled back.
-        if self._reasoning_offset == 0:
-            title = f"agent reasoning — latest {len(window)}/{total}"
-        else:
-            shown_end = total - self._reasoning_offset
-            shown_start = shown_end - len(window) + 1
-            title = f"agent reasoning — {shown_start}-{shown_end}/{total} (scrolled {self._reasoning_offset})"
-        return Panel(
-            body,
-            title=title,
-            border_style="dim",
-            height=height,
+        root["top"].split_row(
+            Layout(name="map", ratio=2),
+            Layout(name="right", ratio=1),
+        )
+        root["top"]["right"].split_column(
+            Layout(name="player", ratio=2),
+            Layout(name="actions", ratio=3),
+        )
+        root["bottom"].split_row(
+            Layout(name="reasoning", ratio=2),
+            Layout(name="coach", ratio=1),
         )
 
-    def _render_coach(self) -> RenderableType:
-        """Coach input + history panel.
-
-        - When in coach input mode, shows a '> <buffer>_' prompt so the
-          user sees exactly what they've typed.
-        - Below, a one-line history of the last few sent messages so
-          they don't need to remember what they already said.
-        - When neither has content (no history, not typing), returns a
-          blank Text so the surrounding Group layout stays stable.
-        """
-        has_history = bool(self._coach_sent)
-        typing = self._input_mode == "coach"
-        if not (has_history or typing):
-            return Text("")
-
-        lines: list[Text] = []
-        if typing:
-            # overflow="fold" + no_wrap=False lets the prompt wrap over
-            # multiple terminal rows so long suggestions stay visible
-            # while being typed. Panel height is left unset so it grows
-            # to fit the wrapped content.
-            prompt = Text(no_wrap=False, overflow="fold")
-            prompt.append("coach> ", style="yellow bold")
-            prompt.append(self._coach_buffer, style="white")
-            prompt.append("▌", style="yellow")  # non-blinking cursor
-            lines.append(prompt)
-        if has_history:
-            recent = " · ".join(
-                f'"{m}"' for m in list(self._coach_sent)[-3:]
-            )
-            lines.append(
-                Text(
-                    f"recently sent: {recent}",
-                    style="dim",
-                    no_wrap=False,
-                    overflow="fold",
-                )
-            )
-        body = Group(*lines) if len(lines) > 1 else lines[0]
-        return Panel(
-            body,
-            title=("coach input" if typing else "coach"),
-            border_style="yellow" if typing else "dim",
-            # No fixed height — Panel sizes to wrapped content so
-            # long messages remain fully visible.
+        focused = self._panels[self._focus_idx]
+        root["top"]["map"].update(self.map_panel.render(focused is self.map_panel))
+        root["top"]["right"]["player"].update(
+            self._panels[1].render(focused is self._panels[1])
         )
+        root["top"]["right"]["actions"].update(
+            self.actions_panel.render(focused is self.actions_panel)
+        )
+        root["bottom"]["reasoning"].update(
+            self.reasoning_panel.render(focused is self.reasoning_panel)
+        )
+        root["bottom"]["coach"].update(
+            self.coach_panel.render(focused is self.coach_panel)
+        )
+        return root
 
-    def _render_board(self, gs: dict[str, Any]) -> RenderableType:
-        board = gs.get("board", {})
-        w = int(board.get("width", 0))
-        h = int(board.get("height", 0))
-        tiles = board.get("tiles", [])
-        units = gs.get("units", [])
-        tile_by_pos = {(int(t.get("x", 0)), int(t.get("y", 0))): t for t in tiles}
-        # Dead units stay in the payload so the units table can show
-        # them dim, but the board itself should treat their tile as
-        # empty — they're corpses, not blockers.
-        unit_by_pos = {
-            (int((u.get("pos") or {}).get("x", 0)), int((u.get("pos") or {}).get("y", 0))): u
-            for u in units
-            if u.get("alive", u.get("hp", 0) > 0)
-        }
-
-        text = Text()
-        text.append("   " + " ".join(f"{x:>2}" for x in range(w)) + "\n", style="dim")
-        from clash_of_odin.client.tui.screens.room import _unit_cell_style
-
-        for y in range(h):
-            text.append(f"{y:>2} ", style="dim")
-            for x in range(w):
-                u = unit_by_pos.get((x, y))
-                t = tile_by_pos.get((x, y), {})
-                if u is not None:
-                    glyph, style = _unit_cell_style(u)
-                    text.append(f" {glyph}", style=style)
-                else:
-                    ttype = t.get("type", "unknown")
-                    if ttype == "unknown":
-                        text.append(" ?", style="bright_black")
-                    elif ttype == "forest":
-                        text.append(" f", style="green")
-                    elif ttype == "mountain":
-                        text.append(" ^", style="bright_black")
-                    elif ttype == "fort":
-                        text.append(" *", style="yellow")
-                    else:
-                        text.append(" .", style="dim")
-                text.append(" ")
-            text.append("\n")
-        return text
-
-    def _render_units(self, gs: dict[str, Any]) -> RenderableType:
-        t = Table(show_header=True, header_style="bold", expand=False, title="Units")
-        t.add_column("ID")
-        t.add_column("Team")
-        t.add_column("Class")
-        t.add_column("Pos")
-        t.add_column("HP")
-        t.add_column("Status")
-        for u in gs.get("units", []):
-            pos = u.get("pos") or {}
-            team = u.get("owner", "")
-            alive = u.get("alive", u.get("hp", 0) > 0)
-            if alive:
-                team_style = "cyan" if team == "blue" else "red"
-                status_text = u.get("status", "")
-                row_style = None
-            else:
-                # Dead unit: light gray across the row, status replaced
-                # with 'dead'. HP shown as 0/<max> for clarity.
-                team_style = "bright_black"
-                status_text = "dead"
-                row_style = "bright_black"
-            t.add_row(
-                u.get("id", ""),
-                Text(team, style=team_style),
-                u.get("class", ""),
-                f"({pos.get('x', '?')},{pos.get('y', '?')})",
-                f"{u.get('hp', 0)}/{u.get('hp_max', '?')}",
-                status_text,
-                style=row_style,
-            )
-        return t
-
-    async def tick(self) -> None:
-        import time
-
-        now = time.time()
-        if now - self._last_poll >= POLL_INTERVAL_S:
-            await self._refresh_state()
+    # ---- input ----
 
     async def handle_key(self, key: str) -> Screen | None:
-        # All keys route through the coach handler while in input mode
-        # (so typing 'q' in a message doesn't quit, typing 'e' doesn't
-        # end_turn, etc.).
-        if self._input_mode == "coach":
-            return await self._handle_coach_key(key)
+        if self._modal is not None:
+            close = await self._modal.handle_key(key)
+            if close:
+                self._modal = None
+            return None
+
+        # When the Coach panel is focused, the buffer captures everything
+        # so users can type 'q' / 'tab' / etc. into a message. The two
+        # exits are Esc (clear+stay) and a blank-buffer Tab cycle handled
+        # below by checking buffer state.
+        coach_focused = self._panels[self._focus_idx] is self.coach_panel
+        if coach_focused and key not in ("\t",):
+            return await self.coach_panel.handle_key(key)
+        # Tab from the coach panel only exits if the buffer is empty.
+        # Otherwise the user might cycle away mid-message.
+        if coach_focused and key == "\t" and self.coach_panel.buffer:
+            return None
 
         if key == "q":
             self.app.exit()
             return None
-        if key == "e":
+        if key == "\t":
+            self._focus_next(1)
+            return None
+        return await self._panels[self._focus_idx].handle_key(key)
+
+    def _focus_next(self, step: int) -> None:
+        n = len(self._panels)
+        if n == 0:
+            return
+        i = self._focus_idx
+        for _ in range(n):
+            i = (i + step) % n
+            if self._panels[i].can_focus():
+                self._focus_idx = i
+                return
+
+    # ---- public API used by panels ----
+
+    def open_unit_card(self, unit: dict[str, Any]) -> None:
+        spec = (
+            (self.app.state.scenario_description or {}).get("unit_classes") or {}
+        ).get(unit.get("class"))
+        self._modal = UnitCard(unit=unit, class_spec=spec)
+
+    async def run_action(self, action: str) -> Screen | None:
+        if action == "end_turn":
             return await self._call("end_turn")
-        if key == "x":
+        if action == "concede":
             return await self._call("concede")
-        if key == "c":
-            self._input_mode = "coach"
-            self._coach_buffer = ""
-            return None
-        # Scroll the reasoning panel. vim-style: k = older, j = newer,
-        # 0 jumps back to the bottom (latest). Also accept arrow keys.
-        if key in ("k", "up"):
-            self._reasoning_offset += 1
-            return None
-        if key in ("j", "down"):
-            self._reasoning_offset = max(0, self._reasoning_offset - 1)
-            return None
-        if key == "0":
-            self._reasoning_offset = 0
+        if action == "quit":
+            self.app.exit()
             return None
         return None
 
-    async def _handle_coach_key(self, key: str) -> Screen | None:
-        """Keys while the coach-input prompt is active.
-
-        Esc cancels, Enter sends. Any printable single char extends
-        the buffer; Backspace deletes the tail. Every other key token
-        (arrow keys, etc.) is ignored inside the input.
-        """
-        if key == "esc":
-            self._input_mode = "normal"
-            self._coach_buffer = ""
-            return None
-        if key == "enter":
-            text = self._coach_buffer.strip()
-            self._input_mode = "normal"
-            self._coach_buffer = ""
-            if not text:
-                return None
-            await self._send_coach_message(text)
-            return None
-        if key == "backspace":
-            self._coach_buffer = self._coach_buffer[:-1]
-            return None
-        # Only accept ordinary printable characters — avoid eating
-        # multi-character tokens like "up" / "down" that aren't real
-        # single keystrokes.
-        if len(key) == 1 and key.isprintable():
-            self._coach_buffer += key
-        return None
-
-    async def _send_coach_message(self, text: str) -> None:
-        """Send a coach message to THIS player's own agent."""
-        gs = self._state or {}
+    async def send_coach_message(self, text: str) -> None:
+        gs = self.state or {}
         my_team = gs.get("you")
         if not my_team or self.app.client is None:
             return
@@ -507,14 +649,20 @@ class GameScreen(Screen):
             self.app.state.error_message = f"send_to_agent failed: {e}"
             return
         if r.get("ok"):
-            self._coach_sent.append(text)
             self.app.state.error_message = ""
         else:
             self.app.state.error_message = r.get("error", {}).get(
                 "message", "send_to_agent rejected"
             )
 
-    # ---- actions ----
+    # ---- server interactions ----
+
+    async def tick(self) -> None:
+        import time
+
+        now = time.time()
+        if now - self._last_poll >= POLL_INTERVAL_S:
+            await self._refresh_state()
 
     async def _refresh_state(self) -> Screen | None:
         import time
@@ -533,17 +681,12 @@ class GameScreen(Screen):
             )
             return None
         self.app.state.error_message = ""
-        self._state = r.get("result", {})
-        self.app.state.last_game_state = self._state
+        self.state = r.get("result", {})
+        self.app.state.last_game_state = self.state
 
-        # Agent-driven play: on our turn, kick off agent.play_turn if
-        # none is already running. Async-fire-and-forget — the agent
-        # drives tool calls directly; subsequent ticks will observe the
-        # resulting state.
         await self._maybe_trigger_agent()
 
-        # Auto-transition on game over.
-        if self._state.get("status") == "game_over":
+        if self.state.get("status") == "game_over":
             from clash_of_odin.client.tui.screens.post_match import PostMatchScreen
 
             next_screen = PostMatchScreen(self.app)
@@ -552,33 +695,24 @@ class GameScreen(Screen):
         return None
 
     async def _maybe_trigger_agent(self) -> None:
-        """Launch agent.play_turn() if it's our turn and none is running."""
         if self.app.state.agent is None:
             return
-        if self.app.state.agent_task is not None and not self.app.state.agent_task.done():
+        if (
+            self.app.state.agent_task is not None
+            and not self.app.state.agent_task.done()
+        ):
             return
-        gs = self._state or {}
+        gs = self.state or {}
         if gs.get("status") == "game_over":
             return
         my_team = gs.get("you")
         active = gs.get("active_player")
-        # Don't spam every tick — but log the first time a new (my_team,
-        # active) pair fails to match so we can see whether it's a
-        # missing 'you' key, a missing 'team', or an active_player
-        # mismatch.
-        key = (my_team, active, gs.get("status"))
-        if getattr(self, "_last_guard_log_key", None) != key:
-            self._last_guard_log_key = key  # type: ignore[attr-defined]
-            log.info(
-                "agent guard: my_team=%r active=%r status=%r keys=%s",
-                my_team,
-                active,
-                gs.get("status"),
-                sorted(list(gs.keys())),
-            )
         if not my_team or active != my_team:
             return
-        log.info("triggering agent.play_turn for team=%s turn=%s", my_team, gs.get("turn"))
+        log.info(
+            "triggering agent.play_turn for team=%s turn=%s",
+            my_team, gs.get("turn"),
+        )
 
         from clash_of_odin.server.engine.state import Team
 
@@ -596,17 +730,12 @@ class GameScreen(Screen):
             )
 
             try:
-                log.info("agent.play_turn: starting")
                 await self.app.state.agent.play_turn(viewer, max_turns=max_turns)
-                log.info("agent.play_turn: finished")
             except asyncio.CancelledError:
-                log.info("agent.play_turn: cancelled")
+                return
             except ProviderError as e:
                 log.warning("agent.play_turn provider error: %s", e)
                 if e.is_terminal:
-                    # Auth failure / out of credit / model-gone: we can't
-                    # continue playing. Concede so the opponent gets a
-                    # clean win + we leave the room naturally.
                     self.app.state.error_message = (
                         f"{e.reason.value}: {e} — conceding match"
                     )
@@ -615,10 +744,6 @@ class GameScreen(Screen):
                     except Exception:
                         log.exception("concede-after-provider-error raised")
                 elif e.reason == ProviderErrorReason.RATE_LIMIT:
-                    # Caller will see the banner; the SDK+transport
-                    # already retried internally if configured. Do
-                    # nothing more here — next tick will try again
-                    # if it's still our turn.
                     self.app.state.error_message = (
                         "rate-limited — retrying on next poll"
                     )
