@@ -94,6 +94,35 @@ def test_trump_death_loses_the_match_for_blue():
     assert r.get("reason") == "vip_lost"
 
 
+def test_plugin_description_surfaces_through_describe_scenario():
+    """The opaque check_fn name used to be all that room-preview /
+    agent system-prompt saw for plugin rules. Now the plugin
+    attaches a `.description` attribute to the function and the
+    server's describe_scenario resolver reads it into the bundle."""
+    from silicon_pantheon.server.engine.scenarios import (
+        resolve_plugin_description,
+    )
+
+    desc = resolve_plugin_description(
+        "13_hormuz", "rules", "enriched_uranium_strike_check"
+    )
+    assert desc is not None
+    assert "uranium" in desc.lower()
+    assert "khamenei" in desc.lower()
+
+    # Unknown function → None; caller falls back to the function name.
+    assert (
+        resolve_plugin_description("13_hormuz", "rules", "not_a_real_fn")
+        is None
+    )
+
+    # Unknown scenario name → None (no crash on missing plugin file).
+    assert (
+        resolve_plugin_description("does_not_exist", "rules", "anything")
+        is None
+    )
+
+
 def test_netanyahu_death_loses_the_match_for_blue():
     s = load_scenario("13_hormuz")
     _kill(s, "u_b_netanyahu_1")

@@ -83,6 +83,21 @@ enriched_uranium_strike_check.__doc__ = (
 ).replace("%s", f"({_URANIUM_BUNKER_POS.x}, {_URANIUM_BUNKER_POS.y})")
 
 
+# Human-readable description surfaced in the room preview + the
+# system prompt passed to agents. Server-side `describe_scenario`
+# looks for this attribute (falling back to the docstring's first
+# line) so the player/agent never has to decode the function name.
+enriched_uranium_strike_check.description = (
+    "Blue (US+Israel) wins only by delivering BOTH halves of the "
+    f"strike package within {10} turns: "
+    f"reach the enriched-uranium bunker at "
+    f"({_URANIUM_BUNKER_POS.x}, {_URANIUM_BUNKER_POS.y}) AND "
+    "kill Khamenei. Either objective alone is not enough. Red "
+    "(Iran) wins if the ten-turn budget expires with the compound "
+    "goal unmet, or if either US/Israeli leader dies."
+)
+
+
 def sea_mine_effect(state, unit, tile, hook: str, **_):
     """Terrain effect for sea_mine tiles.
 

@@ -705,6 +705,14 @@ def _describe_win_condition(
             f"{wc.get('axis', '?')}={wc.get('value', '?')} with any unit."
         )
     if t == "plugin":
+        # Scenarios can attach a description to their check_fn (an
+        # explicit `.description` attribute or its docstring's first
+        # line). Server-side `describe_scenario` resolves that into
+        # the `description` field on this dict, so the client just
+        # reads it straight — no plugin imports in the TUI process.
+        desc = wc.get("description")
+        if desc:
+            return str(desc)
         return f"Custom plugin rule: {wc.get('check_fn', '?')}."
     return t or "(unknown rule)"
 

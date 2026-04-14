@@ -200,6 +200,54 @@ def _validate_art_frame(
             )
 
 
+def resolve_plugin_description(
+    scenario_name: str, module: str, check_fn: str
+) -> str | None:
+    """Return the human-readable description a plugin check_fn declares.
+
+    Resolution order:
+      1. an explicit `description` attribute on the function object
+         (the recommended form — explicit, operator-maintained)
+      2. the function's docstring's first non-blank line (Pythonic
+         fallback, keeps short rules readable without a second source
+         of truth)
+
+    Returns None if the plugin can't be loaded, the function isn't
+    present, or neither hook produced a description. Caller should
+    fall back to the function name in that case.
+
+    Uses the same `_load_plugin` path the scenario loader uses at
+    match-start, so the description you see in the room preview is
+    coming from the exact code that will judge the match."""
+    if not _is_safe_scenario_name(scenario_name):
+        return None
+    try:
+        plugin_path = _games_root() / scenario_name / f"{module}.py"
+    except FileNotFoundError:
+        return None
+    if not plugin_path.is_file():
+        return None
+    try:
+        ns = _load_plugin(plugin_path, scenario_name)
+    except Exception:
+        return None
+    fn = ns.get(check_fn)
+    if fn is None:
+        return None
+    explicit = getattr(fn, "description", None)
+    if isinstance(explicit, str) and explicit.strip():
+        return explicit.strip()
+    doc = (getattr(fn, "__doc__", "") or "").strip()
+    if doc:
+        # First non-blank line — keeps the room UI readable even if
+        # the plugin's docstring is long.
+        for line in doc.splitlines():
+            line = line.strip()
+            if line:
+                return line
+    return None
+
+
 def _load_plugin(path: Path, scenario_name: str) -> dict:
     """Load a scenario's rules.py as an isolated module.
 

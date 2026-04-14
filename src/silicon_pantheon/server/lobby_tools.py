@@ -113,6 +113,46 @@ def _serialize_room_preview(room: Room) -> dict[str, Any]:
     return summary
 
 
+def _enrich_win_conditions(
+    win_conditions: list[dict], scenario_name: str
+) -> list[dict]:
+    """Attach a human description to each plugin win-rule.
+
+    For `type: plugin` entries, resolve the function's
+    scenario-supplied description (an explicit `.description`
+    attribute on the function, or the first line of its docstring
+    as fallback) and inject it as a `description` field on the
+    returned dict. Built-in rule types (protect_unit, reach_tile,
+    …) already render meaningfully from their type + kwargs alone,
+    so we leave them untouched.
+
+    Done server-side so the client never needs to import scenario
+    plugin code. If the YAML already supplies a `description`
+    explicitly, respect it and don't overwrite.
+    """
+    from silicon_pantheon.server.engine.scenarios import (
+        resolve_plugin_description,
+    )
+
+    out: list[dict] = []
+    for wc in win_conditions:
+        if not isinstance(wc, dict):
+            out.append(wc)
+            continue
+        enriched = dict(wc)
+        if enriched.get("type") == "plugin" and "description" not in enriched:
+            module = enriched.get("module", "rules")
+            check_fn = enriched.get("check_fn", "")
+            if module and check_fn:
+                desc = resolve_plugin_description(
+                    scenario_name, str(module), str(check_fn)
+                )
+                if desc:
+                    enriched["description"] = desc
+        out.append(enriched)
+    return out
+
+
 _BUILTIN_DESCRIPTIONS = {
     "knight": "Armored melee fighter. High HP and DEF, slow, short range.",
     "archer": "Ranged attacker. Weaker in close combat but hits from 2–3 tiles.",
@@ -284,7 +324,9 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
             "rules": cfg.get("rules", {}),
             "unit_classes": unit_classes,
             "terrain_types": terrain_types,
-            "win_conditions": cfg.get("win_conditions") or [],
+            "win_conditions": _enrich_win_conditions(
+                cfg.get("win_conditions") or [], name
+            ),
             "narrative": cfg.get("narrative") or {},
         })
 
