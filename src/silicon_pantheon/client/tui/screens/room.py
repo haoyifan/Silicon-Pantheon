@@ -125,7 +125,11 @@ class Dropdown:
         )
 
     async def handle_key(self, key: str) -> bool:
-        if key == "esc":
+        # esc / tab / q all close without confirming — Tab in
+        # particular because users reach for it to cycle panels
+        # when they don't realize a modal is open; swallowing it
+        # silently looks like the TUI is frozen.
+        if key in ("esc", "\t", "q"):
             return True
         if key in ("up", "k"):
             self.selected_idx = (self.selected_idx - 1) % len(self.options)
@@ -179,13 +183,27 @@ class ConfirmModal:
         )
 
     async def handle_key(self, key: str) -> bool:
-        """True = close modal. on_confirm already fired if chosen."""
-        if key == "esc":
+        """True = close modal. on_confirm already fired if chosen.
+
+        Accepts every reasonable hotkey a user might try so the
+        modal never looks frozen:
+          - y / Y / enter  → confirm yes
+          - n / N / esc    → cancel (close without firing on_confirm)
+          - ← / → / h / l / j / k → move selection between Yes/No
+          - \\t (Tab) / q  → cancel, same as esc. Tab specifically was
+            the recurring footgun — users hit Tab to cycle panels,
+            the modal ate the key with no visual feedback, and the
+            TUI appeared stuck.
+        """
+        if key in ("esc", "\t", "q", "n", "N"):
             return True
-        if key in ("left", "h"):
+        if key in ("y", "Y"):
+            await self.on_confirm(True)
+            return True
+        if key in ("left", "h", "j"):
             self.selected_yes = True
             return False
-        if key in ("right", "l"):
+        if key in ("right", "l", "k"):
             self.selected_yes = False
             return False
         if key == "enter":
@@ -355,7 +373,9 @@ class UnitCard:
         self._opened_at = None
 
     async def handle_key(self, key: str) -> bool:
-        return key in ("esc", "enter", "q")
+        # Tab closes the card too — otherwise users pressing Tab to
+        # leave the unit card feel stuck.
+        return key in ("esc", "enter", "q", "\t")
 
 
 # ---- panel: Player ----

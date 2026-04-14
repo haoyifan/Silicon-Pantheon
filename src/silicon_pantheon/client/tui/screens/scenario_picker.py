@@ -408,7 +408,7 @@ class ScenarioPicker:
         """Return True when the picker should close."""
         # Unit card consumes its own Esc/Enter first; snap the map
         # cursor to the unit that was being inspected.
-        if self.unit_card is not None and key in ("esc", "enter", "q"):
+        if self.unit_card is not None and key in ("esc", "enter", "q", "\t"):
             pos = self.unit_card.unit.get("pos") or {}
             self.cursor = (int(pos.get("x", self.cursor[0])),
                            int(pos.get("y", self.cursor[1])))
