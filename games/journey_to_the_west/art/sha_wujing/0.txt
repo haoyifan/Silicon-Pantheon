@@ -1,12 +1,12 @@
         ____
        /    \
-      | o  o |       stoic monk
+      | o  o |
       |   -  |
        \____/
       __||||_
-     /   |   \       crescent-moon staff
+     /   |   \
     | _  |  _ |
-    |( ) | ( )|      crescent
+    |( ) | ( )|
     | -  |  - |
         |
         |

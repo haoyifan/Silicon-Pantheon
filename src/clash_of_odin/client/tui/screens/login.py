@@ -54,7 +54,7 @@ class LoginScreen(Screen):
 
     def render(self) -> RenderableType:
         lines: list[Text] = []
-        title = Text("Clash of Odin — login", style="bold cyan")
+        title = Text("Clash of Odin — login", style="bold yellow")
         lines.append(title)
         lines.append(Text(""))
         for i, f in enumerate(self._fields):
@@ -85,7 +85,7 @@ class LoginScreen(Screen):
         lines.append(keys)
 
         body = Group(*lines)
-        return Align.center(Panel(body, title="login", border_style="cyan"), vertical="middle")
+        return Align.center(Panel(body, title="login", border_style="yellow"), vertical="middle")
 
     async def handle_key(self, key: str) -> Screen | None:
         if self._connecting:

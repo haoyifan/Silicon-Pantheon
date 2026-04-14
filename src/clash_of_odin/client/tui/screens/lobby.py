@@ -33,7 +33,7 @@ class LobbyScreen(Screen):
     def render(self) -> RenderableType:
         rooms = self.app.state.last_rooms
 
-        header = Text(f"Lobby — {self.app.state.display_name} ({self.app.state.kind})", style="bold cyan")
+        header = Text(f"Lobby — {self.app.state.display_name} ({self.app.state.kind})", style="bold yellow")
         subtitle = Text(f"{len(rooms)} room(s) open", style="dim")
 
         table = Table(expand=True, show_lines=False, header_style="bold")

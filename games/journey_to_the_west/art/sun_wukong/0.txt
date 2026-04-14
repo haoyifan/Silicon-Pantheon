@@ -1,6 +1,6 @@
        /\___/\
-      / V V V \      crown of thorns
-     |  o   o  |     monkey eyes
+      / V V V \
+     |  o   o  |
      |    >    |
       \__\_/__/
        _/   \_
@@ -8,6 +8,6 @@
      | |  |  | |
      | |  |  | |____
      | |  |  |       \
-       =  |  =        \--- Ruyi Jingu Bang
+       =  |  =        \---
         \_|_/        /
                 ____/

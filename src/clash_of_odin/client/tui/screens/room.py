@@ -81,7 +81,7 @@ class Dropdown:
         lines: list[Text] = []
         for i, opt in enumerate(self.options):
             marker = "➤ " if i == self.selected_idx else "  "
-            style = "bold cyan" if i == self.selected_idx else "white"
+            style = "bold yellow" if i == self.selected_idx else "white"
             lines.append(Text(f"{marker}{opt}", style=style))
         list_panel = RichPanel(
             Group(*lines), border_style="dim", padding=(0, 1),
@@ -108,7 +108,7 @@ class Dropdown:
             RichPanel(
                 Group(*body_parts),
                 title=self.title,
-                border_style="cyan",
+                border_style="yellow",
                 padding=(1, 3),
             ),
             vertical="middle",
@@ -142,7 +142,7 @@ class ConfirmModal:
     def render(self) -> RenderableType:
         yes = Text(
             "[Yes]",
-            style="bold red" if self.selected_yes else "dim",
+            style="bold magenta" if self.selected_yes else "dim",
         )
         no = Text(
             "[No]",
@@ -728,7 +728,7 @@ class ActionsPanel(Panel):
                 if not btn.enabled:
                     style = "dim strike" if is_focused else "dim"
                 elif is_focused:
-                    style = "bold cyan"
+                    style = "bold yellow"
                 else:
                     style = "white"
                 lines.append(Text(f"{marker}{label}", style=style))
@@ -1030,7 +1030,9 @@ class RoomScreen(Screen):
         countdown = rs.get("autostart_in_s")
 
         header_line = Text()
-        header_line.append(f"Room {room_id[:10]}  ", style="bold cyan")
+        # Room id + scenario header are neutral chrome — use yellow so
+        # they don't read as "this room belongs to the blue team".
+        header_line.append(f"Room {room_id[:10]}  ", style="bold white")
         header_line.append(scenario, style="yellow")
         header_line.append(f"   fog={rs.get('fog_of_war', '?')}", style="dim")
         header_line.append(f"   teams={rs.get('team_assignment', '?')}", style="dim")

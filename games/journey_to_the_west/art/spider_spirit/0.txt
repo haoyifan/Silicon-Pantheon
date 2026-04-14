@@ -1,14 +1,14 @@
                 .
                 .
               ,---,
-             / o o \           eight eyes (some)
+             / o o \
              |  v  |
               \___/
             ___|||___
            /  | | |  \
-          /  /  |  \  \         legs splayed
+          /  /  |  \  \
          /  /   |   \  \
         |  /    |    \  |
          \/     |     \/
                 |
-            ===WEB===            spinning web
+              =====

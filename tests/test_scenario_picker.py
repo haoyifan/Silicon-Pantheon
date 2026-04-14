@@ -54,6 +54,26 @@ def _sample_payload(name: str, w: int = 4, h: int = 4) -> dict:
     }
 
 
+def test_picker_uses_title_cased_slug_before_fetch_completes():
+    """Regression: list used to render `journey_to_the_west` and
+    flip to `Journey to the West` only after the user moved focus
+    onto it. The slug fallback now title-cases on first paint."""
+    client = _FakeClient({})  # nothing cached
+    picker = ScenarioPicker(
+        scenarios=["journey_to_the_west", "01_tiny_skirmish"],
+        current="journey_to_the_west",
+        client=client,
+        on_confirm=lambda v: None,  # type: ignore[arg-type]
+    )
+    # No prefetch — render the picker straight away. Wide console
+    # so the right-side list column has room for the longer title.
+    console = Console(record=True, width=140)
+    console.print(picker.render())
+    out = console.export_text()
+    assert "Journey To The West" in out
+    assert "journey_to_the_west" not in out
+
+
 def test_picker_renders_preview_of_current_scenario():
     client = _FakeClient({
         "alpha": _sample_payload("alpha"),

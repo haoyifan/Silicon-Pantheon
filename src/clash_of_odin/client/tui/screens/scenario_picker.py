@@ -26,6 +26,14 @@ from rich.panel import Panel as RichPanel
 from rich.text import Text
 
 from clash_of_odin.client.tui.panels import border_style
+
+
+def _slug_to_title(slug: str) -> str:
+    """Cheap human-readable name for a scenario directory slug —
+    `journey_to_the_west` → `Journey To The West`. Used as a
+    placeholder while describe_scenario is in flight."""
+    parts = slug.replace("-", "_").split("_")
+    return " ".join(p.capitalize() if p else "_" for p in parts if p)
 from clash_of_odin.client.tui.screens.room import (
     UnitCard,
     _describe_win_condition,
@@ -68,8 +76,21 @@ class ScenarioPicker:
 
     async def prefetch_current(self) -> None:
         """Called once by the owning screen when the picker is first
-        opened — ensures the displayed scenario has data available."""
+        opened — fetches descriptions for ALL scenarios in parallel
+        so the right-side list can show display_name (e.g. 'Journey
+        to the West') from the very first frame instead of slugs
+        (e.g. 'journey_to_the_west') that flip to display_name only
+        after the user moves the highlight onto them.
+
+        The current scenario is awaited so the left-side preview is
+        populated immediately; the rest run in the background."""
         await self._ensure_loaded(self.scenarios[self.selected_idx])
+        import asyncio as _asyncio
+
+        for n in self.scenarios:
+            if n in self._cache or n in self._in_flight:
+                continue
+            _asyncio.create_task(self._ensure_loaded(n))
 
     async def _ensure_loaded(self, name: str) -> None:
         if name in self._cache or name in self._in_flight or self.client is None:
@@ -101,7 +122,7 @@ class ScenarioPicker:
         )
         root["hdr"].update(
             Text("Change Scenario — Tab switch panel · Enter select · Esc cancel",
-                 style="bold cyan")
+                 style="bold yellow")
         )
         body = Layout()
         body.split_row(
@@ -143,10 +164,14 @@ class ScenarioPicker:
         for i, name in enumerate(self.scenarios):
             is_selected = i == self.selected_idx
             marker = "●" if is_selected else "○"
-            # Show the scenario's display name if we've loaded it.
+            # Prefer the loaded display name. While the fetch is
+            # in flight, fall back to a title-cased slug so the list
+            # reads "Journey To The West" instead of
+            # "journey_to_the_west" before the network roundtrip
+            # completes — no jarring flip when fetches finish.
             desc = self._cache.get(name)
-            display = desc.get("name") if desc else name
-            style = "bold cyan" if is_selected else "white"
+            display = desc.get("name") if desc else _slug_to_title(name)
+            style = "bold yellow" if is_selected else "white"
             lines.append(Text(f"  {marker} {display}", style=style))
         return RichPanel(
             Group(*lines),
@@ -268,11 +293,11 @@ class ScenarioPicker:
         if desc is None:
             return RichPanel(
                 Text("(loading…)", style="dim italic"),
-                title=name,
+                title=_slug_to_title(name),
                 border_style=border_style(focused),
                 padding=(0, 1),
             )
-        title = desc.get("name", name)
+        title = desc.get("name") or _slug_to_title(name)
         story = (desc.get("description") or "").strip()
         wcs = desc.get("win_conditions") or []
         armies = desc.get("armies") or {}

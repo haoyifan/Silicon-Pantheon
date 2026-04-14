@@ -95,7 +95,7 @@ class ProviderAuthScreen(Screen):
         p = get_provider(self._step.provider_id or "")
         provider_label = p.display_name if p else (self._step.provider_id or "?")
         body = Group(
-            Text("Pick LLM provider & model", style="bold cyan"),
+            Text("Pick LLM provider & model", style="bold yellow"),
             Text(""),
             Text(
                 f"Using saved defaults: {provider_label} / {self._step.model_id}",
@@ -105,12 +105,12 @@ class ProviderAuthScreen(Screen):
             Text("[Enter] continue   [c] change   [q] quit", style="dim"),
         )
         return Align.center(
-            Panel(body, title="provider", border_style="cyan", padding=(1, 3)),
+            Panel(body, title="provider", border_style="yellow", padding=(1, 3)),
             vertical="middle",
         )
 
     def _render_pick_provider(self) -> RenderableType:
-        lines: list[Text] = [Text("Pick LLM provider", style="bold cyan"), Text("")]
+        lines: list[Text] = [Text("Pick LLM provider", style="bold yellow"), Text("")]
         for i, p in enumerate(PROVIDERS):
             marker = "➤ " if i == self._step.focused else "  "
             style = "bold cyan" if i == self._step.focused else "white"
@@ -123,7 +123,7 @@ class ProviderAuthScreen(Screen):
         if self.app.state.error_message:
             lines.append(Text(self.app.state.error_message, style="red"))
         return Align.center(
-            Panel(Group(*lines), title="provider", border_style="cyan", padding=(1, 3)),
+            Panel(Group(*lines), title="provider", border_style="yellow", padding=(1, 3)),
             vertical="middle",
         )
 
@@ -142,7 +142,7 @@ class ProviderAuthScreen(Screen):
         lines: list[Text] = [
             Text(
                 f"{p.display_name if p else '?'} — auth",
-                style="bold cyan",
+                style="bold yellow",
             ),
             Text(""),
         ]
@@ -180,7 +180,7 @@ class ProviderAuthScreen(Screen):
         if self.app.state.error_message:
             lines.append(Text(self.app.state.error_message, style="red"))
         return Align.center(
-            Panel(Group(*lines), title="auth", border_style="cyan", padding=(1, 3)),
+            Panel(Group(*lines), title="auth", border_style="yellow", padding=(1, 3)),
             vertical="middle",
         )
 
@@ -189,7 +189,7 @@ class ProviderAuthScreen(Screen):
         if p is None:
             return Text("(missing provider)", style="red")
         lines: list[Text] = [
-            Text(f"{p.display_name} — pick model", style="bold cyan"),
+            Text(f"{p.display_name} — pick model", style="bold yellow"),
             Text(""),
         ]
         for i, m in enumerate(p.models):
@@ -211,7 +211,7 @@ class ProviderAuthScreen(Screen):
         if self.app.state.error_message:
             lines.append(Text(self.app.state.error_message, style="red"))
         return Align.center(
-            Panel(Group(*lines), title="model", border_style="cyan", padding=(1, 3)),
+            Panel(Group(*lines), title="model", border_style="yellow", padding=(1, 3)),
             vertical="middle",
         )
 
