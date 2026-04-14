@@ -210,11 +210,12 @@ def test_reasoning_panel_scroll_is_focus_gated():
         [(f"00:00:0{i}", "blue", f"thought {i}") for i in range(5)]
     )
     # Map is focused; up arrow moves the map cursor, not reasoning offset.
-    before = screen.reasoning_panel.offset
+    before = screen.reasoning_panel.line_offset
     asyncio.run(screen.handle_key("up"))
-    assert screen.reasoning_panel.offset == before
+    assert screen.reasoning_panel.line_offset == before
     # Tab Map→Player→Reasoning.
     for _ in range(2):
         asyncio.run(screen.handle_key("\t"))
     asyncio.run(screen.handle_key("up"))
-    assert screen.reasoning_panel.offset == before + 1
+    # k/j now move by 3 logical lines (not 1 entry).
+    assert screen.reasoning_panel.line_offset == before + 3

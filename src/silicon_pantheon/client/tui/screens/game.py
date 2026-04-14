@@ -363,53 +363,77 @@ def _terrain_cell(ttype: str) -> tuple[str, str]:
 
 
 class ReasoningPanel(Panel):
+    """Scrollable thought log.
+
+    Scroll unit is a logical line, not an entry: a single reasoning
+    block from a reasoning model can be thousands of chars / dozens
+    of lines, and entry-based scrolling hid everything past the
+    panel's visible height with no way to reach it. Now k/j move
+    by 3 lines, K/J by a page (12 lines), and 0 jumps to the newest
+    tail. Full raw text is also mirrored into the client log at
+    silicon.agent.thoughts for out-of-band review.
+    """
+
     title = "Agent Reasoning"
 
     def __init__(self, screen: "GameScreen") -> None:
         self.screen = screen
-        self.offset = 0
-        self._last_count = 0
+        # Line offset from the END of the text. 0 = pinned to newest.
+        self.line_offset = 0
+        self._last_total_lines = 0
 
     def key_hints(self) -> str:
-        return "↑/↓ (or k/j) scroll   0 latest"
+        return "k up   j down   0 latest"
+
+    def _build_all_lines(self) -> list[tuple[str, str]]:
+        """Flatten thoughts into (style, text) line tuples, oldest
+        first. Each thought contributes a team-colored timestamp
+        header line followed by its content lines."""
+        out: list[tuple[str, str]] = []
+        for ts, team, t in self.screen.app.state.thoughts:
+            team_style = "cyan" if team == "blue" else "red"
+            out.append((team_style + " bold", f"[{ts}] ({team})"))
+            for raw_line in t.splitlines() or [""]:
+                out.append(("white", raw_line))
+            out.append(("", ""))  # blank separator
+        return out
 
     def render(self, focused: bool) -> RenderableType:
-        thoughts = list(self.screen.app.state.thoughts)
-        total = len(thoughts)
-        # Pin user's view if they've scrolled back and new thoughts arrive.
-        new_count = total - self._last_count
-        if new_count > 0 and self.offset > 0:
-            self.offset += new_count
-        self._last_count = total
+        lines = self._build_all_lines()
+        total = len(lines)
+        # Pin user's view: if they've scrolled up and new lines land
+        # at the bottom, keep their eyes on the same content rather
+        # than yanking them to the newest.
+        new_lines = total - self._last_total_lines
+        if new_lines > 0 and self.line_offset > 0:
+            self.line_offset += new_lines
+        self._last_total_lines = total
 
         if total == 0:
-            body = Text("(no reasoning yet)", style="dim italic")
-            title = self.title
+            return RichPanel(
+                Text("(no reasoning yet)", style="dim italic"),
+                title=self.title,
+                border_style=border_style(focused),
+                padding=(0, 1),
+            )
+
+        self.line_offset = max(0, min(self.line_offset, max(0, total - 1)))
+        # Render the slice ending at `end`; Rich crops whatever
+        # doesn't fit from the TOP. 400-line upper bound keeps the
+        # renderable cheap even after a long match.
+        end = total - self.line_offset
+        start = max(0, end - 400)
+        body = Text(no_wrap=False, overflow="fold")
+        for i in range(start, end):
+            style, txt = lines[i]
+            body.append(txt, style=style or None)
+            if i != end - 1:
+                body.append("\n")
+
+        if self.line_offset == 0:
+            title = f"{self.title} — tail (lines {end}/{total})"
         else:
-            self.offset = max(0, min(self.offset, total - 1))
-            # Render newest-first (top) so panel cropping chews on
-            # older thoughts at the bottom, not the tail of the
-            # freshest one the user actually cares about. Previously
-            # we printed chronologically (oldest first) and Rich's
-            # bottom-crop truncated the newest mid-sentence.
-            end = total - self.offset
-            window: list[tuple[str, str, str]] = [
-                thoughts[i]
-                for i in range(end - 1, max(-1, end - 7), -1)
-            ]
-            body = Text(no_wrap=False, overflow="fold")
-            for i, (ts, team, t) in enumerate(window):
-                team_style = "cyan" if team == "blue" else "red"
-                body.append(f"[{ts}] ", style=team_style)
-                body.append(t)
-                if i != len(window) - 1:
-                    body.append("\n")
-            if self.offset == 0:
-                title = f"{self.title} — latest {len(window)}/{total}"
-            else:
-                title = (
-                    f"{self.title} — scrolled {self.offset}/{total}"
-                )
+            title = f"{self.title} — scrolled (line {end}/{total})"
         return RichPanel(
             body,
             title=title,
@@ -418,14 +442,18 @@ class ReasoningPanel(Panel):
         )
 
     async def handle_key(self, key: str) -> Screen | None:
+        # k/j move by 3 lines at a time — enough to feel snappy
+        # without overshooting paragraph breaks. The reader
+        # lowercases everything so shift-variants aren't
+        # distinguishable here.
         if key in ("up", "k"):
-            self.offset += 1
+            self.line_offset += 3
             return None
         if key in ("down", "j"):
-            self.offset = max(0, self.offset - 1)
+            self.line_offset = max(0, self.line_offset - 3)
             return None
         if key == "0":
-            self.offset = 0
+            self.line_offset = 0
             return None
         return None
 
@@ -569,14 +597,27 @@ class GameScreen(Screen):
         from silicon_pantheon.client.agent_bridge import NetworkedAgent
 
         async def on_thought(text: str) -> None:
-            collapsed = " ".join(text.split())
-            if not collapsed:
+            # Preserve newlines: reasoning models emit paragraphs, and
+            # collapsing all whitespace to single spaces turned long
+            # chain-of-thought into one giant run-on that the panel
+            # was forced to fold into a wall of text. strip() just
+            # trims leading/trailing blank space per entry.
+            stripped = text.strip()
+            if not stripped:
                 return
             from datetime import datetime
 
             ts = datetime.now().strftime("%H:%M:%S")
             team = (app.state.last_game_state or {}).get("you") or "blue"
-            app.state.thoughts.append((ts, team, collapsed))
+            app.state.thoughts.append((ts, team, stripped))
+            # Mirror each thought to the client log so the full text
+            # is always recoverable, even if the TUI panel crops it.
+            # The file lives at ~/.silicon-pantheon/logs/client-*.log.
+            import logging as _logging
+
+            _logging.getLogger("silicon.agent.thoughts").info(
+                "[%s team=%s] %s", ts, team, stripped
+            )
 
         # `lessons_dir=None` disables both lesson injection into the
         # system prompt AND saving the post-match summary. Toggled via
