@@ -53,6 +53,7 @@ def _copy_stats(src: UnitStats) -> UnitStats:
         color=src.color,
         display_name=src.display_name,
         description=src.description,
+        art_frames=list(src.art_frames),
     )
 
 
@@ -145,7 +146,58 @@ def load_scenario(name: str) -> GameState:
         state._plugin_namespace = _load_plugin(plugin_path, name)
     else:
         state._plugin_namespace = {}
+    # ASCII-art portrait frames per unit class, auto-discovered from
+    # <scenario_dir>/art/<class_slug>/*.txt (sorted lexically). Each
+    # file is a single frame; multiple files animate. Files larger
+    # than the configured limits are rejected so a typo doesn't blow
+    # up rendering with a wall-of-text.
+    art_limits = cfg.get("art_limits") or {}
+    max_cols = int(art_limits.get("max_cols", DEFAULT_ART_MAX_COLS))
+    max_rows = int(art_limits.get("max_rows", DEFAULT_ART_MAX_ROWS))
+    art_root = scenario_dir / "art"
+    if art_root.is_dir():
+        # Walk every alive unit and try to fill in its art_frames from
+        # disk if its class has an art directory.
+        loaded: dict[str, list[str]] = {}
+        for class_slug_dir in sorted(art_root.iterdir()):
+            if not class_slug_dir.is_dir():
+                continue
+            frames: list[str] = []
+            for f in sorted(class_slug_dir.glob("*.txt")):
+                text = f.read_text(encoding="utf-8").rstrip("\n")
+                _validate_art_frame(text, str(f), max_cols, max_rows)
+                frames.append(text)
+            if frames:
+                loaded[class_slug_dir.name] = frames
+        if loaded:
+            for u in state.units.values():
+                if u.class_ in loaded and not u.stats.art_frames:
+                    u.stats.art_frames = list(loaded[u.class_])
+            state._art_frames_by_class = loaded
     return state
+
+
+# Default size caps. Generous so authors can do detailed pieces, but
+# not so generous a misplaced screenshot blows out the layout. Authors
+# can override at scenario level via art_limits.
+DEFAULT_ART_MAX_COLS = 80
+DEFAULT_ART_MAX_ROWS = 30
+
+
+def _validate_art_frame(
+    text: str, source: str, max_cols: int, max_rows: int
+) -> None:
+    rows = text.split("\n")
+    if len(rows) > max_rows:
+        raise ValueError(
+            f"ASCII art {source} has {len(rows)} rows, exceeds max_rows={max_rows}"
+        )
+    for i, row in enumerate(rows):
+        if len(row) > max_cols:
+            raise ValueError(
+                f"ASCII art {source} row {i + 1} is {len(row)} cols, "
+                f"exceeds max_cols={max_cols}"
+            )
 
 
 def _load_plugin(path: Path, scenario_name: str) -> dict:

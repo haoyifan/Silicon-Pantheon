@@ -23,9 +23,50 @@ Each scenario lives under `games/<name>/`:
 
 ```
 games/my_scenario/
-├── config.yaml      # required
-└── rules.py         # optional — plugin callables
+├── config.yaml          # required
+├── rules.py             # optional — plugin callables
+└── art/                 # optional — ASCII portraits per unit class
+    ├── tang_monk/
+    │   ├── 0.txt        # frame 0
+    │   └── 1.txt        # frame 1 (animation)
+    └── sun_wukong/
+        └── 0.txt        # single frame, no animation
 ```
+
+## ASCII portraits (optional)
+
+Drop `<scenario>/art/<class_slug>/*.txt` files. The loader
+auto-discovers them, sorts lexically, validates per-frame size, and
+attaches the frames to the unit class. The TUI unit-card modal
+renders the portrait above the stats; if a class has more than one
+frame, the card cycles through them at **one frame every 2 seconds**.
+
+The feature is fully optional — a scenario can ship art for some
+classes, all classes, or none.
+
+### Size limits
+
+By default each frame is capped at **80 columns × 30 rows**. Authors
+who want larger pieces can override at the scenario level:
+
+```yaml
+art_limits:
+  max_cols: 120
+  max_rows: 50
+```
+
+Files exceeding the cap make `load_scenario` raise — there's no
+silent truncation. Pick a size your players' terminals will fit.
+
+### Format
+
+Plain text. Each file is one frame. Trailing newlines are stripped.
+Use spaces for alignment (rows can be ragged — Rich handles uneven
+widths). Color is applied team-wide (cyan for blue, red for red); art
+itself is monochrome.
+
+A two-frame "head bob" or "weapon sway" is the cheapest convincing
+animation. See `games/journey_to_the_west/art/` for examples.
 
 ## `config.yaml` anatomy
 

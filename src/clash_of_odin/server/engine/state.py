@@ -129,6 +129,11 @@ class UnitStats:
     # drop this in per-class so players can tell scenario-specific
     # units apart without memorizing the YAML.
     description: str = ""
+    # Optional ASCII-art frames for the unit-card portrait. Each
+    # entry is a multi-line string. The TUI cycles through them at
+    # one frame per ART_FRAME_SECONDS to produce a small idle
+    # animation. Empty list = no portrait, the card just shows stats.
+    art_frames: list[str] = field(default_factory=list)
 
 
 @dataclass

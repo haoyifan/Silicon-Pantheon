@@ -111,4 +111,5 @@ def make_stats(cls: UnitClass) -> UnitStats:
         color=src.color,
         display_name=src.display_name,
         description=src.description,
+        art_frames=list(src.art_frames),
     )

@@ -231,6 +231,28 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         for cname, spec in (cfg.get("unit_classes") or {}).items():
             unit_classes[cname] = dict(spec or {})
 
+        # Discover ASCII art per class — same convention as
+        # load_scenario uses at runtime. Done here too so the room
+        # preview / scenario picker can show portraits before any
+        # match starts.
+        art_root = path.parent / "art"
+        if art_root.is_dir():
+            for class_slug_dir in sorted(art_root.iterdir()):
+                if not class_slug_dir.is_dir():
+                    continue
+                frames: list[str] = []
+                for f in sorted(class_slug_dir.glob("*.txt")):
+                    try:
+                        frames.append(
+                            f.read_text(encoding="utf-8").rstrip("\n")
+                        )
+                    except OSError:
+                        continue
+                if frames:
+                    unit_classes.setdefault(class_slug_dir.name, {})[
+                        "art_frames"
+                    ] = frames
+
         # Built-ins carry their baked-in effects so the client can show
         # what "forest" means without having to know engine internals.
         # Scenario overrides win — scenarios may redefine a built-in.

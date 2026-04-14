@@ -180,6 +180,9 @@ class ConfirmModal:
         return False
 
 
+ART_FRAME_SECONDS = 2.0
+
+
 @dataclass
 class UnitCard:
     """Read-only card showing a unit's description / stats / tags /
@@ -190,10 +193,18 @@ class UnitCard:
     state carries them) or the class_spec pulled from
     describe_scenario.unit_classes (room preview only has id+pos so
     stats must come from class_spec). Unit values take priority so
-    match-time mutations (HP, status) override the class baseline."""
+    match-time mutations (HP, status) override the class baseline.
+
+    If the scenario provides ASCII art frames for the class, the card
+    cycles through them at 1 frame per ART_FRAME_SECONDS using a
+    monotonic clock — re-renders compute the right frame on their
+    own, no separate animation tick required."""
 
     unit: dict[str, Any]
     class_spec: dict[str, Any] | None
+    # Set on the first render; subtracted on subsequent renders to
+    # turn elapsed time into a frame index.
+    _opened_at: float | None = None
 
     def _stat(self, key: str, default: str = "?") -> str:
         """Prefer the unit's live value, fall back to class_spec, then
@@ -212,9 +223,6 @@ class UnitCard:
         spec = self.class_spec or {}
         owner = u.get("owner", "?")
         team_color = "cyan" if owner == "blue" else "red"
-        # Prefer a human-readable name (spec.display_name or
-        # unit-level display_name override) over the slug class name
-        # or the raw u_b_xxx_1 id.
         display = (
             u.get("display_name")
             or spec.get("display_name")
@@ -224,6 +232,17 @@ class UnitCard:
         title = f"{display} ({owner})"
 
         rows: list[RenderableType] = []
+        # ASCII portrait first if the scenario shipped any frames.
+        frames = u.get("art_frames") or spec.get("art_frames") or []
+        if frames:
+            import time as _time
+
+            if self._opened_at is None:
+                self._opened_at = _time.monotonic()
+            elapsed = _time.monotonic() - self._opened_at
+            idx = int(elapsed / ART_FRAME_SECONDS) % len(frames)
+            rows.append(Text(frames[idx], style=team_color))
+            rows.append(Text(""))
         desc = spec.get("description") or u.get("description") or ""
         if desc:
             rows.append(Text(desc, style="italic"))
