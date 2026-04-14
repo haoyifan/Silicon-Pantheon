@@ -1,0 +1,435 @@
+schema_version: 1
+name: Battle of Five Armies
+description: |
+  Smaug is dead, killed by Bard's black arrow. Thorin Oakenshield
+  has reclaimed Erebor and the dragon-hoard within. Bard, leading
+  the homeless men of Laketown, comes to the mountain demanding a
+  share. Thranduil's wood-elves arrive with claims of their own.
+  As the three peoples are about to spill blood at the gate of
+  the Lonely Mountain, a goblin army with Wargs pours off the
+  northern slopes. The three would-be enemies suddenly become
+  three allies. Then the Eagles arrive. Then Beorn.
+
+board:
+  width: 18
+  height: 14
+  terrain:
+    # The Lonely Mountain dominates the north. Mountain (impassable
+    # to most) at y=0..1.
+    - {x: 0, y: 0, type: mountain}
+    - {x: 1, y: 0, type: mountain}
+    - {x: 2, y: 0, type: mountain}
+    - {x: 3, y: 0, type: mountain}
+    - {x: 4, y: 0, type: mountain}
+    - {x: 5, y: 0, type: mountain}
+    - {x: 6, y: 0, type: mountain}
+    - {x: 7, y: 0, type: mountain}
+    - {x: 8, y: 0, type: mountain}
+    - {x: 9, y: 0, type: mountain}
+    - {x: 10, y: 0, type: mountain}
+    - {x: 11, y: 0, type: mountain}
+    - {x: 12, y: 0, type: mountain}
+    - {x: 13, y: 0, type: mountain}
+    - {x: 14, y: 0, type: mountain}
+    - {x: 15, y: 0, type: mountain}
+    - {x: 16, y: 0, type: mountain}
+    - {x: 17, y: 0, type: mountain}
+    - {x: 0, y: 1, type: mountain}
+    - {x: 2, y: 1, type: mountain}
+    - {x: 3, y: 1, type: mountain}
+    - {x: 4, y: 1, type: mountain}
+    - {x: 5, y: 1, type: mountain}
+    - {x: 6, y: 1, type: mountain}
+    - {x: 7, y: 1, type: mountain}
+    - {x: 8, y: 1, type: mountain}
+    - {x: 10, y: 1, type: mountain}
+    - {x: 11, y: 1, type: mountain}
+    - {x: 12, y: 1, type: mountain}
+    - {x: 13, y: 1, type: mountain}
+    - {x: 14, y: 1, type: mountain}
+    - {x: 15, y: 1, type: mountain}
+    - {x: 16, y: 1, type: mountain}
+    - {x: 17, y: 1, type: mountain}
+    # Erebor's gate — fort tile in the south slope. Goblin gate
+    # opening at the northwest.
+    # Dale's ruins — forest-equivalent in the middle-south.
+    - {x: 5, y: 6, type: ruins}
+    - {x: 6, y: 6, type: ruins}
+    - {x: 7, y: 6, type: ruins}
+    - {x: 5, y: 7, type: ruins}
+    - {x: 6, y: 7, type: ruins}
+    - {x: 7, y: 7, type: ruins}
+    # Running River along the east edge.
+    - {x: 14, y: 5, type: river}
+    - {x: 14, y: 6, type: river}
+    - {x: 14, y: 7, type: river}
+    - {x: 14, y: 8, type: river}
+    - {x: 14, y: 9, type: river}
+    - {x: 14, y: 10, type: river}
+    - {x: 14, y: 11, type: river}
+    - {x: 14, y: 12, type: river}
+    - {x: 14, y: 13, type: river}
+  forts:
+    - {x: 9, y: 2, owner: blue}
+
+terrain_types:
+  mountain:
+    move_cost: 99
+    passable: false
+    defense_bonus: 3
+    glyph: "^"
+    color: bright_black
+    # Eagles can fly over mountains.
+    class_overrides:
+      eagle:
+        passable: true
+        move_cost: 1
+  ruins:
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "%"
+    color: yellow
+  river:
+    move_cost: 99
+    passable: false
+    glyph: "~"
+    color: blue
+
+unit_classes:
+  thorin:
+    display_name: Thorin Oakenshield
+    description: |
+      King under the Mountain. Has reclaimed Erebor. Will not yield
+      a single coin until the goblins force his hand. The novel
+      ends with his death — historical/literary outcome the
+      protect_unit rule reflects.
+    hp_max: 38
+    atk: 12
+    defense: 7
+    res: 3
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [vip, king, dwarf]
+    sight: 4
+    glyph: T
+    color: bright_cyan
+
+  bilbo:
+    display_name: Bilbo Baggins
+    description: |
+      Hobbit burglar of the company. Wears a magic ring most of
+      the battle. Soft, sneaky, very high speed for his size.
+    hp_max: 16
+    atk: 5
+    defense: 3
+    res: 3
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [hero, hobbit]
+    sight: 4
+    glyph: H
+    color: cyan
+
+  dwarf_warrior:
+    display_name: Dwarf Warrior
+    description: |
+      Of Dáin's Iron Hills company, just arrived to relieve
+      Thorin. Stout, slow, hits hard.
+    hp_max: 24
+    atk: 9
+    defense: 6
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [dwarf]
+    sight: 3
+    glyph: D
+    color: cyan
+
+  thranduil:
+    display_name: Thranduil
+    description: |
+      Elven-king of the Wood. Came for the dragon-treasure, stays
+      to fight the goblins. Reluctant ally; brilliant swordsman.
+    hp_max: 30
+    atk: 10
+    defense: 5
+    res: 5
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [hero, elf, king]
+    sight: 5
+    glyph: E
+    color: cyan
+
+  wood_elf_archer:
+    display_name: Wood-Elf Archer
+    description: |
+      Mirkwood elf. Light, fast, deadly at range.
+    hp_max: 16
+    atk: 10
+    defense: 2
+    res: 3
+    spd: 7
+    rng_min: 2
+    rng_max: 4
+    move: 5
+    tags: [archer, elf]
+    sight: 5
+    glyph: A
+    color: cyan
+
+  bard:
+    display_name: Bard the Bowman
+    description: |
+      Heir of Girion of Dale. Killed Smaug with the last of his
+      family's black arrows. Now leads the homeless men of
+      Laketown.
+    hp_max: 24
+    atk: 10
+    defense: 4
+    res: 3
+    spd: 6
+    rng_min: 2
+    rng_max: 3
+    move: 4
+    tags: [hero, archer, man]
+    sight: 5
+    glyph: B
+    color: cyan
+
+  laketown_militia:
+    display_name: Laketown Militia
+    description: |
+      Survivors of Smaug's burning of Esgaroth — fishermen and
+      townsfolk with whatever weapons they could salvage.
+    hp_max: 14
+    atk: 7
+    defense: 3
+    res: 2
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [militia, man]
+    sight: 3
+    glyph: M
+    color: cyan
+
+  bolg:
+    display_name: Bolg of the North
+    description: |
+      Son of Azog. Leads the goblin army to avenge his father at
+      Thorin's hands. Two-handed mace, faster than he looks.
+    hp_max: 34
+    atk: 12
+    defense: 5
+    res: 2
+    spd: 7
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [vip, chief, goblin]
+    sight: 4
+    glyph: G
+    color: bright_red
+
+  goblin_warrior:
+    display_name: Goblin Warrior
+    description: |
+      Crooked, snarling, numerous. Cheap; the goblin army is
+      mostly these.
+    hp_max: 14
+    atk: 7
+    defense: 3
+    res: 2
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [goblin]
+    sight: 3
+    glyph: g
+    color: red
+
+  goblin_archer:
+    display_name: Goblin Archer
+    description: |
+      Stunted bow, poisoned tip. Fragile but irritating from cover.
+    hp_max: 12
+    atk: 7
+    defense: 2
+    res: 2
+    spd: 6
+    rng_min: 2
+    rng_max: 3
+    move: 4
+    tags: [goblin, archer]
+    sight: 4
+    glyph: a
+    color: red
+
+  warg_rider:
+    display_name: Warg Rider
+    description: |
+      Goblin mounted on a warg — wolf-creature of malevolent
+      cunning. Fast, snarling, very dangerous on a flank.
+    hp_max: 22
+    atk: 9
+    defense: 4
+    res: 2
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 6
+    tags: [warg, mounted]
+    sight: 4
+    glyph: W
+    color: bright_red
+
+  eagle:
+    display_name: Great Eagle
+    description: |
+      Lord of the Eagles answers Gwaihir's call. Spawns at turn 15
+      from the southern sky if the goblins haven't already won.
+      Can fly over mountains.
+    hp_max: 26
+    atk: 9
+    defense: 5
+    res: 3
+    spd: 10
+    rng_min: 1
+    rng_max: 1
+    move: 8
+    can_enter_mountain: true
+    can_enter_forest: true
+    tags: [eagle, flying, reinforcement]
+    sight: 6
+    glyph: V
+    color: bright_yellow
+
+  beorn_bear:
+    display_name: Beorn (bear form)
+    description: |
+      Skin-changer of the Carrock. Arrives in his great bear shape
+      at turn 18. The deciding stroke in the novel — kills Bolg
+      personally.
+    hp_max: 48
+    atk: 16
+    defense: 8
+    res: 3
+    spd: 7
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [bear, hero, reinforcement]
+    sight: 4
+    glyph: R
+    color: bright_yellow
+
+armies:
+  blue:
+    # The three allies on the south slopes.
+    - {class: thorin, pos: {x: 9, y: 3}}
+    - {class: bilbo, pos: {x: 10, y: 3}}
+    - {class: dwarf_warrior, pos: {x: 8, y: 3}}
+    - {class: dwarf_warrior, pos: {x: 9, y: 4}}
+    - {class: dwarf_warrior, pos: {x: 10, y: 4}}
+    - {class: dwarf_warrior, pos: {x: 8, y: 4}}
+    - {class: dwarf_warrior, pos: {x: 11, y: 3}}
+    - {class: dwarf_warrior, pos: {x: 7, y: 3}}
+    - {class: thranduil, pos: {x: 4, y: 5}}
+    - {class: wood_elf_archer, pos: {x: 3, y: 5}}
+    - {class: wood_elf_archer, pos: {x: 4, y: 6}}
+    - {class: wood_elf_archer, pos: {x: 5, y: 5}}
+    - {class: wood_elf_archer, pos: {x: 4, y: 4}}
+    - {class: wood_elf_archer, pos: {x: 3, y: 6}}
+    - {class: wood_elf_archer, pos: {x: 5, y: 4}}
+    - {class: bard, pos: {x: 13, y: 5}}
+    - {class: laketown_militia, pos: {x: 12, y: 5}}
+    - {class: laketown_militia, pos: {x: 13, y: 6}}
+    - {class: laketown_militia, pos: {x: 12, y: 6}}
+    - {class: laketown_militia, pos: {x: 13, y: 4}}
+    - {class: laketown_militia, pos: {x: 12, y: 4}}
+  red:
+    # Goblin army pouring from the northwest gate (between mountain
+    # tiles at (1, 1) and (9, 1)).
+    - {class: bolg, pos: {x: 1, y: 2}}
+    - {class: warg_rider, pos: {x: 0, y: 2}}
+    - {class: warg_rider, pos: {x: 4, y: 2}}
+    - {class: warg_rider, pos: {x: 2, y: 2}}
+    - {class: warg_rider, pos: {x: 1, y: 3}}
+    - {class: goblin_warrior, pos: {x: 0, y: 3}}
+    - {class: goblin_warrior, pos: {x: 0, y: 4}}
+    - {class: goblin_warrior, pos: {x: 1, y: 4}}
+    - {class: goblin_warrior, pos: {x: 2, y: 3}}
+    - {class: goblin_warrior, pos: {x: 2, y: 4}}
+    - {class: goblin_warrior, pos: {x: 3, y: 3}}
+    - {class: goblin_warrior, pos: {x: 3, y: 4}}
+    - {class: goblin_warrior, pos: {x: 4, y: 3}}
+    - {class: goblin_warrior, pos: {x: 0, y: 5}}
+    - {class: goblin_warrior, pos: {x: 1, y: 5}}
+    - {class: goblin_warrior, pos: {x: 2, y: 5}}
+    - {class: goblin_warrior, pos: {x: 0, y: 6}}
+    - {class: goblin_warrior, pos: {x: 1, y: 6}}
+    - {class: goblin_warrior, pos: {x: 2, y: 6}}
+    - {class: goblin_archer, pos: {x: 0, y: 7}}
+    - {class: goblin_archer, pos: {x: 1, y: 7}}
+    - {class: goblin_archer, pos: {x: 2, y: 7}}
+    - {class: goblin_archer, pos: {x: 0, y: 8}}
+    - {class: goblin_archer, pos: {x: 1, y: 8}}
+    - {class: goblin_archer, pos: {x: 2, y: 8}}
+
+rules:
+  max_turns: 30
+  fog_of_war: false
+  first_player: red
+
+win_conditions:
+  - {type: protect_unit, unit_id: u_b_thorin_1, owning_team: blue}
+  - {type: protect_unit, unit_id: u_r_bolg_1, owning_team: red}
+  # Red wins by seizing the Lonely Mountain gate.
+  - {type: seize_enemy_fort}
+  - {type: eliminate_all_enemy_units}
+  - {type: max_turns_draw}
+
+plugin_hooks:
+  on_turn_start:
+    - second_goblin_wave
+    - eagles_arrive
+    - beorn_arrives
+
+narrative:
+  title: Battle of the Five Armies
+  description: |
+    Dwarves, elves, and men against goblins and wargs at the foot
+    of the Lonely Mountain — with surprise reinforcements from the
+    sky and the wood.
+  intro: |
+    Morning at the foot of Erebor. Three peoples stand on the
+    edge of war with each other. A horn from the north stops them
+    all in their tracks: goblins, in their tens of thousands.
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: "More goblins pour from the mountain gates."
+    - trigger: on_turn_start
+      turn: 15
+      text: "A great cry rings out: 'The Eagles! The Eagles are coming!'"
+    - trigger: on_turn_start
+      turn: 18
+      text: "Beorn in bear form bursts from the south, rending wargs aside."
+    - trigger: on_unit_killed
+      unit_id: u_b_thorin_1
+      text: "Thorin has fallen. The dragon-sickness ends with him."
+    - trigger: on_unit_killed
+      unit_id: u_r_bolg_1
+      text: "Bolg of the North is dead. The goblin host wavers."
