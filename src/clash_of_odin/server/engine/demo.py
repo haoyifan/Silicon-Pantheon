@@ -25,7 +25,7 @@ def _ascii(state) -> str:
                     else u.class_[0].lower()
                 )
             else:
-                t = state.board.tile(p).type.value
+                t = state.board.tile(p).type
                 ch = {"plain": ".", "forest": "F", "mountain": "M", "fort": "*"}[t]
             row.append(ch)
         rows.append(" ".join(row))

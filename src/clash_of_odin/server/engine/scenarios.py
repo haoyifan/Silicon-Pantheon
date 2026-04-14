@@ -134,16 +134,47 @@ def build_state(cfg: dict) -> GameState:
     board_cfg = cfg["board"]
     width = int(board_cfg["width"])
     height = int(board_cfg["height"])
-    tiles: dict[Pos, Tile] = {}
 
+    # Per-scenario terrain type table. Built-ins are always present
+    # with legacy effects; scenario YAML can override a built-in or
+    # introduce a new name.
+    terrain_types: dict[str, dict] = {
+        "plain": {},
+        "forest": {},
+        "mountain": {},
+        "fort": {},
+    }
+    for name, spec in (cfg.get("terrain_types") or {}).items():
+        terrain_types[name] = dict(spec or {})
+
+    def _make_tile(pos: Pos, type_name: str, fort_owner: Team | None = None) -> Tile:
+        spec = terrain_types.get(type_name, {})
+        return Tile(
+            pos=pos,
+            type=type_name,
+            fort_owner=fort_owner,
+            _move_cost=spec.get("move_cost"),
+            _defense_bonus=spec.get("defense_bonus"),
+            _magic_bonus=spec.get("magic_bonus"),
+            heals=int(spec.get("heals", 0)),
+            blocks_sight=bool(spec.get("blocks_sight", False)),
+            passable=bool(spec.get("passable", True)),
+            class_overrides=dict(spec.get("class_overrides") or {}),
+            glyph=spec.get("glyph"),
+            color=spec.get("color"),
+        )
+
+    tiles: dict[Pos, Tile] = {}
     for t in board_cfg.get("terrain", []) or []:
         pos = Pos(int(t["x"]), int(t["y"]))
-        tiles[pos] = Tile(pos=pos, type=TerrainType(t["type"]))
+        tiles[pos] = _make_tile(pos, str(t["type"]))
 
     # Forts overlay: they become FORT tiles with a fort_owner.
     for f in board_cfg.get("forts", []) or []:
         pos = Pos(int(f["x"]), int(f["y"]))
-        tiles[pos] = Tile(pos=pos, type=TerrainType.FORT, fort_owner=Team(f["owner"]))
+        tiles[pos] = _make_tile(
+            pos, TerrainType.FORT.value, fort_owner=Team(f["owner"])
+        )
 
     board = Board(width=width, height=height, tiles=tiles)
 

@@ -21,7 +21,7 @@ def state_to_dict(state: GameState, viewer: Team | None = None) -> dict:
     for y in range(state.board.height):
         for x in range(state.board.width):
             tile = state.board.tile(Pos(x, y))
-            tiles.append({"x": x, "y": y, "type": tile.type.value})
+            tiles.append({"x": x, "y": y, "type": tile.type})
 
     forts = []
     for pos, tile in state.board.tiles.items():

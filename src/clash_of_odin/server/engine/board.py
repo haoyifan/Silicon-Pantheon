@@ -4,13 +4,25 @@ from __future__ import annotations
 
 import heapq
 
-from .state import Board, GameState, Pos, TerrainType, Unit, UnitStats
+from .state import Board, GameState, Pos, TerrainType, Tile, Unit, UnitStats
 
 
-def can_enter(stats: UnitStats, tile_type: TerrainType) -> bool:
-    if tile_type is TerrainType.FOREST and not stats.can_enter_forest:
+def can_enter(stats: UnitStats, tile: Tile, unit_class: str | None = None) -> bool:
+    """Whether a unit of class `unit_class` with `stats` may enter `tile`.
+
+    Consults the tile's per-class override first (so scenarios can say
+    'cavalry cannot enter sand'), then falls back to the legacy
+    can_enter_forest / can_enter_mountain flags for built-in types.
+    """
+    if unit_class is not None:
+        override = tile.class_overrides.get(unit_class) or {}
+        if "passable" in override:
+            return bool(override["passable"])
+    if not tile.passable:
         return False
-    if tile_type is TerrainType.MOUNTAIN and not stats.can_enter_mountain:
+    if tile.type == TerrainType.FOREST.value and not stats.can_enter_forest:
+        return False
+    if tile.type == TerrainType.MOUNTAIN.value and not stats.can_enter_mountain:
         return False
     return True
 
@@ -41,13 +53,13 @@ def reachable_tiles(state: GameState, unit: Unit) -> dict[Pos, int]:
             if not board.in_bounds(n):
                 continue
             tile = board.tile(n)
-            if not can_enter(stats, tile.type):
+            if not can_enter(stats, tile, unit.class_):
                 continue
             occupant = state.unit_at(n)
             if occupant is not None and occupant.owner is not unit.owner:
                 # cannot pass through enemies
                 continue
-            step = tile.move_cost()
+            step = tile.move_cost(unit.class_)
             nd = d + step
             if nd > stats.move:
                 continue

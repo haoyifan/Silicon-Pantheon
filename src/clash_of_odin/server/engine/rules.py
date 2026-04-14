@@ -300,6 +300,16 @@ def _apply_end_turn(state: GameState) -> dict:
                 "seized_by_unit": u.id,
             }
 
+    # 1.5. Custom-terrain heal/damage effects for the OUTGOING
+    # player's units (Fire Emblem-classic poison / venom timing — hit
+    # at the end of *your* turn). Legacy fort heal stays in step 4.
+    for u in list(state.units_of(active)):
+        if not u.alive:
+            continue
+        tile = state.board.tile(u.pos)
+        if tile.heals != 0:
+            u.hp = max(0, min(u.stats.hp_max, u.hp + tile.heals))
+
     # 2. Hand over to opponent.
     state.active_player = enemy
 
@@ -313,7 +323,9 @@ def _apply_end_turn(state: GameState) -> dict:
 
     # 4. Start-of-turn effects for the incoming player:
     #    - reset unit statuses to READY
-    #    - apply fort heal
+    #    - apply legacy fort heal (+3 on own fort)
+    # Custom-terrain heals/damage already applied at step 1.5 for the
+    # outgoing player.
     reset_ids = []
     for u in state.units_of(state.active_player):
         u.status = UnitStatus.READY

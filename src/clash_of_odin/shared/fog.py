@@ -16,7 +16,7 @@ from __future__ import annotations
 from clash_of_odin.server.engine.state import GameState, Pos, Team, TerrainType
 
 
-OPAQUE_TERRAIN = frozenset({TerrainType.FOREST, TerrainType.MOUNTAIN})
+OPAQUE_TERRAIN = frozenset({TerrainType.FOREST.value, TerrainType.MOUNTAIN.value})
 
 
 def _bresenham_line(a: Pos, b: Pos) -> list[Pos]:
@@ -60,7 +60,9 @@ def _has_line_of_sight(state: GameState, viewer: Pos, target: Pos) -> bool:
     # Skip endpoints — blockers only count when they're strictly between.
     for p in line[1:-1]:
         tile = state.board.tile(p)
-        if tile.type in OPAQUE_TERRAIN:
+        # Both legacy built-in types and any custom type declaring
+        # blocks_sight=True should block the line.
+        if tile.type in OPAQUE_TERRAIN or tile.blocks_sight:
             return False
     return True
 

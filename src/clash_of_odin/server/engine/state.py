@@ -116,43 +116,59 @@ class UnitStats:
 @dataclass
 class Tile:
     pos: Pos
-    type: TerrainType
-    fort_owner: Team | None = None  # None unless `type == FORT`
+    # Type is now a free-form string so scenarios can introduce custom
+    # terrain types. Built-in names ('plain', 'forest', 'mountain',
+    # 'fort') produce the legacy behavior unless overridden.
+    type: str
+    fort_owner: Team | None = None  # None unless `type == 'fort'`
+    # Configurable effects. If a scenario's terrain_types: block
+    # supplies these they override the built-in defaults. None = derive
+    # from type at accessor time (backward compatible).
+    _move_cost: int | None = None
+    _defense_bonus: int | None = None
+    _magic_bonus: int | None = None
+    heals: int = 0  # positive = per-turn heal; negative = damage
+    blocks_sight: bool = False
+    passable: bool = True
+    class_overrides: dict[str, dict] = field(default_factory=dict)
+    glyph: str | None = None
+    color: str | None = None
 
     @property
     def is_fort(self) -> bool:
-        return self.type is TerrainType.FORT
+        return self.type == TerrainType.FORT.value or self.type == "fort"
 
-    def move_cost(self) -> int:
-        match self.type:
-            case TerrainType.PLAIN:
-                return 1
-            case TerrainType.FOREST:
-                return 2
-            case TerrainType.MOUNTAIN:
-                return 2
-            case TerrainType.FORT:
-                return 1
+    def move_cost(self, unit_class: str | None = None) -> int:
+        """Move cost honoring per-class overrides (e.g. cavalry pays
+        more on sand)."""
+        if unit_class is not None:
+            override = self.class_overrides.get(unit_class) or {}
+            if "move_cost" in override:
+                return int(override["move_cost"])
+        if self._move_cost is not None:
+            return self._move_cost
+        # Legacy built-in defaults.
+        if self.type == "forest" or self.type == "mountain":
+            return 2
+        return 1
 
     def def_bonus(self) -> int:
-        match self.type:
-            case TerrainType.FOREST:
-                return 2
-            case TerrainType.MOUNTAIN:
-                return 3
-            case TerrainType.FORT:
-                return 3
-            case _:
-                return 0
+        if self._defense_bonus is not None:
+            return self._defense_bonus
+        if self.type == "forest":
+            return 2
+        if self.type == "mountain" or self.type == "fort":
+            return 3
+        return 0
 
     def res_bonus(self) -> int:
-        match self.type:
-            case TerrainType.MOUNTAIN:
-                return 1
-            case TerrainType.FORT:
-                return 3
-            case _:
-                return 0
+        if self._magic_bonus is not None:
+            return self._magic_bonus
+        if self.type == "mountain":
+            return 1
+        if self.type == "fort":
+            return 3
+        return 0
 
 
 @dataclass
@@ -169,7 +185,7 @@ class Board:
         t = self.tiles.get(p)
         if t is not None:
             return t
-        return Tile(pos=p, type=TerrainType.PLAIN)
+        return Tile(pos=p, type=TerrainType.PLAIN.value)
 
     def all_positions(self) -> list[Pos]:
         return [Pos(x, y) for y in range(self.height) for x in range(self.width)]

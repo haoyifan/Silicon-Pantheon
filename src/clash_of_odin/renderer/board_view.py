@@ -6,12 +6,13 @@ from rich.text import Text
 
 from clash_of_odin.server.engine.state import GameState, Pos, Team, TerrainType
 
-# Terrain glyph map (background characters).
+# Terrain glyph map (background characters). Keys are strings so
+# custom terrain types from scenarios land here too.
 TERRAIN_GLYPH = {
-    TerrainType.PLAIN: ".",
-    TerrainType.FOREST: "f",
-    TerrainType.MOUNTAIN: "^",
-    TerrainType.FORT: "*",
+    TerrainType.PLAIN.value: ".",
+    TerrainType.FOREST.value: "f",
+    TerrainType.MOUNTAIN.value: "^",
+    TerrainType.FORT.value: "*",
 }
 
 CLASS_GLYPH = {
@@ -48,14 +49,17 @@ def render_board(state: GameState) -> Text:
                 rendered = glyph if unit.owner is Team.BLUE else glyph.lower()
                 cell = Text(f" {rendered}", style=base)
             else:
-                g = TERRAIN_GLYPH[tile.type]
-                style = {
-                    TerrainType.PLAIN: "dim",
-                    TerrainType.FOREST: "green",
-                    TerrainType.MOUNTAIN: "bright_black",
-                    TerrainType.FORT: "yellow",
-                }[tile.type]
-                # Fort color by owner
+                # Custom terrain types may supply their own glyph +
+                # color on the Tile; fall back to built-in maps.
+                g = tile.glyph or TERRAIN_GLYPH.get(tile.type, "?")
+                default_colors = {
+                    TerrainType.PLAIN.value: "dim",
+                    TerrainType.FOREST.value: "green",
+                    TerrainType.MOUNTAIN.value: "bright_black",
+                    TerrainType.FORT.value: "yellow",
+                }
+                style = tile.color or default_colors.get(tile.type, "dim")
+                # Fort color by owner (built-in forts only).
                 if tile.is_fort and tile.fort_owner is Team.BLUE:
                     style = "cyan"
                 elif tile.is_fort and tile.fort_owner is Team.RED:
