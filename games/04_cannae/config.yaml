@@ -1,0 +1,270 @@
+schema_version: 1
+name: Cannae
+description: |
+  August 216 BC. Hannibal Barca has already crushed three Roman
+  armies in Italy; now Rome fields 80,000 men — the largest it has
+  ever mustered — under the consul Gaius Terentius Varro. They
+  meet on an open plain near the village of Cannae. Hannibal
+  arranges a thin concave line of Gauls and Spanish; as the Roman
+  legions press, his center retreats and his Libyan veterans fold
+  in from both flanks. The Numidian cavalry closes the back. By
+  sunset, 50,000 Romans are dead. It is the textbook example of
+  the double envelopment — still taught at war colleges.
+
+board:
+  width: 16
+  height: 10
+  terrain:
+    # The Aufidus river at the north — impassable, anchors the
+    # Roman right flank.
+    - {x: 0, y: 0, type: river}
+    - {x: 1, y: 0, type: river}
+    - {x: 2, y: 0, type: river}
+    - {x: 3, y: 0, type: river}
+    - {x: 4, y: 0, type: river}
+    - {x: 5, y: 0, type: river}
+    - {x: 6, y: 0, type: river}
+    - {x: 7, y: 0, type: river}
+    - {x: 8, y: 0, type: river}
+    - {x: 9, y: 0, type: river}
+    - {x: 10, y: 0, type: river}
+    - {x: 11, y: 0, type: river}
+    - {x: 12, y: 0, type: river}
+    - {x: 13, y: 0, type: river}
+    - {x: 14, y: 0, type: river}
+    - {x: 15, y: 0, type: river}
+    # A slight rise in the middle — the tribune's hill.
+    - {x: 7, y: 5, type: hill}
+    - {x: 8, y: 5, type: hill}
+    - {x: 9, y: 5, type: hill}
+  forts: []
+
+terrain_types:
+  river:
+    move_cost: 99
+    passable: false
+    glyph: "~"
+    color: blue
+  hill:
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "^"
+    color: yellow
+
+unit_classes:
+  varro:
+    display_name: Gaius Varro
+    description: |
+      Roman consul and over-confident commander. Eager for a
+      decisive battle despite his colleague Paullus's advice to
+      delay. Rome loses if Varro falls — morale collapses.
+    hp_max: 30
+    atk: 7
+    defense: 5
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [vip, consul]
+    sight: 4
+    glyph: V
+    color: bright_cyan
+
+  roman_legionary:
+    display_name: Roman Legionary
+    description: |
+      Trained heavy infantry of the Republic. Pilum and gladius,
+      dense formation, remorseless grinding advance. The rear
+      ranks are about to learn that a compressed block can't
+      flex when hit from the sides.
+    hp_max: 22
+    atk: 8
+    defense: 6
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [infantry, legionary]
+    sight: 3
+    glyph: R
+    color: cyan
+
+  roman_hastati:
+    display_name: Roman Hastati
+    description: |
+      Younger front-line legionaries. Throw their pila and close
+      with sword and scutum. Cheap, numerous, eager.
+    hp_max: 18
+    atk: 7
+    defense: 5
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [infantry]
+    sight: 3
+    glyph: H
+    color: cyan
+
+  hannibal:
+    display_name: Hannibal Barca
+    description: |
+      Carthaginian general, missing an eye from the marshes of
+      Etruria. One of the greatest military minds in history; the
+      architect of this envelopment.
+    hp_max: 30
+    atk: 10
+    defense: 6
+    res: 4
+    spd: 7
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [general, vip]
+    sight: 5
+    glyph: B
+    color: bright_red
+
+  libyan_spearman:
+    display_name: Libyan Spearman
+    description: |
+      Hannibal's veteran Africans — mercenaries who've fought with
+      him since Spain, now equipped in captured Roman armor. Hard
+      spearmen; the hinge of the envelopment.
+    hp_max: 20
+    atk: 7
+    defense: 5
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 2
+    move: 3
+    tags: [spearman, veteran]
+    sight: 3
+    glyph: L
+    color: red
+
+  gallic_warrior:
+    display_name: Gallic Warrior
+    description: |
+      Tall Celts in torcs, long swords, short tempers. Hannibal
+      put them in the center of the line on purpose — they break
+      first, pulling the Romans forward into the trap.
+    hp_max: 18
+    atk: 9
+    defense: 3
+    res: 2
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [warrior, gaul]
+    sight: 3
+    glyph: G
+    color: red
+
+  numidian_cavalry:
+    display_name: Numidian Cavalry
+    description: |
+      Light horsemen of North Africa. No saddles, javelin-hurlers,
+      terrifyingly fast. They'll circle behind the Roman line and
+      slam the rear while the flanks fold.
+    hp_max: 22
+    atk: 8
+    defense: 4
+    res: 3
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 6
+    tags: [cavalry, numidian]
+    sight: 4
+    glyph: N
+    color: bright_red
+
+armies:
+  blue:
+    # Roman dense block. Varro commands from the rear; hastati
+    # front-line; legionaries behind them. Deep formation — the
+    # signature weakness of the day.
+    - {class: varro, pos: {x: 3, y: 5}}
+    - {class: roman_hastati, pos: {x: 5, y: 3}}
+    - {class: roman_hastati, pos: {x: 5, y: 4}}
+    - {class: roman_hastati, pos: {x: 5, y: 5}}
+    - {class: roman_hastati, pos: {x: 5, y: 6}}
+    - {class: roman_hastati, pos: {x: 5, y: 7}}
+    - {class: roman_hastati, pos: {x: 5, y: 8}}
+    - {class: roman_legionary, pos: {x: 4, y: 3}}
+    - {class: roman_legionary, pos: {x: 4, y: 4}}
+    - {class: roman_legionary, pos: {x: 4, y: 5}}
+    - {class: roman_legionary, pos: {x: 4, y: 6}}
+    - {class: roman_legionary, pos: {x: 4, y: 7}}
+    - {class: roman_legionary, pos: {x: 4, y: 8}}
+    - {class: roman_legionary, pos: {x: 3, y: 3}}
+    - {class: roman_legionary, pos: {x: 3, y: 4}}
+    - {class: roman_legionary, pos: {x: 3, y: 6}}
+    - {class: roman_legionary, pos: {x: 3, y: 7}}
+    - {class: roman_legionary, pos: {x: 3, y: 8}}
+  red:
+    # Hannibal's concave line. Gauls in the bulging center (will
+    # retreat), Libyans on each wing (will close), Numidians on
+    # the far south flank to race around the back. Hannibal himself
+    # behind the center.
+    - {class: hannibal, pos: {x: 11, y: 5}}
+    - {class: gallic_warrior, pos: {x: 10, y: 3}}
+    - {class: gallic_warrior, pos: {x: 10, y: 4}}
+    - {class: gallic_warrior, pos: {x: 9, y: 5}}
+    - {class: gallic_warrior, pos: {x: 9, y: 6}}
+    - {class: gallic_warrior, pos: {x: 10, y: 7}}
+    - {class: gallic_warrior, pos: {x: 10, y: 8}}
+    - {class: libyan_spearman, pos: {x: 11, y: 2}}
+    - {class: libyan_spearman, pos: {x: 11, y: 3}}
+    - {class: libyan_spearman, pos: {x: 12, y: 3}}
+    - {class: libyan_spearman, pos: {x: 11, y: 8}}
+    - {class: libyan_spearman, pos: {x: 11, y: 9}}
+    - {class: libyan_spearman, pos: {x: 12, y: 8}}
+    - {class: numidian_cavalry, pos: {x: 13, y: 1}}
+    - {class: numidian_cavalry, pos: {x: 13, y: 2}}
+    - {class: numidian_cavalry, pos: {x: 13, y: 9}}
+    - {class: numidian_cavalry, pos: {x: 14, y: 8}}
+
+rules:
+  max_turns: 30
+  fog_of_war: false
+  first_player: blue
+
+win_conditions:
+  # Rome loses if Varro dies.
+  - {type: protect_unit, unit_id: u_b_varro_1, owning_team: blue}
+  # Either side can win by elimination — Hannibal's goal is the
+  # historical outcome; Rome's is to break the Carthaginian line
+  # before the flanks close.
+  - {type: eliminate_all_enemy_units}
+  - {type: max_turns_draw}
+
+narrative:
+  title: Cannae
+  description: |
+    The textbook double envelopment. Hannibal invites the Romans
+    into a pocket and seals it behind them.
+  intro: |
+    Morning on the plain. Varro has seniority today; he rejected
+    his colleague's advice to starve the Carthaginians out. The
+    legions draw up in the heaviest formation Rome has ever
+    fielded. Hannibal smiles.
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: "The Gallic center bends back. Varro orders the legions forward."
+    - trigger: on_turn_start
+      turn: 8
+      text: "Hannibal's Libyans wheel inward. The Roman flanks shorten."
+    - trigger: on_turn_start
+      turn: 12
+      text: "Dust on the Roman rear — Numidian horse has closed the pocket."
+    - trigger: on_unit_killed
+      unit_id: u_b_varro_1
+      text: "Varro falls. Rome's line breaks apart."
