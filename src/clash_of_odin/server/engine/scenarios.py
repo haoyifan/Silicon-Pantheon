@@ -44,7 +44,25 @@ def load_scenario(name: str) -> GameState:
     return build_state(cfg)
 
 
+SUPPORTED_SCHEMA_VERSION = 1
+
+
+class UnsupportedSchemaVersion(ValueError):
+    """Raised when a scenario YAML declares a schema_version the engine
+    doesn't understand."""
+
+
 def build_state(cfg: dict) -> GameState:
+    # Schema version gate. Missing = v1 (legacy). Anything newer refuses
+    # to load so we don't silently misinterpret future fields.
+    schema_version = int(cfg.get("schema_version", 1))
+    if schema_version > SUPPORTED_SCHEMA_VERSION:
+        raise UnsupportedSchemaVersion(
+            f"scenario declares schema_version={schema_version}; "
+            f"this engine supports up to {SUPPORTED_SCHEMA_VERSION}. "
+            "Upgrade the server."
+        )
+
     board_cfg = cfg["board"]
     width = int(board_cfg["width"])
     height = int(board_cfg["height"])
