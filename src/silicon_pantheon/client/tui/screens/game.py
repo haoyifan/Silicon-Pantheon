@@ -171,23 +171,33 @@ class PlayerPanel(Panel):
                 if alive:
                     status = str(u.get("status", "ready"))
                     hp_str = f"{hp}/{hp_max}"
-                    rows.append(
-                        Text(
-                            f"  {name[:14]:<14}  {hp_str:>7}  {status}",
-                            style=_status_style(status),
-                        )
+                    # Per-column styling: neutral name + HP, colored
+                    # status cell. Before this split the whole row
+                    # inherited _status_style and the entire roster
+                    # rendered green/yellow/dim on every render.
+                    row = Text.assemble(
+                        ("  ", None),
+                        (f"{name[:14]:<14}", "white"),
+                        ("  ", None),
+                        (f"{hp_str:>7}", "white"),
+                        ("  ", None),
+                        (status, _status_style(status)),
                     )
+                    rows.append(row)
                 else:
                     # Portable "dead" marker — see earlier comment; many
                     # terminals render strikethrough as nothing.
                     marker = f"✗ ~{name[:12]}~"
                     hp_str = f"0/{hp_max}"
-                    rows.append(
-                        Text(
-                            f"  {marker:<14}  {hp_str:>7}  dead",
-                            style="dim",
-                        )
+                    row = Text.assemble(
+                        ("  ", None),
+                        (f"{marker:<14}", "dim"),
+                        ("  ", None),
+                        (f"{hp_str:>7}", "dim"),
+                        ("  ", None),
+                        ("dead", "bold red"),
                     )
+                    rows.append(row)
         # Apply scroll by dropping leading rows. Clamp so scrolling
         # past the bottom snaps back to the last full row.
         if self.scroll > 0 and rows:
