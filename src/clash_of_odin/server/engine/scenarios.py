@@ -197,6 +197,7 @@ def build_state(cfg: dict) -> GameState:
             class_overrides=dict(spec.get("class_overrides") or {}),
             glyph=spec.get("glyph"),
             color=spec.get("color"),
+            effects_plugin=spec.get("effects_plugin"),
         )
 
     tiles: dict[Pos, Tile] = {}

@@ -133,6 +133,10 @@ class Tile:
     class_overrides: dict[str, dict] = field(default_factory=dict)
     glyph: str | None = None
     color: str | None = None
+    # Name of a plugin callable invoked on end_turn for units on this
+    # tile. Signature: fn(state, unit, tile, hook) -> dict | None. The
+    # returned dict may contain `hp_delta` to apply HP changes.
+    effects_plugin: str | None = None
 
     @property
     def is_fort(self) -> bool:

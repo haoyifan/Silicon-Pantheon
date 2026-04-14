@@ -294,6 +294,14 @@ def _apply_end_turn(state: GameState) -> dict:
         tile = state.board.tile(u.pos)
         if tile.heals != 0:
             u.hp = max(0, min(u.stats.hp_max, u.hp + tile.heals))
+        if tile.effects_plugin:
+            ns = getattr(state, "_plugin_namespace", None) or {}
+            fn = ns.get(tile.effects_plugin)
+            if callable(fn):
+                out = fn(state, u, tile, "end_turn") or {}
+                delta = int(out.get("hp_delta", 0))
+                if delta:
+                    u.hp = max(0, min(u.stats.hp_max, u.hp + delta))
 
     # 2. Hand over to opponent.
     state.active_player = enemy
