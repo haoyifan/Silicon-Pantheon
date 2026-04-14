@@ -67,12 +67,49 @@ class ProviderError(RuntimeError):
 # once we have real failure telemetry to guide tuning.
 
 
+def _extract_detail(exc: BaseException) -> str:
+    """Pull the most user-useful string out of an SDK exception.
+
+    SDK exception shapes vary:
+      - openai.BadRequestError exposes `.body` as a dict with
+        {"error": {"message": ..., "type": ...}} under HTTP 400
+      - Anthropic's SDK puts similar shape on `.body` too
+      - Some adapters only fill `.message`
+      - Fallback: str(exc) which usually includes the SDK's
+        formatted "Error code: 400 - {...}" line
+
+    Returns up to 400 characters — enough to see "tool_calls[2]:
+    arguments is not valid JSON" without blowing up the TUI
+    footer. Longer payloads keep their full text in the client
+    log via log.exception in the adapter.
+    """
+    body = getattr(exc, "body", None)
+    if isinstance(body, dict):
+        err = body.get("error") or {}
+        if isinstance(err, dict):
+            m = err.get("message")
+            if isinstance(m, str) and m.strip():
+                return m.strip()[:400]
+    msg = getattr(exc, "message", None)
+    if isinstance(msg, str) and msg.strip():
+        return msg.strip()[:400]
+    s = str(exc).strip()
+    if s:
+        return s[:400]
+    return type(exc).__name__
+
+
 def classify(exc: BaseException) -> ProviderError:
     """Best-effort categorization of an arbitrary SDK exception.
 
     Returns a ProviderError with the inferred reason and the original
     exception preserved. Callers catch `ProviderError` and route by
     `reason` / `is_terminal`.
+
+    The `detail` string preserves the SDK's own error message so
+    operators see the actual cause in the TUI footer ("tool_calls
+    argument must be a string", "context_length_exceeded", etc.)
+    instead of the previous bland "bad request".
     """
     if isinstance(exc, ProviderError):
         return exc
@@ -83,9 +120,14 @@ def classify(exc: BaseException) -> ProviderError:
     # HTTP status hints — both Anthropic and OpenAI SDKs expose
     # `status_code` on their exception classes.
     status: int | None = getattr(exc, "status_code", None)
+    detail = _extract_detail(exc)
 
-    def _mk(reason: ProviderErrorReason, detail: str) -> ProviderError:
-        return ProviderError(reason, detail, original=exc)
+    def _mk(reason: ProviderErrorReason, summary: str) -> ProviderError:
+        # Keep the summary (a short human label) up front, then
+        # append the SDK's detail so the user sees both the category
+        # and the concrete reason.
+        body = f"{summary}: {detail}" if detail and detail != summary else summary
+        return ProviderError(reason, body, original=exc)
 
     if status == 401 or "invalid api key" in msg or "unauthorized" in msg:
         return _mk(ProviderErrorReason.AUTH, "API key rejected or missing")
@@ -101,8 +143,13 @@ def classify(exc: BaseException) -> ProviderError:
         return _mk(ProviderErrorReason.TIMEOUT, "request timed out")
     if status == 404 or "model" in msg and ("not found" in msg or "does not exist" in msg):
         return _mk(ProviderErrorReason.MODEL_NOT_FOUND, "model removed or renamed")
-    if status == 400 or "invalid" in msg and "argument" in msg:
+    if status == 400 or ("invalid" in msg and "argument" in msg):
+        # Parenthesized to fix operator precedence: the old expression
+        # was `status == 400 or "invalid" in msg and "argument" in msg`
+        # which binds as status==400 OR (invalid AND argument). That's
+        # fine for 400s but the user-facing detail was "bad request"
+        # with no further info — see _extract_detail above.
         return _mk(ProviderErrorReason.FORMAT, "bad request")
     if "session" in msg and "expired" in msg:
         return _mk(ProviderErrorReason.SESSION_EXPIRED, "session expired")
-    return _mk(ProviderErrorReason.UNKNOWN, str(exc) or cls_name)
+    return _mk(ProviderErrorReason.UNKNOWN, detail or cls_name)

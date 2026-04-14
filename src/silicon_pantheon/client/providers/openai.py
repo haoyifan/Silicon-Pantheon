@@ -132,7 +132,23 @@ class OpenAIAdapter:
                     tool_choice="auto",
                 )
             except Exception as e:
-                log.exception("OpenAI completion raised")
+                # log.exception already captures the traceback, but the
+                # SDK's response `body` (the JSON the server sent back)
+                # is the actually useful part for 400s — dump it
+                # separately so it's grep-able even when the traceback
+                # is many lines deep.
+                sdk_body = getattr(e, "body", None)
+                sdk_status = getattr(e, "status_code", None)
+                log.exception(
+                    "OpenAI completion raised "
+                    "(model=%s status=%s body=%s) — last message role=%s "
+                    "messages_count=%d",
+                    self.model,
+                    sdk_status,
+                    sdk_body,
+                    self._messages[-1].get("role") if self._messages else "?",
+                    len(self._messages),
+                )
                 raise classify(e) from e
 
             choice = resp.choices[0]
