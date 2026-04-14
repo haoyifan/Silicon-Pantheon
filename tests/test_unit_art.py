@@ -58,11 +58,12 @@ def test_jttw_art_loads_for_all_units():
 
 def test_unit_card_renders_art_when_present():
     card = UnitCard(
-        unit={"id": "u_b_x_1", "owner": "blue", "class": "x"},
-        class_spec={
+        units=[{"id": "u_b_x_1", "owner": "blue", "class": "x"}],
+        index=0,
+        unit_classes={"x": {
             "display_name": "Demo",
             "art_frames": ["A R T\n=====\n=====", "B R T\n=====\n====="],
-        },
+        }},
     )
     console = Console(record=True, width=60)
     console.print(card.render())
@@ -77,13 +78,14 @@ def test_unit_card_with_art_uses_two_column_layout():
     so neither clamps the other. With no frames, the card is single-
     column and renders the same as before."""
     card = UnitCard(
-        unit={"id": "u_b_x_1", "owner": "blue", "class": "x"},
-        class_spec={
+        units=[{"id": "u_b_x_1", "owner": "blue", "class": "x"}],
+        index=0,
+        unit_classes={"x": {
             "description": "A long-ish description that needs room to breathe.",
             "hp_max": 30, "atk": 8, "defense": 5, "res": 3, "spd": 4,
             "move": 4, "rng_min": 1, "rng_max": 1,
             "art_frames": [" /\\\n( ) \n V "],
-        },
+        }},
     )
     console = Console(record=True, width=80)
     console.print(card.render())
@@ -102,8 +104,9 @@ def test_unit_card_with_art_uses_two_column_layout():
 
 def test_unit_card_advances_to_next_frame_after_window():
     card = UnitCard(
-        unit={"id": "u_b_x_1", "owner": "blue", "class": "x"},
-        class_spec={"art_frames": ["FRAME0", "FRAME1"]},
+        units=[{"id": "u_b_x_1", "owner": "blue", "class": "x"}],
+        index=0,
+        unit_classes={"x": {"art_frames": ["FRAME0", "FRAME1"]}},
     )
     console = Console(record=True, width=40)
     console.print(card.render())  # primes _opened_at

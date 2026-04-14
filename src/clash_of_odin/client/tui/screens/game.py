@@ -329,10 +329,20 @@ class GameMapPanel(Panel):
         h = int(board.get("height", 0))
         if w == 0 or h == 0:
             return None
-        # Esc / Enter / q on an open card dismisses it — re-pressing
-        # Enter on the same unit toggles the panel off.
-        if self.screen.unit_card is not None and key in ("esc", "enter", "q"):
-            self.screen.unit_card = None
+        card = self.screen.unit_card
+        if card is not None:
+            if key in ("left", "h"):
+                card.navigate(-1)
+                return None
+            if key in ("right", "l"):
+                card.navigate(1)
+                return None
+            if key in ("esc", "enter", "q"):
+                pos = card.unit.get("pos") or {}
+                self.cx = int(pos.get("x", self.cx))
+                self.cy = int(pos.get("y", self.cy))
+                self.screen.unit_card = None
+                return None
             return None
         if key in ("up", "k"):
             self.cy = (self.cy - 1) % h
@@ -611,7 +621,7 @@ class GameScreen(Screen):
                 hints.append(f"[{focused.title}] ", style="bold yellow")
                 hints.append(panel_hints, style="white")
                 hints.append("   ", style="dim")
-            hints.append("Tab next panel   q quit", style="dim")
+            hints.append("Tab next panel   F2 help   q quit", style="dim")
             footer_line = hints
 
         root = Layout()
@@ -702,10 +712,23 @@ class GameScreen(Screen):
     # ---- public API used by panels ----
 
     def open_unit_card(self, unit: dict[str, Any]) -> None:
-        spec = (
-            (self.app.state.scenario_description or {}).get("unit_classes") or {}
-        ).get(unit.get("class"))
-        self.unit_card = UnitCard(unit=unit, class_spec=spec)
+        gs = self.state or {}
+        units = [u for u in (gs.get("units") or []) if u.get("alive", u.get("hp", 0) > 0)]
+        units.sort(
+            key=lambda u: (
+                int((u.get("pos") or {}).get("y", 0)),
+                int((u.get("pos") or {}).get("x", 0)),
+            )
+        )
+        try:
+            idx = units.index(unit)
+        except ValueError:
+            idx = 0
+            units = [unit] + units
+        unit_classes = (
+            self.app.state.scenario_description or {}
+        ).get("unit_classes") or {}
+        self.unit_card = UnitCard(units=units, index=idx, unit_classes=unit_classes)
 
     async def run_action(self, action: str) -> Screen | None:
         if action == "end_turn":

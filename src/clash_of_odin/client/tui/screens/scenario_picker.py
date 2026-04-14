@@ -374,8 +374,12 @@ class ScenarioPicker:
 
     async def handle_key(self, key: str) -> bool:
         """Return True when the picker should close."""
-        # Unit card consumes its own Esc/Enter first.
+        # Unit card consumes its own Esc/Enter first; snap the map
+        # cursor to the unit that was being inspected.
         if self.unit_card is not None and key in ("esc", "enter", "q"):
+            pos = self.unit_card.unit.get("pos") or {}
+            self.cursor = (int(pos.get("x", self.cursor[0])),
+                           int(pos.get("y", self.cursor[1])))
             self.unit_card = None
             return False
 
@@ -427,6 +431,15 @@ class ScenarioPicker:
         h = int(board.get("height", 0))
         if w == 0 or h == 0:
             return False
+        # Card-mode navigation while a unit card is open.
+        if self.unit_card is not None:
+            if key in ("left", "h"):
+                self.unit_card.navigate(-1)
+                return False
+            if key in ("right", "l"):
+                self.unit_card.navigate(1)
+                return False
+            return False
         cx, cy = self.cursor
         if key in ("up", "k"):
             cy = (cy - 1) % h
@@ -437,23 +450,37 @@ class ScenarioPicker:
         elif key in ("right", "l"):
             cx = (cx + 1) % w
         elif key == "enter":
-            # Find a unit at the cursor.
             unit_classes = desc.get("unit_classes") or {}
+            navigable: list[dict] = []
             for owner in ("blue", "red"):
                 for u in (desc.get("armies") or {}).get(owner, []):
                     pos = u.get("pos") or {}
-                    if int(pos["x"]) == cx and int(pos["y"]) == cy:
-                        enriched = {
-                            "id": f"preview_{owner}_{u.get('class', '?')}",
-                            "owner": owner,
-                            "class": u.get("class"),
-                            "pos": pos,
-                        }
-                        self.unit_card = UnitCard(
-                            unit=enriched,
-                            class_spec=unit_classes.get(u.get("class")),
-                        )
-                        break
+                    navigable.append({
+                        "id": f"preview_{owner}_{u.get('class', '?')}",
+                        "owner": owner,
+                        "class": u.get("class"),
+                        "pos": pos,
+                    })
+            navigable.sort(
+                key=lambda u: (
+                    int((u.get("pos") or {}).get("y", 0)),
+                    int((u.get("pos") or {}).get("x", 0)),
+                )
+            )
+            target_idx = next(
+                (
+                    i for i, u in enumerate(navigable)
+                    if int((u.get("pos") or {}).get("x", -1)) == cx
+                    and int((u.get("pos") or {}).get("y", -1)) == cy
+                ),
+                None,
+            )
+            if target_idx is not None:
+                self.unit_card = UnitCard(
+                    units=navigable,
+                    index=target_idx,
+                    unit_classes=unit_classes,
+                )
         self.cursor = (cx, cy)
         return False
 

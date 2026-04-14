@@ -37,8 +37,11 @@ from typing import Any, Awaitable, Callable, TYPE_CHECKING
 
 _log = logging.getLogger("clash.tui.app")
 
-from rich.console import Console, RenderableType
+from rich.align import Align
+from rich.console import Console, Group, RenderableType
 from rich.live import Live
+from rich.panel import Panel as RichPanel
+from rich.text import Text
 
 from clash_of_odin.client.transport import ServerClient
 
@@ -127,6 +130,13 @@ class TUIApp:
         self._should_exit = False
         self._live: Live | None = None
         self._initial_factory = initial_screen_factory
+        # Help overlay state. App-level so it works on every screen
+        # without each one having to wire it. The overlay is purely
+        # client-side: tick / poll / agent loops keep running while
+        # it's open, so the heartbeat survives and the agent (if any)
+        # can still take its turn.
+        self._help_visible = False
+        self._help_scroll = 0
 
     # ---- lifecycle ----
 
@@ -142,7 +152,7 @@ class TUIApp:
         # through update — keep it brisk so the art-frame animation
         # ticks along even without keystrokes.
         with Live(
-            self._screen.render(),
+            self._render_with_overlay(),
             console=self.console,
             refresh_per_second=15,
             screen=True,
@@ -207,6 +217,19 @@ class TUIApp:
             self.state.error_message = f"on_enter error: {e}"
         self._refresh()
 
+    def _render_with_overlay(self) -> RenderableType:
+        """Wrap the screen renderable with the help overlay if open.
+
+        We re-render the screen even when help is up so any
+        background animation / poll keeps ticking visibly the moment
+        help closes — there's no stale frame to clear."""
+        if self._screen is None:
+            return Text("")
+        base = self._screen.render()
+        if not self._help_visible:
+            return base
+        return _HelpOverlay(self._help_scroll).render()
+
     def _refresh(self) -> None:
         """Repaint the screen immediately.
 
@@ -219,7 +242,7 @@ class TUIApp:
         """
         if self._live is not None and self._screen is not None:
             try:
-                self._live.update(self._screen.render(), refresh=True)
+                self._live.update(self._render_with_overlay(), refresh=True)
             except Exception as e:
                 _log.exception("render raised")
                 self.state.error_message = f"render error: {e}"
@@ -252,6 +275,10 @@ class TUIApp:
                 key = await self._key_queue.get()
                 if self._screen is None:
                     continue
+                # Help overlay intercepts before any screen handler.
+                if self._handle_help_key(key):
+                    self._refresh()
+                    continue
                 try:
                     nxt = await self._screen.handle_key(key)
                 except Exception as e:
@@ -269,6 +296,8 @@ class TUIApp:
                         next_key = self._key_queue.get_nowait()
                     except asyncio.QueueEmpty:
                         break
+                    if self._handle_help_key(next_key):
+                        continue
                     try:
                         nxt = await self._screen.handle_key(next_key)
                     except Exception as e:
@@ -282,6 +311,39 @@ class TUIApp:
                 self._refresh()
         except asyncio.CancelledError:
             return
+
+    def _handle_help_key(self, key: str) -> bool:
+        """Toggle / scroll the help overlay. Returns True if the key
+        was consumed.
+
+        F2 toggles. While the overlay is up, ↑/↓/k/j scroll, Esc/q/F2
+        dismiss; everything else is swallowed so it doesn't leak to
+        the underlying screen and accidentally end a turn."""
+        if key in ("f2", "?"):
+            self._help_visible = not self._help_visible
+            self._help_scroll = 0
+            return True
+        if not self._help_visible:
+            return False
+        if key in ("esc", "q"):
+            self._help_visible = False
+            self._help_scroll = 0
+            return True
+        if key in ("up", "k"):
+            self._help_scroll = max(0, self._help_scroll - 1)
+            return True
+        if key in ("down", "j"):
+            self._help_scroll += 1
+            return True
+        if key == "pgup":
+            self._help_scroll = max(0, self._help_scroll - 10)
+            return True
+        if key in ("pgdn", " "):
+            self._help_scroll += 10
+            return True
+        # While help is open, swallow everything else so 'e', 'x', etc.
+        # don't reach the game screen and end the turn / concede.
+        return True
 
     async def _ticker(self) -> None:
         try:
@@ -371,6 +433,11 @@ def _read_key_blocking() -> str:
             # byte (a letter or '~') so leftover parameter bytes don't
             # bleed into the next keypress and look like stray input.
             if c1 in ("[", "O"):
+                # Accumulate the parameter bytes too — F-keys can come
+                # in either form (ESC O Q for F2, or ESC [ 12~ for the
+                # CSI variant) and we need the parameters to tell them
+                # apart from arrow keys.
+                params = ""
                 final = ""
                 for _ in range(16):
                     nxt = _peek(0.02)
@@ -379,14 +446,29 @@ def _read_key_blocking() -> str:
                     if nxt.isalpha() or nxt == "~":
                         final = nxt
                         break
-                if final == "A":
+                    params += nxt
+                # Arrow keys (no params, single-letter final).
+                if final == "A" and not params:
                     return "up"
-                if final == "B":
+                if final == "B" and not params:
                     return "down"
-                if final == "C":
+                if final == "C" and not params:
                     return "right"
-                if final == "D":
+                if final == "D" and not params:
                     return "left"
+                # Function keys. SS3 form: ESC O P/Q/R/S = F1-F4.
+                # CSI form: ESC [ 11~ ... 15~ = F1-F5; 17~..21~ = F6-F10.
+                if c1 == "O" and final == "Q":
+                    return "f2"
+                if c1 == "[" and final == "~":
+                    if params == "12":
+                        return "f2"
+                    if params == "11":
+                        return "f1"
+                    if params == "13":
+                        return "f3"
+                    if params == "14":
+                        return "f4"
             return "esc"
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
@@ -398,3 +480,155 @@ def _read_key_blocking() -> str:
     if ch == "\x7f":  # backspace
         return "backspace"
     return ch.lower()
+
+
+# ---- help overlay ----
+
+
+HELP_TEXT = """\
+Welcome to Clash of Odin
+========================
+
+Tactical grid combat played by AI agents. You watch (and optionally
+coach) while two LLM-driven players move units across a board to
+satisfy the scenario's win conditions.
+
+This help screen never blocks the game — turns, polls, and the
+agent (if you're hosting one) keep running while you read.
+
+Navigation
+----------
+
+  Tab            cycle focus through the panels in this screen
+  ↑ ↓ ← →        move within the focused panel (cursor / scroll /
+                 button select / typing)
+  h j k l        same as ← ↓ ↑ → (vim bindings)
+  Enter          activate the focused thing (button / unit on map /
+                 scenario in picker)
+  Esc            close a modal / dropdown / unit card
+  q              quit (or close a unit card)
+  F2 / ?         toggle this help overlay
+  Esc            (when help is open) close it
+
+Each panel shows its own keys in the footer when focused —
+"[PanelName] panel-specific keys   Tab next panel   q quit".
+
+The Map panel
+-------------
+
+When focused, the Map panel shows a tile cursor. Move it with the
+arrows (or h/j/k/l). The footer reports the tile's terrain type,
+movement cost, defense bonus, and any HP-affecting effects.
+
+Press Enter on a unit's tile to open its stat card. Inside the
+card:
+
+  ← / h         previous unit
+  → / l         next unit
+  Esc / Enter   close (cursor lands on the displayed unit)
+
+The card cycles through the unit's ASCII portrait frames if the
+scenario shipped any (1 frame every 2 seconds).
+
+Reading the unit stats
+----------------------
+
+  HP            current hit points / maximum
+  ATK           attack value (versus enemy DEF for physical units,
+                or enemy RES for magical ones)
+  DEF           defense versus physical attacks
+  RES           defense versus magical attacks
+  SPD           speed — affects who counter-attacks (faster
+                attackers may double-strike)
+  MOVE          how far the unit can travel in one turn
+  RANGE         min–max attack distance
+  type=magic    attack uses RES instead of DEF
+  can_heal      may heal an adjacent ally instead of attacking
+  tags          flavor / future-mechanics labels
+                (vip, monk, demon, mount, …)
+
+Reading the map
+---------------
+
+  K A C M       built-in classes: Knight / Archer / Cavalry / Mage
+                Uppercase = blue team, lowercase = red team.
+  *             fort tile (seizing the enemy fort wins by default)
+  f             forest (cover, +DEF, costs 2 to enter)
+  ^             mountain (high cover, most classes can't enter)
+  .             plain
+  custom glyphs scenarios may define their own letter + color
+                per class (e.g. T = Tang Monk in Journey to the West)
+
+How a turn plays out
+--------------------
+
+The active player's units act one at a time:
+
+  1. Move:    pick a destination within MOVE range, paying the
+              terrain's move_cost on each tile entered.
+  2. Action:  attack an enemy in RANGE, heal an adjacent ally
+              (Mage / scenario healers only), or wait.
+  3. End turn: hand over to the opponent.
+
+A defender that survives an attack and is in range may
+counter-attack in the same exchange.
+
+Win conditions
+--------------
+
+Each scenario lists its own. Built-ins:
+
+  Either side wins by moving onto the opponent's fort.
+  Either side wins by eliminating every enemy unit.
+  Match ends in a draw at the turn cap.
+
+Scenarios may add their own:
+
+  protect_unit       a side loses if a specific unit dies
+  reach_tile         a side wins if a unit ends a turn on a tile
+  hold_tile          a side wins by holding a tile for N turns
+  reach_goal_line    a side wins by crossing a row / column
+
+The Description panel always lists the active scenario's actual
+rules in plain prose, side-explicit ("Red wins if Tang Monk dies").
+
+Coaching the agent (game screen)
+--------------------------------
+
+Tab to the Coach panel and just type. Enter sends the message to
+your own agent's coach queue; it'll see your message at the start
+of its next turn and may incorporate the advice.
+
+Press Esc to clear the buffer; Tab leaves the panel only if the
+buffer is empty (so you can't accidentally cycle away mid-message).
+
+Press F2 again or Esc to close this help."""
+
+
+class _HelpOverlay:
+    """Whole-screen scrollable help / tutorial. Rendered on top of
+    the current screen; the underlying screen's tick loop keeps
+    running so the heartbeat and any agent turns proceed normally."""
+
+    def __init__(self, scroll: int) -> None:
+        self.scroll = scroll
+
+    def render(self) -> RenderableType:
+        lines = HELP_TEXT.split("\n")
+        if self.scroll > 0:
+            self.scroll = min(self.scroll, max(0, len(lines) - 1))
+            lines = lines[self.scroll:]
+        body = Text("\n".join(lines))
+        footer = Text(
+            "↑/↓ scroll   PgUp/PgDn page   Esc / F2 close",
+            style="dim",
+        )
+        return Align.center(
+            RichPanel(
+                Group(body, Text(""), footer),
+                title="Help — Clash of Odin",
+                border_style="yellow",
+                padding=(1, 3),
+            ),
+            vertical="middle",
+        )

@@ -143,13 +143,14 @@ def test_unit_card_shows_class_spec_stats_when_unit_has_none():
     """Regression: room preview units carry no stats — the card must
     fall back to describe_scenario.unit_classes to fill HP/ATK/etc."""
     card = UnitCard(
-        unit={"id": "u_b_knight_1", "owner": "blue", "class": "knight",
-              "pos": {"x": 0, "y": 0}},  # no hp/atk/def/res — preview only
-        class_spec={
+        units=[{"id": "u_b_knight_1", "owner": "blue", "class": "knight",
+                "pos": {"x": 0, "y": 0}}],
+        index=0,
+        unit_classes={"knight": {
             "hp_max": 30, "atk": 8, "defense": 7, "res": 2,
             "spd": 3, "move": 3, "rng_min": 1, "rng_max": 1,
             "tags": ["melee"],
-        },
+        }},
     )
     console = Console(record=True, width=80)
     console.print(card.render())
@@ -161,14 +162,16 @@ def test_unit_card_shows_class_spec_stats_when_unit_has_none():
 
 
 def test_unit_card_renders_stats_and_class_name():
+    unit = {
+        "id": "u_b_sun_wukong_1", "owner": "blue", "class": "sun_wukong",
+        "hp": 42, "hp_max": 42, "atk": 14, "def": 7, "res": 6,
+        "spd": 9, "move": 5, "rng": [1, 1],
+        "tags": ["hero", "monkey"],
+    }
     card = UnitCard(
-        unit={
-            "id": "u_b_sun_wukong_1", "owner": "blue", "class": "sun_wukong",
-            "hp": 42, "hp_max": 42, "atk": 14, "def": 7, "res": 6,
-            "spd": 9, "move": 5, "rng": [1, 1],
-            "tags": ["hero", "monkey"],
-        },
-        class_spec={"description": "The Monkey King."},
+        units=[unit],
+        index=0,
+        unit_classes={"sun_wukong": {"description": "The Monkey King."}},
     )
     console = Console(record=True, width=80)
     console.print(card.render())
@@ -190,6 +193,43 @@ def test_focused_panel_gets_yellow_border():
     ansi = console.export_text(styles=True)
     # Yellow appears on the focused (Actions) panel border.
     assert "Actions" in ansi
+
+
+def test_unit_card_h_l_cycle_units_and_dismiss_snaps_cursor():
+    """h/← steps to previous unit, l/→ to next; close lands the
+    cursor on whichever unit is currently in the card."""
+    app = _FakeApp()
+    _stub_room(app)
+    screen = RoomScreen(app)
+    screen.scenario_preview = {
+        "width": 6, "height": 6,
+        "units": [
+            {"id": "u_b_a", "owner": "blue", "class": "a", "pos": {"x": 1, "y": 0}},
+            {"id": "u_b_b", "owner": "blue", "class": "b", "pos": {"x": 3, "y": 2}},
+            {"id": "u_r_c", "owner": "red", "class": "c", "pos": {"x": 5, "y": 5}},
+        ],
+        "forts": [],
+    }
+    _focus_map(screen)
+    # Move cursor to (1, 0) where u_b_a sits.
+    asyncio.run(screen.handle_key("right"))
+    asyncio.run(screen.handle_key("enter"))
+    assert screen.unit_card is not None
+    assert screen.unit_card.unit["id"] == "u_b_a"
+    # → goes to next (u_b_b at (3,2)).
+    asyncio.run(screen.handle_key("l"))
+    assert screen.unit_card.unit["id"] == "u_b_b"
+    # ← steps back.
+    asyncio.run(screen.handle_key("h"))
+    assert screen.unit_card.unit["id"] == "u_b_a"
+    # → twice → wraps from b → c.
+    asyncio.run(screen.handle_key("right"))
+    asyncio.run(screen.handle_key("right"))
+    assert screen.unit_card.unit["id"] == "u_r_c"
+    # Esc dismisses, cursor snaps to (5,5).
+    asyncio.run(screen.handle_key("esc"))
+    assert screen.unit_card is None
+    assert (screen.map_panel.cx, screen.map_panel.cy) == (5, 5)
 
 
 def test_room_map_renders_forest_and_fort_from_preview_tiles():

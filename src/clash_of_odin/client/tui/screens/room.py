@@ -186,25 +186,29 @@ ART_FRAME_SECONDS = 2.0
 @dataclass
 class UnitCard:
     """Read-only card showing a unit's description / stats / tags /
-    abilities / inventory. Rendered inline inside the Map panel — the
-    rest of the layout stays visible around it. Esc dismisses.
+    abilities / inventory.
 
-    Stats come from two sources: the unit dict itself (live match
-    state carries them) or the class_spec pulled from
-    describe_scenario.unit_classes (room preview only has id+pos so
-    stats must come from class_spec). Unit values take priority so
-    match-time mutations (HP, status) override the class baseline.
+    Holds an ordered list of units the player can browse with
+    h/left and l/right while the card is open — the unit_classes
+    lookup lets us repaint stats and ASCII art when the highlighted
+    unit changes class. The owning MapPanel snaps its cursor to the
+    card's currently-displayed unit when the card dismisses, so
+    closing always lands you back on the unit you were inspecting."""
 
-    If the scenario provides ASCII art frames for the class, the card
-    cycles through them at 1 frame per ART_FRAME_SECONDS using a
-    monotonic clock — re-renders compute the right frame on their
-    own, no separate animation tick required."""
-
-    unit: dict[str, Any]
-    class_spec: dict[str, Any] | None
-    # Set on the first render; subtracted on subsequent renders to
-    # turn elapsed time into a frame index.
+    units: list[dict[str, Any]]
+    index: int
+    unit_classes: dict[str, Any] | None = None
     _opened_at: float | None = None
+
+    @property
+    def unit(self) -> dict[str, Any]:
+        return self.units[self.index]
+
+    @property
+    def class_spec(self) -> dict[str, Any] | None:
+        if self.unit_classes is None:
+            return None
+        return self.unit_classes.get(self.unit.get("class"))
 
     def _stat(self, key: str, default: str = "?") -> str:
         """Prefer the unit's live value, fall back to class_spec, then
@@ -320,8 +324,21 @@ class UnitCard:
             rows.append(Text("inventory: " + ", ".join(inv)))
 
         rows.append(Text(""))
-        rows.append(Text("Esc / Enter to close", style="dim"))
+        if len(self.units) > 1:
+            rows.append(
+                Text("←/h previous · l/→ next · Esc/Enter close", style="dim")
+            )
+        else:
+            rows.append(Text("Esc / Enter to close", style="dim"))
         return Group(*rows)
+
+    def navigate(self, step: int) -> None:
+        """Move the highlighted unit by `step` (wraps). Resets the
+        animation clock so the new portrait starts at frame 0."""
+        if not self.units:
+            return
+        self.index = (self.index + step) % len(self.units)
+        self._opened_at = None
 
     async def handle_key(self, key: str) -> bool:
         return key in ("esc", "enter", "q")
@@ -941,12 +958,29 @@ class MapPanel(Panel):
         h = int(p.get("height", 0))
         if w == 0 or h == 0:
             return None
-        # Any of Esc / Enter / q dismisses an open unit card before
-        # we interpret the key as cursor / select. Re-pressing Enter
-        # on the same unit toggles the card off, which is the natural
-        # "open it then close it again" muscle memory.
-        if self.screen.unit_card is not None and key in ("esc", "enter", "q"):
-            self.screen.unit_card = None
+        card = self.screen.unit_card
+        if card is not None:
+            # Card-mode keys win over board navigation.
+            #   h / ←   previous unit
+            #   l / →   next unit
+            #   esc / enter / q   close (and snap cursor to the
+            #                      currently-displayed unit, so closing
+            #                      always lands you on the unit you
+            #                      were inspecting)
+            if key in ("left", "h"):
+                card.navigate(-1)
+                return None
+            if key in ("right", "l"):
+                card.navigate(1)
+                return None
+            if key in ("esc", "enter", "q"):
+                pos = card.unit.get("pos") or {}
+                self.cx = int(pos.get("x", self.cx))
+                self.cy = int(pos.get("y", self.cy))
+                self.screen.unit_card = None
+                return None
+            # Other keys (up/down/Tab handled higher) are no-ops while
+            # the card is up.
             return None
         if key in ("up", "k"):
             self.cy = (self.cy - 1) % h
@@ -1059,7 +1093,7 @@ class RoomScreen(Screen):
                 hints.append(f"[{focused.title}] ", style="bold yellow")
                 hints.append(panel_hints, style="white")
                 hints.append("   ", style="dim")
-            hints.append("Tab next panel   q quit", style="dim")
+            hints.append("Tab next panel   F2 help   q quit", style="dim")
             footer_line = hints
 
         # Put header / body / footer all inside a single Layout with
@@ -1169,10 +1203,30 @@ class RoomScreen(Screen):
     # ---- public API used by panels ----
 
     def open_unit_card(self, unit: dict[str, Any]) -> None:
-        spec = (
-            (self.app.state.scenario_description or {}).get("unit_classes") or {}
-        ).get(unit.get("class"))
-        self.unit_card = UnitCard(unit=unit, class_spec=spec)
+        units = self._navigable_units()
+        try:
+            idx = units.index(unit)
+        except ValueError:
+            idx = 0
+            units = [unit] + units
+        unit_classes = (
+            self.app.state.scenario_description or {}
+        ).get("unit_classes") or {}
+        self.unit_card = UnitCard(units=units, index=idx, unit_classes=unit_classes)
+
+    def _navigable_units(self) -> list[dict[str, Any]]:
+        """Units the unit-card cycle (h / l) walks through. Sorted by
+        (y, x) so 'next' moves left-to-right top-to-bottom across the
+        board, which matches how players read the map."""
+        p = self.scenario_preview or {}
+        units = list(p.get("units") or [])
+        units.sort(
+            key=lambda u: (
+                int((u.get("pos") or {}).get("y", 0)),
+                int((u.get("pos") or {}).get("x", 0)),
+            )
+        )
+        return units
 
     async def run_action(self, action: str) -> Screen | None:
         if action == "toggle_ready":
