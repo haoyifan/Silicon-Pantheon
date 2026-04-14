@@ -87,11 +87,27 @@ def _serialize_room_preview(room: Room) -> dict[str, Any]:
         for t in state.board.tiles.values()
         if t.is_fort
     ]
+    # Enumerate every non-default tile (forts + any explicit terrain)
+    # so the room MapPanel can render forests / mountains / etc. and
+    # the cursor tooltip can describe what's underneath. Without this
+    # the preview only shows units + fort glyphs and falls back to
+    # "plain" everywhere else, even on tiles the scenario painted.
+    tiles: list[dict[str, Any]] = []
+    for tile in state.board.tiles.values():
+        entry: dict[str, Any] = {
+            "x": tile.pos.x,
+            "y": tile.pos.y,
+            "type": tile.type,
+        }
+        if tile.fort_owner is not None:
+            entry["fort_owner"] = tile.fort_owner.value
+        tiles.append(entry)
     summary["scenario_preview"] = {
         "width": state.board.width,
         "height": state.board.height,
         "units": units,
         "forts": forts,
+        "tiles": tiles,
         "max_turns": state.max_turns,
     }
     return summary

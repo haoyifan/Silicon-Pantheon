@@ -391,6 +391,23 @@ class DescriptionPanel(Panel):
         )
 
 
+def _terrain_cell_style(ttype: str) -> tuple[str, str] | None:
+    """Map glyph + style for a terrain type. None means "let the
+    default empty-cell render handle it" (i.e. plain). Built-ins are
+    hard-coded to keep visuals consistent across renderers; scenarios
+    that introduce custom terrain names render via the first letter
+    of the name in dim until they're added here too."""
+    if ttype == "plain":
+        return None
+    if ttype == "forest":
+        return ("f", "green")
+    if ttype == "mountain":
+        return ("^", "bright_black")
+    if ttype == "fort":
+        return ("*", "yellow")
+    return (ttype[:1] or "?", "magenta")
+
+
 def _terrain_effect_summary(
     scenario_description: dict[str, Any] | None, terrain: str
 ) -> str:
@@ -701,6 +718,21 @@ class MapPanel(Panel):
             self.cy = max(0, min(self.cy, h - 1))
 
         styled: dict[tuple[int, int], tuple[str, str]] = {}
+        # Paint terrain first (forest/mountain/swamp/lava/etc.) so units
+        # and forts can overlay it. Without this, scenarios that paint
+        # forests in their YAML show up as bare dots in the room
+        # preview — mismatching what the live game-state map renders.
+        tiles = p.get("tiles") or []
+        tile_lookup: dict[tuple[int, int], dict] = {
+            (int(t.get("x", -1)), int(t.get("y", -1))): t for t in tiles
+        }
+        for (tx, ty), t in tile_lookup.items():
+            if not (0 <= tx < w and 0 <= ty < h):
+                continue
+            ttype = str(t.get("type", "plain"))
+            cell = _terrain_cell_style(ttype)
+            if cell is not None:
+                styled[(tx, ty)] = cell
         for f in forts:
             pos = f.get("pos") or {}
             x, y = int(pos.get("x", -1)), int(pos.get("y", -1))
@@ -756,6 +788,15 @@ class MapPanel(Panel):
         for t in (self._board().get("tiles") or []):
             if int(t.get("x", -1)) == self.cx and int(t.get("y", -1)) == self.cy:
                 terrain = str(t.get("type", "plain"))
+                break
+        # Forts live in their own list in scenario_preview (legacy
+        # compatibility — the engine treats them as a tile type but
+        # the preview keeps them separate). Fold them in here so the
+        # tooltip says "fort" instead of "plain" on a fort tile.
+        for f in self._board().get("forts") or []:
+            fpos = f.get("pos") or {}
+            if int(fpos.get("x", -1)) == self.cx and int(fpos.get("y", -1)) == self.cy:
+                terrain = "fort"
                 break
         line = Text()
         line.append(f"({self.cx}, {self.cy}) ", style="dim")

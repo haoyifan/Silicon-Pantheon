@@ -192,6 +192,35 @@ def test_focused_panel_gets_yellow_border():
     assert "Actions" in ansi
 
 
+def test_room_map_renders_forest_and_fort_from_preview_tiles():
+    """Regression: room MapPanel used to ignore the tiles list, so
+    forests / mountains never showed up; fort tiles showed only the
+    fort glyph and the cursor tooltip said 'plain'."""
+    app = _FakeApp()
+    _stub_room(app)
+    screen = RoomScreen(app)
+    screen.scenario_preview = {
+        "width": 4, "height": 4,
+        "units": [],
+        "forts": [{"pos": {"x": 0, "y": 0}, "owner": "blue"}],
+        "tiles": [
+            {"x": 1, "y": 1, "type": "forest"},
+            {"x": 0, "y": 0, "type": "fort", "fort_owner": "blue"},
+        ],
+    }
+    _focus_map(screen)
+    console = Console(record=True, width=120)
+    console.print(screen.render())
+    out = console.export_text()
+    # Forest glyph 'f' is visible somewhere in the rendered map row.
+    assert " f " in out
+    # Fort glyph '*' too.
+    assert "*" in out
+    # Tooltip on the fort cell calls it 'fort', not 'plain'.
+    # cursor still at (0,0), which IS the fort.
+    assert "terrain: fort" in out
+
+
 def test_enter_on_open_unit_card_dismisses_it():
     """Re-pressing Enter on the same unit toggles the card off — same
     muscle memory as 'open it then close it again'."""

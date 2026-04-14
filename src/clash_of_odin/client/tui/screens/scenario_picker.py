@@ -56,10 +56,12 @@ class ScenarioPicker:
         self._cache: dict[str, dict[str, Any]] = {}
         # Pending fetches so we don't hammer the server while renders tick.
         self._in_flight: set[str] = set()
-        # Focus state: True = list panel focused (arrows cycle
-        # selection); False = map focused (arrows move cursor).
-        self._list_focused = True
+        # Focus rotates Tab → "list" → "map" → "desc" → "list" — the
+        # description panel can hold a long story plus all the win
+        # conditions, so it needs its own scroll state.
+        self.focus: str = "list"
         self.cursor = (0, 0)
+        self.desc_scroll = 0
         self.unit_card: UnitCard | None = None
 
     # ---- async bridge ----
@@ -118,14 +120,20 @@ class ScenarioPicker:
         return root
 
     def _footer_hint(self) -> RenderableType:
-        if self._list_focused:
+        if self.focus == "list":
             return Text(
                 "[Scenarios] ↑/↓ browse   Enter select   "
                 "Tab → preview map   Esc cancel",
                 style="dim",
             )
+        if self.focus == "map":
+            return Text(
+                "[Map preview] ←↑↓→ / h j k l move cursor   "
+                "Enter unit stats   Tab → description   Esc cancel",
+                style="dim",
+            )
         return Text(
-            "[Map preview] ←↑↓→ / h j k l move cursor   Enter unit stats   "
+            "[Description] ↑/↓ scroll   "
             "Tab → scenario list   Esc cancel",
             style="dim",
         )
@@ -143,13 +151,13 @@ class ScenarioPicker:
         return RichPanel(
             Group(*lines),
             title="Scenarios",
-            border_style=border_style(self._list_focused),
+            border_style=border_style(self.focus == "list"),
             padding=(0, 1),
         )
 
     def _render_map(self) -> RenderableType:
         desc = self._current_desc()
-        focused = not self._list_focused
+        focused = self.focus == "map"
         if desc is None:
             return RichPanel(
                 Text("(loading scenario preview…)", style="dim italic"),
@@ -251,11 +259,12 @@ class ScenarioPicker:
     def _render_description(self) -> RenderableType:
         desc = self._current_desc()
         name = self._current_name()
+        focused = self.focus == "desc"
         if desc is None:
             return RichPanel(
                 Text("(loading…)", style="dim italic"),
                 title=name,
-                border_style="dim",
+                border_style=border_style(focused),
                 padding=(0, 1),
             )
         title = desc.get("name", name)
@@ -299,10 +308,15 @@ class ScenarioPicker:
         if max_turns:
             rows.append(Text(""))
             rows.append(Text(f"Max turns: {max_turns}", style="dim"))
+        # Apply scroll offset by trimming leading rows. Clamp first
+        # so scrolling past the end snaps back instead of going blank.
+        if self.desc_scroll > 0 and rows:
+            self.desc_scroll = min(self.desc_scroll, max(0, len(rows) - 1))
+            rows = rows[self.desc_scroll :]
         return RichPanel(
             Group(*rows),
             title=title,
-            border_style="dim",
+            border_style=border_style(focused),
             padding=(0, 1),
         )
 
@@ -319,12 +333,23 @@ class ScenarioPicker:
             self.on_cancel()
             return True
         if key == "\t":
-            self._list_focused = not self._list_focused
+            order = ["list", "map", "desc"]
+            i = order.index(self.focus)
+            self.focus = order[(i + 1) % len(order)]
             return False
 
-        if self._list_focused:
+        if self.focus == "list":
             return await self._handle_list_key(key)
-        return self._handle_map_key(key)
+        if self.focus == "map":
+            return self._handle_map_key(key)
+        return self._handle_desc_key(key)
+
+    def _handle_desc_key(self, key: str) -> bool:
+        if key in ("down", "j"):
+            self.desc_scroll += 1
+        elif key in ("up", "k"):
+            self.desc_scroll = max(0, self.desc_scroll - 1)
+        return False
 
     async def _handle_list_key(self, key: str) -> bool:
         n = len(self.scenarios)

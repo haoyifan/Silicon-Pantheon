@@ -93,7 +93,7 @@ def test_picker_arrows_cycle_scenarios():
     assert picker._current_name() == "b"
 
 
-def test_picker_tab_toggles_list_vs_map_focus():
+def test_picker_tab_cycles_list_map_desc_focus():
     client = _FakeClient({"a": _sample_payload("a")})
     picker = ScenarioPicker(
         scenarios=["a"],
@@ -102,13 +102,24 @@ def test_picker_tab_toggles_list_vs_map_focus():
         on_confirm=lambda v: None,  # type: ignore[arg-type]
     )
     asyncio.run(picker.prefetch_current())
-    assert picker._list_focused is True
+    assert picker.focus == "list"
     asyncio.run(picker.handle_key("\t"))
-    assert picker._list_focused is False
-    # Now arrows move the map cursor, not the list selection.
+    assert picker.focus == "map"
+    # Map cursor responds to arrows now.
     cx, cy = picker.cursor
     asyncio.run(picker.handle_key("right"))
     assert picker.cursor != (cx, cy)
+    asyncio.run(picker.handle_key("\t"))
+    assert picker.focus == "desc"
+    # In desc focus, down/up scroll the description.
+    before = picker.desc_scroll
+    asyncio.run(picker.handle_key("down"))
+    assert picker.desc_scroll == before + 1
+    asyncio.run(picker.handle_key("up"))
+    assert picker.desc_scroll == before
+    # Tab again wraps back to list.
+    asyncio.run(picker.handle_key("\t"))
+    assert picker.focus == "list"
 
 
 def test_picker_enter_in_list_confirms_selection():
