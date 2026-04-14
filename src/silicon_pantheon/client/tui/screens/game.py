@@ -451,11 +451,27 @@ class ReasoningPanel(Panel):
             )
 
         self.line_offset = max(0, min(self.line_offset, max(0, total - 1)))
-        # Render the slice ending at `end`; Rich crops whatever
-        # doesn't fit from the TOP. 400-line upper bound keeps the
-        # renderable cheap even after a long match.
+        # Rich renders content top-down and crops any overflow from
+        # the bottom of the panel — if we feed it 400 lines into a
+        # 10-row slot, it shows the oldest 10 and silently drops the
+        # rest. That looked like "scrolling does nothing" from the
+        # user's view because the hidden rows off the bottom were
+        # the only ones our offset could move.
+        #
+        # Estimate the panel's visible height and render exactly that
+        # many lines ending at `end`. Then Rich shows the full window
+        # top-to-bottom with the newest at the bottom as intended.
+        # Reasoning panel height ≈ (console_height - 2) * 2/5 - 2
+        # (body = total - header/footer, bottom = 2/5 of body,
+        # reasoning gets the bottom's full height minus borders).
+        try:
+            ch = self.screen.app.console.height
+        except Exception:
+            ch = 30
+        visible_rows = max(4, (ch - 2) * 2 // 5 - 2)
+
         end = total - self.line_offset
-        start = max(0, end - 400)
+        start = max(0, end - visible_rows)
         body = Text(no_wrap=False, overflow="fold")
         for i in range(start, end):
             style, txt = lines[i]
