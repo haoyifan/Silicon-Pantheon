@@ -36,6 +36,41 @@ from silicon_pantheon.server.engine.state import Team
 log = logging.getLogger("silicon.provider.openai")
 
 
+def _extract_reasoning(msg: Any) -> str | None:
+    """Dig chain-of-thought text out of a chat-completions message.
+
+    Providers disagree on where reasoning lives:
+      - xAI Grok 3/4:       `reasoning_content`  (str)
+      - OpenAI o-series:    `reasoning_content`  (str)
+      - xAI (some builds):  `reasoning`          (str)
+      - DeepSeek R1 etc.:   `reasoning`          (str)
+      - Anthropic via OAI-compat: `thinking`     (str)
+
+    Pydantic models in newer openai SDKs stash unknown fields in
+    `model_extra`; older versions expose them as attributes directly.
+    Walk both.
+    """
+    for name in ("reasoning_content", "reasoning", "thinking"):
+        val = getattr(msg, name, None)
+        if isinstance(val, str) and val.strip():
+            return val
+        # List-of-blocks form (rare but used by some OAI-compat proxies).
+        if isinstance(val, list):
+            parts = [
+                b.get("text") if isinstance(b, dict) else str(b)
+                for b in val
+            ]
+            joined = "\n".join(p for p in parts if p)
+            if joined.strip():
+                return joined
+    extra = getattr(msg, "model_extra", None) or {}
+    for name in ("reasoning_content", "reasoning", "thinking"):
+        val = extra.get(name)
+        if isinstance(val, str) and val.strip():
+            return val
+    return None
+
+
 def _as_openai_tool(spec: ToolSpec) -> dict:
     """Convert our generic ToolSpec to OpenAI's function-tool format."""
     return {
@@ -103,6 +138,33 @@ class OpenAIAdapter:
             choice = resp.choices[0]
             msg = choice.message
 
+            # Diagnostic: dump the full message shape so we can see
+            # where Grok / OpenAI actually stashed reasoning. xAI has
+            # shipped at least three different field names across
+            # Grok 3 / 4 releases (reasoning_content, reasoning,
+            # thinking); this log makes the next field-rename
+            # trivial to diagnose from a client log tail.
+            try:
+                msg_dump = msg.model_dump() if hasattr(msg, "model_dump") else {
+                    k: getattr(msg, k, None)
+                    for k in ("role", "content", "reasoning_content",
+                              "reasoning", "thinking", "tool_calls")
+                }
+                log.info(
+                    "openai/xai response [model=%s iter=%d]: keys=%s content_len=%s reasoning_keys=%s dump=%s",
+                    self.model,
+                    _iter,
+                    list(msg_dump.keys()) if isinstance(msg_dump, dict) else type(msg_dump).__name__,
+                    len(msg.content) if msg.content else 0,
+                    {k: (len(v) if isinstance(v, str) else type(v).__name__)
+                     for k, v in (msg_dump.items() if isinstance(msg_dump, dict) else [])
+                     if k in ("reasoning_content", "reasoning", "thinking")},
+                    # Truncate the dump so we don't spam megabytes per turn.
+                    json.dumps(msg_dump, default=str)[:4000],
+                )
+            except Exception:
+                log.exception("failed to dump openai response for diagnostic")
+
             # Persist the assistant turn so the transcript stays valid
             # for subsequent tool-result appends.
             assistant_entry: dict[str, Any] = {
@@ -131,11 +193,7 @@ class OpenAIAdapter:
             # whichever is non-empty so the thoughts panel actually
             # populates for reasoning-capable models.
             if on_thought is not None:
-                reasoning = getattr(msg, "reasoning_content", None)
-                # Some SDK versions expose it via model_extra instead.
-                if not reasoning:
-                    extra = getattr(msg, "model_extra", None) or {}
-                    reasoning = extra.get("reasoning_content")
+                reasoning = _extract_reasoning(msg)
                 for piece in (reasoning, msg.content):
                     if piece:
                         try:
