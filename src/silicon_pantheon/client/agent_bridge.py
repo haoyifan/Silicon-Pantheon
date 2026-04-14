@@ -386,6 +386,30 @@ class NetworkedAgent:
         """Drive one half-turn: fetch state, build prompt, let the
         adapter run until the turn ends."""
         state = await self._fetch_state()
+
+        # Defensive re-check of turn ownership. _maybe_trigger_agent
+        # in the TUI already gates on `active_player == viewer`, but
+        # its decision is based on polled state that can be up to
+        # ~1s stale (POLL_INTERVAL_S) and the spawning of this task
+        # is decoupled from the next poll. Without this second check
+        # we'd build a "It is your turn" prompt from fresh state that
+        # actually says active_player=<other>, ship it to the LLM,
+        # and watch the model earnestly call move/attack/end_turn
+        # only for every call to come back as "not_your_turn".
+        # Returning early leaves the agent_task done() so the next
+        # poll cycle re-evaluates with fresh truth.
+        status = state.get("status")
+        if status == "game_over":
+            log.info("play_turn: match already game_over; skipping")
+            return state
+        active = state.get("active_player")
+        if active != viewer.value:
+            log.warning(
+                "play_turn: fresh state says active=%s but we are "
+                "%s; skipping turn (likely stale-poll race)",
+                active, viewer.value,
+            )
+            return state
         user_prompt = build_turn_prompt_from_state_dict(state, viewer)
         # Lazy-fetch scenario invariants on the first turn. The
         # Anthropic adapter reuses its ClaudeSDKClient across turns

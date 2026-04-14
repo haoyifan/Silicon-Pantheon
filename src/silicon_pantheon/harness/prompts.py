@@ -356,6 +356,16 @@ Here is a snapshot of the current game state (you can always call get_state to r
 Play your turn. Remember to call end_turn at the end."""
 
 
+_TURN_PROMPT_MISMATCH_WARNING = """\
+WARNING: the per-turn prompt builder was invoked but the snapshot's
+active_player does not match you ({team}). The server is authoritative —
+every action tool will reject with "not_your_turn" until the opposing
+side ends their turn. Do NOT call move/attack/heal/wait/end_turn.
+Call get_state once to re-check; if still not your turn, reply with a
+short note acknowledging the mismatch and do nothing else.
+"""
+
+
 def build_turn_prompt(session: Session, viewer: Team) -> str:
     state_dict = state_to_dict(session.state, viewer=viewer)
     # Strip the verbose terrain grid from the snapshot — it's constant across turns.
@@ -410,6 +420,11 @@ def build_turn_prompt_from_state_dict(
     `get_state` tool call rather than holding a local Session. The
     dict should already be filtered for `viewer` by the server's
     viewer-filter layer.
+
+    If the snapshot's active_player disagrees with `viewer`, a
+    warning block is prepended so a misfired call to this function
+    can't silently lie to the model (see agent_bridge.play_turn
+    which guards against the same race earlier in the pipeline).
     """
     snapshot = {
         "turn": state_dict.get("turn"),
@@ -423,11 +438,19 @@ def build_turn_prompt_from_state_dict(
         "units": [_slim_unit(u) for u in state_dict.get("units", [])],
         "last_action": state_dict.get("last_action"),
     }
-    return TURN_PROMPT_TEMPLATE.format(
+    prompt = TURN_PROMPT_TEMPLATE.format(
         turn=state_dict.get("turn", "?"),
         team=viewer.value,
         state_json=json.dumps(snapshot, indent=2),
     )
+    active = state_dict.get("active_player")
+    if active is not None and active != viewer.value:
+        prompt = (
+            _TURN_PROMPT_MISMATCH_WARNING.format(team=viewer.value)
+            + "\n"
+            + prompt
+        )
+    return prompt
 
 
 def load_strategy(path: str | Path | None) -> str | None:
