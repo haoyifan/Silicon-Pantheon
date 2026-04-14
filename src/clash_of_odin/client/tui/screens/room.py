@@ -765,11 +765,11 @@ class RoomScreen(Screen):
         self._dropdown: Dropdown | None = None
         self._confirm: ConfirmModal | None = None
         self.unit_card: UnitCard | None = None
+        # Full-screen scenario picker (richer than a one-line dropdown
+        # — see screens/scenario_picker.py for layout). Only the host
+        # opens this.
+        self._scenario_picker = None
         # Pending screen transition queued from a ConfirmModal callback.
-        # _run_action gets called synchronously from the panel; we can't
-        # hand back the new Screen through the modal on_confirm closure,
-        # so we stage it here and return it from handle_key after the
-        # modal closes.
         self._pending_transition: Screen | None = None
 
         # Build panels. Order matters: Tab cycles in this order.
@@ -796,6 +796,8 @@ class RoomScreen(Screen):
     def render(self) -> RenderableType:
         if self._confirm is not None:
             return self._confirm.render()
+        if self._scenario_picker is not None:
+            return self._scenario_picker.render()
         if self._dropdown is not None:
             return self._dropdown.render()
 
@@ -903,6 +905,11 @@ class RoomScreen(Screen):
                 self._pending_transition = None
                 return pending
             return None
+        if self._scenario_picker is not None:
+            close = await self._scenario_picker.handle_key(key)
+            if close:
+                self._scenario_picker = None
+            return None
         # Full-screen dropdowns swallow all input while open.
         if self._dropdown is not None:
             close = await self._dropdown.handle_key(key)
@@ -990,15 +997,26 @@ class RoomScreen(Screen):
         )
 
     def _open_scenario_modal(self) -> None:
+        from clash_of_odin.client.tui.screens.scenario_picker import ScenarioPicker
+
         current = (self.app.state.last_room_state or {}).get("scenario")
         options = list(self.scenarios) or [current or "01_tiny_skirmish"]
-        idx = options.index(current) if current in options else 0
-        self._dropdown = Dropdown(
-            title="Change Scenario",
-            options=options,
-            selected_idx=idx,
-            on_confirm=lambda v: self._apply_config({"scenario": v}),
+
+        async def _on_confirm(chosen: str) -> None:
+            await self._apply_config({"scenario": chosen})
+
+        picker = ScenarioPicker(
+            scenarios=options,
+            current=current or options[0],
+            client=self.app.client,
+            on_confirm=_on_confirm,
         )
+        self._scenario_picker = picker
+        # Kick off the first scenario's data fetch so the preview
+        # shows up without waiting for the user to move.
+        import asyncio
+
+        asyncio.create_task(picker.prefetch_current())
 
     def _open_fog_modal(self) -> None:
         current = (self.app.state.last_room_state or {}).get("fog_of_war", "none")
@@ -1051,6 +1069,8 @@ class RoomScreen(Screen):
         now = _time.time()
         if now - self._last_poll >= POLL_INTERVAL_S:
             await self._refresh_state()
+        if self._scenario_picker is not None:
+            await self._scenario_picker.tick()
 
     async def _load_preview(self) -> None:
         if self.app.client is None or self.app.state.room_id is None:
