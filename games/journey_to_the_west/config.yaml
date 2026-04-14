@@ -1,0 +1,242 @@
+schema_version: 1
+name: Journey to the West
+description: |
+  The pilgrim Tang Monk and his three disciples — Sun Wukong (the Monkey
+  King), Zhu Bajie, and Sha Wujing — must escort the White Dragon Horse
+  eastward to Thunder Temple to retrieve the sutras. Hungry demons bar
+  their path.
+
+  Blue (pilgrims) wins by getting Tang Monk to the temple at (13, 4),
+  OR by wiping out all the monsters. Blue loses if Tang Monk dies.
+
+board:
+  width: 14
+  height: 9
+  terrain:
+    # Mountain passes along the north / south edges
+    - {x: 0, y: 0, type: mountain}
+    - {x: 1, y: 0, type: mountain}
+    - {x: 12, y: 0, type: mountain}
+    - {x: 13, y: 0, type: mountain}
+    - {x: 0, y: 8, type: mountain}
+    - {x: 1, y: 8, type: mountain}
+    - {x: 12, y: 8, type: mountain}
+    - {x: 13, y: 8, type: mountain}
+    # Forest patches (cover for archers / ambush sites)
+    - {x: 3, y: 2, type: forest}
+    - {x: 3, y: 6, type: forest}
+    - {x: 7, y: 1, type: forest}
+    - {x: 7, y: 7, type: forest}
+    - {x: 10, y: 3, type: forest}
+    - {x: 10, y: 5, type: forest}
+    # The river — impassable to most units
+    - {x: 6, y: 2, type: river}
+    - {x: 6, y: 3, type: river}
+    - {x: 6, y: 5, type: river}
+    - {x: 6, y: 6, type: river}
+    # Bridge at center — narrow chokepoint
+    - {x: 6, y: 4, type: bridge}
+    # Poison swamp — slow, hurts units standing in it
+    - {x: 9, y: 4, type: swamp}
+    # Thunder Temple goal tile
+    - {x: 13, y: 4, type: temple}
+  forts: []
+
+terrain_types:
+  river:
+    move_cost: 99
+    passable: false
+    blocks_sight: false
+    glyph: "~"
+    color: blue
+  bridge:
+    move_cost: 1
+    defense_bonus: 0
+    glyph: "="
+    color: yellow
+  swamp:
+    move_cost: 2
+    heals: -2           # -2 HP at end_turn for the outgoing player
+    blocks_sight: false
+    glyph: ","
+    color: magenta
+  temple:
+    move_cost: 1
+    defense_bonus: 2
+    heals: 3
+    glyph: "T"
+    color: yellow
+
+unit_classes:
+  # ---- Pilgrims ----
+  tang_monk:
+    hp_max: 16
+    atk: 2
+    defense: 2
+    res: 2
+    spd: 2
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [vip, monk, human]
+    sight: 3
+  sun_wukong:
+    hp_max: 42
+    atk: 14
+    defense: 7
+    res: 6
+    spd: 9
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    can_enter_mountain: true
+    tags: [hero, monkey, immortal]
+    sight: 4
+  zhu_bajie:
+    hp_max: 34
+    atk: 11
+    defense: 5
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [hero, pig]
+    sight: 3
+  sha_wujing:
+    hp_max: 36
+    atk: 9
+    defense: 6
+    res: 4
+    spd: 4
+    rng_min: 1
+    rng_max: 2
+    move: 4
+    tags: [hero, porter]
+    sight: 3
+  bai_long_ma:
+    hp_max: 22
+    atk: 7
+    defense: 4
+    res: 4
+    spd: 7
+    rng_min: 1
+    rng_max: 1
+    move: 6
+    tags: [mount, dragon]
+    sight: 4
+
+  # ---- Monsters ----
+  demon_king:
+    hp_max: 40
+    atk: 13
+    defense: 6
+    res: 5
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [boss, demon]
+    sight: 4
+  bull_demon:
+    hp_max: 32
+    atk: 10
+    defense: 6
+    res: 3
+    spd: 4
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [demon, brute]
+    sight: 3
+  white_bone_demon:
+    hp_max: 20
+    atk: 9
+    defense: 3
+    res: 5
+    spd: 6
+    rng_min: 2
+    rng_max: 3
+    move: 4
+    is_magic: true
+    tags: [demon, caster]
+    sight: 4
+  spider_spirit:
+    hp_max: 18
+    atk: 7
+    defense: 3
+    res: 3
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [demon, fast]
+    sight: 3
+  skeleton:
+    hp_max: 14
+    atk: 6
+    defense: 3
+    res: 2
+    spd: 4
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [undead, mook]
+    sight: 2
+
+armies:
+  blue:
+    - {class: tang_monk,   pos: {x: 0, y: 4}}
+    - {class: sun_wukong,  pos: {x: 0, y: 3}}
+    - {class: zhu_bajie,   pos: {x: 1, y: 5}}
+    - {class: sha_wujing,  pos: {x: 0, y: 5}}
+    - {class: bai_long_ma, pos: {x: 1, y: 4}}
+  red:
+    - {class: demon_king,       pos: {x: 12, y: 4}}
+    - {class: bull_demon,       pos: {x: 11, y: 3}}
+    - {class: white_bone_demon, pos: {x: 11, y: 5}}
+    - {class: spider_spirit,    pos: {x: 8, y: 2}}
+    - {class: spider_spirit,    pos: {x: 8, y: 6}}
+    - {class: skeleton,         pos: {x: 5, y: 1}}
+    - {class: skeleton,         pos: {x: 5, y: 7}}
+    - {class: skeleton,         pos: {x: 9, y: 1}}
+
+rules:
+  max_turns: 40
+  fog_of_war: false
+  first_player: blue
+
+win_conditions:
+  - {type: protect_unit, unit_id: u_b_tang_monk_1, owning_team: blue}
+  - {type: reach_tile,   team: blue, pos: {x: 13, y: 4}, unit_id: u_b_tang_monk_1}
+  - {type: eliminate_all_enemy_units}
+  - {type: max_turns_draw}
+
+plugin_hooks:
+  on_turn_start:
+    - spawn_ambush
+
+narrative:
+  title: Journey to the West
+  description: |
+    A retelling of Wu Cheng'en's epic pilgrimage as a tactical skirmish.
+  intro: |
+    Day 1. The road from Chang'an stretches east. Tang Monk rides
+    the White Dragon Horse; Sun Wukong scouts ahead, Zhu Bajie
+    grumbles, Sha Wujing bears the packs.
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: "Scout's report: bandits stir in the forest to the east."
+    - trigger: on_turn_start
+      turn: 10
+      text: "An ambush! Skeletons rise from the bridge rubble."
+    - trigger: on_turn_start
+      turn: 20
+      text: "Thunder Temple's spires appear through the mist."
+    - trigger: on_unit_killed
+      unit_id: u_r_demon_king_1
+      text: "The demon king falls! His cohorts waver."
+    - trigger: on_unit_killed
+      unit_id: u_b_tang_monk_1
+      text: "Tang Monk has fallen. The pilgrimage is over."
