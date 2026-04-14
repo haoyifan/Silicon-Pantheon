@@ -283,26 +283,11 @@ def _apply_wait(state: GameState, unit: Unit) -> dict:
 
 def _apply_end_turn(state: GameState) -> dict:
     active = state.active_player
-
-    # 1. Check fort-capture win: any of my units standing on an enemy-owned fort?
     enemy = active.other()
-    for u in state.units_of(active):
-        tile = state.board.tile(u.pos)
-        if tile.is_fort and tile.fort_owner is enemy:
-            state.status = GameStatus.GAME_OVER
-            state.winner = active
-            return {
-                "type": "end_turn",
-                "by": active.value,
-                "winner": active.value,
-                "reason": "seize",
-                "seized_at": u.pos.to_dict(),
-                "seized_by_unit": u.id,
-            }
 
-    # 1.5. Custom-terrain heal/damage effects for the OUTGOING
-    # player's units (Fire Emblem-classic poison / venom timing — hit
-    # at the end of *your* turn). Legacy fort heal stays in step 4.
+    # 1. Custom-terrain heal/damage effects for the OUTGOING player's
+    # units (Fire Emblem-classic timing — hit at the end of *your*
+    # turn). Legacy fort heal for the incoming player is in step 4.
     for u in list(state.units_of(active)):
         if not u.alive:
             continue
@@ -316,16 +301,10 @@ def _apply_end_turn(state: GameState) -> dict:
     # 3. If we wrapped back to first_player, increment turn counter.
     if state.active_player is state.first_player:
         state.turn += 1
-        if state.turn > state.max_turns:
-            state.status = GameStatus.GAME_OVER
-            state.winner = None  # draw
-            return {"type": "end_turn", "by": active.value, "winner": None, "reason": "max_turns"}
 
     # 4. Start-of-turn effects for the incoming player:
     #    - reset unit statuses to READY
-    #    - apply legacy fort heal (+3 on own fort)
-    # Custom-terrain heals/damage already applied at step 1.5 for the
-    # outgoing player.
+    #    - legacy fort heal (+3 on own fort)
     reset_ids = []
     for u in state.units_of(state.active_player):
         u.status = UnitStatus.READY
@@ -342,17 +321,46 @@ def _apply_end_turn(state: GameState) -> dict:
         reset_ids,
     )
 
-    # 5. Check elimination win (opponent has no units after our turn ends).
-    if not state.units_of(state.active_player):
-        state.status = GameStatus.GAME_OVER
-        state.winner = active
-        return {
-            "type": "end_turn",
-            "by": active.value,
-            "winner": active.value,
-            "reason": "elimination",
-        }
+    # 5. Walk the declarative win-condition rule list. Rules evaluate
+    # in YAML order; first match wins. Scenarios without an explicit
+    # list use default_conditions() (seize / elimination / max_turns).
+    from clash_of_odin.server.engine.win_conditions import default_conditions
 
+    rules_ = getattr(state, "_win_conditions", None) or default_conditions()
+    # Note: SeizeEnemyFort needs to run from the perspective of the
+    # team that just ended — active_player has already flipped. Each
+    # rule handles its own 'whose perspective' logic internally.
+    # Temporarily flip back for the seize check only.
+    original_active = state.active_player
+    state.active_player = active
+    try:
+        for rule in rules_:
+            # Seize rule checks 'active' (the one ending); restore the
+            # flipped state for rules that assume post-handover.
+            if type(rule).__name__ == "SeizeEnemyFort":
+                result = rule.check(state, "end_turn")
+            else:
+                state.active_player = original_active
+                result = rule.check(state, "end_turn")
+                state.active_player = active
+            if result is None:
+                continue
+            state.active_player = original_active
+            state.status = GameStatus.GAME_OVER
+            state.winner = Team(result.winner) if result.winner else None
+            payload: dict = {
+                "type": "end_turn",
+                "by": active.value,
+                "winner": result.winner,
+                "reason": result.reason,
+            }
+            if result.details:
+                payload.update(result.details)
+            return payload
+    finally:
+        state.active_player = original_active
+
+    # Fallback: rules didn't fire; game continues.
     return {"type": "end_turn", "by": active.value, "winner": None, "reason": None}
 
 

@@ -225,7 +225,20 @@ def build_state(cfg: dict) -> GameState:
                 stats=stats,
             )
 
-    return GameState(
+    # Win conditions: explicit list from scenario OR default (seize /
+    # elimination / max_turns). Rules stored on the state so
+    # _apply_end_turn's dispatcher can walk them.
+    from clash_of_odin.server.engine.win_conditions import (
+        build_conditions,
+        default_conditions,
+    )
+
+    if "win_conditions" in cfg:
+        win_rules = build_conditions(cfg.get("win_conditions") or [])
+    else:
+        win_rules = default_conditions()
+
+    state = GameState(
         game_id=f"g_{uuid.uuid4().hex[:8]}",
         turn=1,
         max_turns=max_turns,
@@ -234,3 +247,7 @@ def build_state(cfg: dict) -> GameState:
         board=board,
         units=units,
     )
+    # Runtime-attached: not a declared dataclass field because it holds
+    # live rule instances (with per-game counters like HoldTile._count).
+    state._win_conditions = win_rules
+    return state
