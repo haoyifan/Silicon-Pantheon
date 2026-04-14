@@ -55,7 +55,7 @@ def test_blue_wins_with_bunker_and_khamenei():
     seal.pos = Pos(15, 5)
     r = apply(s, EndTurnAction())
     assert r.get("winner") == "blue"
-    assert r.get("reason") == "uranium_seized_and_khamenei_killed"
+    assert r.get("reason") == "enriched_uranium_seized_and_khamenei_killed"
 
 
 def test_bunker_alone_is_not_enough():

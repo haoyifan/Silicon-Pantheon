@@ -1,15 +1,14 @@
-"""Plugins for the Strait of Hormuz scenario.
+"""Plugins for the Strait of Hormuz scenario (2026 Iran war).
 
 Two callables:
 
-  - hormuz_win_check: the sole authoritative win-condition. Blue
-    wins iff a blue unit occupies the uranium-bunker tile AND
-    Khamenei is dead. Red wins when turn > max_turns without that
-    compound goal met (i.e. Iran held the line for 10 turns).
+  - enriched_uranium_strike_check: the authoritative win rule for
+    this scenario. See its docstring for the precise compound
+    condition.
 
   - sea_mine_effect: the contact-mine terrain hook. Any unit ending
     its turn on a sea_mine tile takes 6 HP. One-shot — the mine
-    detonates and is replaced with normal water.
+    detonates and the tile flips to plain water.
 """
 
 from __future__ import annotations
@@ -17,27 +16,33 @@ from __future__ import annotations
 from silicon_pantheon.server.engine.state import Pos, Team, Tile
 from silicon_pantheon.server.engine.win_conditions.base import WinResult
 
-# Coordinates of the uranium bunker must match config.yaml.
-_BUNKER_POS = Pos(15, 5)
+# Coordinates of the enriched-uranium bunker must match config.yaml.
+# The tile uses terrain_type "uranium_bunker" and is the goal tile
+# blue must occupy for the strike package to count as delivered.
+_URANIUM_BUNKER_POS = Pos(15, 5)
 _KHAMENEI_ID = "u_r_khamenei_1"
 
 
-def hormuz_win_check(state, hook: str, **_):
-    """Authoritative win rule for this scenario.
+def enriched_uranium_strike_check(state, hook: str, **_):
+    """Operation Epic Fury compound win rule.
 
-    Called by the plugin win-condition at end_turn. Returns a
-    WinResult on victory, or None to let the match continue.
+    Blue (US + Israel) is running a joint strike package with two
+    objectives that BOTH must land inside the ten-turn window:
 
-    Victory lattice:
-      - blue: on_bunker AND khamenei_dead, before turn budget exhausts
-      - red:  turn > max_turns and blue has not met the compound goal
-      - red:  both blue VIP leaders are dead (operation cancelled)
+        1. Assassinate Ayatollah Khamenei (mirrors the real strike
+           in Tehran on 2026-02-28 that killed him day 1).
+        2. Plant boots on the Iranian enriched-uranium bunker
+           (terrain tile "uranium_bunker" at position %s).
 
-    Protect_unit rules for each individual VIP are listed in
-    win_conditions as defensive redundancy, but they fire on a
-    single-death and flip the match to red immediately. This
-    plugin therefore only needs to cover the "both dead" /
-    "turn-budget" shapes.
+    Exactly one of those two isn't enough — bombing the bunker
+    without decapitating the regime leaves Iran capable of
+    resupply; killing the Leader without reaching the enrichment
+    site means the program survives. Blue must stack both.
+
+    Red (Iran) wins if the ten-turn budget expires with the
+    compound goal unmet, OR if either US/Israeli leader is killed
+    (the protect_unit rules in config.yaml handle that case
+    directly).
     """
     if hook != "end_turn":
         return None
@@ -45,16 +50,16 @@ def hormuz_win_check(state, hook: str, **_):
     dead = getattr(state, "dead_unit_ids", set())
     khamenei_dead = _KHAMENEI_ID in dead
 
-    # Blue victory lane.
+    # Blue victory lane: both objectives delivered this turn or earlier.
     blue_on_bunker = any(
-        u.pos == _BUNKER_POS for u in state.units_of(Team.BLUE)
+        u.pos == _URANIUM_BUNKER_POS for u in state.units_of(Team.BLUE)
     )
     if blue_on_bunker and khamenei_dead:
         return WinResult(
             winner="blue",
-            reason="uranium_seized_and_khamenei_killed",
+            reason="enriched_uranium_seized_and_khamenei_killed",
             details={
-                "bunker": _BUNKER_POS.to_dict(),
+                "uranium_bunker": _URANIUM_BUNKER_POS.to_dict(),
                 "khamenei_id": _KHAMENEI_ID,
             },
         )
@@ -70,6 +75,12 @@ def hormuz_win_check(state, hook: str, **_):
         )
 
     return None
+
+
+# Docstring can't substitute %s at class-load time; patch post-def.
+enriched_uranium_strike_check.__doc__ = (
+    enriched_uranium_strike_check.__doc__ or ""
+).replace("%s", f"({_URANIUM_BUNKER_POS.x}, {_URANIUM_BUNKER_POS.y})")
 
 
 def sea_mine_effect(state, unit, tile, hook: str, **_):

@@ -1,27 +1,32 @@
 schema_version: 1
 name: Strait of Hormuz
 description: |
-  June 2025 — Israeli strikes on Iranian leadership and nuclear
-  sites open the "Twelve-Day War". A week later, B-2 Spirits drop
-  GBU-57 bunker-busters on Fordow, Natanz, and Esfahan. The IRGC
-  closes the Strait of Hormuz with speedboats, Shahed drones, sea
-  mines, and coastal-missile batteries. This fictional scenario
-  condenses the campaign into a ten-turn race: a US/Israeli strike
-  group must push through the Strait, eliminate the Supreme Leader,
-  and plant boots on a hardened uranium-enrichment bunker in the
-  Iranian interior before the IRGC bleeds them dry.
+  February 2026 — the United States and Israel open "Operation
+  Epic Fury" with nearly 900 coordinated strikes on Iranian
+  leadership, missile infrastructure, and nuclear facilities in
+  twelve hours. Ayatollah Ali Khamenei is assassinated in Tehran
+  on day 1; Iran confirms his death on 1 March. The IRGC retaliates
+  by closing the Strait of Hormuz with speedboat swarms, Shahed
+  drones, coastal-missile batteries, and sea mines.
+
+  This scenario compresses the opening act into a ten-turn race:
+  a US/Israeli strike package must push through the Strait,
+  finish the decapitation of the regime, and plant boots on a
+  hardened enriched-uranium (the user's "condensed uranium")
+  bunker in the Iranian interior before the IRGC bleeds them dry.
 
   Blue (US/Israel): fast air (F-35, B-2), naval firepower (Arleigh-
-  Burke destroyer, Tomahawk boat), special forces (Navy SEAL team,
-  Shayetet 13), and two VIP leaders (the US President and the
-  Israeli PM) whose loss ends the operation.
+  Burke destroyer, Tomahawk sub), special forces (Navy SEAL team,
+  Shayetet 13), and two VIP leaders — the US President and the
+  Israeli PM — whose loss ends the operation.
 
-  Red (Iran): Khamenei is deliberately placed forward and on a
-  vulnerable speedboat (HP 1) — historical echo, and a free kill
-  for blue on turn 1 if they spend the shot there. IRGC speedboat
-  swarms, Shahed drones, coastal-missile batteries, Basij
-  infantry, an IRGC commando core, and sea mines that damage any
-  unit stepping on them.
+  Red (Iran): Khamenei is deliberately placed forward on a
+  vulnerable IRGC craft at HP 1 — a historical echo of his day-1
+  death, and a free kill for blue on turn 1 if they spend the
+  shot there. IRGC speedboat swarms, Shahed drones, two stationary
+  coastal-missile batteries, a Basij infantry line, an IRGC
+  commando core around the bunker, and sea mines in the Strait
+  corridor that damage any unit stepping on them.
 
 board:
   width: 18
@@ -448,28 +453,34 @@ rules:
   first_player: blue
 
 win_conditions:
-  # Blue needs BOTH: step on the uranium bunker AND kill Khamenei.
-  # Red wins if turn > 10 without blue meeting that compound goal,
-  # or if either VIP leader on the blue side dies. The plugin is the
-  # single source of truth — don't mix in seize_enemy_fort or blue
-  # would trigger a premature win by just reaching the bunker.
-  - {type: plugin, module: rules, check_fn: hormuz_win_check}
+  # Blue needs BOTH halves of the Operation Epic Fury strike
+  # package: reach the enriched-uranium bunker AND kill Khamenei.
+  # Red wins if the ten-turn budget expires without the compound
+  # goal met, or if either US/Israeli VIP dies (handled by the
+  # protect_unit rules below). The plugin is the single source of
+  # truth for blue-victory — don't add seize_enemy_fort here or
+  # blue would trigger a premature win from reaching the bunker
+  # alone.
+  - {type: plugin, module: rules, check_fn: enriched_uranium_strike_check}
   # Safety nets that the plugin defers to:
   - {type: protect_unit, unit_id: u_b_trump_1,      owning_team: blue}
   - {type: protect_unit, unit_id: u_b_netanyahu_1,  owning_team: blue}
   - {type: eliminate_all_enemy_units}
 
 narrative:
-  title: Strait of Hormuz
+  title: Strait of Hormuz (Operation Epic Fury, 2026)
   description: |
-    A ten-turn compressed version of the 2025-2026 US/Israel-Iran
-    exchange: push through the Strait, eliminate the Supreme
-    Leader, plant boots on the uranium bunker.
+    A ten-turn compressed version of the February 2026 US/Israel
+    strike on Iran: push through the Strait, finish the
+    decapitation begun on day 1, and plant boots on the
+    enriched-uranium bunker.
   intro: |
-    Dawn over the Gulf of Oman. The B-2 is feet-wet; the carrier
-    turns into the wind. The strait is mined. Coastal batteries
-    track on the radar horizon. Ten turns to the bunker.
+    28 February 2026. Khamenei has just been hit in Tehran but
+    not yet confirmed dead; his escort craft is still at the mouth
+    of the Strait. B-2s are feet-wet over the Gulf of Oman. The
+    IRGC has mined the Strait and rolled out its coastal-missile
+    regiments. Ten turns to the bunker.
   events:
     - trigger: on_unit_killed
       unit_id: u_r_khamenei_1
-      text: "Supreme Leader confirmed KIA. Political pre-condition met — now take the bunker."
+      text: "Supreme Leader KIA confirmed. Half the strike package is delivered — now the bunker."
