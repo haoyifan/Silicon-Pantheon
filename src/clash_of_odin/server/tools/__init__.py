@@ -175,6 +175,14 @@ def _record_action(session: Session, result: dict) -> None:
     session.state.last_action = result
     session.state.history.append(result)
     session.log("action", result)
+    # Drain any narrative events emitted by this action so they appear
+    # in the replay (F.6) and can be surfaced to the TUI (F.7). Read
+    # and clear atomically so the next action starts with a fresh log.
+    log = getattr(session.state, "_narrative_log", None)
+    if log:
+        for entry in log:
+            session.log("narrative_event", entry)
+        log.clear()
     session.notify_action(result)
 
 

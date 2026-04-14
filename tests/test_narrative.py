@@ -42,6 +42,31 @@ def test_parse_narrative_reads_all_fields():
     assert n.events[0].turn == 3
 
 
+def test_narrative_events_written_to_replay(tmp_path):
+    """F.6: narrative_event lines appear in the JSONL replay stream."""
+    import json
+
+    from clash_of_odin.server.engine.replay import ReplayWriter
+    from clash_of_odin.server.session import Session
+    from clash_of_odin.server.tools import end_turn
+    from clash_of_odin.server.engine.state import Team
+
+    cfg = _base_cfg()
+    cfg["narrative"] = {
+        "events": [{"trigger": "on_turn_start", "turn": 1, "text": "Go!"}],
+    }
+    state = build_state(cfg)
+    writer = ReplayWriter(tmp_path / "replay.jsonl")
+    session = Session(state=state, replay=writer)
+    end_turn(session, Team.BLUE)  # blue ends → red starts turn 1
+    writer.close()
+    lines = [json.loads(ln) for ln in (tmp_path / "replay.jsonl").read_text().splitlines()]
+    kinds = [ln["kind"] for ln in lines]
+    assert "narrative_event" in kinds
+    nev = next(ln for ln in lines if ln["kind"] == "narrative_event")
+    assert nev["payload"]["text"] == "Go!"
+
+
 def test_on_turn_start_fires_once_at_the_right_turn():
     cfg = _base_cfg()
     cfg["narrative"] = {
