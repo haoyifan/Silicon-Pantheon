@@ -87,6 +87,45 @@ def test_reserved_fields_default_to_empty() -> None:
     assert u.stats.vulnerability_to_tags == []
 
 
+def test_reserved_fields_round_trip_through_state_to_dict() -> None:
+    """Custom class fields survive the serializer — agents / clients
+    can read tags / abilities / mp / profiles via get_state."""
+    from clash_of_odin.server.engine.serialize import state_to_dict
+
+    state = build_state(
+        _cfg(
+            unit_classes={
+                "pegasus_knight": {
+                    "hp_max": 30,
+                    "atk": 10,
+                    "defense": 6,
+                    "tags": ["flying", "armored"],
+                    "mp_max": 20,
+                    "mp_per_turn": 5,
+                    "abilities": ["swift_strike"],
+                    "default_inventory": ["iron_lance", "vulnerary"],
+                    "damage_profile": {"physical": 10},
+                    "defense_profile": {"physical": 6, "magic": 2},
+                    "bonus_vs_tags": [{"tag": "armored", "mult": 1.5}],
+                    "vulnerability_to_tags": [{"tag": "piercing", "mult": 2.0}],
+                }
+            },
+            blue=[{"class": "pegasus_knight", "pos": {"x": 0, "y": 0}}],
+        )
+    )
+    d = state_to_dict(state)
+    [pegasus] = [u for u in d["units"] if u["class"] == "pegasus_knight"]
+    assert pegasus["tags"] == ["flying", "armored"]
+    assert pegasus["mp_max"] == 20
+    assert pegasus["mp_per_turn"] == 5
+    assert pegasus["abilities"] == ["swift_strike"]
+    assert pegasus["default_inventory"] == ["iron_lance", "vulnerary"]
+    assert pegasus["damage_profile"] == {"physical": 10}
+    assert pegasus["defense_profile"] == {"physical": 6, "magic": 2}
+    assert pegasus["bonus_vs_tags"] == [{"tag": "armored", "mult": 1.5}]
+    assert pegasus["vulnerability_to_tags"] == [{"tag": "piercing", "mult": 2.0}]
+
+
 def test_custom_class_stats_are_independent_across_units() -> None:
     """Two units of the same custom class shouldn't share a stats dict."""
     state = build_state(
