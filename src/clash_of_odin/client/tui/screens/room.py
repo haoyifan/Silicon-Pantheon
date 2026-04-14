@@ -61,12 +61,21 @@ def _unit_cell_style(u: dict[str, Any]) -> tuple[str, str]:
 
 @dataclass
 class Dropdown:
-    """Modal single-select list. Enter confirms, Esc cancels."""
+    """Modal single-select list with an inline explanation box.
+
+    When the caller supplies `option_descriptions`, the currently-
+    highlighted option's description is rendered beneath the list so
+    the player can read what 'classic' fog actually means before
+    committing."""
 
     title: str
     options: list[str]
     selected_idx: int
     on_confirm: Callable[[str], Awaitable[None]]
+    # Optional {option_value: markdown-free explanation}. Missing keys
+    # render no description panel — the list stays minimal for truly
+    # self-describing options (e.g. team colors).
+    option_descriptions: dict[str, str] | None = None
 
     def render(self) -> RenderableType:
         lines: list[Text] = []
@@ -74,12 +83,34 @@ class Dropdown:
             marker = "➤ " if i == self.selected_idx else "  "
             style = "bold cyan" if i == self.selected_idx else "white"
             lines.append(Text(f"{marker}{opt}", style=style))
-        footer = Text(
-            "\n↑/k up   ↓/j down   Enter select   Esc cancel", style="dim"
+        list_panel = RichPanel(
+            Group(*lines), border_style="dim", padding=(0, 1),
         )
-        body = Group(*(lines + [footer]))
+        footer = Text(
+            "↑/k up   ↓/j down   Enter select   Esc cancel", style="dim"
+        )
+        body_parts: list[RenderableType] = [list_panel]
+        desc = (self.option_descriptions or {}).get(
+            self.options[self.selected_idx] if self.options else ""
+        )
+        if desc:
+            body_parts.append(
+                RichPanel(
+                    Text(desc, style="white"),
+                    title=self.options[self.selected_idx],
+                    border_style="yellow",
+                    padding=(0, 1),
+                )
+            )
+        body_parts.append(Text(""))
+        body_parts.append(footer)
         return Align.center(
-            RichPanel(body, title=self.title, border_style="cyan", padding=(1, 3)),
+            RichPanel(
+                Group(*body_parts),
+                title=self.title,
+                border_style="cyan",
+                padding=(1, 3),
+            ),
             vertical="middle",
         )
 
@@ -95,6 +126,56 @@ class Dropdown:
         if key == "enter":
             chosen = self.options[self.selected_idx]
             await self.on_confirm(chosen)
+            return True
+        return False
+
+
+@dataclass
+class ConfirmModal:
+    """Yes/No confirmation overlay. Esc cancels. Enter invokes
+    `on_confirm` on the currently-highlighted option."""
+
+    prompt: str
+    on_confirm: Callable[[bool], Awaitable[None]]
+    selected_yes: bool = False  # default: No, so accidental Enter cancels
+
+    def render(self) -> RenderableType:
+        yes = Text(
+            "[Yes]",
+            style="bold red" if self.selected_yes else "dim",
+        )
+        no = Text(
+            "[No]",
+            style="bold green" if not self.selected_yes else "dim",
+        )
+        row = Text()
+        row.append(yes)
+        row.append("    ")
+        row.append(no)
+        body = Group(
+            Text(self.prompt, style="white"),
+            Text(""),
+            Align.center(row),
+            Text(""),
+            Text("← / → select   Enter confirm   Esc cancel", style="dim"),
+        )
+        return Align.center(
+            RichPanel(body, title="Confirm", border_style="yellow", padding=(1, 3)),
+            vertical="middle",
+        )
+
+    async def handle_key(self, key: str) -> bool:
+        """True = close modal. on_confirm already fired if chosen."""
+        if key == "esc":
+            return True
+        if key in ("left", "h"):
+            self.selected_yes = True
+            return False
+        if key in ("right", "l"):
+            self.selected_yes = False
+            return False
+        if key == "enter":
+            await self.on_confirm(self.selected_yes)
             return True
         return False
 
@@ -403,6 +484,29 @@ _FOG_OPTIONS = ("none", "classic", "line_of_sight")
 _TEAM_MODE_OPTIONS = ("fixed", "random")
 _HOST_TEAM_OPTIONS = ("blue", "red")
 
+_FOG_DESCRIPTIONS = {
+    "none": "No fog. Both sides see the entire board at all times. "
+            "Best for learning a new scenario.",
+    "classic": "Fire Emblem-style fog. A tile is visible if any of "
+               "your units is within sight range of it. Once seen, "
+               "the tile stays visible for the rest of the match.",
+    "line_of_sight": "Strict fog. A tile is visible only while a unit "
+                     "can see it THIS turn. Forests and mountains block "
+                     "sight past them — use them for ambushes.",
+}
+_TEAM_MODE_DESCRIPTIONS = {
+    "fixed": "Host picks which color they play (see 'Change Host "
+             "Team'). The other player gets the opposite color.",
+    "random": "Teams are assigned randomly at match start. Useful for "
+              "tournaments where first-player advantage matters.",
+}
+_HOST_TEAM_DESCRIPTIONS = {
+    "blue": "Host plays blue, who moves first. The game reveals the "
+            "map from blue's perspective in line_of_sight fog.",
+    "red": "Host plays red, the second-mover. Good if you want to "
+           "give a new player the simpler first-move option.",
+}
+
 
 class ActionsPanel(Panel):
     title = "Actions"
@@ -659,7 +763,14 @@ class RoomScreen(Screen):
         # it renders *inside* the Map panel as an inline overlay so
         # the rest of the UI stays visible.
         self._dropdown: Dropdown | None = None
+        self._confirm: ConfirmModal | None = None
         self.unit_card: UnitCard | None = None
+        # Pending screen transition queued from a ConfirmModal callback.
+        # _run_action gets called synchronously from the panel; we can't
+        # hand back the new Screen through the modal on_confirm closure,
+        # so we stage it here and return it from handle_key after the
+        # modal closes.
+        self._pending_transition: Screen | None = None
 
         # Build panels. Order matters: Tab cycles in this order.
         self.map_panel = MapPanel(self)
@@ -683,6 +794,8 @@ class RoomScreen(Screen):
     # ---- render ----
 
     def render(self) -> RenderableType:
+        if self._confirm is not None:
+            return self._confirm.render()
         if self._dropdown is not None:
             return self._dropdown.render()
 
@@ -779,6 +892,17 @@ class RoomScreen(Screen):
     # ---- input ----
 
     async def handle_key(self, key: str) -> Screen | None:
+        # Confirmation overlays win over everything. When the modal
+        # closes and staged a transition (e.g. Leave Room → Lobby),
+        # surface it here.
+        if self._confirm is not None:
+            close = await self._confirm.handle_key(key)
+            if close:
+                self._confirm = None
+                pending = self._pending_transition
+                self._pending_transition = None
+                return pending
+            return None
         # Full-screen dropdowns swallow all input while open.
         if self._dropdown is not None:
             close = await self._dropdown.handle_key(key)
@@ -824,9 +948,10 @@ class RoomScreen(Screen):
             await self._toggle_ready()
             return None
         if action == "leave":
-            return await self._leave()
+            self._open_leave_confirm()
+            return None
         if action == "quit":
-            self.app.exit()
+            self._open_quit_confirm()
             return None
         if action == "change_scenario":
             self._open_scenario_modal()
@@ -843,6 +968,26 @@ class RoomScreen(Screen):
         return None
 
     # ---- modal openers ----
+
+    def _open_leave_confirm(self) -> None:
+        async def _on_confirm(yes: bool) -> None:
+            if yes:
+                self._pending_transition = await self._leave()
+
+        self._confirm = ConfirmModal(
+            prompt="Leave this room and return to the lobby?",
+            on_confirm=_on_confirm,
+        )
+
+    def _open_quit_confirm(self) -> None:
+        async def _on_confirm(yes: bool) -> None:
+            if yes:
+                self.app.exit()
+
+        self._confirm = ConfirmModal(
+            prompt="Quit Clash of Odin?",
+            on_confirm=_on_confirm,
+        )
 
     def _open_scenario_modal(self) -> None:
         current = (self.app.state.last_room_state or {}).get("scenario")
@@ -863,6 +1008,7 @@ class RoomScreen(Screen):
             options=list(_FOG_OPTIONS),
             selected_idx=idx,
             on_confirm=lambda v: self._apply_config({"fog_of_war": v}),
+            option_descriptions=dict(_FOG_DESCRIPTIONS),
         )
 
     def _open_teams_modal(self) -> None:
@@ -879,6 +1025,7 @@ class RoomScreen(Screen):
             options=list(_TEAM_MODE_OPTIONS),
             selected_idx=idx,
             on_confirm=lambda v: self._apply_config({"team_assignment": v}),
+            option_descriptions=dict(_TEAM_MODE_DESCRIPTIONS),
         )
 
     def _open_host_team_modal(self) -> None:
@@ -893,6 +1040,7 @@ class RoomScreen(Screen):
             options=list(_HOST_TEAM_OPTIONS),
             selected_idx=idx,
             on_confirm=lambda v: self._apply_config({"host_team": v}),
+            option_descriptions=dict(_HOST_TEAM_DESCRIPTIONS),
         )
 
     # ---- server interactions ----

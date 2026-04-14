@@ -10,6 +10,8 @@ from rich.console import Console
 from clash_of_odin.client.tui.app import SharedState
 from clash_of_odin.client.tui.screens.room import (
     ActionsPanel,
+    ConfirmModal,
+    Dropdown,
     MapPanel,
     RoomScreen,
     UnitCard,
@@ -188,3 +190,58 @@ def test_focused_panel_gets_yellow_border():
     ansi = console.export_text(styles=True)
     # Yellow appears on the focused (Actions) panel border.
     assert "Actions" in ansi
+
+
+def test_dropdown_shows_description_of_highlighted_option():
+    dd = Dropdown(
+        title="Change Fog",
+        options=["none", "classic", "line_of_sight"],
+        selected_idx=1,
+        on_confirm=lambda v: None,  # type: ignore[arg-type]
+        option_descriptions={
+            "none": "No fog.",
+            "classic": "Classic Fire Emblem fog.",
+            "line_of_sight": "Strict LoS.",
+        },
+    )
+    console = Console(record=True, width=80)
+    console.print(dd.render())
+    out = console.export_text()
+    assert "Classic Fire Emblem fog" in out
+    # Other descriptions not shown (only the highlighted one).
+    assert "Strict LoS" not in out
+
+
+def test_confirm_modal_yes_routes_to_callback():
+    called: list[bool] = []
+
+    async def on_confirm(yes: bool) -> None:
+        called.append(yes)
+
+    m = ConfirmModal(prompt="Really?", on_confirm=on_confirm)
+    # Default selection is No.
+    assert m.selected_yes is False
+    asyncio.run(m.handle_key("left"))
+    assert m.selected_yes is True
+    closed = asyncio.run(m.handle_key("enter"))
+    assert closed is True
+    assert called == [True]
+
+
+def test_leave_room_opens_confirm_modal_not_immediate_leave():
+    app = _FakeApp()
+    _stub_room(app)
+    screen = RoomScreen(app)
+    # Focus on Actions, navigate to "Leave Room" (fixed team-mode host
+    # sees 7 buttons; blindly find by label).
+    buttons = screen.actions_panel._buttons()
+    leave_idx = next(
+        i for i, b in enumerate(buttons) if b.action == "leave"
+    )
+    screen.actions_panel.focus = leave_idx
+    asyncio.run(screen.handle_key("enter"))
+    assert screen._confirm is not None
+    # 'No' by default — Enter just dismisses without leaving.
+    next_screen = asyncio.run(screen.handle_key("enter"))
+    assert screen._confirm is None
+    assert next_screen is None  # still in the room

@@ -43,6 +43,7 @@ from rich.text import Text
 from clash_of_odin.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
 from clash_of_odin.client.tui.panels import Panel, border_style
 from clash_of_odin.client.tui.screens.room import (
+    ConfirmModal,
     UnitCard,
     _describe_win_condition,
     _terrain_effect_summary,
@@ -506,6 +507,7 @@ class GameScreen(Screen):
         # cursor-Enter combo opens one. Not a full-screen modal — the
         # rest of the layout stays visible.
         self.unit_card: UnitCard | None = None
+        self._confirm: ConfirmModal | None = None
 
         self.map_panel = GameMapPanel(self)
         self.actions_panel = ActionsPanel(self)
@@ -579,6 +581,8 @@ class GameScreen(Screen):
     # ---- render ----
 
     def render(self) -> RenderableType:
+        if self._confirm is not None:
+            return self._confirm.render()
         gs = self.state or {}
         scenario = (gs.get("rules") or {}).get("scenario") or (
             self.app.state.last_room_state or {}
@@ -650,6 +654,11 @@ class GameScreen(Screen):
     # ---- input ----
 
     async def handle_key(self, key: str) -> Screen | None:
+        if self._confirm is not None:
+            close = await self._confirm.handle_key(key)
+            if close:
+                self._confirm = None
+            return None
         # When the Coach panel is focused, the buffer captures everything
         # so users can type 'q' / 'tab' / etc. into a message.
         coach_focused = self._panels[self._focus_idx] is self.coach_panel
@@ -693,9 +702,23 @@ class GameScreen(Screen):
         if action == "end_turn":
             return await self._call("end_turn")
         if action == "concede":
-            return await self._call("concede")
+            async def _concede(yes: bool) -> None:
+                if yes:
+                    await self._call("concede")
+
+            self._confirm = ConfirmModal(
+                prompt="Concede the match? Your opponent wins immediately.",
+                on_confirm=_concede,
+            )
+            return None
         if action == "quit":
-            self.app.exit()
+            async def _quit(yes: bool) -> None:
+                if yes:
+                    self.app.exit()
+
+            self._confirm = ConfirmModal(
+                prompt="Quit Clash of Odin?", on_confirm=_quit,
+            )
             return None
         return None
 
