@@ -308,13 +308,19 @@ def _read_key_blocking() -> str:
                 return "esc"
             c2 = _peek(0.02)
             seq = c1 + c2
-            if seq == "[A":
+            # Two cursor-key encodings exist and either may show up
+            # depending on whether the terminal is in "normal" or
+            # "application" keypad mode (DECCKM). Rich's prior output
+            # can flip the terminal into application mode, after which
+            # arrows arrive as ESC O A instead of ESC [ A — which used
+            # to look broken because j/k worked but ↑/↓ did not.
+            if seq in ("[A", "OA"):
                 return "up"
-            if seq == "[B":
+            if seq in ("[B", "OB"):
                 return "down"
-            if seq == "[C":
+            if seq in ("[C", "OC"):
                 return "right"
-            if seq == "[D":
+            if seq in ("[D", "OD"):
                 return "left"
             return "esc"
     finally:
