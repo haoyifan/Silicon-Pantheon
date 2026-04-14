@@ -230,19 +230,47 @@ class UnitCard:
             or u.get("id", "?")
         )
         title = f"{display} ({owner})"
-
-        rows: list[RenderableType] = []
-        # ASCII portrait first if the scenario shipped any frames.
         frames = u.get("art_frames") or spec.get("art_frames") or []
-        if frames:
-            import time as _time
+        text_body = self._render_text_body(team_color)
+        if not frames:
+            return RichPanel(
+                text_body,
+                title=title,
+                border_style=team_color,
+                padding=(0, 2),
+            )
+        # Two-column layout: text on the left, animated portrait on
+        # the right. The portrait column auto-sizes to its widest
+        # frame so descriptions on the left always have predictable
+        # space and never get clipped by the art.
+        import time as _time
 
-            if self._opened_at is None:
-                self._opened_at = _time.monotonic()
-            elapsed = _time.monotonic() - self._opened_at
-            idx = int(elapsed / ART_FRAME_SECONDS) % len(frames)
-            rows.append(Text(frames[idx], style=team_color))
-            rows.append(Text(""))
+        if self._opened_at is None:
+            self._opened_at = _time.monotonic()
+        elapsed = _time.monotonic() - self._opened_at
+        idx = int(elapsed / ART_FRAME_SECONDS) % len(frames)
+        frame = frames[idx]
+        art_width = max(
+            (len(line) for f in frames for line in f.split("\n")),
+            default=0,
+        )
+        # Add a small gutter so art doesn't kiss the right border.
+        art_col_width = art_width + 2
+        grid = Table.grid(expand=True, padding=(0, 1))
+        grid.add_column(ratio=1)
+        grid.add_column(no_wrap=True, width=art_col_width)
+        grid.add_row(text_body, Text(frame, style=team_color))
+        return RichPanel(
+            grid,
+            title=title,
+            border_style=team_color,
+            padding=(0, 2),
+        )
+
+    def _render_text_body(self, team_color: str) -> RenderableType:
+        u = self.unit
+        spec = self.class_spec or {}
+        rows: list[RenderableType] = []
         desc = spec.get("description") or u.get("description") or ""
         if desc:
             rows.append(Text(desc, style="italic"))
@@ -258,7 +286,6 @@ class UnitCard:
             f"{hp_now if hp_now is not None else hp_max} / {hp_max}",
         )
         stats.add_row("ATK", self._stat("atk"))
-        # Engine uses "def" in the unit dict and "defense" in class_spec.
         def_val = u.get("def")
         if def_val is None:
             def_val = spec.get("defense") or spec.get("def") or "?"
@@ -293,14 +320,8 @@ class UnitCard:
             rows.append(Text("inventory: " + ", ".join(inv)))
 
         rows.append(Text(""))
-        rows.append(Text("Esc to close", style="dim"))
-
-        return RichPanel(
-            Group(*rows),
-            title=title,
-            border_style=team_color,
-            padding=(0, 2),
-        )
+        rows.append(Text("Esc / Enter to close", style="dim"))
+        return Group(*rows)
 
     async def handle_key(self, key: str) -> bool:
         return key in ("esc", "enter", "q")
@@ -748,6 +769,15 @@ class MapPanel(Panel):
         return self.screen.scenario_preview or {}
 
     def render(self, focused: bool) -> RenderableType:
+        # While a unit card is up, give it the entire panel — board
+        # + tooltip are hidden so the description / stats / portrait
+        # have room to breathe instead of being squeezed between the
+        # board and the panel border. Esc / Enter / q closes the card
+        # and the board comes back.
+        card = self.screen.unit_card
+        if card is not None:
+            return card.render()
+
         p = self._board()
         w = int(p.get("width", 0))
         h = int(p.get("height", 0))
@@ -804,14 +834,7 @@ class MapPanel(Panel):
                 else:
                     text.append(f" {g} ", style=st)
             text.append("\n")
-        # Footer: tile / unit info, OR an inline unit card when the
-        # player has hit Enter on a unit. The card stays inside the
-        # Map panel so the surrounding layout remains visible.
-        card = self.screen.unit_card
-        if card is not None:
-            footer: RenderableType = card.render()
-        else:
-            footer = self._cursor_tooltip(w, h, unit_at)
+        footer = self._cursor_tooltip(w, h, unit_at)
         body = Group(text, Text(""), footer)
         return RichPanel(
             body,

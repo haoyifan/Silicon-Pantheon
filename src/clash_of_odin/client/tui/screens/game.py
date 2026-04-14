@@ -238,6 +238,11 @@ class GameMapPanel(Panel):
         return self.screen.state or {}
 
     def render(self, focused: bool) -> RenderableType:
+        # Card takes the whole panel while it's up, same as the room
+        # MapPanel — the board hides until the player closes the card.
+        card = self.screen.unit_card
+        if card is not None:
+            return card.render()
         gs = self._state()
         board = gs.get("board") or {}
         w = int(board.get("width", 0))
@@ -274,11 +279,7 @@ class GameMapPanel(Panel):
                 else:
                     text.append(f" {g} ", style=st)
             text.append("\n")
-        card = self.screen.unit_card
-        if card is not None:
-            footer_body: RenderableType = card.render()
-        else:
-            footer_body = self._cursor_tooltip(w, h, tile_by_pos, unit_at)
+        footer_body = self._cursor_tooltip(w, h, tile_by_pos, unit_at)
         return RichPanel(
             Group(text, Text(""), footer_body),
             title=self.title,

@@ -72,6 +72,34 @@ def test_unit_card_renders_art_when_present():
     assert "B R T" not in out
 
 
+def test_unit_card_with_art_uses_two_column_layout():
+    """When frames are present, text and art live in separate columns
+    so neither clamps the other. With no frames, the card is single-
+    column and renders the same as before."""
+    card = UnitCard(
+        unit={"id": "u_b_x_1", "owner": "blue", "class": "x"},
+        class_spec={
+            "description": "A long-ish description that needs room to breathe.",
+            "hp_max": 30, "atk": 8, "defense": 5, "res": 3, "spd": 4,
+            "move": 4, "rng_min": 1, "rng_max": 1,
+            "art_frames": [" /\\\n( ) \n V "],
+        },
+    )
+    console = Console(record=True, width=80)
+    console.print(card.render())
+    out = console.export_text()
+    # Both columns rendered on at least one row (description text and
+    # the art's first row coexist horizontally).
+    line_with_both = next(
+        (
+            ln for ln in out.splitlines()
+            if "long-ish" in ln and "/\\" in ln
+        ),
+        None,
+    )
+    assert line_with_both is not None, f"art and text not on same row\n{out}"
+
+
 def test_unit_card_advances_to_next_frame_after_window():
     card = UnitCard(
         unit={"id": "u_b_x_1", "owner": "blue", "class": "x"},

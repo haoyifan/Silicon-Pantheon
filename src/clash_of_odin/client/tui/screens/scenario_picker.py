@@ -158,6 +158,15 @@ class ScenarioPicker:
     def _render_map(self) -> RenderableType:
         desc = self._current_desc()
         focused = self.focus == "map"
+        # Card takes the full Map region while it's up — same UX as
+        # the room/game MapPanels.
+        if self.unit_card is not None:
+            return RichPanel(
+                self.unit_card.render(),
+                title="Map",
+                border_style=border_style(focused),
+                padding=(0, 1),
+            )
         if desc is None:
             return RichPanel(
                 Text("(loading scenario preview…)", style="dim italic"),
@@ -221,11 +230,7 @@ class ScenarioPicker:
                 else:
                     text.append(f" {g} ", style=st)
             text.append("\n")
-        # Tooltip below the board.
-        if self.unit_card is not None:
-            footer: RenderableType = self.unit_card.render()
-        else:
-            footer = self._cursor_tooltip(tile_type, unit_at)
+        footer = self._cursor_tooltip(tile_type, unit_at)
         return RichPanel(
             Group(text, Text(""), footer),
             title="Map",
