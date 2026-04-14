@@ -124,11 +124,24 @@ class OpenAIAdapter:
             self._messages.append(assistant_entry)
 
             # Surface any text reasoning before we dispatch tools.
-            if msg.content and on_thought is not None:
-                try:
-                    await on_thought(msg.content)
-                except Exception:
-                    pass
+            # xAI Grok reasoning models (grok-4, grok-3-mini) put
+            # chain-of-thought in `reasoning_content`, leaving
+            # `content` empty when the turn is pure reasoning + tool
+            # calls. OpenAI's o-series uses the same split. Emit
+            # whichever is non-empty so the thoughts panel actually
+            # populates for reasoning-capable models.
+            if on_thought is not None:
+                reasoning = getattr(msg, "reasoning_content", None)
+                # Some SDK versions expose it via model_extra instead.
+                if not reasoning:
+                    extra = getattr(msg, "model_extra", None) or {}
+                    reasoning = extra.get("reasoning_content")
+                for piece in (reasoning, msg.content):
+                    if piece:
+                        try:
+                            await on_thought(piece)
+                        except Exception:
+                            pass
 
             # Terminal condition: no tool calls requested.
             if not msg.tool_calls:

@@ -143,6 +143,45 @@ async def test_play_turn_stops_on_empty_tool_calls_first_response() -> None:
 
 
 @pytest.mark.asyncio
+async def test_play_turn_surfaces_reasoning_content() -> None:
+    """Grok (grok-4 / grok-3-mini) and OpenAI o-series put chain-of-
+    thought in `reasoning_content`, leaving `content` empty when the
+    turn is pure reasoning + tool calls. The adapter must emit it via
+    on_thought so the TUI thoughts panel populates — otherwise the
+    user sees a blank panel even though the model is reasoning."""
+
+    class _MsgWithReasoning:
+        def __init__(self, reasoning: str, content: str | None, tool_calls=None):
+            self.reasoning_content = reasoning
+            self.content = content
+            self.tool_calls = tool_calls
+
+    # Response has reasoning but no content and no tool calls — loop exits.
+    resp = _FakeResp(
+        _MsgWithReasoning(
+            reasoning="Considering archer vs knight matchup…",
+            content=None,
+            tool_calls=None,
+        )
+    )
+    adapter = _make_adapter_with_mock_client([resp])
+
+    thoughts: list[str] = []
+
+    async def on_thought(text):
+        thoughts.append(text)
+
+    await adapter.play_turn(
+        system_prompt="sys",
+        user_prompt="user",
+        tools=[],
+        tool_dispatcher=None,  # no tool calls to dispatch
+        on_thought=on_thought,
+    )
+    assert thoughts == ["Considering archer vs knight matchup…"]
+
+
+@pytest.mark.asyncio
 async def test_close_is_idempotent() -> None:
     adapter = _make_adapter_with_mock_client([])
     await adapter.close()
