@@ -1,0 +1,370 @@
+schema_version: 1
+name: Helm's Deep
+description: |
+  Saruman has marched his Uruk-hai out of Isengard with one
+  purpose — to destroy the men of Rohan. King Théoden, with his
+  household and a small contingent of Galadhrim elves sent by
+  Elrond, retreats into the ancient fortress of Helm's Deep at
+  the Hornburg. Ten thousand Uruks pour into the gorge in the
+  rain. The Deeping Wall holds until a berserker plants
+  explosives in the culvert. Aragorn buys time at the dawn-line;
+  Gandalf rides up the road at sunrise with Éomer's cavalry and
+  scatters the host.
+
+board:
+  width: 16
+  height: 10
+  terrain:
+    # Outer wall of the Hornburg — fort line at x=4..5 from y=1..8.
+    # Gate at (4, 5) — fort tile that the explosives plugin will
+    # demolish on turn 4.
+    - {x: 4, y: 1, type: deeping_wall}
+    - {x: 4, y: 2, type: deeping_wall}
+    - {x: 4, y: 3, type: deeping_wall}
+    - {x: 4, y: 4, type: deeping_wall}
+    - {x: 4, y: 5, type: deeping_gate}
+    - {x: 4, y: 6, type: deeping_wall}
+    - {x: 4, y: 7, type: deeping_wall}
+    - {x: 4, y: 8, type: deeping_wall}
+    - {x: 5, y: 0, type: deeping_wall}
+    - {x: 5, y: 9, type: deeping_wall}
+    # Cliff edges (the Deep) along the south edge — impassable.
+    - {x: 0, y: 9, type: cliff}
+    - {x: 1, y: 9, type: cliff}
+    - {x: 2, y: 9, type: cliff}
+    - {x: 3, y: 9, type: cliff}
+    - {x: 6, y: 9, type: cliff}
+    - {x: 7, y: 9, type: cliff}
+    # And along the north (rocky escarpment).
+    - {x: 0, y: 0, type: cliff}
+    - {x: 1, y: 0, type: cliff}
+    - {x: 2, y: 0, type: cliff}
+    - {x: 3, y: 0, type: cliff}
+  forts:
+    - {x: 0, y: 5, owner: blue}
+
+terrain_types:
+  deeping_wall:
+    move_cost: 99
+    passable: false
+    defense_bonus: 5
+    glyph: "#"
+    color: yellow
+  deeping_gate:
+    move_cost: 1
+    defense_bonus: 4
+    glyph: "="
+    color: yellow
+  cliff:
+    move_cost: 99
+    passable: false
+    glyph: "^"
+    color: bright_black
+
+unit_classes:
+  theoden:
+    display_name: Théoden
+    description: |
+      King of Rohan. Newly recovered from Saruman's enchantment.
+      Ages a decade in this single night but holds the keep.
+    hp_max: 34
+    atk: 10
+    defense: 7
+    res: 4
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [vip, king]
+    sight: 4
+    glyph: T
+    color: bright_cyan
+
+  aragorn:
+    display_name: Aragorn
+    description: |
+      Heir of Isildur, Strider of the wild. Switches between
+      sword and bow as the fight needs.
+    hp_max: 38
+    atk: 12
+    defense: 6
+    res: 4
+    spd: 7
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [hero, ranger]
+    sight: 5
+    glyph: A
+    color: cyan
+
+  legolas:
+    display_name: Legolas
+    description: |
+      Wood-elf prince. Counts kills with Gimli — keep him within
+      bow range of the wall and the count climbs fast.
+    hp_max: 22
+    atk: 10
+    defense: 3
+    res: 3
+    spd: 8
+    rng_min: 2
+    rng_max: 4
+    move: 5
+    tags: [hero, archer, elf]
+    sight: 5
+    glyph: L
+    color: cyan
+
+  gimli:
+    display_name: Gimli
+    description: |
+      Dwarf of Erebor. Counts kills with Legolas. Will throw himself
+      into anything melee — that's both his strength and his
+      weakness today.
+    hp_max: 28
+    atk: 11
+    defense: 6
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [hero, dwarf]
+    sight: 3
+    glyph: G
+    color: cyan
+
+  galadhrim_archer:
+    display_name: Galadhrim Archer
+    description: |
+      Lothlórien elf-warriors sent by Galadriel. Long range, light
+      armor, ancient grace. Will not survive in melee but will
+      thin the Uruk advance.
+    hp_max: 16
+    atk: 9
+    defense: 2
+    res: 3
+    spd: 6
+    rng_min: 2
+    rng_max: 3
+    move: 4
+    tags: [archer, elf]
+    sight: 4
+    glyph: E
+    color: cyan
+
+  rohirrim_footman:
+    display_name: Rohirrim Footman
+    description: |
+      A man of the Mark — farmer in peace, soldier tonight. Spear
+      and shield.
+    hp_max: 18
+    atk: 7
+    defense: 5
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [infantry, rohan]
+    sight: 3
+    glyph: F
+    color: cyan
+
+  gandalf:
+    display_name: Gandalf the White
+    description: |
+      Comes at the dawn of the fifth day, riding Shadowfax up the
+      Deeping Coomb with Éomer's cavalry. Spawns at turn 12.
+    hp_max: 50
+    atk: 14
+    defense: 6
+    res: 8
+    spd: 8
+    rng_min: 1
+    rng_max: 2
+    move: 6
+    is_magic: true
+    can_enter_mountain: true
+    tags: [hero, wizard, reinforcement]
+    sight: 6
+    glyph: W
+    color: bright_yellow
+
+  eomer:
+    display_name: Éomer
+    description: |
+      Théoden's nephew, marshal of the East-mark. Rides with
+      Gandalf at dawn. Spawns at turn 12.
+    hp_max: 32
+    atk: 11
+    defense: 6
+    res: 3
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 6
+    tags: [hero, cavalry, reinforcement]
+    sight: 4
+    glyph: O
+    color: bright_yellow
+
+  rohirrim_cavalry:
+    display_name: Rohirrim Cavalry
+    description: |
+      Mounted warriors of the Mark. Spawns with Éomer at turn 12.
+      Devastating on the open field east of the Hornburg.
+    hp_max: 26
+    atk: 10
+    defense: 4
+    res: 3
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 6
+    tags: [cavalry, rohan, reinforcement]
+    sight: 4
+    glyph: R
+    color: bright_yellow
+
+  uruk_berserker:
+    display_name: Uruk Berserker
+    description: |
+      Sleeves rolled to the shoulder, no armor, the strongest
+      uruk-hai. The torch-bearer who plants explosives at the
+      culvert is one of these (resolved by the plugin, not a
+      special unit).
+    hp_max: 32
+    atk: 11
+    defense: 5
+    res: 2
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [berserker, uruk]
+    sight: 3
+    glyph: B
+    color: red
+
+  uruk_swordsman:
+    display_name: Uruk Swordsman
+    description: |
+      Bred for battle in the pits below Isengard. Heavy plate, two-
+      handed sword, no fear.
+    hp_max: 22
+    atk: 9
+    defense: 5
+    res: 2
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [uruk]
+    sight: 3
+    glyph: U
+    color: red
+
+  uruk_crossbow:
+    display_name: Uruk Crossbow
+    description: |
+      Steel-bolt crossbow. Slow to reload; murderous on the wall
+      defenders.
+    hp_max: 16
+    atk: 8
+    defense: 3
+    res: 2
+    spd: 5
+    rng_min: 2
+    rng_max: 3
+    move: 4
+    tags: [crossbow, uruk]
+    sight: 4
+    glyph: X
+    color: red
+
+armies:
+  blue:
+    # Defenders inside the keep (x=0..3) and on the wall (x=4).
+    - {class: theoden, pos: {x: 1, y: 5}}
+    - {class: aragorn, pos: {x: 3, y: 5}}
+    - {class: legolas, pos: {x: 3, y: 3}}
+    - {class: gimli, pos: {x: 3, y: 6}}
+    - {class: galadhrim_archer, pos: {x: 3, y: 1}}
+    - {class: galadhrim_archer, pos: {x: 3, y: 2}}
+    - {class: galadhrim_archer, pos: {x: 3, y: 4}}
+    - {class: galadhrim_archer, pos: {x: 3, y: 7}}
+    - {class: galadhrim_archer, pos: {x: 3, y: 8}}
+    - {class: rohirrim_footman, pos: {x: 2, y: 4}}
+    - {class: rohirrim_footman, pos: {x: 2, y: 5}}
+    - {class: rohirrim_footman, pos: {x: 2, y: 6}}
+    - {class: rohirrim_footman, pos: {x: 2, y: 3}}
+    - {class: rohirrim_footman, pos: {x: 2, y: 7}}
+    - {class: rohirrim_footman, pos: {x: 2, y: 8}}
+  red:
+    # Uruk-hai mass on the field east of the wall.
+    - {class: uruk_berserker, pos: {x: 6, y: 4}}
+    - {class: uruk_berserker, pos: {x: 6, y: 5}}
+    - {class: uruk_berserker, pos: {x: 6, y: 6}}
+    - {class: uruk_berserker, pos: {x: 7, y: 5}}
+    - {class: uruk_berserker, pos: {x: 7, y: 4}}
+    - {class: uruk_berserker, pos: {x: 7, y: 6}}
+    - {class: uruk_swordsman, pos: {x: 7, y: 1}}
+    - {class: uruk_swordsman, pos: {x: 7, y: 2}}
+    - {class: uruk_swordsman, pos: {x: 7, y: 3}}
+    - {class: uruk_swordsman, pos: {x: 7, y: 7}}
+    - {class: uruk_swordsman, pos: {x: 7, y: 8}}
+    - {class: uruk_swordsman, pos: {x: 8, y: 4}}
+    - {class: uruk_swordsman, pos: {x: 8, y: 5}}
+    - {class: uruk_swordsman, pos: {x: 8, y: 6}}
+    - {class: uruk_swordsman, pos: {x: 8, y: 1}}
+    - {class: uruk_swordsman, pos: {x: 8, y: 2}}
+    - {class: uruk_swordsman, pos: {x: 8, y: 3}}
+    - {class: uruk_swordsman, pos: {x: 8, y: 7}}
+    - {class: uruk_swordsman, pos: {x: 8, y: 8}}
+    - {class: uruk_crossbow, pos: {x: 9, y: 1}}
+    - {class: uruk_crossbow, pos: {x: 9, y: 2}}
+    - {class: uruk_crossbow, pos: {x: 9, y: 4}}
+    - {class: uruk_crossbow, pos: {x: 9, y: 5}}
+    - {class: uruk_crossbow, pos: {x: 9, y: 7}}
+    - {class: uruk_crossbow, pos: {x: 9, y: 8}}
+
+rules:
+  max_turns: 25
+  fog_of_war: false
+  first_player: red
+
+win_conditions:
+  - {type: protect_unit, unit_id: u_b_theoden_1, owning_team: blue}
+  # Red wins by reaching the keep — the deepest defensive line at x=0.
+  - {type: reach_goal_line, team: red, axis: x, value: 0}
+  - {type: eliminate_all_enemy_units}
+  # Surviving until turn 15 (after Gandalf arrives at 12) counts as
+  # a strategic victory for blue.
+  - {type: max_turns_draw}
+
+plugin_hooks:
+  on_turn_start:
+    - explode_culvert
+    - gandalf_arrives
+
+narrative:
+  title: Helm's Deep
+  description: |
+    A night siege at the Hornburg, broken at dawn by Gandalf's
+    arrival.
+  intro: |
+    Rain on the gorge. The Deeping Stream runs black under the
+    walls. Saruman's army stretches from cliff to cliff, torches
+    flickering. Théoden mounts the parapet.
+  events:
+    - trigger: on_turn_start
+      turn: 4
+      text: "A berserker reaches the culvert! The wall explodes outward."
+    - trigger: on_turn_start
+      turn: 12
+      text: "A horn from the Deeping Coomb. Gandalf rides with Éomer at first light!"
+    - trigger: on_unit_killed
+      unit_id: u_b_theoden_1
+      text: "The king has fallen. The keep loses its heart."
