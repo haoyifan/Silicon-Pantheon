@@ -8,7 +8,7 @@ whether a model response becomes a saved Lesson or is dropped.
 
 from __future__ import annotations
 
-from clash_of_odin.client.agent_bridge import _parse_lesson_json
+from clash_of_odin.client.providers.anthropic import _parse_lesson_json
 
 
 def test_bare_json_object() -> None:
