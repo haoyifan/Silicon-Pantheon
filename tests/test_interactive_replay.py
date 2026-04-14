@@ -107,6 +107,29 @@ def test_interactive_replay_skip_then_back(
     assert rc == 0
 
 
+def test_resolve_replay_path_accepts_file_or_directory(tmp_path: Path) -> None:
+    """Regression: silicon-play previously always appended
+    'replay.jsonl' to whatever path you passed, so the client-side
+    flat layout `~/.silicon-pantheon/replays/<room>.jsonl` couldn't
+    be opened without --replay. DWIM now accepts either shape."""
+    from silicon_pantheon.match.interactive_replay import _resolve_replay_path
+
+    # File form: flat path, like the TUI's downloaded replays.
+    flat = tmp_path / "d88915770baeeda3.jsonl"
+    flat.write_text('{"kind":"match_start","turn":0,"payload":{"scenario":"x"}}\n')
+    assert _resolve_replay_path(flat) == flat
+
+    # Directory form: offline runs/<ts>_<scenario>/replay.jsonl layout.
+    run_dir = tmp_path / "20260414T120000_01_tiny_skirmish"
+    run_dir.mkdir()
+    inner = run_dir / "replay.jsonl"
+    inner.write_text('{"kind":"match_start","turn":0,"payload":{"scenario":"x"}}\n')
+    assert _resolve_replay_path(run_dir) == inner
+
+    # Bogus path.
+    assert _resolve_replay_path(tmp_path / "nope") is None
+
+
 def test_interactive_replay_rejects_missing_match_start(tmp_path: Path) -> None:
     # Synthesize a replay file with only an action event — no match_start.
     bad = tmp_path / "replay.jsonl"

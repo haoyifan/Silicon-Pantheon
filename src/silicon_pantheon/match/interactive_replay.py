@@ -354,6 +354,31 @@ def interactive_replay(replay_path: Path) -> int:
     return 0
 
 
+def _resolve_replay_path(user_path: Path) -> Path | None:
+    """DWIM resolver: the positional arg can be either a jsonl file or
+    a run directory.
+
+    Two formats exist in the wild:
+
+      1. Offline runs written by `silicon-match` / `run_match.py`:
+         `runs/<ts>_<scenario>/replay.jsonl` — the conventional
+         one-dir-per-run layout.
+      2. Networked matches downloaded from the server by the TUI's
+         post-match screen: flat files at
+         `~/.silicon-pantheon/replays/<room_id>.jsonl`.
+
+    Accept both. A file → use verbatim. A directory → look for
+    replay.jsonl inside. Returns None if nothing usable is found.
+    """
+    if user_path.is_file():
+        return user_path
+    if user_path.is_dir():
+        candidate = user_path / "replay.jsonl"
+        if candidate.is_file():
+            return candidate
+    return None
+
+
 def main() -> int:
     p = argparse.ArgumentParser(
         description=(
@@ -362,28 +387,40 @@ def main() -> int:
         )
     )
     p.add_argument(
-        "run_dir",
+        "path",
         nargs="?",
         type=Path,
         default=None,
-        help="run directory containing replay.jsonl",
+        help=(
+            "replay.jsonl file OR a run directory containing one. "
+            "Accepts both offline runs (runs/<ts>_<scenario>/) and "
+            "downloaded networked replays "
+            "(~/.silicon-pantheon/replays/<room_id>.jsonl)."
+        ),
     )
     p.add_argument(
         "--replay",
         type=Path,
         default=None,
-        help="explicit path to replay.jsonl (overrides run_dir)",
+        help="explicit path to replay.jsonl (overrides the positional arg)",
     )
     args = p.parse_args()
     if args.replay is not None:
-        replay_path = args.replay
-    elif args.run_dir is not None:
-        replay_path = args.run_dir / "replay.jsonl"
+        replay_path: Path | None = args.replay if args.replay.is_file() else None
+        if replay_path is None:
+            print(f"replay file not found: {args.replay}", file=sys.stderr)
+            return 2
+    elif args.path is not None:
+        replay_path = _resolve_replay_path(args.path)
+        if replay_path is None:
+            print(
+                f"no replay found at {args.path} — expected either a "
+                "replay.jsonl file or a directory containing one",
+                file=sys.stderr,
+            )
+            return 2
     else:
-        p.error("provide a run_dir positional argument or --replay PATH")
-        return 2
-    if not replay_path.is_file():
-        print(f"replay file not found: {replay_path}", file=sys.stderr)
+        p.error("provide a path to a replay.jsonl file or run directory")
         return 2
     return interactive_replay(replay_path)
 
