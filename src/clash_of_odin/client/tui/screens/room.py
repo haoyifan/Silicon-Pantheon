@@ -494,11 +494,15 @@ class DescriptionPanel(Panel):
         # the scenario bundle. Only include classes that are actually
         # in play (cuts noise for scenarios that ship a big roster
         # but only field a few classes).
-        in_play = {
-            u.get("class")
-            for army in armies.values()
-            for u in (army or [])
-        }
+        # Map each class to the team(s) that field it, so the Units
+        # block can color names by side instead of a neutral yellow —
+        # the reader wants to know "is this a blue unit or red" at a
+        # glance.
+        class_teams: dict[str, set[str]] = {}
+        for team_name, army in armies.items():
+            for u in (army or []):
+                class_teams.setdefault(u.get("class"), set()).add(team_name)
+        in_play = set(class_teams.keys())
         described = [
             (slug, unit_classes[slug])
             for slug in sorted(in_play)
@@ -509,7 +513,15 @@ class DescriptionPanel(Panel):
             rows.append(Text("Units:", style="bold"))
             for slug, spec in described:
                 name_str = spec.get("display_name") or slug
-                rows.append(Text(f"  {name_str}", style="bold yellow"))
+                teams = class_teams.get(slug, set())
+                if teams == {"blue"}:
+                    name_style = "bold cyan"
+                elif teams == {"red"}:
+                    name_style = "bold red"
+                else:
+                    # Mirror matches etc. — class fielded by both sides.
+                    name_style = "bold yellow"
+                rows.append(Text(f"  {name_str}", style=name_style))
                 rows.append(
                     Text(f"    {spec['description'].strip()}", style="dim")
                 )

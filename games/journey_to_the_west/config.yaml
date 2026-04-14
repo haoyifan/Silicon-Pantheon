@@ -91,15 +91,15 @@ unit_classes:
   sun_wukong:
     display_name: Sun Wukong (Monkey King)
     description: |
-      The Monkey King — fast, furious, hard to bring down. Armed
-      with the Ruyi Jingu Bang. Unique among the team: can cross
-      mountain terrain. Use him to scout and to bait demons away
-      from Tang Monk — but he can't solo every fight on his own.
-    hp_max: 34
-    atk: 11
-    defense: 6
-    res: 5
-    spd: 7
+      The Monkey King — fast, furious, armed with the Ruyi Jingu
+      Bang. Unique among the team: can cross mountain terrain. A
+      clear hero-tier fighter, but not invincible; he'll take real
+      damage trading blows with the Demon King.
+    hp_max: 36
+    atk: 14
+    defense: 5
+    res: 6
+    spd: 9
     rng_min: 1
     rng_max: 1
     move: 5
@@ -170,11 +170,11 @@ unit_classes:
     display_name: Demon King
     description: |
       The Demon King, ruler of this stretch of the road. A terrifying
-      melee opponent — high HP, high ATK, solid defenses. Even Sun
-      Wukong trades hits with him. Fighting him head-on with Tang
-      Monk nearby is suicidal.
-    hp_max: 44
-    atk: 14
+      melee opponent — high HP, high ATK, solid defenses. Break his
+      minions before engaging; fighting him head-on with Tang Monk
+      nearby is suicidal.
+    hp_max: 40
+    atk: 13
     defense: 6
     res: 5
     spd: 6
@@ -189,10 +189,11 @@ unit_classes:
     display_name: Bull Demon
     description: |
       A brawny ox-headed demon. Tanky frontline fighter; slow, hits
-      very hard, poor magic defense. A ranged strike from Wujing
-      will wear him down without trading hits.
-    hp_max: 36
-    atk: 12
+      hard, terrible at magic defense. A Mage-class pilgrim or a
+      ranged strike from Wujing will wear him down without trading
+      hits.
+    hp_max: 32
+    atk: 10
     defense: 6
     res: 3
     spd: 4
@@ -207,11 +208,11 @@ unit_classes:
     display_name: White-Bone Demoness
     description: |
       The White-Bone Demoness — a magical caster who disguises
-      herself as innocents to lure the pilgrims. Still fragile in
-      melee, but her 2–3 tile magic attacks will pick off Tang Monk
-      from behind your front line if you leave him exposed.
-    hp_max: 24
-    atk: 10
+      herself as innocents to lure the pilgrims. Fragile body, but
+      her 2–3 tile magic attacks can pick off Tang Monk from behind
+      your front line if you leave him exposed.
+    hp_max: 20
+    atk: 9
     defense: 3
     res: 5
     spd: 6
@@ -226,12 +227,13 @@ unit_classes:
   spider_spirit:
     display_name: Spider Spirit
     description: |
-      A spider spirit from the caves. Fast, poisonous, aggressive —
-      swarms the weaker pilgrims. Dangerous alone, lethal in pairs;
-      don't let one slip past the front line to Tang Monk.
-    hp_max: 22
-    atk: 9
-    defense: 4
+      A spider spirit from the caves. Very fast (SPD 8, move 5) and
+      aggressive — swarms the weaker pilgrims. Individually fragile
+      but dangerous in pairs; don't let one survive to reach Tang
+      Monk.
+    hp_max: 18
+    atk: 7
+    defense: 3
     res: 3
     spd: 8
     rng_min: 1
@@ -244,13 +246,12 @@ unit_classes:
   skeleton:
     display_name: Skeleton
     description: |
-      A reanimated bandit skeleton. Not especially strong on its
-      own, but numerous — the Demon King fields several, and more
-      show up at the bridge on turn 10. Can trade meaningful HP
-      with a pilgrim when it connects.
-    hp_max: 18
-    atk: 8
-    defense: 4
+      A reanimated bandit skeleton. Low HP and slow, but cheap to
+      spawn — the Demon King has many of them, and more show up at
+      the bridge on turn 10. Good fodder to screen stronger monsters.
+    hp_max: 14
+    atk: 6
+    defense: 3
     res: 2
     spd: 4
     rng_min: 1

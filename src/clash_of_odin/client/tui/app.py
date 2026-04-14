@@ -143,20 +143,24 @@ class TUIApp:
     async def run(self) -> int:
         self._screen = self._initial_factory(self)
         await self._screen.on_enter(self)
-        # refresh_per_second is the cap for Live's *background* repaint
-        # thread when something is dirty but no explicit refresh has
-        # been requested. We pass refresh=True on every update() below
-        # so the screen paints immediately on user input. The
-        # background cadence is still useful for the few cases (e.g.
-        # asyncio task completion) that mark Live dirty without going
-        # through update — keep it brisk so the art-frame animation
-        # ticks along even without keystrokes.
+        # refresh_per_second caps Live's *background* repaint thread
+        # when nothing has explicitly asked for a refresh. We pass
+        # refresh=True on every update() below so the screen paints
+        # immediately on user input; the background cadence is only
+        # used by things like art-frame animation (1 frame / 2 s).
+        # Keep the background low — a high rate showed a flickering
+        # terminal cursor at the bottom-right between frames.
         with Live(
             self._render_with_overlay(),
             console=self.console,
-            refresh_per_second=15,
+            refresh_per_second=2,
             screen=True,
         ) as live:
+            # Pin the cursor off. Live already hides it when it starts
+            # but some terminals briefly re-show between screen clears;
+            # an explicit show_cursor(False) on the real console keeps
+            # it hidden throughout the app's lifetime.
+            self.console.show_cursor(False)
             self._live = live
             tasks = [
                 asyncio.create_task(self._key_reader()),

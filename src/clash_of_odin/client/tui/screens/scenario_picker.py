@@ -335,11 +335,13 @@ class ScenarioPicker:
             color = "cyan" if owner == "blue" else "red"
             rows.append(Text(f"  {owner}: {summary}", style=color))
         # Per-class descriptions for classes that are actually fielded.
-        in_play = {
-            u.get("class")
-            for army in armies.values()
-            for u in (army or [])
-        }
+        # Color each name by the team(s) that field it so the preview
+        # reads like a team roster, not a neutral yellow dump.
+        class_teams: dict[str, set[str]] = {}
+        for team_name, army in armies.items():
+            for u in (army or []):
+                class_teams.setdefault(u.get("class"), set()).add(team_name)
+        in_play = set(class_teams.keys())
         described = [
             (slug, unit_classes[slug])
             for slug in sorted(in_play)
@@ -350,7 +352,14 @@ class ScenarioPicker:
             rows.append(Text("Units:", style="bold"))
             for slug, spec in described:
                 name_str = spec.get("display_name") or slug
-                rows.append(Text(f"  {name_str}", style="bold yellow"))
+                teams = class_teams.get(slug, set())
+                if teams == {"blue"}:
+                    name_style = "bold cyan"
+                elif teams == {"red"}:
+                    name_style = "bold red"
+                else:
+                    name_style = "bold yellow"
+                rows.append(Text(f"  {name_str}", style=name_style))
                 rows.append(
                     Text(f"    {spec['description'].strip()}", style="dim")
                 )
