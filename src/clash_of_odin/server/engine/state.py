@@ -87,6 +87,31 @@ class UnitStats:
     # to team vision).
     sight: int = 3
 
+    # ---- v1 schema, v2+ behavior (reserved fields) ----
+    # All of these are accepted by the scenario loader, serialized in
+    # state_to_dict, and kept on the Unit, but the v1 engine ignores
+    # them for combat / movement purposes. v2 engines flip the switches
+    # without a schema change.
+    tags: list[str] = field(default_factory=list)
+    # MP pool for ability use. mp_per_turn is the recharge per end_turn
+    # (default 0 = no recharge; burn what you have across the match).
+    mp_max: int = 0
+    mp_per_turn: int = 0
+    # Named abilities this class can invoke. Ability catalog lives on
+    # the scenario.
+    abilities: list[str] = field(default_factory=list)
+    # Starting inventory (item ids from the scenario's item catalog).
+    default_inventory: list[str] = field(default_factory=list)
+    # Damage-type aware combat (v2). Keys are damage-type strings:
+    #   physical, magic, fire, wind, lightning, holy, dark, ...
+    # Empty dict = use legacy ATK vs DEF/RES formula.
+    damage_profile: dict[str, int] = field(default_factory=dict)
+    defense_profile: dict[str, int] = field(default_factory=dict)
+    # Tag-aware bonus / vulnerability multipliers for combat (v2).
+    # Each entry: {"tag": "flying", "mult": 2.0}.
+    bonus_vs_tags: list[dict] = field(default_factory=list)
+    vulnerability_to_tags: list[dict] = field(default_factory=list)
+
 
 @dataclass
 class Tile:

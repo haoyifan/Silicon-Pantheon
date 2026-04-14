@@ -72,7 +72,9 @@ CLASS_STATS: dict[UnitClass, UnitStats] = {
 def make_stats(cls: UnitClass) -> UnitStats:
     """Return a fresh copy of stats for the given class."""
     src = CLASS_STATS[cls]
-    # UnitStats is mutable; we copy so per-unit effects don't leak into the class table.
+    # UnitStats is mutable; we copy so per-unit effects don't leak into
+    # the class table. Lists/dicts are copied shallowly via list(...) /
+    # dict(...) so per-unit inventory/tags mutations don't leak either.
     return UnitStats(
         hp_max=src.hp_max,
         atk=src.atk,
@@ -88,4 +90,13 @@ def make_stats(cls: UnitClass) -> UnitStats:
         can_heal=src.can_heal,
         heal_amount=src.heal_amount,
         sight=src.sight,
+        tags=list(src.tags),
+        mp_max=src.mp_max,
+        mp_per_turn=src.mp_per_turn,
+        abilities=list(src.abilities),
+        default_inventory=list(src.default_inventory),
+        damage_profile=dict(src.damage_profile),
+        defense_profile=dict(src.defense_profile),
+        bonus_vs_tags=[dict(b) for b in src.bonus_vs_tags],
+        vulnerability_to_tags=[dict(v) for v in src.vulnerability_to_tags],
     )
