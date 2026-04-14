@@ -111,6 +111,14 @@ class UnitStats:
     # Each entry: {"tag": "flying", "mult": 2.0}.
     bonus_vs_tags: list[dict] = field(default_factory=list)
     vulnerability_to_tags: list[dict] = field(default_factory=list)
+    # Display metadata. Renderers (room preview, in-game board) use
+    # `glyph` as the cell character and `color` as the cell foreground.
+    # `None` means "renderer pick a default" — typically the first
+    # letter of the class name uppercased for blue and lowercased for
+    # red. Authors of custom unit classes should set these so the map
+    # actually shows units instead of falling back to a placeholder.
+    glyph: str | None = None
+    color: str | None = None
 
 
 @dataclass

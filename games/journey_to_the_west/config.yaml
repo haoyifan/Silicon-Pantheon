@@ -80,6 +80,8 @@ unit_classes:
     move: 3
     tags: [vip, monk, human]
     sight: 3
+    glyph: T
+    color: yellow
   sun_wukong:
     hp_max: 42
     atk: 14
@@ -92,6 +94,8 @@ unit_classes:
     can_enter_mountain: true
     tags: [hero, monkey, immortal]
     sight: 4
+    glyph: S
+    color: bright_yellow
   zhu_bajie:
     hp_max: 34
     atk: 11
@@ -103,6 +107,8 @@ unit_classes:
     move: 4
     tags: [hero, pig]
     sight: 3
+    glyph: P
+    color: cyan
   sha_wujing:
     hp_max: 36
     atk: 9
@@ -114,6 +120,8 @@ unit_classes:
     move: 4
     tags: [hero, porter]
     sight: 3
+    glyph: W
+    color: blue
   bai_long_ma:
     hp_max: 22
     atk: 7
@@ -125,6 +133,8 @@ unit_classes:
     move: 6
     tags: [mount, dragon]
     sight: 4
+    glyph: H
+    color: white
 
   # ---- Monsters ----
   demon_king:
@@ -138,6 +148,8 @@ unit_classes:
     move: 4
     tags: [boss, demon]
     sight: 4
+    glyph: D
+    color: bright_red
   bull_demon:
     hp_max: 32
     atk: 10
@@ -149,6 +161,8 @@ unit_classes:
     move: 4
     tags: [demon, brute]
     sight: 3
+    glyph: B
+    color: red
   white_bone_demon:
     hp_max: 20
     atk: 9
@@ -161,6 +175,8 @@ unit_classes:
     is_magic: true
     tags: [demon, caster]
     sight: 4
+    glyph: O
+    color: magenta
   spider_spirit:
     hp_max: 18
     atk: 7
@@ -172,6 +188,8 @@ unit_classes:
     move: 5
     tags: [demon, fast]
     sight: 3
+    glyph: X
+    color: red
   skeleton:
     hp_max: 14
     atk: 6
@@ -183,6 +201,8 @@ unit_classes:
     move: 3
     tags: [undead, mook]
     sight: 2
+    glyph: K
+    color: white
 
 armies:
   blue:

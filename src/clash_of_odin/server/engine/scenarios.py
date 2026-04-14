@@ -49,6 +49,8 @@ def _copy_stats(src: UnitStats) -> UnitStats:
         defense_profile=dict(src.defense_profile),
         bonus_vs_tags=[dict(b) for b in src.bonus_vs_tags],
         vulnerability_to_tags=[dict(v) for v in src.vulnerability_to_tags],
+        glyph=src.glyph,
+        color=src.color,
     )
 
 
@@ -86,6 +88,8 @@ def _build_unit_stats(name: str, spec: dict) -> UnitStats:
         vulnerability_to_tags=[
             dict(v) for v in (s.get("vulnerability_to_tags") or [])
         ],
+        glyph=(str(s["glyph"]) if s.get("glyph") is not None else None),
+        color=(str(s["color"]) if s.get("color") is not None else None),
     )
 
 

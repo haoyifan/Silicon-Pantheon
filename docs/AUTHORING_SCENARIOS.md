@@ -61,6 +61,8 @@ unit_classes:             # optional — override built-ins or add new
     spd: 8
     move: 5
     tags: [hero, monkey, immortal]
+    glyph: S               # one-char map symbol (UPPER blue / lower red)
+    color: bright_yellow   # any Rich color name
 
 armies:
   blue:

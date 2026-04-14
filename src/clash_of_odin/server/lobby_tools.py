@@ -72,7 +72,14 @@ def _serialize_room_preview(room: Room) -> dict[str, Any]:
         summary["scenario_preview"] = {"error": str(e)}
         return summary
     units = [
-        {"id": u.id, "owner": u.owner.value, "class": u.class_, "pos": u.pos.to_dict()}
+        {
+            "id": u.id,
+            "owner": u.owner.value,
+            "class": u.class_,
+            "pos": u.pos.to_dict(),
+            "glyph": u.stats.glyph,
+            "color": u.stats.color,
+        }
         for u in state.units.values()
     ]
     forts = [

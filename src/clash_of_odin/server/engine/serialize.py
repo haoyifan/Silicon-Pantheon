@@ -70,6 +70,8 @@ def state_to_dict(state: GameState, viewer: Team | None = None) -> dict:
                 "vulnerability_to_tags": [
                     dict(v) for v in u.stats.vulnerability_to_tags
                 ],
+                "glyph": u.stats.glyph,
+                "color": u.stats.color,
             }
         )
 

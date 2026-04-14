@@ -40,6 +40,26 @@ from clash_of_odin.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
 log = logging.getLogger("clash.tui.room")
 
 
+def _unit_cell_style(u: dict[str, Any]) -> tuple[str, str]:
+    """Pick the (glyph, Rich style) for a unit cell in any board view.
+
+    Honors scenario-provided `glyph` / `color` from the unit_classes
+    block. Falls back to the first letter of the class name (uppercase
+    for blue, lowercase for red) so legacy scenarios and any class
+    that omits glyph/color still render something visible.
+    """
+    cls = str(u.get("class", "") or "")
+    owner = u.get("owner")
+    glyph = u.get("glyph")
+    if not glyph:
+        glyph = (cls[:1] or "?")
+    glyph = glyph.upper() if owner == "blue" else glyph.lower()
+    color = u.get("color")
+    if not color:
+        color = "cyan" if owner == "blue" else "red"
+    return glyph, f"bold {color}"
+
+
 @dataclass
 class Button:
     label: str
@@ -275,35 +295,30 @@ class RoomScreen(Screen):
         h = int(p.get("height", 0))
         units = p.get("units", [])
         forts = p.get("forts", [])
-        grid = [["." for _ in range(w)] for _ in range(h)]
+        # cell -> (glyph, style). Forts pre-painted; units overwrite.
+        styled: dict[tuple[int, int], tuple[str, str]] = {}
         for f in forts:
             pos = f.get("pos") or {}
             x, y = int(pos.get("x", -1)), int(pos.get("y", -1))
             if 0 <= x < w and 0 <= y < h:
-                grid[y][x] = "*"
-        glyph_for = {"knight": "K", "archer": "A", "cavalry": "C", "mage": "M"}
+                styled[(x, y)] = ("*", "yellow")
         for u in units:
             pos = u.get("pos") or {}
             x, y = int(pos.get("x", -1)), int(pos.get("y", -1))
             if 0 <= x < w and 0 <= y < h:
-                glyph = glyph_for.get(u.get("class", ""), "?")
-                if u.get("owner") == "red":
-                    glyph = glyph.lower()
-                grid[y][x] = glyph
+                glyph, style = _unit_cell_style(u)
+                styled[(x, y)] = (glyph, style)
         text = Text()
         text.append("   " + " ".join(f"{x:>2}" for x in range(w)) + "\n", style="dim")
         for y in range(h):
             text.append(f"{y:>2} ", style="dim")
             for x in range(w):
-                g = grid[y][x]
-                if g.isupper() and g.isalpha():
-                    text.append(f" {g}", style="bold cyan")
-                elif g.islower() and g.isalpha():
-                    text.append(f" {g}", style="bold red")
-                elif g == "*":
-                    text.append(" *", style="yellow")
-                else:
+                cell = styled.get((x, y))
+                if cell is None:
                     text.append(" .", style="dim")
+                else:
+                    g, st = cell
+                    text.append(f" {g}", style=st)
                 text.append(" ")
             text.append("\n")
         text.append(f"\n{w}x{h} board · {len(units)} units · {len(forts)} forts")

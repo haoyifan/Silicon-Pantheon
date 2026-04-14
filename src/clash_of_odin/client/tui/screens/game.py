@@ -366,17 +366,15 @@ class GameScreen(Screen):
 
         text = Text()
         text.append("   " + " ".join(f"{x:>2}" for x in range(w)) + "\n", style="dim")
-        glyph_for = {"knight": "K", "archer": "A", "cavalry": "C", "mage": "M"}
+        from clash_of_odin.client.tui.screens.room import _unit_cell_style
+
         for y in range(h):
             text.append(f"{y:>2} ", style="dim")
             for x in range(w):
                 u = unit_by_pos.get((x, y))
                 t = tile_by_pos.get((x, y), {})
                 if u is not None:
-                    glyph = glyph_for.get(u.get("class", ""), "?")
-                    if u.get("owner") == "red":
-                        glyph = glyph.lower()
-                    style = "bold cyan" if u.get("owner") == "blue" else "bold red"
+                    glyph, style = _unit_cell_style(u)
                     text.append(f" {glyph}", style=style)
                 else:
                     ttype = t.get("type", "unknown")
