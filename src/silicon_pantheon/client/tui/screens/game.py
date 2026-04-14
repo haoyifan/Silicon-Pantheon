@@ -578,11 +578,19 @@ class GameScreen(Screen):
             team = (app.state.last_game_state or {}).get("you") or "blue"
             app.state.thoughts.append((ts, team, collapsed))
 
+        # `lessons_dir=None` disables both lesson injection into the
+        # system prompt AND saving the post-match summary. Toggled via
+        # the room-screen Actions panel ("Lessons: on/off"); default
+        # on preserves prior behavior.
+        from pathlib import Path as _Path
+
+        lessons_dir = _Path("lessons") if app.state.use_lessons else None
         app.state.agent = NetworkedAgent(
             client=app.client,
             model=app.state.model,
             scenario=scenario,
             strategy=app.state.strategy_text,
+            lessons_dir=lessons_dir,
             thoughts_callback=on_thought,
             # Hand over the scenario bundle the room screen already
             # fetched so the agent doesn't need to re-call the server.

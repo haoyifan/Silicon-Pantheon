@@ -821,12 +821,21 @@ class ActionsPanel(Panel):
         sp = self.screen.app.state.strategy_path
         if sp is not None:
             strat_label = sp.stem
+        # Lessons toggle: per-player (each side's agent reads/writes
+        # its own store), only editable pre-match like strategy.
+        lessons_label = "on" if self.screen.app.state.use_lessons else "off"
         buttons: list[Button] = [
             Button(label="Toggle Ready", action="toggle_ready", enabled=editable),
             Button(
                 label="Strategy",
                 action="change_strategy",
                 value=strat_label,
+                enabled=editable,
+            ),
+            Button(
+                label="Lessons",
+                action="toggle_lessons",
+                value=lessons_label,
                 enabled=editable,
             ),
         ]
@@ -1321,6 +1330,9 @@ class RoomScreen(Screen):
             return None
         if action == "change_strategy":
             self._open_strategy_modal()
+            return None
+        if action == "toggle_lessons":
+            self.app.state.use_lessons = not self.app.state.use_lessons
             return None
         return None
 
