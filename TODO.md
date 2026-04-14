@@ -124,6 +124,33 @@ guidance for when this gets picked up:
 
 ---
 
+## Room / game chat pipeline
+
+Status: **design decided**. Deferred in favor of shipping the room
+screen redesign first; the TUI chat panel lands as a placeholder and
+gets wired up here.
+
+- [ ] **Server-side chat log per room.** Add `chat: list[ChatMessage]`
+      on `Room` (timestamp, author_id, author_display_name, text, team
+      if known). New tools: `chat_send(connection_id, text)` posts to
+      the current room; echo the full log in `get_room_state` and the
+      game state payload so the client can drain and display on each
+      refresh.
+- [ ] **Agent chat awareness.** Inject the chat log into the agent's
+      turn context (like coach messages today). Give the agent an MCP
+      tool — `chat_send(text)` — so it can taunt / negotiate. Chat is
+      **public** (both teams + both humans see everything) for now;
+      per-team scoping can layer on later.
+- [ ] **TUI chat panel — real input + scroll.** Replace the
+      placeholder in the 5-panel layout with a live input mode (Enter
+      to send, scrolling for history) plus a push refresh so incoming
+      messages appear without the user having to Tab away and back.
+- [ ] **Throttling / length cap.** One-line cap, drop-the-newlines
+      sanitization, per-author rate limit (e.g. 1 msg/sec). Agents
+      could otherwise flood the channel on every turn.
+
+---
+
 ## Audit residue (known-but-not-fixed)
 
 Surfaced during the second-pass deep audit of the multi-provider /
