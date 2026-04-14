@@ -485,42 +485,65 @@ def _humanize_unit_id(unit_id: str, scenario_description: dict[str, Any] | None)
     return class_slug or unit_id
 
 
+def _other(team: str) -> str:
+    return "red" if team == "blue" else "blue"
+
+
 def _describe_win_condition(
     wc: dict[str, Any],
     scenario_description: dict[str, Any] | None = None,
 ) -> str:
+    """Return a one-line, side-explicit explanation of a win condition.
+
+    Both teams need to read this prose: protect_unit and
+    reach_tile are asymmetric (only one side benefits), so each line
+    must say WHO wins instead of just describing the trigger. Earlier
+    versions said "keep Tang Monk (blue) alive" — true from blue's
+    perspective, but a red player reading the same line wouldn't know
+    they win when the monk dies.
+    """
     t = wc.get("type", "")
     if t == "seize_enemy_fort":
-        return "seize the enemy fort"
+        return "Either side wins by moving a unit onto the opponent's fort."
     if t == "eliminate_all_enemy_units":
-        return "eliminate every enemy unit"
+        return "Either side wins by eliminating every enemy unit."
     if t == "max_turns_draw":
         n = wc.get("turns")
-        return f"draw at turn {n}" if n else "draw at the turn cap"
+        return (
+            f"Match ends in a draw at turn {n}."
+            if n
+            else "Match ends in a draw at the turn cap."
+        )
     if t == "protect_unit":
         name = _humanize_unit_id(wc.get("unit_id", ""), scenario_description)
-        team = wc.get("owning_team", "?")
-        return f"keep {name} ({team}) alive"
+        loser = wc.get("owning_team", "?")
+        winner = _other(loser)
+        return f"{winner.capitalize()} wins if {name} dies (protected by {loser})."
     if t == "reach_tile":
         pos = wc.get("pos") or {}
         team = wc.get("team", "?")
         u = wc.get("unit_id")
-        if u:
-            who = _humanize_unit_id(u, scenario_description)
-        else:
-            who = f"any {team} unit"
-        return f"{who} reaches ({pos.get('x', '?')}, {pos.get('y', '?')})"
+        who = _humanize_unit_id(u, scenario_description) if u else f"any {team} unit"
+        return (
+            f"{team.capitalize()} wins if {who} ends a turn on "
+            f"({pos.get('x', '?')}, {pos.get('y', '?')})."
+        )
     if t == "hold_tile":
         pos = wc.get("pos") or {}
         n = wc.get("consecutive_turns", "?")
+        team = wc.get("team", "?")
         return (
-            f"{wc.get('team', '?')} holds ({pos.get('x', '?')}, {pos.get('y', '?')})"
-            f" for {n} turns"
+            f"{team.capitalize()} wins by holding "
+            f"({pos.get('x', '?')}, {pos.get('y', '?')}) for {n} consecutive turns."
         )
     if t == "reach_goal_line":
-        return f"{wc.get('team', '?')} crosses {wc.get('axis', '?')}={wc.get('value', '?')}"
+        team = wc.get("team", "?")
+        return (
+            f"{team.capitalize()} wins by crossing "
+            f"{wc.get('axis', '?')}={wc.get('value', '?')} with any unit."
+        )
     if t == "plugin":
-        return f"plugin rule: {wc.get('check_fn', '?')}"
+        return f"Custom plugin rule: {wc.get('check_fn', '?')}."
     return t or "(unknown rule)"
 
 

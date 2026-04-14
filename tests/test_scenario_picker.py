@@ -73,7 +73,9 @@ def test_picker_renders_preview_of_current_scenario():
     assert "beta" in out.lower() or "Beta" in out
     # Description + win conditions shown for the highlighted one.
     assert "Stub description for alpha" in out
-    assert "seize" in out.lower()
+    # Win-condition prose is now side-explicit ("Either side wins…")
+    # rather than the verb form ("seize the enemy fort").
+    assert "fort" in out.lower()
 
 
 def test_picker_arrows_cycle_scenarios():

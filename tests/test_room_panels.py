@@ -265,6 +265,28 @@ def test_win_condition_prose_uses_display_name_when_available():
     )
     assert "Tang Monk" in out
     assert "u_b_tang_monk_1" not in out
+    # Side-explicit: red wins when blue's VIP dies.
+    assert "Red wins" in out
+
+
+def test_protect_unit_prose_names_the_winning_side():
+    """The opposite team of `owning_team` is the one that wins when
+    the protected unit dies. Earlier prose buried this — it just said
+    'keep X alive (blue)' which never explained how RED wins."""
+    from clash_of_odin.client.tui.screens.room import _describe_win_condition
+
+    out = _describe_win_condition(
+        {"type": "protect_unit", "unit_id": "u_r_boss_1", "owning_team": "red"},
+        None,
+    )
+    assert "Blue wins" in out
+
+
+def test_eliminate_all_prose_says_either_side_wins():
+    from clash_of_odin.client.tui.screens.room import _describe_win_condition
+
+    out = _describe_win_condition({"type": "eliminate_all_enemy_units"}, None)
+    assert "Either side" in out
 
 
 def test_win_condition_prose_falls_back_when_no_display_name():
