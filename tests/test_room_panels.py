@@ -43,44 +43,42 @@ def _stub_room(app):
     }
 
 
-def test_tab_cycles_focus_skipping_non_focusable():
+def test_tab_cycles_through_all_five_panels():
     app = _FakeApp()
     _stub_room(app)
     screen = RoomScreen(app)
-    # Built-in start: actions panel.
+    # Starts on Actions panel.
     assert screen._panels[screen._focus_idx] is screen.actions_panel
-    # Tab → next focusable, which (Player & Description & Chat are
-    # non-focusable in v1) should be the Map panel.
-    asyncio.run(screen.handle_key("\t"))
-    assert screen._panels[screen._focus_idx] is screen.map_panel
-    # Tab again → cycles back to actions (others not focusable).
-    asyncio.run(screen.handle_key("\t"))
-    assert screen._panels[screen._focus_idx] is screen.actions_panel
+    titles = []
+    for _ in range(5):
+        asyncio.run(screen.handle_key("\t"))
+        titles.append(type(screen._panels[screen._focus_idx]).__name__)
+    assert titles[-1] == "ActionsPanel"  # wrapped back
+    assert len(set(titles[:-1])) == 4  # visited 4 distinct other panels
 
 
 def test_arrow_keys_only_affect_focused_panel():
     app = _FakeApp()
     _stub_room(app)
     screen = RoomScreen(app)
-    # Focused on Actions: down moves the action cursor.
     initial_action = screen.actions_panel.focus
     asyncio.run(screen.handle_key("down"))
     assert screen.actions_panel.focus == initial_action + 1
-    # Map cursor should not have moved.
     assert (screen.map_panel.cx, screen.map_panel.cy) == (0, 0)
+
+
+def _focus_map(screen) -> None:
+    screen._focus_idx = screen._panels.index(screen.map_panel)
 
 
 def test_map_panel_cursor_navigates_with_arrows():
     app = _FakeApp()
     _stub_room(app)
     screen = RoomScreen(app)
-    # Stub a 6x6 board.
     screen.scenario_preview = {
         "width": 6, "height": 6, "units": [], "forts": [],
     }
-    # Focus the map panel.
-    asyncio.run(screen.handle_key("\t"))
-    assert screen._panels[screen._focus_idx] is screen.map_panel
+    _focus_map(screen)
     asyncio.run(screen.handle_key("right"))
     asyncio.run(screen.handle_key("right"))
     asyncio.run(screen.handle_key("down"))
@@ -92,14 +90,29 @@ def test_map_panel_cursor_wraps():
     _stub_room(app)
     screen = RoomScreen(app)
     screen.scenario_preview = {"width": 4, "height": 4, "units": [], "forts": []}
-    asyncio.run(screen.handle_key("\t"))
+    _focus_map(screen)
     asyncio.run(screen.handle_key("up"))
     assert screen.map_panel.cy == 3
     asyncio.run(screen.handle_key("left"))
     assert screen.map_panel.cx == 3
 
 
-def test_enter_on_unit_opens_unit_card_modal():
+def test_map_panel_vim_hjkl_keys_also_move_cursor():
+    app = _FakeApp()
+    _stub_room(app)
+    screen = RoomScreen(app)
+    screen.scenario_preview = {"width": 5, "height": 5, "units": [], "forts": []}
+    _focus_map(screen)
+    asyncio.run(screen.handle_key("l"))  # right
+    asyncio.run(screen.handle_key("l"))
+    asyncio.run(screen.handle_key("j"))  # down
+    assert (screen.map_panel.cx, screen.map_panel.cy) == (2, 1)
+    asyncio.run(screen.handle_key("h"))  # left
+    asyncio.run(screen.handle_key("k"))  # up
+    assert (screen.map_panel.cx, screen.map_panel.cy) == (1, 0)
+
+
+def test_enter_on_unit_opens_inline_unit_card():
     app = _FakeApp()
     _stub_room(app)
     screen = RoomScreen(app)
@@ -109,20 +122,39 @@ def test_enter_on_unit_opens_unit_card_modal():
             {
                 "id": "u_b_knight_1", "owner": "blue", "class": "knight",
                 "pos": {"x": 1, "y": 1},
-                "hp": 30, "hp_max": 30, "atk": 8, "def": 7, "res": 2,
-                "spd": 3, "move": 3, "rng": [1, 1],
             },
         ],
         "forts": [],
     }
-    asyncio.run(screen.handle_key("\t"))  # focus map
+    _focus_map(screen)
     asyncio.run(screen.handle_key("right"))
     asyncio.run(screen.handle_key("down"))
     asyncio.run(screen.handle_key("enter"))
-    assert isinstance(screen._modal, UnitCard)
-    # Esc dismisses.
+    assert isinstance(screen.unit_card, UnitCard)
+    # Esc dismisses the inline card without exiting the screen.
     asyncio.run(screen.handle_key("esc"))
-    assert screen._modal is None
+    assert screen.unit_card is None
+
+
+def test_unit_card_shows_class_spec_stats_when_unit_has_none():
+    """Regression: room preview units carry no stats — the card must
+    fall back to describe_scenario.unit_classes to fill HP/ATK/etc."""
+    card = UnitCard(
+        unit={"id": "u_b_knight_1", "owner": "blue", "class": "knight",
+              "pos": {"x": 0, "y": 0}},  # no hp/atk/def/res — preview only
+        class_spec={
+            "hp_max": 30, "atk": 8, "defense": 7, "res": 2,
+            "spd": 3, "move": 3, "rng_min": 1, "rng_max": 1,
+            "tags": ["melee"],
+        },
+    )
+    console = Console(record=True, width=80)
+    console.print(card.render())
+    out = console.export_text()
+    assert "?" not in out.split("HP", 1)[1].split("\n", 1)[0]  # HP row is real
+    assert "30" in out
+    assert "8" in out   # atk
+    assert "melee" in out
 
 
 def test_unit_card_renders_stats_and_class_name():

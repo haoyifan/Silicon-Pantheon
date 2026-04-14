@@ -101,18 +101,37 @@ class Dropdown:
 
 @dataclass
 class UnitCard:
-    """Read-only modal showing a unit's full description / stats /
-    tags / abilities / inventory. Esc to dismiss."""
+    """Read-only card showing a unit's description / stats / tags /
+    abilities / inventory. Rendered inline inside the Map panel — the
+    rest of the layout stays visible around it. Esc dismisses.
+
+    Stats come from two sources: the unit dict itself (live match
+    state carries them) or the class_spec pulled from
+    describe_scenario.unit_classes (room preview only has id+pos so
+    stats must come from class_spec). Unit values take priority so
+    match-time mutations (HP, status) override the class baseline."""
 
     unit: dict[str, Any]
-    class_spec: dict[str, Any] | None  # from describe_scenario.unit_classes
+    class_spec: dict[str, Any] | None
+
+    def _stat(self, key: str, default: str = "?") -> str:
+        """Prefer the unit's live value, fall back to class_spec, then
+        to the placeholder."""
+        u_val = self.unit.get(key)
+        if u_val is not None and u_val != "":
+            return str(u_val)
+        if self.class_spec is not None:
+            spec_val = self.class_spec.get(key)
+            if spec_val is not None:
+                return str(spec_val)
+        return default
 
     def render(self) -> RenderableType:
         u = self.unit
         spec = self.class_spec or {}
         owner = u.get("owner", "?")
         team_color = "cyan" if owner == "blue" else "red"
-        title = f"{u.get('id', '?')} — {u.get('class', '?')} ({owner})"
+        title = f"{u.get('id', u.get('class', '?'))} — {u.get('class', '?')} ({owner})"
 
         rows: list[RenderableType] = []
         desc = spec.get("description") or u.get("description") or ""
@@ -123,17 +142,29 @@ class UnitCard:
         stats = Table.grid(padding=(0, 2))
         stats.add_column(style="dim")
         stats.add_column()
-        stats.add_row("HP", f"{u.get('hp', '?')} / {u.get('hp_max', '?')}")
-        stats.add_row("ATK", str(u.get("atk", "?")))
-        stats.add_row("DEF", str(u.get("def", "?")))
-        stats.add_row("RES", str(u.get("res", "?")))
-        stats.add_row("SPD", str(u.get("spd", "?")))
-        stats.add_row("MOVE", str(u.get("move", "?")))
-        rng = u.get("rng") or [u.get("rng_min", "?"), u.get("rng_max", "?")]
+        hp_now = u.get("hp")
+        hp_max = self._stat("hp_max")
+        stats.add_row(
+            "HP",
+            f"{hp_now if hp_now is not None else hp_max} / {hp_max}",
+        )
+        stats.add_row("ATK", self._stat("atk"))
+        # Engine uses "def" in the unit dict and "defense" in class_spec.
+        def_val = u.get("def")
+        if def_val is None:
+            def_val = spec.get("defense") or spec.get("def") or "?"
+        stats.add_row("DEF", str(def_val))
+        stats.add_row("RES", self._stat("res"))
+        stats.add_row("SPD", self._stat("spd"))
+        stats.add_row("MOVE", self._stat("move"))
+        rng = u.get("rng") or [
+            spec.get("rng_min", self._stat("rng_min")),
+            spec.get("rng_max", self._stat("rng_max")),
+        ]
         stats.add_row("RANGE", f"{rng[0]}–{rng[1]}")
-        if u.get("is_magic"):
+        if u.get("is_magic") or spec.get("is_magic"):
             stats.add_row("type", "magic")
-        if u.get("can_heal"):
+        if u.get("can_heal") or spec.get("can_heal"):
             stats.add_row("can_heal", "yes")
         rows.append(stats)
 
@@ -155,18 +186,15 @@ class UnitCard:
         rows.append(Text(""))
         rows.append(Text("Esc to close", style="dim"))
 
-        return Align.center(
-            RichPanel(
-                Group(*rows),
-                title=title,
-                border_style=team_color,
-                padding=(1, 3),
-            ),
-            vertical="middle",
+        return RichPanel(
+            Group(*rows),
+            title=title,
+            border_style=team_color,
+            padding=(0, 2),
         )
 
     async def handle_key(self, key: str) -> bool:
-        return key == "esc" or key == "enter" or key == "q"
+        return key in ("esc", "enter", "q")
 
 
 # ---- panel: Player ----
@@ -178,8 +206,8 @@ class PlayerPanel(Panel):
     def __init__(self, app: TUIApp) -> None:
         self.app = app
 
-    def can_focus(self) -> bool:
-        return False
+    def key_hints(self) -> str:
+        return "(read-only)"
 
     def render(self, focused: bool) -> RenderableType:
         s = self.app.state
@@ -205,7 +233,7 @@ class PlayerPanel(Panel):
             Group(*rows),
             title=self.title,
             border_style=border_style(focused),
-            padding=(1, 2),
+            padding=(0, 1),
         )
 
 
@@ -217,9 +245,19 @@ class DescriptionPanel(Panel):
 
     def __init__(self, app: TUIApp) -> None:
         self.app = app
+        self.scroll = 0  # number of rows scrolled down from the top
 
-    def can_focus(self) -> bool:
-        return False
+    def key_hints(self) -> str:
+        return "↑/↓ (or k/j) scroll"
+
+    async def handle_key(self, key: str) -> "Screen | None":
+        if key in ("down", "j"):
+            self.scroll += 1
+            return None
+        if key in ("up", "k"):
+            self.scroll = max(0, self.scroll - 1)
+            return None
+        return None
 
     def render(self, focused: bool) -> RenderableType:
         s = self.app.state
@@ -245,11 +283,16 @@ class DescriptionPanel(Panel):
                 rows.append(Text(f"  • {_describe_win_condition(wc)}", style="dim"))
         if not (story or intro or win_conds):
             rows.append(Text("(no scenario description loaded)", style="dim italic"))
+        # Simple line-based scroll: drop the first `scroll` rows. Clamp
+        # so scrolling past the end doesn't produce an empty panel.
+        if self.scroll > 0 and rows:
+            self.scroll = min(self.scroll, max(0, len(rows) - 1))
+            rows = rows[self.scroll :]
         return RichPanel(
             Group(*rows),
             title=self.title,
             border_style=border_style(focused),
-            padding=(1, 2),
+            padding=(0, 1),
         )
 
 
@@ -290,8 +333,8 @@ def _describe_win_condition(wc: dict[str, Any]) -> str:
 class ChatPanel(Panel):
     title = "Chat"
 
-    def can_focus(self) -> bool:
-        return False  # input not wired yet — see TODO.md "chat pipeline"
+    def key_hints(self) -> str:
+        return "(chat not wired yet)"
 
     def render(self, focused: bool) -> RenderableType:
         body = Text(
@@ -304,7 +347,7 @@ class ChatPanel(Panel):
             body,
             title=self.title,
             border_style=border_style(focused),
-            padding=(1, 2),
+            padding=(0, 1),
         )
 
 
@@ -331,6 +374,9 @@ class ActionsPanel(Panel):
         self.screen = screen
         self.focus = 0
 
+    def key_hints(self) -> str:
+        return "↑/↓ select   Enter activate"
+
     def render(self, focused: bool) -> RenderableType:
         buttons = self._buttons()
         if not buttons:
@@ -356,7 +402,7 @@ class ActionsPanel(Panel):
             body,
             title=self.title,
             border_style=border_style(focused),
-            padding=(1, 2),
+            padding=(0, 1),
         )
 
     def _buttons(self) -> list[Button]:
@@ -433,6 +479,9 @@ class MapPanel(Panel):
         self.cx = 0
         self.cy = 0
 
+    def key_hints(self) -> str:
+        return "←↑↓→ (or h/j/k/l) move   Enter unit stats"
+
     def _board(self) -> dict[str, Any]:
         return self.screen.scenario_preview or {}
 
@@ -478,9 +527,15 @@ class MapPanel(Panel):
                 else:
                     text.append(f" {g} ", style=st)
             text.append("\n")
-        # Footer: tile / unit info.
-        info = self._cursor_tooltip(w, h, unit_at)
-        body = Group(text, Text(""), info)
+        # Footer: tile / unit info, OR an inline unit card when the
+        # player has hit Enter on a unit. The card stays inside the
+        # Map panel so the surrounding layout remains visible.
+        card = self.screen.unit_card
+        if card is not None:
+            footer: RenderableType = card.render()
+        else:
+            footer = self._cursor_tooltip(w, h, unit_at)
+        body = Group(text, Text(""), footer)
         return RichPanel(
             body,
             title=self.title,
@@ -521,16 +576,20 @@ class MapPanel(Panel):
         h = int(p.get("height", 0))
         if w == 0 or h == 0:
             return None
+        # Esc dismisses an open unit card before any cursor movement.
+        if key == "esc" and self.screen.unit_card is not None:
+            self.screen.unit_card = None
+            return None
         if key in ("up", "k"):
             self.cy = (self.cy - 1) % h
             return None
         if key in ("down", "j"):
             self.cy = (self.cy + 1) % h
             return None
-        if key == "left":
+        if key in ("left", "h"):
             self.cx = (self.cx - 1) % w
             return None
-        if key == "right":
+        if key in ("right", "l"):
             self.cx = (self.cx + 1) % w
             return None
         if key == "enter":
@@ -552,10 +611,15 @@ class RoomScreen(Screen):
         self.scenario_preview: dict[str, Any] | None = None
         self.scenarios: list[str] = []
         self._last_poll = 0.0
-        self._modal: Dropdown | UnitCard | None = None
+        # Dropdowns (change scenario / fog / teams / host_team) still
+        # render full-screen — they're modal single-select lists that
+        # make no sense to scope to one panel. UnitCard is different:
+        # it renders *inside* the Map panel as an inline overlay so
+        # the rest of the UI stays visible.
+        self._dropdown: Dropdown | None = None
+        self.unit_card: UnitCard | None = None
 
-        # Build panels. Order matters: Tab cycles in this order, restricted
-        # to focusable ones.
+        # Build panels. Order matters: Tab cycles in this order.
         self.map_panel = MapPanel(self)
         self.actions_panel = ActionsPanel(self)
         self._panels: list[Panel] = [
@@ -577,8 +641,8 @@ class RoomScreen(Screen):
     # ---- render ----
 
     def render(self) -> RenderableType:
-        if self._modal is not None:
-            return self._modal.render()
+        if self._dropdown is not None:
+            return self._dropdown.render()
 
         rs = self.app.state.last_room_state or {}
         room_id = rs.get("room_id") or self.app.state.room_id or "?"
@@ -586,88 +650,110 @@ class RoomScreen(Screen):
         status = rs.get("status", "?")
         countdown = rs.get("autostart_in_s")
 
-        header = Text()
-        header.append(f"Room {room_id[:10]}  ", style="bold cyan")
-        header.append(scenario, style="yellow")
-        header.append(f"   fog={rs.get('fog_of_war', '?')}", style="dim")
-        header.append(f"   teams={rs.get('team_assignment', '?')}", style="dim")
+        header_line = Text()
+        header_line.append(f"Room {room_id[:10]}  ", style="bold cyan")
+        header_line.append(scenario, style="yellow")
+        header_line.append(f"   fog={rs.get('fog_of_war', '?')}", style="dim")
+        header_line.append(f"   teams={rs.get('team_assignment', '?')}", style="dim")
         if countdown is not None:
-            header.append(
+            header_line.append(
                 f"   match starting in {countdown:.1f}s", style="bold yellow"
             )
         elif status == "waiting_for_players":
-            header.append("   waiting for opponent…", style="dim")
+            header_line.append("   waiting for opponent…", style="dim")
         elif status == "waiting_ready":
-            header.append("   ready up to start", style="green")
+            header_line.append("   ready up to start", style="green")
 
-        footer = Text(
-            "Tab cycle panels   ↑/↓/←/→ navigate focused panel   "
-            "Enter activate   q quit",
-            style="dim",
-        )
+        # Footer: errors take priority, otherwise the focused panel's
+        # own key hints + the always-on Tab/q hints.
         if self.app.state.error_message:
-            footer = Text(self.app.state.error_message, style="red")
+            footer_line: RenderableType = Text(
+                self.app.state.error_message, style="red"
+            )
+        else:
+            focused = self._panels[self._focus_idx]
+            hints = Text()
+            panel_hints = focused.key_hints()
+            if panel_hints:
+                hints.append(f"[{focused.title}] ", style="bold yellow")
+                hints.append(panel_hints, style="white")
+                hints.append("   ", style="dim")
+            hints.append("Tab next panel   q quit", style="dim")
+            footer_line = hints
 
-        layout = self._build_layout()
-        return Group(header, Text(""), layout, Text(""), footer)
-
-    def _build_layout(self) -> Layout:
+        # Put header / body / footer all inside a single Layout with
+        # fixed-size header+footer and a flexible body. Rich's Live
+        # sizes the root Layout to the full console, so every row is
+        # accounted for — the bottom panels no longer get clipped in
+        # tmux or short terminals.
         root = Layout()
         root.split_column(
+            Layout(name="hdr", size=1),
+            Layout(name="body"),
+            Layout(name="ftr", size=1),
+        )
+        root["hdr"].update(header_line)
+        root["body"].update(self._build_body())
+        root["ftr"].update(footer_line)
+        return root
+
+    def _build_body(self) -> Layout:
+        body = Layout()
+        body.split_column(
             Layout(name="top", ratio=3),
             Layout(name="bottom", ratio=2),
         )
-        root["top"].split_row(
+        body["top"].split_row(
             Layout(name="map", ratio=2),
             Layout(name="right", ratio=1),
         )
-        root["top"]["right"].split_column(
+        body["top"]["right"].split_column(
             Layout(name="player", ratio=2),
             Layout(name="actions", ratio=3),
         )
-        root["bottom"].split_row(
+        body["bottom"].split_row(
             Layout(name="description", ratio=2),
             Layout(name="chat", ratio=1),
         )
 
         focused_panel = self._panels[self._focus_idx]
-        # Use object identity for "is this one focused".
-        root["top"]["map"].update(self.map_panel.render(focused_panel is self.map_panel))
-        root["top"]["right"]["player"].update(
+        body["top"]["map"].update(
+            self.map_panel.render(focused_panel is self.map_panel)
+        )
+        body["top"]["right"]["player"].update(
             self._panels[1].render(focused_panel is self._panels[1])
         )
-        root["top"]["right"]["actions"].update(
+        body["top"]["right"]["actions"].update(
             self.actions_panel.render(focused_panel is self.actions_panel)
         )
-        root["bottom"]["description"].update(
+        body["bottom"]["description"].update(
             self._panels[3].render(focused_panel is self._panels[3])
         )
-        root["bottom"]["chat"].update(
+        body["bottom"]["chat"].update(
             self._panels[4].render(focused_panel is self._panels[4])
         )
-        # Make the layout fill a reasonable minimum size so panels render.
-        root.size = None  # let the renderer pick height
-        return root
+        return body
 
     # ---- input ----
 
     async def handle_key(self, key: str) -> Screen | None:
-        if self._modal is not None:
-            close = await self._modal.handle_key(key)
+        # Full-screen dropdowns swallow all input while open.
+        if self._dropdown is not None:
+            close = await self._dropdown.handle_key(key)
             if close:
-                self._modal = None
-                # If a Dropdown closed, the on_confirm call already
-                # refreshed state; nothing else to do here.
+                self._dropdown = None
             return None
 
-        if key == "q":
+        # Global exit — but not when the Map panel has an open unit
+        # card (Esc/Enter/q close the card instead).
+        if key == "q" and self.unit_card is None:
             self.app.exit()
             return None
         if key == "\t":
+            # Close any stale unit card on Tab so the next panel has
+            # a clean state.
+            self.unit_card = None
             self._focus_next(1)
-            return None
-        if key == "shift_tab":  # not currently emitted; here for completeness
-            self._focus_next(-1)
             return None
         focused = self._panels[self._focus_idx]
         return await focused.handle_key(key)
@@ -689,7 +775,7 @@ class RoomScreen(Screen):
         spec = (
             (self.app.state.scenario_description or {}).get("unit_classes") or {}
         ).get(unit.get("class"))
-        self._modal = UnitCard(unit=unit, class_spec=spec)
+        self.unit_card = UnitCard(unit=unit, class_spec=spec)
 
     async def run_action(self, action: str) -> Screen | None:
         if action == "toggle_ready":
@@ -720,7 +806,7 @@ class RoomScreen(Screen):
         current = (self.app.state.last_room_state or {}).get("scenario")
         options = list(self.scenarios) or [current or "01_tiny_skirmish"]
         idx = options.index(current) if current in options else 0
-        self._modal = Dropdown(
+        self._dropdown = Dropdown(
             title="Change Scenario",
             options=options,
             selected_idx=idx,
@@ -730,7 +816,7 @@ class RoomScreen(Screen):
     def _open_fog_modal(self) -> None:
         current = (self.app.state.last_room_state or {}).get("fog_of_war", "none")
         idx = _FOG_OPTIONS.index(current) if current in _FOG_OPTIONS else 0
-        self._modal = Dropdown(
+        self._dropdown = Dropdown(
             title="Change Fog of War",
             options=list(_FOG_OPTIONS),
             selected_idx=idx,
@@ -746,7 +832,7 @@ class RoomScreen(Screen):
             if current in _TEAM_MODE_OPTIONS
             else 0
         )
-        self._modal = Dropdown(
+        self._dropdown = Dropdown(
             title="Change Team Assignment",
             options=list(_TEAM_MODE_OPTIONS),
             selected_idx=idx,
@@ -760,7 +846,7 @@ class RoomScreen(Screen):
             if current in _HOST_TEAM_OPTIONS
             else 0
         )
-        self._modal = Dropdown(
+        self._dropdown = Dropdown(
             title="Change Host Team",
             options=list(_HOST_TEAM_OPTIONS),
             selected_idx=idx,

@@ -60,8 +60,8 @@ class PlayerPanel(Panel):
     def __init__(self, screen: "GameScreen") -> None:
         self.screen = screen
 
-    def can_focus(self) -> bool:
-        return False
+    def key_hints(self) -> str:
+        return "(read-only)"
 
     def render(self, focused: bool) -> RenderableType:
         gs = self.screen.state or {}
@@ -112,7 +112,7 @@ class PlayerPanel(Panel):
             Group(*rows),
             title=self.title,
             border_style=border_style(focused),
-            padding=(1, 2),
+            padding=(0, 1),
         )
 
 
@@ -132,6 +132,9 @@ class ActionsPanel(Panel):
     def __init__(self, screen: "GameScreen") -> None:
         self.screen = screen
         self.focus = 0
+
+    def key_hints(self) -> str:
+        return "↑/↓ select   Enter activate"
 
     def _buttons(self) -> list[_Btn]:
         gs = self.screen.state or {}
@@ -162,7 +165,7 @@ class ActionsPanel(Panel):
             Group(*lines),
             title=self.title,
             border_style=border_style(focused),
-            padding=(1, 2),
+            padding=(0, 1),
         )
 
     async def handle_key(self, key: str) -> Screen | None:
@@ -193,6 +196,9 @@ class GameMapPanel(Panel):
         self.screen = screen
         self.cx = 0
         self.cy = 0
+
+    def key_hints(self) -> str:
+        return "←↑↓→ (or h/j/k/l) move   Enter unit stats"
 
     def _state(self) -> dict[str, Any]:
         return self.screen.state or {}
@@ -234,9 +240,13 @@ class GameMapPanel(Panel):
                 else:
                     text.append(f" {g} ", style=st)
             text.append("\n")
-        info = self._cursor_tooltip(w, h, tile_by_pos, unit_at)
+        card = self.screen.unit_card
+        if card is not None:
+            footer_body: RenderableType = card.render()
+        else:
+            footer_body = self._cursor_tooltip(w, h, tile_by_pos, unit_at)
         return RichPanel(
-            Group(text, Text(""), info),
+            Group(text, Text(""), footer_body),
             title=self.title,
             border_style=border_style(focused),
             padding=(0, 1),
@@ -276,16 +286,19 @@ class GameMapPanel(Panel):
         h = int(board.get("height", 0))
         if w == 0 or h == 0:
             return None
+        if key == "esc" and self.screen.unit_card is not None:
+            self.screen.unit_card = None
+            return None
         if key in ("up", "k"):
             self.cy = (self.cy - 1) % h
             return None
         if key in ("down", "j"):
             self.cy = (self.cy + 1) % h
             return None
-        if key == "left":
+        if key in ("left", "h"):
             self.cx = (self.cx - 1) % w
             return None
-        if key == "right":
+        if key in ("right", "l"):
             self.cx = (self.cx + 1) % w
             return None
         if key == "enter":
@@ -322,6 +335,9 @@ class ReasoningPanel(Panel):
         self.screen = screen
         self.offset = 0
         self._last_count = 0
+
+    def key_hints(self) -> str:
+        return "↑/↓ (or k/j) scroll   0 latest"
 
     def render(self, focused: bool) -> RenderableType:
         thoughts = list(self.screen.app.state.thoughts)
@@ -389,6 +405,9 @@ class CoachPanel(Panel):
         self.buffer = ""
         self.history: deque[str] = deque(maxlen=5)
 
+    def key_hints(self) -> str:
+        return "type a message   Enter send   Esc clear   Tab leave (empty)"
+
     def render(self, focused: bool) -> RenderableType:
         rows: list[RenderableType] = []
         if focused:
@@ -416,7 +435,7 @@ class CoachPanel(Panel):
             Group(*rows),
             title=self.title,
             border_style=border_style(focused),
-            padding=(1, 2),
+            padding=(0, 1),
         )
 
     async def handle_key(self, key: str) -> Screen | None:
@@ -448,7 +467,10 @@ class GameScreen(Screen):
         self.app = app
         self.state: dict[str, Any] | None = None
         self._last_poll = 0.0
-        self._modal: UnitCard | None = None
+        # Inline unit card rendered inside the Map panel when the
+        # cursor-Enter combo opens one. Not a full-screen modal — the
+        # rest of the layout stays visible.
+        self.unit_card: UnitCard | None = None
 
         self.map_panel = GameMapPanel(self)
         self.actions_panel = ActionsPanel(self)
@@ -522,86 +544,93 @@ class GameScreen(Screen):
     # ---- render ----
 
     def render(self) -> RenderableType:
-        if self._modal is not None:
-            return self._modal.render()
-
         gs = self.state or {}
         scenario = (gs.get("rules") or {}).get("scenario") or (
             self.app.state.last_room_state or {}
         ).get("scenario", "?")
-        header = Text()
-        header.append(scenario, style="yellow bold")
-        if self.app.state.error_message:
-            footer: RenderableType = Text(self.app.state.error_message, style="red")
-        else:
-            footer = Text(
-                "Tab cycle panels   ↑/↓/←/→ navigate focused panel   "
-                "Enter activate   q quit",
-                style="dim",
-            )
-        layout = self._build_layout()
-        return Group(header, Text(""), layout, Text(""), footer)
+        header_line = Text()
+        header_line.append(scenario, style="yellow bold")
 
-    def _build_layout(self) -> Layout:
+        if self.app.state.error_message:
+            footer_line: RenderableType = Text(
+                self.app.state.error_message, style="red"
+            )
+        else:
+            focused = self._panels[self._focus_idx]
+            hints = Text()
+            panel_hints = focused.key_hints()
+            if panel_hints:
+                hints.append(f"[{focused.title}] ", style="bold yellow")
+                hints.append(panel_hints, style="white")
+                hints.append("   ", style="dim")
+            hints.append("Tab next panel   q quit", style="dim")
+            footer_line = hints
+
         root = Layout()
         root.split_column(
+            Layout(name="hdr", size=1),
+            Layout(name="body"),
+            Layout(name="ftr", size=1),
+        )
+        root["hdr"].update(header_line)
+        root["body"].update(self._build_body())
+        root["ftr"].update(footer_line)
+        return root
+
+    def _build_body(self) -> Layout:
+        body = Layout()
+        body.split_column(
             Layout(name="top", ratio=3),
             Layout(name="bottom", ratio=2),
         )
-        root["top"].split_row(
+        body["top"].split_row(
             Layout(name="map", ratio=2),
             Layout(name="right", ratio=1),
         )
-        root["top"]["right"].split_column(
+        body["top"]["right"].split_column(
             Layout(name="player", ratio=2),
             Layout(name="actions", ratio=3),
         )
-        root["bottom"].split_row(
+        body["bottom"].split_row(
             Layout(name="reasoning", ratio=2),
             Layout(name="coach", ratio=1),
         )
 
         focused = self._panels[self._focus_idx]
-        root["top"]["map"].update(self.map_panel.render(focused is self.map_panel))
-        root["top"]["right"]["player"].update(
+        body["top"]["map"].update(self.map_panel.render(focused is self.map_panel))
+        body["top"]["right"]["player"].update(
             self._panels[1].render(focused is self._panels[1])
         )
-        root["top"]["right"]["actions"].update(
+        body["top"]["right"]["actions"].update(
             self.actions_panel.render(focused is self.actions_panel)
         )
-        root["bottom"]["reasoning"].update(
+        body["bottom"]["reasoning"].update(
             self.reasoning_panel.render(focused is self.reasoning_panel)
         )
-        root["bottom"]["coach"].update(
+        body["bottom"]["coach"].update(
             self.coach_panel.render(focused is self.coach_panel)
         )
-        return root
+        return body
 
     # ---- input ----
 
     async def handle_key(self, key: str) -> Screen | None:
-        if self._modal is not None:
-            close = await self._modal.handle_key(key)
-            if close:
-                self._modal = None
-            return None
-
         # When the Coach panel is focused, the buffer captures everything
-        # so users can type 'q' / 'tab' / etc. into a message. The two
-        # exits are Esc (clear+stay) and a blank-buffer Tab cycle handled
-        # below by checking buffer state.
+        # so users can type 'q' / 'tab' / etc. into a message.
         coach_focused = self._panels[self._focus_idx] is self.coach_panel
         if coach_focused and key not in ("\t",):
             return await self.coach_panel.handle_key(key)
         # Tab from the coach panel only exits if the buffer is empty.
-        # Otherwise the user might cycle away mid-message.
         if coach_focused and key == "\t" and self.coach_panel.buffer:
             return None
 
-        if key == "q":
+        # Global quit — but not when a unit card is open (Esc/Enter/q
+        # close the card instead).
+        if key == "q" and self.unit_card is None:
             self.app.exit()
             return None
         if key == "\t":
+            self.unit_card = None
             self._focus_next(1)
             return None
         return await self._panels[self._focus_idx].handle_key(key)
@@ -623,7 +652,7 @@ class GameScreen(Screen):
         spec = (
             (self.app.state.scenario_description or {}).get("unit_classes") or {}
         ).get(unit.get("class"))
-        self._modal = UnitCard(unit=unit, class_spec=spec)
+        self.unit_card = UnitCard(unit=unit, class_spec=spec)
 
     async def run_action(self, action: str) -> Screen | None:
         if action == "end_turn":

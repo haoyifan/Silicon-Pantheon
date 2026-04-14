@@ -42,6 +42,11 @@ class Panel(ABC):
         """If False, Tab skips this panel and arrows never reach it."""
         return True
 
+    def key_hints(self) -> str:
+        """Short inline string shown in the footer when this panel is
+        focused. Describes what the focused-panel keystrokes do."""
+        return ""
+
     @abstractmethod
     def render(self, focused: bool) -> RenderableType:
         """Return the renderable that fills this panel's region."""
