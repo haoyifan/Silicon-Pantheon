@@ -132,8 +132,8 @@ class LoginScreen(Screen):
         self.app.state.provider = self._fields[3].value.strip() or None
         self.app.state.model = self._fields[4].value.strip() or None
 
-        # Late-import LobbyScreen to avoid a circular import.
-        from clash_of_odin.client.tui.screens.lobby import LobbyScreen
+        # Late-import to avoid circular imports.
+        from clash_of_odin.client.tui.screens.provider_auth import ProviderAuthScreen
 
         try:
             await _connect_and_declare(self.app)
@@ -141,7 +141,9 @@ class LoginScreen(Screen):
             self._connecting = False
             self.app.state.error_message = f"connect failed: {e}"
             return None
-        return LobbyScreen(self.app)
+        # Pipeline: login -> provider-auth -> lobby. ProviderAuthScreen
+        # handles the resume-or-pick-fresh logic for LLM credentials.
+        return ProviderAuthScreen(self.app)
 
 
 async def _connect_and_declare(app: TUIApp) -> None:

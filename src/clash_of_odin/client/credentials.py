@@ -35,7 +35,10 @@ from pathlib import Path
 
 SCHEMA_VERSION = 1
 
-DEFAULT_PATH = Path.home() / ".clash-of-odin" / "credentials.json"
+
+def default_path() -> Path:
+    """Resolved lazily so tests can monkey-patch HOME."""
+    return Path.home() / ".clash-of-odin" / "credentials.json"
 
 
 class CredentialsError(RuntimeError):
@@ -114,7 +117,7 @@ class Credentials:
 def load(path: Path | None = None) -> Credentials:
     """Return the stored Credentials, or a fresh empty instance if
     the file doesn't exist."""
-    p = path or DEFAULT_PATH
+    p = path or default_path()
     if not p.exists():
         return Credentials()
     try:
@@ -126,7 +129,7 @@ def load(path: Path | None = None) -> Credentials:
 
 def save(creds: Credentials, path: Path | None = None) -> Path:
     """Write the credentials file with 0600 perms."""
-    p = path or DEFAULT_PATH
+    p = path or default_path()
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(creds.to_dict(), indent=2), encoding="utf-8")
     # 0600 regardless of umask.
