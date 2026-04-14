@@ -29,12 +29,12 @@ Trivial but unblocks the rest.
 
 | # | Commit | Scope | Test | Size |
 |---|---|---|---|---|
-| A.1 | Add `PROTOCOL_VERSION` constant | New `PROTOCOL_VERSION = 1` in `shared/protocol.py`. No behavior change. | existing tests pass | XS |
-| A.2 | Server reports version in `set_player_metadata` response | Response includes `server_protocol_version`. | new test: whoami returns the version | XS |
-| A.3 | Client sends its version in `set_player_metadata` args | Transport wrapper passes `client_protocol_version`. | new test: server sees the client version in logs | XS |
-| A.4 | Server refuses mismatched versions | `set_player_metadata` returns `VERSION_MISMATCH` with human-readable message when client != server. | test: older client gets the error | S |
-| A.5 | Add `schema_version` to scenario YAML loader | Default 1 if missing. Refuse to load anything `> 1`. | test: YAML with `schema_version: 99` raises on load | S |
-| A.6 | Add `ErrorCode.VERSION_MISMATCH` to shared enum + docs note | Enum + one-line change to `docs/USAGE.md`. | existing tests | XS |
+| A.1 ✅ | Add `PROTOCOL_VERSION` constant | New `PROTOCOL_VERSION = 1` in `shared/protocol.py`. No behavior change. | existing tests pass | XS |
+| A.2 ✅ | Server reports version in `set_player_metadata` response | Response includes `server_protocol_version`. | new test: whoami returns the version | XS |
+| A.3 ✅ | Client sends its version in `set_player_metadata` args | Transport wrapper passes `client_protocol_version`. | new test: server sees the client version in logs | XS |
+| A.4 ✅ | Server refuses mismatched versions | `set_player_metadata` returns `VERSION_MISMATCH` with human-readable message when client != server. | test: older client gets the error | S |
+| A.5 ✅ | Add `schema_version` to scenario YAML loader | Default 1 if missing. Refuse to load anything `> 1`. | test: YAML with `schema_version: 99` raises on load | S |
+| A.6 ✅ | Add `ErrorCode.VERSION_MISMATCH` to shared enum + docs note | Enum + one-line change to `docs/USAGE.md`. | existing tests | XS |
 
 **Acceptance**: a server and client both declare protocol v1 and
 connect cleanly; fabricated v0/v2 clients get rejected with a clear
@@ -49,11 +49,11 @@ break.
 
 | # | Commit | Scope | Test | Size |
 |---|---|---|---|---|
-| B.1 | Add reserved fields to `UnitStats` | New optional fields: `sight` (already there), `tags: list[str]`, `mp_max: int = 0`, `mp_per_turn: int = 0`, `abilities: list[str] = []`, `default_inventory: list[str] = []`, `damage_profile: dict[str, int] = {}`, `defense_profile: dict[str, int] = {}`, `bonus_vs_tags: list[dict] = []`, `vulnerability_to_tags: list[dict] = []`. Engine ignores everything new. | existing 136 tests | S |
-| B.2 | Scenario loader accepts `unit_classes:` block | Parse + override / extend the built-in `CLASS_STATS` table per-scenario. Unknown class referenced in `armies:` → friendly error. | test: YAML with custom class round-trips through load_scenario + get_state | S |
-| B.3 | `state_to_dict` exposes tags + mp + abilities | So clients can see them even though v1 engine doesn't act. | test: serialized unit includes reserved fields when set | XS |
+| B.1 ✅ | Add reserved fields to `UnitStats` | New optional fields: `sight` (already there), `tags: list[str]`, `mp_max: int = 0`, `mp_per_turn: int = 0`, `abilities: list[str] = []`, `default_inventory: list[str] = []`, `damage_profile: dict[str, int] = {}`, `defense_profile: dict[str, int] = {}`, `bonus_vs_tags: list[dict] = []`, `vulnerability_to_tags: list[dict] = []`. Engine ignores everything new. | existing 136 tests | S |
+| B.2 ✅ | Scenario loader accepts `unit_classes:` block | Parse + override / extend the built-in `CLASS_STATS` table per-scenario. Unknown class referenced in `armies:` → friendly error. | test: YAML with custom class round-trips through load_scenario + get_state | S |
+| B.3 ✅ | `state_to_dict` exposes tags + mp + abilities | So clients can see them even though v1 engine doesn't act. | test: serialized unit includes reserved fields when set | XS |
 | B.4 | `describe_scenario`-preview helper returns unit class table | Helper used by future Phase 2e tool; exposes the resolved class table. | unit test against `01_tiny_skirmish` | S |
-| B.5 | Add reserved-field round-trip test | One test loading a synthetic scenario with custom unit classes + reserved fields, plays a few turns, asserts all fields present on get_state. | — | XS |
+| B.5 ✅ | Add reserved-field round-trip test | One test loading a synthetic scenario with custom unit classes + reserved fields, plays a few turns, asserts all fields present on get_state. | — | XS |
 
 **Acceptance**: `Journey to the West`'s unit-class block parses; a
 player playing with a custom class observes correct stats in the
@@ -65,23 +65,23 @@ units table; today's 4-class scenarios are unchanged.
 
 | # | Commit | Scope | Test | Size |
 |---|---|---|---|---|
-| C.1 | Add `ProviderAdapter` Protocol + `ToolSpec` dataclass | `client/providers/base.py`. No behavior change yet. | mypy/pyright passes | XS |
-| C.2 | Extract Anthropic adapter | `client/providers/anthropic.py` containing today's `ClaudeSDKClient` code behind the Protocol. `NetworkedAgent` calls it. | existing Anthropic smoke test unchanged | M |
-| C.3 | Add `ProviderSpec` / `ModelSpec` catalog | `shared/providers.py` with Anthropic entries. No wiring yet. | test: catalog enumerates expected models | XS |
-| C.4 | Credentials store module | `client/credentials.py` that reads `~/.clash-of-odin/credentials.json`, resolves `env:` / `keyring:` refs. | unit test with tmp home | S |
-| C.5 | Make `keyring` an optional dependency | `pyproject.toml` extras. Graceful degrade when missing. | test: credentials module imports without keyring | XS |
+| C.1 ✅ | Add `ProviderAdapter` Protocol + `ToolSpec` dataclass | `client/providers/base.py`. No behavior change yet. | mypy/pyright passes | XS |
+| C.2 ✅ | Extract Anthropic adapter | `client/providers/anthropic.py` containing today's `ClaudeSDKClient` code behind the Protocol. `NetworkedAgent` calls it. | existing Anthropic smoke test unchanged | M |
+| C.3 ✅ | Add `ProviderSpec` / `ModelSpec` catalog | `shared/providers.py` with Anthropic entries. No wiring yet. | test: catalog enumerates expected models | XS |
+| C.4 ✅ | Credentials store module | `client/credentials.py` that reads `~/.clash-of-odin/credentials.json`, resolves `env:` / `keyring:` refs. | unit test with tmp home | S |
+| C.5 ✅ | Make `keyring` an optional dependency | `pyproject.toml` extras. Graceful degrade when missing. | test: credentials module imports without keyring | XS |
 | C.6 | Login-screen → provider picker transition | New `ProviderAuthScreen` between Login and Lobby; reads from credentials file; if empty, runs the first-run flow. | stub smoke test using fake credentials | M |
 | C.7 | API-key auth subscreen | Input-box subscreen for api-key providers; offers env-var detection and keyring save. | stub smoke test | M |
 | C.8 | Subscription-CLI auth subscreen | Detect `claude` CLI presence; friendly error if missing. | stub smoke test with mocked `shutil.which` | S |
 | C.9 | Token-cost warning banner | Warning text on provider picker; copy per auth mode. | render test via `rich.Console(record=True)` | XS |
 | C.10 | Model picker subscreen | List provider's models with cost hints; persist choice. | stub smoke test | S |
 | C.11 | Second-run "resume" prompt | If credentials file has a default pair, skip picker with a one-line confirm. | stub smoke test | S |
-| C.12 | OpenAI catalog entry + model list | Add to `shared/providers.py`. | catalog test | XS |
-| C.13 | OpenAI adapter | `client/providers/openai.py`. Uses Responses + function-calling. Transcript-persistent (Conversations or manual replay). Converts MCP tool schemas to OpenAI function format. | in-process smoke: stub OpenAI client, run a 2-turn match end-to-end | L |
-| C.14 | Add OpenAI dependency | `pyproject.toml` adds `openai>=1.0`. | install test | XS |
-| C.15 | Error classifier | `client/providers/errors.py` mapping exceptions → `ProviderError(reason=...)`. Both adapters raise it. | unit test per reason | S |
-| C.16 | Force-concede on `auth` / `billing` | Catch `ProviderError` with those reasons inside `play_turn`; call `concede` tool + transition to PostMatchScreen. | fault-injection test with a fake adapter that raises | S |
-| C.17 | Rate-limit backoff + banner | Exponential backoff with jitter; status banner during retry. | test that backoff respects time budget | S |
+| C.12 ✅ | OpenAI catalog entry + model list | Add to `shared/providers.py`. | catalog test | XS |
+| C.13 ✅ | OpenAI adapter | `client/providers/openai.py`. Uses Responses + function-calling. Transcript-persistent (Conversations or manual replay). Converts MCP tool schemas to OpenAI function format. | in-process smoke: stub OpenAI client, run a 2-turn match end-to-end | L |
+| C.14 ✅ | Add OpenAI dependency | `pyproject.toml` adds `openai>=1.0`. | install test | XS |
+| C.15 ✅ | Error classifier | `client/providers/errors.py` mapping exceptions → `ProviderError(reason=...)`. Both adapters raise it. | unit test per reason | S |
+| C.16 ✅ | Force-concede on `auth` / `billing` | Catch `ProviderError` with those reasons inside `play_turn`; call `concede` tool + transition to PostMatchScreen. | fault-injection test with a fake adapter that raises | S |
+| C.17 ✅ | Rate-limit backoff + banner | Exponential backoff with jitter; status banner during retry. | test that backoff respects time budget | S |
 | C.18 | Update `docs/USAGE.md` for multi-provider | New "Picking a provider" section; update onboarding flow. | — | XS |
 | C.19 | Remove `--provider`/`--model` flag defaults | Flags still accepted but override, not required — defaults come from credentials. | CLI help snapshot test | XS |
 
