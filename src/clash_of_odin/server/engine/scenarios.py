@@ -103,13 +103,48 @@ def _games_root() -> Path:
 
 
 def load_scenario(name: str) -> GameState:
-    """Load a scenario by folder name (e.g. '01_tiny_skirmish')."""
-    config_path = _games_root() / name / "config.yaml"
+    """Load a scenario by folder name (e.g. '01_tiny_skirmish').
+
+    If the scenario directory contains a `rules.py`, load it as a
+    plugin module and expose its public callables on the resulting
+    state's `_plugin_namespace`. This runs at scenario-load time so
+    import errors surface immediately, not mid-match.
+    """
+    scenario_dir = _games_root() / name
+    config_path = scenario_dir / "config.yaml"
     if not config_path.exists():
         raise FileNotFoundError(f"No scenario at {config_path}")
     with config_path.open() as f:
         cfg = yaml.safe_load(f)
-    return build_state(cfg)
+    state = build_state(cfg)
+    plugin_path = scenario_dir / "rules.py"
+    if plugin_path.exists():
+        state._plugin_namespace = _load_plugin(plugin_path, name)
+    else:
+        state._plugin_namespace = {}
+    return state
+
+
+def _load_plugin(path: Path, scenario_name: str) -> dict:
+    """Load a scenario's rules.py as an isolated module.
+
+    Returns its public namespace (names not starting with underscore).
+    Operator-trusted: no sandbox, full Python. Failures here bubble up
+    to the caller so broken scenarios never enter play.
+    """
+    import importlib.util
+
+    mod_name = f"clash_of_odin._scenario_plugins.{scenario_name}"
+    spec = importlib.util.spec_from_file_location(mod_name, path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"could not load scenario plugin at {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return {
+        name: getattr(module, name)
+        for name in dir(module)
+        if not name.startswith("_")
+    }
 
 
 SUPPORTED_SCHEMA_VERSION = 1

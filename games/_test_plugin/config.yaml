@@ -1,0 +1,26 @@
+name: Test Plugin Scenario
+description: Synthetic scenario used by the plugin-loader test suite.
+
+board:
+  width: 4
+  height: 4
+  terrain: []
+  forts:
+    - {x: 0, y: 0, owner: blue}
+    - {x: 3, y: 3, owner: red}
+
+armies:
+  blue:
+    - {class: knight, pos: {x: 0, y: 1}}
+  red:
+    - {class: knight, pos: {x: 3, y: 2}}
+
+rules:
+  max_turns: 10
+  fog_of_war: false
+  first_player: blue
+
+win_conditions:
+  - type: plugin
+    module: rules
+    check_fn: always_blue_wins
