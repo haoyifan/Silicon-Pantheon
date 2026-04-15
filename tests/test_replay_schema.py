@@ -142,3 +142,36 @@ def test_action_from_payload_wait_and_end_turn() -> None:
 def test_action_from_payload_rejects_unknown() -> None:
     with pytest.raises(UnreconstructibleAction):
         action_from_payload({"type": "teleport", "unit_id": "x"})
+
+
+def test_heal_payload_uses_unit_id_not_healer_id():
+    """Regression: silicon-play crashed on every replay containing a
+    heal because the engine records heal results with the healer's id
+    under `unit_id` (rules.py:_apply_heal), not `healer_id`. The
+    parser was unconditionally reading `payload["healer_id"]` and
+    raising KeyError."""
+    from silicon_pantheon.shared.replay_schema import (
+        HealAction,
+        action_from_payload,
+    )
+
+    # Real-world shape from the engine.
+    a = action_from_payload({
+        "type": "heal",
+        "unit_id": "u_b_mage_1",
+        "target_id": "u_b_knight_1",
+        "heal_amount": 5,
+    })
+    assert isinstance(a, HealAction)
+    assert a.healer_id == "u_b_mage_1"
+    assert a.target_id == "u_b_knight_1"
+
+    # Backward-compatible: hand-written tests / hypothetical older
+    # replays might use the explicit healer_id field.
+    a2 = action_from_payload({
+        "type": "heal",
+        "healer_id": "u_b_mage_1",
+        "target_id": "u_b_knight_1",
+    })
+    assert isinstance(a2, HealAction)
+    assert a2.healer_id == "u_b_mage_1"

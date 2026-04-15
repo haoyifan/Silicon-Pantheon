@@ -158,8 +158,19 @@ def action_from_payload(payload: dict[str, Any]) -> Action:
             target_id=str(payload["target_id"]),
         )
     if t == "heal":
+        # Engine records heal results with the healer's id under
+        # `unit_id` (rules.py:_apply_heal). The earlier `healer_id`
+        # lookup never matched any real payload — every heal in
+        # every replay file crashed silicon-play with KeyError.
+        # Fall back through both for any defensive symmetry with
+        # hand-written tests.
+        healer_id = payload.get("unit_id") or payload.get("healer_id")
+        if not healer_id:
+            raise UnreconstructibleAction(
+                f"heal missing unit_id/healer_id: {payload!r}"
+            )
         return HealAction(
-            healer_id=str(payload["healer_id"]),
+            healer_id=str(healer_id),
             target_id=str(payload["target_id"]),
         )
     if t == "wait":
