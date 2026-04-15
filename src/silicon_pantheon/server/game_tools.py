@@ -428,6 +428,46 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         return _dispatch(app, connection_id, "send_to_agent", {"team": team, "text": text})
 
     @mcp.tool()
+    def record_thought(connection_id: str, text: str) -> dict:
+        """Record an agent reasoning entry to this match's replay.
+
+        Side-channel for networked clients to push their LLM's
+        chain-of-thought to the server so the post-match replay file
+        captures it (silicon-play renders the agent_thought events).
+        Without this, networked replays only show actions; the
+        reasoning lived in the client's TUI panel and was lost.
+
+        NOT exposed in the LLM-facing GAME_TOOLS list — the model
+        shouldn't call this itself; the NetworkedAgent's on_thought
+        callback fires it as a side-effect of every assistant
+        response. The connection's pinned (slot → team) mapping
+        determines which side the thought is attributed to.
+        """
+        conn = app.get_connection(connection_id)
+        if conn is None:
+            return _error(ErrorCode.TOKEN_INVALID, "unknown connection_id")
+        if conn.state != ConnectionState.IN_GAME:
+            return _error(
+                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                "record_thought requires state=in_game",
+            )
+        resolved = _viewer_for(conn, app)
+        if resolved is None:
+            return _error(ErrorCode.GAME_NOT_STARTED, "no active game for this connection")
+        session, viewer = resolved
+        # Don't update last_game_activity_at — the heartbeat sweeper
+        # uses that to detect a wedged TUI. A reasoning push proves
+        # the agent loop is alive but doesn't prove the player can
+        # still ACT, so keep it out of the liveness signal. Bare
+        # heartbeat handles transport-level liveness already.
+        try:
+            session.add_thought(viewer, text)
+        except Exception as e:  # pragma: no cover - defensive
+            log.exception("record_thought add_thought raised")
+            return _error(ErrorCode.INTERNAL, str(e))
+        return _ok({})
+
+    @mcp.tool()
     def download_replay(connection_id: str) -> dict:
         """Fetch this connection's match replay as JSONL text.
 

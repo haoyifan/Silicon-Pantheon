@@ -175,3 +175,38 @@ def test_heal_payload_uses_unit_id_not_healer_id():
     })
     assert isinstance(a2, HealAction)
     assert a2.healer_id == "u_b_mage_1"
+
+
+def test_agent_thought_roundtrip_through_session_log(tmp_path):
+    """Pin the full path: Session.add_thought writes an `agent_thought`
+    event to the replay file, and interactive_replay's parser reads
+    it back as a renderable AgentThought. This is the new
+    networked-replay reasoning capture path — see record_thought
+    tool in server/game_tools.py."""
+    from silicon_pantheon.server.engine.scenarios import load_scenario
+    from silicon_pantheon.server.engine.state import Team
+    from silicon_pantheon.server.session import new_session
+    from silicon_pantheon.shared.replay_schema import (
+        AgentThought,
+        parse_event,
+    )
+    import json
+
+    replay_path = tmp_path / "replay.jsonl"
+    state = load_scenario("01_tiny_skirmish")
+    session = new_session(
+        state, replay_path=replay_path, scenario="01_tiny_skirmish"
+    )
+    session.add_thought(Team.BLUE, "I should attack the knight at (3,3).")
+    session.add_thought(Team.RED, "Counter with the archer.")
+
+    raw_lines = replay_path.read_text(encoding="utf-8").splitlines()
+    thought_events = [parse_event(json.loads(ln)) for ln in raw_lines if "agent_thought" in ln]
+    assert len(thought_events) == 2, f"expected 2 agent_thought events, got {len(thought_events)}"
+    assert all(ev.kind == "agent_thought" for ev in thought_events)
+    blue_t, red_t = thought_events
+    assert isinstance(blue_t.data, AgentThought)
+    assert blue_t.data.team == "blue"
+    assert "knight" in blue_t.data.text
+    assert isinstance(red_t.data, AgentThought)
+    assert red_t.data.team == "red"

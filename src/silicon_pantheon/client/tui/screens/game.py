@@ -791,6 +791,21 @@ class GameScreen(Screen):
             _logging.getLogger("silicon.agent.thoughts").info(
                 "[%s team=%s] %s", ts, team, stripped
             )
+            # Push to the server's replay so silicon-play renders the
+            # reasoning alongside the actions. Fire-and-forget — a
+            # transport hiccup must not block the agent loop. The
+            # server pins this thought to the connection's team, so
+            # we don't need to send team/turn explicitly.
+            if app.client is not None:
+                async def _push() -> None:
+                    try:
+                        await app.client.call("record_thought", text=stripped)
+                    except Exception:
+                        # Replay-loss is non-fatal; the panel + log
+                        # still have the text.
+                        pass
+                import asyncio as _asyncio
+                _asyncio.create_task(_push())
 
         # `lessons_dir=None` disables both lesson injection into the
         # system prompt AND saving the post-match summary. Toggled via
