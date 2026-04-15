@@ -706,6 +706,36 @@ class GameScreen(Screen):
         # the board with the cursor.
         self._focus_idx = 0
 
+    # Rate-limit "skipped trigger" logs to one entry per distinct
+    # reason per N ticks, so we see the current blocker without
+    # spamming the file.
+    _trigger_skip_reason: str = ""
+    _trigger_skip_count: int = 0
+
+    def _log_trigger_skip(self, reason: str) -> None:
+        if reason == self._trigger_skip_reason:
+            self._trigger_skip_count += 1
+            # Log every 30th repeat so a persistent block shows up.
+            if self._trigger_skip_count % 30 == 0:
+                log.info(
+                    "_maybe_trigger_agent: still skipping (%s, %d ticks)",
+                    reason, self._trigger_skip_count,
+                )
+            return
+        # Reason changed — emit a transition line.
+        if self._trigger_skip_reason:
+            log.info(
+                "_maybe_trigger_agent: skip %r -> %r after %d ticks",
+                self._trigger_skip_reason, reason,
+                self._trigger_skip_count,
+            )
+        else:
+            log.info(
+                "_maybe_trigger_agent: skipping (%s)", reason,
+            )
+        self._trigger_skip_reason = reason
+        self._trigger_skip_count = 1
+
     async def on_enter(self, app: TUIApp) -> None:
         log.info("GameScreen.on_enter: starting")
         # Reasoning is per-match: clear the thought buffer so the new
@@ -1046,20 +1076,34 @@ class GameScreen(Screen):
         return None
 
     async def _maybe_trigger_agent(self) -> None:
+        # Each early return gets a WHY log so the Q3 "blue just stops
+        # firing play_turn" mystery is diagnosable from the log alone.
+        # We sample the log (don't spam every tick) so the file stays
+        # readable — emit once every ~30 calls that return early for
+        # the same reason.
         if self.app.state.agent is None:
+            self._log_trigger_skip("agent_is_none")
             return
         if (
             self.app.state.agent_task is not None
             and not self.app.state.agent_task.done()
         ):
+            self._log_trigger_skip("task_running")
             return
         gs = self.state or {}
         if gs.get("status") == "game_over":
+            self._log_trigger_skip("game_over")
             return
         my_team = gs.get("you")
         active = gs.get("active_player")
         if not my_team or active != my_team:
+            self._log_trigger_skip(
+                f"not_my_turn(me={my_team}, active={active})"
+            )
             return
+        # Reset skip-counter so the NEXT idle period's log is clean.
+        self._trigger_skip_reason = ""
+        self._trigger_skip_count = 0
         log.info(
             "triggering agent.play_turn for team=%s turn=%s",
             my_team, gs.get("turn"),
@@ -1075,17 +1119,32 @@ class GameScreen(Screen):
         )
 
         async def _run() -> None:
+            import time as _time
+
             from silicon_pantheon.client.providers.errors import (
                 ProviderError,
                 ProviderErrorReason,
             )
 
+            t0 = _time.time()
+            log.info("agent_task START team=%s", my_team)
             try:
                 await self.app.state.agent.play_turn(viewer, max_turns=max_turns)
+                log.info(
+                    "agent_task END team=%s dt=%.1fs (clean)",
+                    my_team, _time.time() - t0,
+                )
             except asyncio.CancelledError:
+                log.info(
+                    "agent_task CANCELLED team=%s dt=%.1fs",
+                    my_team, _time.time() - t0,
+                )
                 return
             except ProviderError as e:
-                log.warning("agent.play_turn provider error: %s", e)
+                log.warning(
+                    "agent_task END team=%s dt=%.1fs (provider error: %s)",
+                    my_team, _time.time() - t0, e,
+                )
                 if e.is_terminal:
                     self.app.state.error_message = (
                         f"{e.reason.value}: {e} — conceding match"
@@ -1101,7 +1160,10 @@ class GameScreen(Screen):
                 else:
                     self.app.state.error_message = f"agent error: {e}"
             except Exception as e:
-                log.exception("agent.play_turn raised: %s", e)
+                log.exception(
+                    "agent_task END team=%s dt=%.1fs (exception): %s",
+                    my_team, _time.time() - t0, e,
+                )
                 self.app.state.error_message = f"agent error: {e}"
 
         self.app.state.agent_task = asyncio.create_task(_run())

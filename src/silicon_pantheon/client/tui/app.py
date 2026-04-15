@@ -376,19 +376,57 @@ class TUIApp:
         return True
 
     async def _ticker(self) -> None:
+        # Heartbeat so we can see in the log whether this task is alive.
+        # The Q3 "blue just stops" mystery had no exception, no transport
+        # error, but no more tick() activity either. Without a heartbeat
+        # we can't tell whether the ticker was cancelled silently, is
+        # stuck inside an await that never returns, or something else.
+        # Emit a pulse every ~30s and log each tick() call's duration
+        # so a hang shows up as "pulse fires but no tick start"
+        # or "tick start with no tick end".
+        import time as _time
+
+        _tick_n = 0
+        _last_pulse = _time.time()
         try:
             while not self._should_exit:
                 await asyncio.sleep(TICK_INTERVAL_S)
                 if self._screen is None:
                     continue
+                _tick_n += 1
+                now = _time.time()
+                if now - _last_pulse >= 30.0:
+                    _log.info(
+                        "ticker pulse: tick_n=%d screen=%s should_exit=%s",
+                        _tick_n, type(self._screen).__name__,
+                        self._should_exit,
+                    )
+                    _last_pulse = now
+                t0 = _time.time()
                 try:
                     await self._screen.tick()
                 except Exception as e:
                     _log.exception("tick raised")
                     self.state.error_message = f"tick error: {e}"
+                dt = _time.time() - t0
+                # Flag abnormally slow ticks — anything over 5s is
+                # suspicious (we make a single get_state at 1s poll
+                # cadence; the rest is cheap). Hangs show up as dt
+                # large or the next tick never arriving.
+                if dt > 5.0:
+                    _log.warning(
+                        "slow tick: tick_n=%d screen=%s dt=%.1fs",
+                        _tick_n, type(self._screen).__name__, dt,
+                    )
                 self._refresh()
         except asyncio.CancelledError:
+            _log.info("ticker cancelled: tick_n=%d", _tick_n)
             return
+        except BaseException:
+            # Normally impossible, but log before propagating so the
+            # next hang repro captures it.
+            _log.exception("ticker died")
+            raise
 
 
 # ---- key-reading helper (POSIX cbreak) ----
