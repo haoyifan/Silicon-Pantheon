@@ -494,21 +494,24 @@ class OpenAIAdapter:
                 ]
             self._messages.append(assistant_entry)
 
-            # Surface any text reasoning before we dispatch tools.
-            # xAI Grok reasoning models (grok-4, grok-3-mini) put
-            # chain-of-thought in `reasoning_content`, leaving
-            # `content` empty when the turn is pure reasoning + tool
-            # calls. OpenAI's o-series uses the same split. Emit
-            # whichever is non-empty so the thoughts panel actually
-            # populates for reasoning-capable models.
+            # Surface text reasoning before we dispatch tools.
+            # xAI Grok models (grok-4, grok-3-mini) put chain-of-
+            # thought in `reasoning_content` and a brief restatement
+            # in `content` — the panel was double-printing those
+            # ("same timestamp, one a subset of the other"). For
+            # Grok we want ONLY the reasoning_content; the content
+            # is just a summary of what's already shown.
+            #
+            # For non-Grok models that don't expose `reasoning_content`
+            # (regular GPT chat completions), `_extract_reasoning`
+            # returns None and we fall back to `content`.
             if on_thought is not None:
-                reasoning = _extract_reasoning(msg)
-                for piece in (reasoning, msg.content):
-                    if piece:
-                        try:
-                            await on_thought(piece)
-                        except Exception:
-                            pass
+                piece = _extract_reasoning(msg) or msg.content
+                if piece:
+                    try:
+                        await on_thought(piece)
+                    except Exception:
+                        pass
 
             # Terminal condition: no tool calls requested.
             if not msg.tool_calls:
