@@ -709,6 +709,11 @@ class GameScreen(Screen):
         # rest of the layout stays visible.
         self.unit_card: UnitCard | None = None
         self._confirm: ConfirmModal | None = None
+        # F3 overlay: full-screen scenario description (story, win
+        # conditions, armies, units). Same content the room screen
+        # shows pre-game; reuses DescriptionPanel verbatim. While
+        # open, scroll keys route to it and F3/Esc/q close it.
+        self._scenario_overlay: Any = None
 
         self.map_panel = GameMapPanel(self)
         self.reasoning_panel = ReasoningPanel(self)
@@ -832,6 +837,22 @@ class GameScreen(Screen):
     def render(self) -> RenderableType:
         if self._confirm is not None:
             return self._confirm.render()
+        if self._scenario_overlay is not None:
+            from rich.align import Align as _Align
+
+            inner = self._scenario_overlay.render(focused=True)
+            footer = Text(
+                "F3/Esc/q close   j/k ↕   ^f/^b page   ^d/^u ½page   gg top   G bottom",
+                style="dim",
+            )
+            root = Layout()
+            root.split_column(
+                Layout(name="body"),
+                Layout(name="ftr", size=1),
+            )
+            root["body"].update(_Align.center(inner, vertical="middle"))
+            root["ftr"].update(footer)
+            return root
         gs = self.state or {}
         scenario = (gs.get("rules") or {}).get("scenario") or (
             self.app.state.last_room_state or {}
@@ -851,7 +872,7 @@ class GameScreen(Screen):
                 hints.append(f"[{focused.title}] ", style="bold yellow")
                 hints.append(panel_hints, style="white")
                 hints.append("   ", style="dim")
-            hints.append("Tab next panel   F2 help   q quit", style="dim")
+            hints.append("Tab next panel   F2 help   F3 scenario   q quit", style="dim")
             footer_line = hints
 
         root = Layout()
@@ -900,6 +921,23 @@ class GameScreen(Screen):
             close = await self._confirm.handle_key(key)
             if close:
                 self._confirm = None
+            return None
+        # Scenario overlay: F3 toggles. While open, Esc/q/F3 close,
+        # everything else (j/k/G/gg/^f/^b/^d/^u) routes to the panel
+        # for vim-style scrolling. The underlying game state keeps
+        # refreshing in the background.
+        if self._scenario_overlay is not None:
+            if key in ("f3", "escape", "q"):
+                self._scenario_overlay = None
+                return None
+            await self._scenario_overlay.handle_key(key)
+            return None
+        if key == "f3":
+            from silicon_pantheon.client.tui.screens.room import (
+                DescriptionPanel as _DescriptionPanel,
+            )
+
+            self._scenario_overlay = _DescriptionPanel(self.app)
             return None
         # When the Coach panel is focused, the buffer captures everything
         # so users can type 'q' / 'tab' / etc. into a message.
