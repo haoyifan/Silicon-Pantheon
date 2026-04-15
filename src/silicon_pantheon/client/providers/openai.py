@@ -99,6 +99,7 @@ class OpenAIAdapter:
         self._client = AsyncOpenAI(api_key=api_key, base_url=base_url)
         self._messages: list[dict] = []
         self._system_prompt: str | None = None
+        self._corrections_this_turn: int = 0
 
     # ---- transcript bookkeeping ----
 
@@ -189,6 +190,10 @@ class OpenAIAdapter:
                 )
 
         self._messages.append({"role": "user", "content": user_prompt})
+        # Reset per-turn corrective-reminder counter — we cap how many
+        # times we inject "use proper tool_calls" reminders so a
+        # stubbornly mis-formatting model can't loop forever.
+        self._corrections_this_turn = 0
         # Log token estimate each turn so operators can see growth
         # trajectory even without hitting the limit.
         log.info(
@@ -298,6 +303,52 @@ class OpenAIAdapter:
 
             # Terminal condition: no tool calls requested.
             if not msg.tool_calls:
+                # Some models (notably older Grok / xAI builds) were
+                # trained with XML-style function-calling demos and
+                # emit "<function_call>tool(args)</function_call>" as
+                # plain content text instead of using the OpenAI
+                # tool_calls field. From the API's perspective there
+                # are no tool calls so the loop would exit silently
+                # — except the model intended to act, didn't actually
+                # do anything, and the next play_turn re-trigger loops
+                # forever sending the same delta prompt.
+                #
+                # If we detect that pattern, append a corrective
+                # system message reminding the model to use the
+                # native tool-calls protocol and continue the loop.
+                # Cap the corrections at 2 so we don't loop forever
+                # on stubborn models.
+                content = (msg.content or "")
+                hallucinated_xml = (
+                    "<function_call" in content
+                    or "</function_call" in content
+                    or "<tool_call" in content
+                )
+                if hallucinated_xml and self._corrections_this_turn < 2:
+                    self._corrections_this_turn += 1
+                    log.warning(
+                        "model emitted XML-style function-call text "
+                        "instead of using the API tool_calls field; "
+                        "injecting corrective reminder (attempt %d/2)",
+                        self._corrections_this_turn,
+                    )
+                    self._messages.append(
+                        {
+                            "role": "system",
+                            "content": (
+                                "Your previous message contained "
+                                "XML-style <function_call> tags in the "
+                                "content. Those are NOT executed. Use "
+                                "the native function-calling protocol: "
+                                "emit a tool_call entry on your "
+                                "message (the SDK exposes this via "
+                                "the standard tools= argument). Do "
+                                "not write <function_call> tags as "
+                                "text — they are inert. Try again."
+                            ),
+                        }
+                    )
+                    continue
                 break
 
             # Dispatch each tool call and append results.

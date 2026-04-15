@@ -281,6 +281,64 @@ def test_networked_agent_advances_cursor_when_turn_ends() -> None:
     asyncio.run(agent.close())
 
 
+def test_no_progress_watchdog_forces_end_turn() -> None:
+    """Watchdog: after 3 consecutive play_turn returns without
+    end_turn, force-call end_turn server-side so a stuck/looping
+    model doesn't livelock the match. Without this, the TUI poll
+    loop kept re-triggering play_turn forever — the user reported
+    'agent reasoning panel reprints the same line for tens of
+    messages'."""
+    from silicon_pantheon.client.agent_bridge import NetworkedAgent
+
+    end_turn_calls: list[dict] = []
+    # State stream: stays "blue active" until end_turn is called.
+    state_box = {"active": "blue"}
+
+    class _StubClient:
+        async def call(self, tool: str, **kw):
+            if tool == "get_state":
+                return {"ok": True, "result": _state(state_box["active"])}
+            if tool == "get_history":
+                return {"ok": True, "result": {"history": []}}
+            if tool == "end_turn":
+                end_turn_calls.append(kw)
+                state_box["active"] = "red"
+                return {"ok": True, "result": {}}
+            return {"ok": True, "result": {}}
+
+    class _StuckAdapter:
+        async def play_turn(self, **kwargs):
+            # Simulates the hallucination case: adapter returns
+            # without dispatching a real end_turn through any tool
+            # call.
+            return
+
+        async def close(self):
+            return None
+
+    agent = NetworkedAgent(
+        client=_StubClient(),
+        model="fake",
+        scenario="01_tiny_skirmish",
+        adapter=_StuckAdapter(),
+    )
+
+    asyncio.run(agent.play_turn(Team.BLUE, max_turns=10))
+    assert end_turn_calls == []
+    asyncio.run(agent.play_turn(Team.BLUE, max_turns=10))
+    assert end_turn_calls == []
+    # Reset active so the third call passes the ownership check
+    # (after our previous force, state would be red and we'd bail).
+    state_box["active"] = "blue"
+    asyncio.run(agent.play_turn(Team.BLUE, max_turns=10))
+    assert len(end_turn_calls) == 1, (
+        f"watchdog didn't fire after 3 retries; end_turn_calls={end_turn_calls}"
+    )
+    # Counter resets after the forced flip.
+    assert agent._no_progress_retries == 0
+    asyncio.run(agent.close())
+
+
 def test_networked_agent_skips_turn_when_game_over() -> None:
     """Game already ended → no prompt, no adapter call."""
     from silicon_pantheon.client.agent_bridge import NetworkedAgent

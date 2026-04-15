@@ -387,6 +387,13 @@ class NetworkedAgent:
         # main driver behind the 351k-token blow-up.
         self._turns_played: int = 0
         self._history_cursor: int = 0
+        # No-progress watchdog: if the adapter returns N times in a
+        # row without the agent calling end_turn, the model is stuck
+        # (often hallucinating tool-call XML, or just paralyzed by
+        # the prompt). After MAX_NO_PROGRESS retries we force end_turn
+        # server-side so the game advances instead of livelocking with
+        # the same delta prompt being re-shipped every poll.
+        self._no_progress_retries: int = 0
 
     async def close(self) -> None:
         try:
@@ -552,16 +559,12 @@ class NetworkedAgent:
         # and the TUI will retrigger play_turn on the next poll. In
         # that case we must NOT advance _turns_played (next prompt
         # should still be the same shape) and must NOT advance the
-        # history cursor (there's nothing new for the agent to see
-        # anyway; their own partial actions are shown through unit
-        # statuses). Without this guard the re-entry would silently
-        # switch the agent from bootstrap to delta mid-turn and show
-        # "Opponent did not act" when the agent is actually resuming
-        # their own incomplete turn.
+        # history cursor.
         post_state = await self._fetch_state()
         turn_ended = post_state.get("active_player") != viewer.value
         if turn_ended:
             self._turns_played += 1
+            self._no_progress_retries = 0
             try:
                 r = await self.client.call("get_history", last_n=0)
                 self._history_cursor = len(
@@ -570,11 +573,41 @@ class NetworkedAgent:
             except Exception:
                 log.exception("get_history failed; delta cursor not advanced")
         else:
+            self._no_progress_retries += 1
             log.info(
                 "play_turn returned without end_turn (active still %s); "
-                "delta bookkeeping held, will retry on next trigger",
-                viewer.value,
+                "no_progress_retries=%d",
+                viewer.value, self._no_progress_retries,
             )
+            # Watchdog: after 3 stuck retries, force-end the turn
+            # server-side so the game advances. Otherwise the TUI
+            # poll loop would keep calling play_turn → adapter →
+            # same hallucination → same broken response → forever.
+            # The model wasted its turn but at least the match
+            # progresses (and the log explains why).
+            if self._no_progress_retries >= 3:
+                log.warning(
+                    "agent stuck (no end_turn after %d retries); "
+                    "forcing end_turn server-side",
+                    self._no_progress_retries,
+                )
+                try:
+                    await self.client.call("end_turn")
+                except Exception:
+                    log.exception("forced end_turn failed")
+                self._no_progress_retries = 0
+                # Re-fetch state so the post_state we return reflects
+                # the forced flip.
+                post_state = await self._fetch_state()
+                if post_state.get("active_player") != viewer.value:
+                    self._turns_played += 1
+                    try:
+                        r = await self.client.call("get_history", last_n=0)
+                        self._history_cursor = len(
+                            (r.get("result") or {}).get("history") or []
+                        )
+                    except Exception:
+                        log.exception("get_history failed after forced end_turn")
 
         return post_state
 

@@ -271,6 +271,52 @@ async def test_transcript_compacts_between_turns() -> None:
 
 
 @pytest.mark.asyncio
+async def test_xml_function_call_hallucination_triggers_correction() -> None:
+    """Regression: a Grok match looped forever because the model
+    emitted "<function_call>get_legal_actions(...)</function_call>"
+    as plain content text instead of using the API tool_calls field.
+    The loop saw no tool_calls and broke; play_turn returned without
+    end_turn; the TUI re-triggered with the same delta prompt; the
+    model produced the same hallucination; repeat. Detection +
+    corrective system reminder breaks the loop."""
+
+    # First response: hallucinated XML, no real tool_calls.
+    bad = _FakeResp(
+        _FakeMessage(
+            content="I'll check legal actions: <function_call>get_legal_actions(unit_id=\"u_b_x\")</function_call>",
+            tool_calls=None,
+        )
+    )
+    # After our corrective system message, the model uses the real
+    # tool_calls protocol.
+    fixed = _FakeResp(_FakeMessage(content="OK", tool_calls=None))
+
+    adapter = _make_adapter_with_mock_client([bad, fixed])
+
+    await adapter.play_turn(
+        system_prompt="sys",
+        user_prompt="turn 1",
+        tools=[],
+        tool_dispatcher=None,
+        on_thought=None,
+    )
+
+    # The corrective system message must have been injected.
+    sys_msgs = [m for m in adapter._messages if m.get("role") == "system"]
+    correction = [
+        m for m in sys_msgs
+        if "<function_call>" in (m.get("content") or "")
+        and "inert" in (m.get("content") or "")
+    ]
+    assert correction, (
+        f"no corrective reminder injected; messages: "
+        f"{[(m.get('role'), (m.get('content') or '')[:50]) for m in adapter._messages]}"
+    )
+    # Loop continued past the bad iteration (we got two responses).
+    assert adapter._corrections_this_turn == 1
+
+
+@pytest.mark.asyncio
 async def test_close_is_idempotent() -> None:
     adapter = _make_adapter_with_mock_client([])
     await adapter.close()
