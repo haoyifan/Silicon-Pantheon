@@ -378,9 +378,10 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
         # Validate every proposed field before mutating so we don't
         # end up with a partial update on reject.
+        scenario_state = None
         if scenario is not None:
             try:
-                load_scenario(scenario)
+                scenario_state = load_scenario(scenario)
             except Exception as e:
                 return _error(ErrorCode.BAD_INPUT, f"scenario load failed: {e}")
         if team_assignment is not None and team_assignment not in ("fixed", "random"):
@@ -401,6 +402,13 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
         if scenario is not None:
             room.config.scenario = scenario
+            # Switching scenario implicitly resets max_turns to the new
+            # scenario's declared cap unless the host overrides it in
+            # the same call. Otherwise a 10-turn scenario inherits the
+            # 20-turn cap from the previous selection and the win
+            # plugin's "turn budget" check fires too late.
+            if max_turns is None and scenario_state is not None:
+                room.config.max_turns = scenario_state.max_turns
         if team_assignment is not None:
             room.config.team_assignment = team_assignment  # type: ignore[assignment]
         if host_team is not None:
@@ -447,7 +455,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
     def create_room(
         connection_id: str,
         scenario: str,
-        max_turns: int = 20,
+        max_turns: int | None = None,
         team_assignment: str = "fixed",
         host_team: str = "blue",
         fog_of_war: str = "none",
@@ -458,6 +466,14 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         Transitions the caller from IN_LOBBY to IN_ROOM. Fails if the
         caller isn't IN_LOBBY or already has a room, if the scenario
         doesn't load, or if the config fields don't validate.
+
+        If `max_turns` is not provided, defaults to whatever the
+        scenario declares in its YAML rules block. Hormuz declares
+        max_turns: 10 (its win plugin red-wins the moment turn > 10
+        without blue meeting the compound objective). Ignoring that
+        and forcing 20 — the previous default — meant the timeout
+        forfeit fired at turn 21 instead of 11, leaving matches
+        running far past the scenario author's intent.
         """
         conn = app.get_connection(connection_id)
         if conn is None or conn.state != ConnectionState.IN_LOBBY:
@@ -480,9 +496,13 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                 "fog_of_war must be 'none' | 'classic' | 'line_of_sight'",
             )
         try:
-            load_scenario(scenario)
+            scenario_state = load_scenario(scenario)
         except Exception as e:
             return _error(ErrorCode.BAD_INPUT, f"scenario load failed: {e}")
+        if max_turns is None:
+            # Honor the scenario's declared cap; the scenario author
+            # tuned win conditions / pacing around this number.
+            max_turns = scenario_state.max_turns
         config = RoomConfig(
             scenario=scenario,
             max_turns=max_turns,

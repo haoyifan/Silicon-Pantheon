@@ -98,3 +98,90 @@ def test_heartbeat_updates_last_heartbeat_at() -> None:
     conn2 = app.get_connection("c1")
     assert conn2 is not None
     assert conn2.last_heartbeat_at > t1
+
+
+def test_create_room_inherits_max_turns_from_scenario_when_unspecified() -> None:
+    """Regression: silicon-join doesn't pass max_turns when calling
+    create_room. The previous default of 20 silently overrode any
+    scenario that declared a smaller cap (Hormuz uses 10), and the
+    win plugin's `if state.turn > state.max_turns` red-wins-by-
+    timeout fired at turn 21 instead of 11. Matches ran way past
+    intent. Default is now None → snap to scenario's value."""
+    app = App()
+    mcp = build_mcp_server(app)
+
+    _call(
+        mcp, "set_player_metadata",
+        connection_id="c1", display_name="alice", kind="ai",
+        provider="anthropic", model="claude-haiku-4-5",
+    )
+    out = _call(
+        mcp, "create_room",
+        connection_id="c1",
+        scenario="13_hormuz",
+        # max_turns deliberately omitted — should pick up the
+        # scenario's declared 10.
+    )
+    assert out["ok"] is True
+    room_id = out["room_id"]
+    room = app.rooms.get(room_id)
+    assert room is not None
+    assert room.config.max_turns == 10, (
+        f"Hormuz declares max_turns=10 in YAML but room got "
+        f"{room.config.max_turns} — the create_room default isn't "
+        f"honoring the scenario"
+    )
+
+
+def test_create_room_explicit_max_turns_wins_over_scenario_default() -> None:
+    """Explicit override still works."""
+    app = App()
+    mcp = build_mcp_server(app)
+    _call(
+        mcp, "set_player_metadata",
+        connection_id="c2", display_name="bob", kind="ai",
+        provider="anthropic", model="claude-haiku-4-5",
+    )
+    out = _call(
+        mcp, "create_room",
+        connection_id="c2",
+        scenario="13_hormuz",
+        max_turns=15,
+    )
+    assert out["ok"] is True
+    room = app.rooms.get(out["room_id"])
+    assert room is not None
+    assert room.config.max_turns == 15
+
+
+def test_update_room_config_scenario_change_resnaps_max_turns() -> None:
+    """Switching scenario mid-room without an explicit max_turns
+    should snap to the new scenario's declared cap, not keep the
+    previous one."""
+    app = App()
+    mcp = build_mcp_server(app)
+    _call(
+        mcp, "set_player_metadata",
+        connection_id="c3", display_name="cathy", kind="ai",
+        provider="anthropic", model="claude-haiku-4-5",
+    )
+    # Start with 01_tiny_skirmish (declared max_turns is its own).
+    out = _call(
+        mcp, "create_room",
+        connection_id="c3",
+        scenario="01_tiny_skirmish",
+    )
+    assert out["ok"] is True
+    room = app.rooms.get(out["room_id"])
+    initial = room.config.max_turns
+    # Switch to Hormuz; expect max_turns to become 10.
+    out2 = _call(
+        mcp, "update_room_config",
+        connection_id="c3",
+        scenario="13_hormuz",
+    )
+    assert out2["ok"] is True, out2
+    assert room.config.max_turns == 10, (
+        f"scenario switch from {initial}-cap → Hormuz didn't update "
+        f"max_turns; still {room.config.max_turns}"
+    )
