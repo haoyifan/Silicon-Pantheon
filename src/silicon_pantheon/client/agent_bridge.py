@@ -199,6 +199,7 @@ GAME_TOOLS: list[ToolSpec] = [
             },
             "required": ["unit_id", "dest"],
         },
+        mutates=True,
     ),
     ToolSpec(
         "attack",
@@ -218,6 +219,7 @@ GAME_TOOLS: list[ToolSpec] = [
             },
             "required": ["unit_id", "target_id"],
         },
+        mutates=True,
     ),
     ToolSpec(
         "heal",
@@ -236,6 +238,7 @@ GAME_TOOLS: list[ToolSpec] = [
             },
             "required": ["healer_id", "target_id"],
         },
+        mutates=True,
     ),
     ToolSpec(
         "wait",
@@ -249,6 +252,7 @@ GAME_TOOLS: list[ToolSpec] = [
             "properties": {"unit_id": {"type": "string"}},
             "required": ["unit_id"],
         },
+        mutates=True,
     ),
     ToolSpec(
         "end_turn",
@@ -259,6 +263,7 @@ GAME_TOOLS: list[ToolSpec] = [
             "to advance the game."
         ),
         {"type": "object", "properties": {}, "required": []},
+        mutates=True,
     ),
     ToolSpec(
         "describe_class",

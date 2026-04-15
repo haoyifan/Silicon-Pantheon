@@ -269,23 +269,30 @@ class CodexAdapter:
                 )
                 break
 
-            # Layer 1 (parallel_tool_calls=False in the request body)
-            # tells the model to emit at most one function_call per
-            # response. Layer 2 here is defense-in-depth: if the
-            # provider ignored Layer 1, execute only the first call
-            # and reply to the rest with synthetic dropped-call
-            # errors. Same invariant as OpenAI Chat Completions:
-            # every function_call needs a matching function_call_output
-            # in the next request, or the API rejects.
-            executed_calls = parsed["tool_calls"][:1]
-            dropped_calls = parsed["tool_calls"][1:]
+            # Selective Layer 2: one MUTATION per response, unlimited
+            # READS. Walk function_calls in order — reads always run,
+            # first mutation runs, subsequent mutations get synthetic
+            # dropped_parallel_mutation errors. See openai.py for the
+            # motivation; same contract here.
+            mutates_by_name = {s.name: s.mutates for s in tools}
+            executed_calls: list[dict] = []
+            dropped_calls: list[dict] = []
+            mutation_seen = False
+            for tc in parsed["tool_calls"]:
+                is_mutation = mutates_by_name.get(tc["name"], False)
+                if is_mutation and mutation_seen:
+                    dropped_calls.append(tc)
+                else:
+                    executed_calls.append(tc)
+                    if is_mutation:
+                        mutation_seen = True
             if dropped_calls:
                 log.warning(
-                    "codex iter %d: dropping %d parallel function_calls "
-                    "past index 0 (Layer 2: provider ignored "
-                    "parallel_tool_calls=False?). kept=%s dropped=%s",
+                    "codex iter %d: dropping %d excess mutation "
+                    "function_calls (Layer 2 selective: one mutation "
+                    "per message). executed=%s dropped=%s",
                     _iter, len(dropped_calls),
-                    executed_calls[0]["name"],
+                    [c["name"] for c in executed_calls],
                     [c["name"] for c in dropped_calls],
                 )
             for tc in executed_calls:
@@ -313,21 +320,26 @@ class CodexAdapter:
                         call_id=tc["call_id"], output=result_text,
                     )
                 )
-            # Layer 2: synthetic function_call_output for each dropped
-            # call. The error envelope mirrors the OpenAI adapter so
-            # the model sees the same dropped_parallel_call code.
+            # Layer 2: synthetic function_call_output per dropped
+            # mutation. Error envelope mirrors openai.py so the model
+            # sees the same dropped_parallel_mutation code.
             for tc in dropped_calls:
                 err_text = json.dumps({
                     "error": {
-                        "code": "dropped_parallel_call",
+                        "code": "dropped_parallel_mutation",
                         "message": (
-                            "Only one tool call is executed per "
+                            "Only ONE mutating tool call (move / attack "
+                            "/ heal / wait / end_turn) is executed per "
                             f"assistant message. Your call to "
-                            f"{tc['name']!r} was DROPPED — it did "
-                            "not run, the game state did not change. "
-                            "Re-issue this call (or a different one "
-                            "informed by the first call's result) in "
-                            "your next message."
+                            f"{tc['name']!r} was DROPPED — it did NOT "
+                            "run and the game state did NOT change. "
+                            "Read-only calls (get_state, "
+                            "get_legal_actions, simulate_attack, etc.) "
+                            "CAN be batched freely — observe as much "
+                            "as you want in one response, commit to "
+                            "one action, then observe the result on "
+                            "your next turn-step. Re-issue this call "
+                            "in your next message."
                         ),
                     }
                 })
@@ -343,7 +355,12 @@ class CodexAdapter:
             "input": self._input,
             "tools": tools,
             "tool_choice": "auto",
-            "parallel_tool_calls": False,
+            # Allow parallel tool calls. Adapter's Layer 2 enforces
+            # "at most one mutating call per response" while allowing
+            # unlimited reads, so the batching benefits the common
+            # "observe many things, act once" pattern without letting
+            # weak models commit an entire turn blindly.
+            "parallel_tool_calls": True,
             "store": False,
             "stream": False,
             # Codex models support reasoning summaries; ask for them

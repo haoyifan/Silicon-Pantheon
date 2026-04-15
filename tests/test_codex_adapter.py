@@ -174,14 +174,14 @@ async def test_layer2_drops_extra_parallel_function_calls(stub_creds, monkeypatc
 
     await adapter.play_turn(
         system_prompt="s", user_prompt="u",
-        tools=[ToolSpec("move", "m", {"type": "object"}),
-               ToolSpec("wait", "w", {"type": "object"}),
-               ToolSpec("end_turn", "e", {"type": "object"})],
+        tools=[ToolSpec("move", "m", {"type": "object"}, mutates=True),
+               ToolSpec("wait", "w", {"type": "object"}, mutates=True),
+               ToolSpec("end_turn", "e", {"type": "object"}, mutates=True)],
         tool_dispatcher=dispatcher, on_thought=None,
     )
     await adapter.close()
 
-    # Only the first function_call ran for real.
+    # All three are mutating; only the first should run.
     assert dispatched == [("move", {"unit_id": "u1", "dest": {"x": 4, "y": 4}})]
 
     # Second request's input must contain three function_call_output
@@ -196,7 +196,7 @@ async def test_layer2_drops_extra_parallel_function_calls(stub_creds, monkeypatc
     assert by_id["call_1"] == {"ok": True}
     for cid in ("call_2", "call_3"):
         err = by_id[cid].get("error") or {}
-        assert err.get("code") == "dropped_parallel_call"
+        assert err.get("code") == "dropped_parallel_mutation"
         assert "DROPPED" in err.get("message", "")
 
 
@@ -278,10 +278,11 @@ async def test_request_body_uses_responses_api_shape(stub_creds, monkeypatch):
     }]
     # Reasoning summary is requested.
     assert body["reasoning"] == {"summary": "auto"}
-    # Layer 1: every request must tell the model not to batch tool
-    # calls. Without this the model can emit [move, wait, end_turn]
-    # in one response and we'd be back to relying on Layer 2 alone.
-    assert body["parallel_tool_calls"] is False
+    # parallel_tool_calls is True — selective Layer 2 is what enforces
+    # the one-mutation rule while allowing batched reads. Pinning
+    # explicitly so a future accidental flip to False doesn't silently
+    # re-introduce the "too-slow-to-play" regression.
+    assert body["parallel_tool_calls"] is True
 
 
 # ---- 401 → refresh → retry path --------------------------------------

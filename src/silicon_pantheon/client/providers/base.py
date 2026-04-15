@@ -50,11 +50,19 @@ class ToolSpec:
     in semantics — any schema normalization (Gemini's stricter
     validation, OpenAI's `strict` mode quirks) happens inside the
     adapter.
+
+    `mutates` flags a tool as state-mutating (move / attack / heal /
+    wait / end_turn). Adapters enforce at most one mutating call per
+    assistant message while allowing parallel read-only calls in the
+    same response — the human-like "observe all the reads, then take
+    one action, then observe" pattern. Defaults to False so new read
+    tools are safe to add without thinking about batching rules.
     """
 
     name: str
     description: str
     input_schema: dict[str, Any]
+    mutates: bool = False
 
 
 ToolDispatcher = Callable[[str, dict[str, Any]], Awaitable[dict[str, Any]]]

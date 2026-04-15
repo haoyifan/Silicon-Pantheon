@@ -122,16 +122,21 @@ async def test_play_turn_dispatches_tool_calls() -> None:
 
 
 @pytest.mark.asyncio
-async def test_layer2_drops_extra_parallel_tool_calls() -> None:
-    """If the provider ignores parallel_tool_calls=False and emits N
-    tool_calls in one assistant message, the adapter MUST execute only
-    the first and reply to the rest with synthetic dropped_parallel_call
-    errors (preserving the OpenAI invariant that every tool_calls[i]
-    needs a matching tool message)."""
-    tc1 = _FakeToolCall("call_1", "move", {"unit_id": "u1", "dest": {"x": 4, "y": 4}})
-    tc2 = _FakeToolCall("call_2", "wait", {"unit_id": "u1"})
-    tc3 = _FakeToolCall("call_3", "end_turn", {})
-    first = _FakeResp(_FakeMessage(content=None, tool_calls=[tc1, tc2, tc3]))
+async def test_layer2_drops_extra_parallel_mutations() -> None:
+    """Selective Layer 2: unlimited READ calls execute, only the FIRST
+    MUTATION executes, subsequent mutations get synthetic
+    dropped_parallel_mutation errors. Invariant: every tool_calls[i]
+    still needs a matching tool message or the API 400s."""
+    # Batch: [get_legal_actions (read), move (mutation), wait (mutation),
+    # get_state (read), end_turn (mutation)]
+    tc1 = _FakeToolCall("call_1", "get_legal_actions", {"unit_id": "u1"})
+    tc2 = _FakeToolCall("call_2", "move", {"unit_id": "u1", "dest": {"x": 4, "y": 4}})
+    tc3 = _FakeToolCall("call_3", "wait", {"unit_id": "u1"})
+    tc4 = _FakeToolCall("call_4", "get_state", {})
+    tc5 = _FakeToolCall("call_5", "end_turn", {})
+    first = _FakeResp(_FakeMessage(
+        content=None, tool_calls=[tc1, tc2, tc3, tc4, tc5]
+    ))
     second = _FakeResp(_FakeMessage(content="done.", tool_calls=None))
     adapter = _make_adapter_with_mock_client([first, second])
 
@@ -144,38 +149,46 @@ async def test_layer2_drops_extra_parallel_tool_calls() -> None:
     await adapter.play_turn(
         system_prompt="sys", user_prompt="user",
         tools=[
-            ToolSpec("move", "m", {"type": "object"}),
-            ToolSpec("wait", "w", {"type": "object"}),
-            ToolSpec("end_turn", "e", {"type": "object"}),
+            ToolSpec("get_legal_actions", "gla", {"type": "object"}),
+            ToolSpec("move", "m", {"type": "object"}, mutates=True),
+            ToolSpec("wait", "w", {"type": "object"}, mutates=True),
+            ToolSpec("get_state", "gs", {"type": "object"}),
+            ToolSpec("end_turn", "e", {"type": "object"}, mutates=True),
         ],
         tool_dispatcher=dispatcher, on_thought=None,
     )
 
-    # Only the first tool call ran for real.
-    assert dispatched == [("move", {"unit_id": "u1", "dest": {"x": 4, "y": 4}})]
+    # Both reads + the first mutation run; subsequent mutations dropped.
+    assert dispatched == [
+        ("get_legal_actions", {"unit_id": "u1"}),
+        ("move", {"unit_id": "u1", "dest": {"x": 4, "y": 4}}),
+        ("get_state", {}),
+    ]
 
-    # Transcript must include one assistant message with all 3 tool_calls
-    # AND three matching tool messages (1 real + 2 synthetic errors).
-    assistant_msgs = [m for m in adapter._messages if m["role"] == "assistant"]
+    # Transcript: one assistant with all 5 tool_calls, five matching
+    # tool messages (3 real + 2 synthetic errors for wait & end_turn).
     tool_msgs = [m for m in adapter._messages if m["role"] == "tool"]
-    assert len(tool_msgs) == 3
-    # tool_call_id pairing is preserved.
-    assert {m["tool_call_id"] for m in tool_msgs} == {"call_1", "call_2", "call_3"}
-    # call_1 is the real result; call_2 and call_3 carry the synthetic error.
+    assert len(tool_msgs) == 5
+    assert {m["tool_call_id"] for m in tool_msgs} == {
+        "call_1", "call_2", "call_3", "call_4", "call_5",
+    }
     by_id = {m["tool_call_id"]: json.loads(m["content"]) for m in tool_msgs}
     assert by_id["call_1"] == {"ok": True}
-    for cid in ("call_2", "call_3"):
+    assert by_id["call_2"] == {"ok": True}
+    assert by_id["call_4"] == {"ok": True}
+    for cid in ("call_3", "call_5"):
         err = by_id[cid].get("error") or {}
-        assert err.get("code") == "dropped_parallel_call"
+        assert err.get("code") == "dropped_parallel_mutation"
         assert "DROPPED" in err.get("message", "")
 
 
 @pytest.mark.asyncio
-async def test_request_sends_parallel_tool_calls_false() -> None:
-    """Layer 1: every chat.completions.create call must include
-    parallel_tool_calls=False so the model is told at decode time not
-    to batch. Without this, weak models batch a whole turn into one
-    response and lose the act-observe-decide loop."""
+async def test_request_sends_parallel_tool_calls_true() -> None:
+    """Layer 1 (parallel_tool_calls) is now True — we RELY on
+    selective Layer 2 to enforce the one-mutation rule. The assertion
+    pins this explicit choice so a future accidental flip to False
+    (which would re-introduce the "too-slow-to-play" regression from
+    the Agincourt post-mortem) can't happen silently."""
     captured: list[dict] = []
 
     class _CapturingCompletions:
@@ -201,7 +214,7 @@ async def test_request_sends_parallel_tool_calls_false() -> None:
         tools=[], tool_dispatcher=None, on_thought=None,
     )
     assert len(captured) == 1
-    assert captured[0].get("parallel_tool_calls") is False
+    assert captured[0].get("parallel_tool_calls") is True
 
 
 @pytest.mark.asyncio

@@ -321,6 +321,11 @@ class OpenAIAdapter:
         )
 
         openai_tools = [_as_openai_tool(s) for s in tools]
+        # Name -> mutates? lookup used by Layer 2 to partition each
+        # response's tool_calls into reads (execute all) vs mutations
+        # (execute only the first). Unknown names default to read-only
+        # — a new tool added without flagging is safest as a read.
+        mutates_by_name: dict[str, bool] = {s.name: s.mutates for s in tools}
         start = time.time()
 
         # Hard ceilings to keep the transcript bounded mid-turn.
@@ -377,14 +382,16 @@ class OpenAIAdapter:
                     messages=self._messages,
                     tools=openai_tools,
                     tool_choice="auto",
-                    # Force one tool call per assistant message. Without
-                    # this, weak models (notably grok-3-mini) batch the
-                    # whole turn into [move, wait, move, wait, ...,
-                    # end_turn] and can't react to mid-batch failures or
-                    # observe state changes between actions. With it,
-                    # the model is forced into the act-observe-decide
-                    # loop a human would use.
-                    parallel_tool_calls=False,
+                    # Allow parallel tool calls at the LLM level — but
+                    # Layer 2 below still enforces "at most one MUTATING
+                    # call per response" while executing all read-only
+                    # calls in the same batch. This matches how a human
+                    # plays: observe a bunch of things, then take one
+                    # action, then observe again. Blanket one-per-step
+                    # (parallel_tool_calls=False) was too slow for weak
+                    # reasoning models — 15–20 units × 15s per iteration
+                    # blew past the turn's time budget.
+                    parallel_tool_calls=True,
                 )
             except Exception as e:
                 # log.exception already captures the traceback, but the
@@ -584,31 +591,42 @@ class OpenAIAdapter:
                 )
                 break
 
-            # Layer 1 (parallel_tool_calls=False on the request) tells
-            # the model to emit at most one tool call per response.
-            # Layer 2 (here) is defense-in-depth: if the provider
-            # silently ignores Layer 1 — some OpenAI-compat endpoints
-            # do — we execute only the FIRST tool call and reply to
-            # the rest with synthetic dropped-call errors. The model
-            # sees explicit feedback per dropped call rather than
-            # thinking they ran as no-ops.
+            # Selective Layer 2: one MUTATION per assistant message,
+            # unlimited READS. We walk tool_calls in order, dispatching
+            # reads normally; for mutations, dispatch the first one and
+            # synthesize dropped_parallel_mutation errors for any
+            # subsequent mutations. Reads that appear after a mutation
+            # in the same response still run (e.g. move then get_state
+            # surfaces the post-move board — that's actually useful).
             #
-            # The assistant message we just appended already carries
-            # all N tool_calls (required for API validity — orphaned
-            # tool_calls 400 the next request). What we control is
-            # the matching tool-result messages: one real, N-1 errors.
-            executed_tcs = msg.tool_calls[:1]
-            dropped_tcs = msg.tool_calls[1:]
-            if dropped_tcs:
+            # Blanket one-per-response was too slow for weak reasoning
+            # models: each tool_call spun its own ~15-20s LLM round-trip,
+            # and a turn with 15 units needed >180s wall-clock. With
+            # this split, the model can batch reads (get_legal_actions
+            # × N units, simulate_attack × K pairs, etc.) in one
+            # round-trip, then commit to one mutation, observe, and
+            # loop — the act-observe-decide pattern a human uses.
+            executed: list[Any] = []
+            dropped: list[Any] = []
+            mutation_seen = False
+            for tc in msg.tool_calls:
+                is_mutation = mutates_by_name.get(tc.function.name, False)
+                if is_mutation and mutation_seen:
+                    dropped.append(tc)
+                else:
+                    executed.append(tc)
+                    if is_mutation:
+                        mutation_seen = True
+            if dropped:
                 log.warning(
-                    "iter %d: dropping %d parallel tool_calls past "
-                    "index 0 (Layer 2: provider ignored "
-                    "parallel_tool_calls=False?). kept=%s dropped=%s",
-                    _iter, len(dropped_tcs),
-                    executed_tcs[0].function.name,
-                    [t.function.name for t in dropped_tcs],
+                    "iter %d: dropping %d excess mutation tool_calls "
+                    "(Layer 2 selective: one mutation per message). "
+                    "executed=%s dropped=%s",
+                    _iter, len(dropped),
+                    [t.function.name for t in executed],
+                    [t.function.name for t in dropped],
                 )
-            for tc in executed_tcs:
+            for tc in executed:
                 try:
                     args = json.loads(tc.function.arguments or "{}")
                 except json.JSONDecodeError:
@@ -652,22 +670,29 @@ class OpenAIAdapter:
                         "content": result_text,
                     }
                 )
-            # Layer 2: synthetic tool-result for each dropped call.
+            # Layer 2: synthetic tool-result for each dropped mutation.
             # OpenAI requires every assistant.tool_calls[i] to have a
             # matching tool message; using that channel to surface the
             # drop is cleaner than a side-channel system message.
-            for tc in dropped_tcs:
+            for tc in dropped:
                 err = {
                     "error": {
-                        "code": "dropped_parallel_call",
+                        "code": "dropped_parallel_mutation",
                         "message": (
-                            "Only one tool call is executed per "
+                            "Only ONE mutating tool call (move / attack "
+                            "/ heal / wait / end_turn) is executed per "
                             f"assistant message. Your call to "
                             f"{tc.function.name!r} was DROPPED — it "
-                            "did not run, the game state did not "
-                            "change. Re-issue this call (or a "
-                            "different one informed by the first "
-                            "call's result) in your next message."
+                            "did NOT run and the game state did NOT "
+                            "change. Read-only calls (get_state, "
+                            "get_legal_actions, simulate_attack, etc.) "
+                            "CAN be batched freely in one message — so "
+                            "observe as much as you want in one "
+                            "response, then commit to one action, then "
+                            "observe the result on your next turn-step. "
+                            "Re-issue this call (or a different one "
+                            "informed by the first action's result) in "
+                            "your next message."
                         ),
                     }
                 }

@@ -133,6 +133,39 @@ it belongs to.
 
 {strategy_section}
 {lessons_section}
+## Tool call batching rule (IMPORTANT)
+
+The client enforces this contract on every assistant message:
+
+  - **Unlimited READ calls per message.** You can batch as many of
+    these as you like in one response:
+    `get_state`, `get_unit`, `get_legal_actions`, `simulate_attack`,
+    `get_threat_map`, `get_history`, `get_coach_messages`,
+    `describe_class`. Ask 10 things at once, get 10 answers back.
+
+  - **At most ONE mutating call per message.** Only the FIRST of these
+    will execute per response; any subsequent ones are DROPPED with a
+    `dropped_parallel_mutation` error and the game state does NOT
+    change for those dropped calls:
+    `move`, `attack`, `heal`, `wait`, `end_turn`.
+
+This mirrors how a human plays: observe broadly, then take one
+concrete action, then observe the result.
+
+Good pattern:
+  message 1: `get_coach_messages`, `get_legal_actions(u1)`,
+             `get_legal_actions(u2)`, `simulate_attack(u1, e3)`
+  message 2: `attack(u1, e3)`     ← ONE mutation based on above
+  message 3: `get_state`, `get_legal_actions(u2)` ← re-observe after the attack
+  message 4: `move(u2, dest)`     ← ONE mutation again
+  ...
+  final:     `end_turn`
+
+Bad pattern (most of these mutations will be dropped):
+  message 1: `move(u1)`, `wait(u1)`, `move(u2)`, `wait(u2)`,
+             `move(u3)`, `wait(u3)`, `end_turn`
+  → only the first `move(u1)` runs. Everything else is dropped.
+
 ## How to pace your turn
 
 You are NOT required to plan and emit your entire turn as a single batch
