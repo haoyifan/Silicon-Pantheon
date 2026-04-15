@@ -105,6 +105,13 @@ class OpenAIAdapter:
         self._messages: list[dict] = []
         self._system_prompt: str | None = None
         self._corrections_this_turn: int = 0
+        # Repeat-detection: when the model emits the same assistant
+        # content twice in a row in a single turn we're in a sterile
+        # loop (no progress, just regurgitating the same prose).
+        # Track last-seen content hash + repeat count for logging
+        # / early-break.
+        self._last_content_hash: str | None = None
+        self._consecutive_repeats: int = 0
 
     # ---- transcript bookkeeping ----
 
@@ -121,6 +128,50 @@ class OpenAIAdapter:
             # a provider-specific field doesn't slip past the count.
             total += len(json.dumps(m, default=str))
         return total // 4
+
+    @classmethod
+    def _transcript_breakdown(cls, messages: list[dict]) -> str:
+        """Per-role / per-message-type token breakdown for diagnostics.
+
+        Returns a single-line string suitable for log output. Walks
+        every message, bucketing bytes by role, and also dumps the
+        top-5 individual messages by size so we can see WHICH
+        message (e.g. "tool result for get_state at index 14, 12KB")
+        is causing trouble. This is the line you'd grep for on a
+        context-overflow report — it answers "what's bloating the
+        prompt".
+        """
+        bucket_bytes: dict[str, int] = {}
+        bucket_count: dict[str, int] = {}
+        per_message: list[tuple[int, int, str, str]] = []
+        for i, m in enumerate(messages):
+            role = m.get("role", "?")
+            raw = json.dumps(m, default=str)
+            n = len(raw)
+            bucket_bytes[role] = bucket_bytes.get(role, 0) + n
+            bucket_count[role] = bucket_count.get(role, 0) + 1
+            # Per-message sample for the top-5 dump.
+            tag = role
+            if role == "tool":
+                # Show what tool_call_id this matched so we can
+                # cross-reference with the dispatch log.
+                tag = f"tool[{m.get('tool_call_id', '?')[:8]}]"
+            elif role == "assistant" and m.get("tool_calls"):
+                names = [
+                    tc.get("function", {}).get("name", "?")
+                    for tc in m.get("tool_calls") or []
+                ]
+                tag = f"assistant[tc={','.join(names)}]"
+            per_message.append((n, i, tag, role))
+        per_message.sort(reverse=True)
+        roles_summary = ", ".join(
+            f"{r}={bucket_bytes[r]}B/{bucket_count[r]}msg"
+            for r in sorted(bucket_bytes)
+        )
+        top5 = "; ".join(
+            f"#{idx} {tag} {n}B" for n, idx, tag, _r in per_message[:5]
+        )
+        return f"by_role: {roles_summary} | top5: {top5}"
 
     # Replacement string for trimmed tool results. Short on purpose
     # — long enough to be unambiguous if it surfaces in logs, short
@@ -226,6 +277,10 @@ class OpenAIAdapter:
         if not self._messages:
             self._messages.append({"role": "system", "content": system_prompt})
             self._system_prompt = system_prompt
+            log.info(
+                "session init: system_prompt_bytes=%d (~%d est_tokens)",
+                len(system_prompt), len(system_prompt) // 4,
+            )
         else:
             # Every turn after the first: compact completed turns so
             # the transcript doesn't grow without bound and hit the
@@ -239,16 +294,30 @@ class OpenAIAdapter:
                     before, after, len(self._messages),
                 )
 
-        self._messages.append({"role": "user", "content": user_prompt})
+        self._messages.append(
+            {"role": "user", "content": user_prompt}
+        )
         # Reset per-turn corrective-reminder counter — we cap how many
         # times we inject "use proper tool_calls" reminders so a
         # stubbornly mis-formatting model can't loop forever.
         self._corrections_this_turn = 0
-        # Log token estimate each turn so operators can see growth
-        # trajectory even without hitting the limit.
+        # Reset spew-loop detector for the new turn — repeats only
+        # count within a single turn.
+        self._last_content_hash = None
+        self._consecutive_repeats = 0
+        # Log token estimate AND the per-role breakdown each turn so
+        # the trajectory + the bloat source are both visible from the
+        # log alone. user_prompt is logged separately because it can
+        # be huge (turn-1 bootstrap snapshot is 5-10 KB).
         log.info(
-            "turn start: messages=%d est_tokens=%d",
-            len(self._messages), self._estimate_tokens(self._messages),
+            "turn start: messages=%d est_tokens=%d user_prompt_bytes=%d",
+            len(self._messages),
+            self._estimate_tokens(self._messages),
+            len(user_prompt),
+        )
+        log.info(
+            "turn start breakdown: %s",
+            self._transcript_breakdown(self._messages),
         )
 
         openai_tools = [_as_openai_tool(s) for s in tools]
@@ -274,17 +343,18 @@ class OpenAIAdapter:
             if est_now >= HARD_TOKEN_LIMIT:
                 log.warning(
                     "loop exit: HARD token limit %d reached at iter=%d "
-                    "(messages=%d) — force-breaking to avoid 400 from "
-                    "provider; the no-progress watchdog should pick up",
+                    "(messages=%d) — force-breaking; breakdown: %s",
                     HARD_TOKEN_LIMIT, _iter, len(self._messages),
+                    self._transcript_breakdown(self._messages),
                 )
                 break
             if est_now >= SOFT_TOKEN_LIMIT and not warned_soft:
                 warned_soft = True
                 log.warning(
                     "soft token limit %d crossed at iter=%d (messages=%d, "
-                    "est=%d) — injecting end_turn nudge",
+                    "est=%d) — injecting end_turn nudge; breakdown: %s",
                     SOFT_TOKEN_LIMIT, _iter, len(self._messages), est_now,
+                    self._transcript_breakdown(self._messages),
                 )
                 self._messages.append(
                     {
@@ -314,17 +384,27 @@ class OpenAIAdapter:
                 # is the actually useful part for 400s — dump it
                 # separately so it's grep-able even when the traceback
                 # is many lines deep.
+                #
+                # On a context-overflow 400 ("maximum prompt length is
+                # X but request contains Y") the per-role breakdown is
+                # the diagnostic. It tells you whether the bloat is
+                # the system prompt, the bootstrap user message,
+                # accumulated assistant chain-of-thought, tool results,
+                # or our own corrective system messages.
                 sdk_body = getattr(e, "body", None)
                 sdk_status = getattr(e, "status_code", None)
                 log.exception(
                     "OpenAI completion raised "
-                    "(model=%s status=%s body=%s) — last message role=%s "
-                    "messages_count=%d",
+                    "(model=%s status=%s body=%s) "
+                    "messages_count=%d est_tokens=%d "
+                    "last_role=%s | breakdown: %s",
                     self.model,
                     sdk_status,
                     sdk_body,
-                    self._messages[-1].get("role") if self._messages else "?",
                     len(self._messages),
+                    self._estimate_tokens(self._messages),
+                    self._messages[-1].get("role") if self._messages else "?",
+                    self._transcript_breakdown(self._messages),
                 )
                 raise classify(e) from e
 
@@ -357,6 +437,42 @@ class OpenAIAdapter:
                 )
             except Exception:
                 log.exception("failed to dump openai response for diagnostic")
+
+            # Repeat detection: hash the (content + tool_call names)
+            # tuple. If two consecutive iterations produce the same
+            # output, the model is stuck regurgitating — log it so
+            # we can correlate "Reasoning panel reprinted the same
+            # paragraph 12 times" with the actual loop. Also break
+            # if the repeat count crosses a threshold.
+            import hashlib as _hash
+            tc_names = ",".join(
+                tc.function.name for tc in (msg.tool_calls or [])
+            )
+            content_for_hash = (msg.content or "") + "|tc:" + tc_names
+            content_hash = _hash.sha1(
+                content_for_hash.encode("utf-8", "replace")
+            ).hexdigest()[:12]
+            if content_hash == self._last_content_hash:
+                self._consecutive_repeats += 1
+            else:
+                self._consecutive_repeats = 0
+            self._last_content_hash = content_hash
+            log.info(
+                "iter %d response: hash=%s repeats=%d "
+                "content_preview=%r tool_call_names=[%s]",
+                _iter, content_hash, self._consecutive_repeats,
+                ((msg.content or "")[:120]).replace("\n", " "),
+                tc_names,
+            )
+            if self._consecutive_repeats >= 3:
+                log.warning(
+                    "loop exit: model emitting identical responses "
+                    "(hash=%s, %d repeats in a row at iter=%d) — "
+                    "breaking to prevent spew loop; the no-progress "
+                    "watchdog in NetworkedAgent will retry/force end_turn",
+                    content_hash, self._consecutive_repeats, _iter,
+                )
+                break
 
             # Persist the assistant turn so the transcript stays valid
             # for subsequent tool-result appends.

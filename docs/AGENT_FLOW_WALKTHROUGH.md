@@ -517,30 +517,86 @@ Not currently used by any built-in scenario but worth flagging.
 
 ---
 
-## 7. What you'll see in the client log
+## 7. What you'll see in the logs
 
-Tail `~/.silicon-pantheon/logs/client-<name>-*.log` and grep:
+Two log streams to correlate when something goes wrong: the client log
+written by `silicon-join`, and the server log written by
+`silicon-serve`.
+
+### Client log: `~/.silicon-pantheon/logs/client-<name>-*.log`
+
+Healthy turn:
 
 ```
 play_turn ENTER team=blue turns_played=4 no_progress_retries=0 history_cursor=23
-turn start: messages=21 est_tokens=8042
+session init: system_prompt_bytes=12044 (~3011 est_tokens)        # only on turn 1
+turn start: messages=21 est_tokens=8042 user_prompt_bytes=487
+turn start breakdown: by_role: assistant=2440B/9msg, system=12033B/1msg, tool=320B/8msg, user=10810B/3msg | top5: #0 system 12033B; #1 user 10048B; ...
 iter 0: messages=21 est_tokens=8042
 openai/xai response [model=grok-4 iter=0]: keys=[...] content_len=287 ...
+iter 0 response: hash=ab12cd34ef89 repeats=0 content_preview='I will check legal actions for u_b_x_1' tool_call_names=[get_legal_actions]
 tool dispatch: name=get_legal_actions args_keys=['unit_id'] result_bytes=412 (capped=412)
 iter 1: messages=23 est_tokens=8398
+iter 1 response: hash=ff34ac9b1244 repeats=0 content_preview='Now I will move' tool_call_names=[move]
 tool dispatch: name=move args_keys=['unit_id', 'dest'] result_bytes=89 (capped=89)
 ...
 loop exit: no tool_calls (iter=11, hallucinated_xml=False, corrections=0, content_len=42)
 play_turn EXIT OK turn_ended=True turns_played=5 history_cursor=29
 ```
 
-If something goes sideways:
+Stuck-loop signature ("agent reprinting same paragraph"):
 
 ```
-loop exit: HARD token limit 120000 reached at iter=14 ...
-play_turn EXIT WITHOUT end_turn (active still blue); no_progress_retries=2/3
-agent stuck (no end_turn after 3 retries); forcing end_turn server-side
+iter 4 response: hash=ab12cd34ef89 repeats=0 ...
+iter 5 response: hash=ab12cd34ef89 repeats=1 ...
+iter 6 response: hash=ab12cd34ef89 repeats=2 ...
+iter 7 response: hash=ab12cd34ef89 repeats=3 ...
+loop exit: model emitting identical responses (hash=ab12cd34ef89, 3 repeats in a row at iter=7) — breaking to prevent spew loop
+play_turn EXIT WITHOUT end_turn (active still blue); no_progress_retries=1/3
 ```
+
+Context-overflow signature:
+
+```
+soft token limit 90000 crossed at iter=12 ... breakdown: by_role: tool=78000B/14msg, ...
+loop exit: HARD token limit 120000 reached at iter=14 ... breakdown: by_role: tool=104000B/18msg ...
+```
+
+If a 400 actually lands (provider rejected before our cap):
+
+```
+OpenAI completion raised (model=grok-4 status=400 body={'error': {'message': 'maximum prompt length...'}}) messages_count=37 est_tokens=87901 last_role=tool | breakdown: by_role: assistant=12044B/14msg, system=12033B/1msg, tool=287122B/15msg, user=10810B/4msg | top5: #21 tool[tc-abc12345] 38214B; #15 tool[tc-9f...] 28100B; ...
+```
+
+The `breakdown` line tells you exactly which message types and which
+INDIVIDUAL messages are bloating the transcript. `top5` names the worst
+offenders by index — cross-reference with the `tool dispatch` lines
+to figure out which specific call ballooned.
+
+### Server log: `silicon-serve` stdout (or wherever you redirected it)
+
+Every game-tool call is logged with the connection id (truncated) for
+correlation:
+
+```
+tool dispatch: cid=a1b2c3d4 tool=get_state viewer=blue active=blue turn=4 args={}
+tool dispatch: cid=a1b2c3d4 tool=move viewer=blue active=blue turn=4 args={"unit_id": "u_b_x_1", "dest": {"x": 5, "y": 3}}
+tool rejected: cid=a1b2c3d4 tool=end_turn viewer=blue err=unit u_b_y_2 moved but has not acted
+post-end_turn viewer=blue active=red turn=4 units=u_b_x_1=ready,u_b_y_2=ready,...
+```
+
+Match the client's `tool dispatch: name=move` to the server's
+`tool dispatch: cid=... tool=move` to confirm a call landed (and
+how the server interpreted it).
+
+### Recommended grep one-liner
+
+```
+grep -E "play_turn|iter |response: hash|tool dispatch|loop exit|breakdown|token limit|stuck|forcing end_turn" \
+  ~/.silicon-pantheon/logs/client-*.log
+```
+
+For the server side just `tail -F` the silicon-serve output.
 
 ---
 

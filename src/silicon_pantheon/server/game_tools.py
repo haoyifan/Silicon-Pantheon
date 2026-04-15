@@ -16,6 +16,7 @@ single transform that every game tool output passes through.
 
 from __future__ import annotations
 
+import json
 import logging
 import random
 from typing import Any
@@ -215,11 +216,26 @@ def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
     if resolved is None:
         return _error(ErrorCode.GAME_NOT_STARTED, "no active game for this connection")
     session, viewer = resolved
+    # Log every dispatch so a server log alone can reconstruct the
+    # full sequence of actions a client took (correlate with the
+    # client log via connection_id and tool name). Args are dumped
+    # short — full payloads are visible on the client side.
+    log.info(
+        "tool dispatch: cid=%s tool=%s viewer=%s active=%s "
+        "turn=%s args=%s",
+        connection_id[:8],
+        tool_name,
+        viewer.value,
+        session.state.active_player.value,
+        session.state.turn,
+        json.dumps(args, default=str)[:200] if args else "{}",
+    )
     try:
         result = call_tool(session, viewer, tool_name, args)
     except ToolError as e:
         log.info(
-            "tool rejected: tool=%s viewer=%s err=%s",
+            "tool rejected: cid=%s tool=%s viewer=%s err=%s",
+            connection_id[:8],
             tool_name,
             viewer.value,
             e,
