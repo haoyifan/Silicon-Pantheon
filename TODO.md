@@ -235,6 +235,27 @@ current symptom warrants.
 - [ ] **Keyring dependency marker** — `pyproject.toml` gains
       `keyring` as an optional extra (`pip install silicon-pantheon[keyring]`)
       so users who don't want it don't pay the install cost.
+- [ ] **Anthropic adapter — no `disable_parallel_tool_use` knob.** The
+      Claude Agent SDK (`ClaudeSDKClient`) doesn't expose it; we'd need
+      to switch to raw `anthropic.AsyncAnthropic` calls and pass
+      `tool_choice={"type":"auto","disable_parallel_tool_use":true}`.
+      Claude doesn't show grok-3-mini's "batch the whole turn" pathology
+      in practice, so this is a defense-in-depth item, not a present
+      bug. OpenAI / xAI / Codex adapters all enforce one-tool-per-step
+      via the API param.
+
+- [ ] **Server-side Layer 3 (force observation between mutating
+      actions).** Today both Layer 1 (`parallel_tool_calls=False` on
+      the LLM request) and Layer 2 (adapter drops extras + synthesises
+      `dropped_parallel_call` errors) live client-side. A non-LLM
+      client that bypasses our adapter could still hammer the server
+      with mutating calls back-to-back. If that becomes a real concern,
+      add a connection-level `requires_observation` flag: every
+      mutating tool sets it; reads (`get_state` etc.) clear it; mutating
+      calls reject with `OBSERVATION_REQUIRED` while it's set. Cost:
+      one bool on the connection + a check at the top of each mutating
+      handler. Defer until we have an actual abuse case.
+
 - [ ] **Ported `silicon-server` (stdio MCP wrapper)** — the legacy
       stdio variant hasn't been touched in a while; confirm it
       still works or deprecate it. Current stance: quietly works but

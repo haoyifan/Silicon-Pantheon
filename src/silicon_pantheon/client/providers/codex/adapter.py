@@ -269,8 +269,26 @@ class CodexAdapter:
                 )
                 break
 
-            # Dispatch each tool call and feed the results back in.
-            for tc in parsed["tool_calls"]:
+            # Layer 1 (parallel_tool_calls=False in the request body)
+            # tells the model to emit at most one function_call per
+            # response. Layer 2 here is defense-in-depth: if the
+            # provider ignored Layer 1, execute only the first call
+            # and reply to the rest with synthetic dropped-call
+            # errors. Same invariant as OpenAI Chat Completions:
+            # every function_call needs a matching function_call_output
+            # in the next request, or the API rejects.
+            executed_calls = parsed["tool_calls"][:1]
+            dropped_calls = parsed["tool_calls"][1:]
+            if dropped_calls:
+                log.warning(
+                    "codex iter %d: dropping %d parallel function_calls "
+                    "past index 0 (Layer 2: provider ignored "
+                    "parallel_tool_calls=False?). kept=%s dropped=%s",
+                    _iter, len(dropped_calls),
+                    executed_calls[0]["name"],
+                    [c["name"] for c in dropped_calls],
+                )
+            for tc in executed_calls:
                 try:
                     args = json.loads(tc.get("arguments") or "{}")
                 except json.JSONDecodeError:
@@ -293,6 +311,29 @@ class CodexAdapter:
                 self._input.append(
                     function_call_output_to_input_item(
                         call_id=tc["call_id"], output=result_text,
+                    )
+                )
+            # Layer 2: synthetic function_call_output for each dropped
+            # call. The error envelope mirrors the OpenAI adapter so
+            # the model sees the same dropped_parallel_call code.
+            for tc in dropped_calls:
+                err_text = json.dumps({
+                    "error": {
+                        "code": "dropped_parallel_call",
+                        "message": (
+                            "Only one tool call is executed per "
+                            f"assistant message. Your call to "
+                            f"{tc['name']!r} was DROPPED — it did "
+                            "not run, the game state did not change. "
+                            "Re-issue this call (or a different one "
+                            "informed by the first call's result) in "
+                            "your next message."
+                        ),
+                    }
+                })
+                self._input.append(
+                    function_call_output_to_input_item(
+                        call_id=tc["call_id"], output=err_text,
                     )
                 )
 

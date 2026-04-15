@@ -133,6 +133,73 @@ async def test_play_turn_dispatches_tool_calls(stub_creds, monkeypatch):
     assert "active_player" in fco_items[0]["output"]
 
 
+# ---- Layer 2: drop parallel calls, synthesize errors -----------------
+
+
+@pytest.mark.asyncio
+async def test_layer2_drops_extra_parallel_function_calls(stub_creds, monkeypatch):
+    """If the Codex backend ignores parallel_tool_calls=False and emits
+    multiple function_calls in one response, the adapter executes only
+    the first and replies to the rest with synthetic
+    dropped_parallel_call errors via function_call_output items."""
+    seen_requests: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        seen_requests.append(body)
+        if len(seen_requests) == 1:
+            return httpx.Response(200, json={
+                "output": [
+                    {"type": "function_call", "call_id": "call_1",
+                     "name": "move",
+                     "arguments": '{"unit_id":"u1","dest":{"x":4,"y":4}}'},
+                    {"type": "function_call", "call_id": "call_2",
+                     "name": "wait", "arguments": '{"unit_id":"u1"}'},
+                    {"type": "function_call", "call_id": "call_3",
+                     "name": "end_turn", "arguments": "{}"},
+                ],
+            })
+        return httpx.Response(200, json={
+            "output": [{"type": "message", "role": "assistant",
+                        "content": [{"type": "output_text", "text": "Done."}]}],
+        })
+
+    _patch_async_client(monkeypatch, httpx.MockTransport(handler))
+    adapter = CodexAdapter(credentials=stub_creds)
+    dispatched: list[tuple[str, dict]] = []
+
+    async def dispatcher(name, args):
+        dispatched.append((name, args))
+        return {"ok": True}
+
+    await adapter.play_turn(
+        system_prompt="s", user_prompt="u",
+        tools=[ToolSpec("move", "m", {"type": "object"}),
+               ToolSpec("wait", "w", {"type": "object"}),
+               ToolSpec("end_turn", "e", {"type": "object"})],
+        tool_dispatcher=dispatcher, on_thought=None,
+    )
+    await adapter.close()
+
+    # Only the first function_call ran for real.
+    assert dispatched == [("move", {"unit_id": "u1", "dest": {"x": 4, "y": 4}})]
+
+    # Second request's input must contain three function_call_output
+    # items — one real for call_1, two synthetic dropped errors for
+    # call_2 / call_3.
+    fcos = [
+        i for i in seen_requests[1]["input"]
+        if isinstance(i, dict) and i.get("type") == "function_call_output"
+    ]
+    assert len(fcos) == 3
+    by_id = {f["call_id"]: json.loads(f["output"]) for f in fcos}
+    assert by_id["call_1"] == {"ok": True}
+    for cid in ("call_2", "call_3"):
+        err = by_id[cid].get("error") or {}
+        assert err.get("code") == "dropped_parallel_call"
+        assert "DROPPED" in err.get("message", "")
+
+
 # ---- terminal-text-first response → loop exits cleanly --------------
 
 
@@ -211,6 +278,10 @@ async def test_request_body_uses_responses_api_shape(stub_creds, monkeypatch):
     }]
     # Reasoning summary is requested.
     assert body["reasoning"] == {"summary": "auto"}
+    # Layer 1: every request must tell the model not to batch tool
+    # calls. Without this the model can emit [move, wait, end_turn]
+    # in one response and we'd be back to relying on Layer 2 alone.
+    assert body["parallel_tool_calls"] is False
 
 
 # ---- 401 → refresh → retry path --------------------------------------

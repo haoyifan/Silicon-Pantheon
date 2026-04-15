@@ -377,6 +377,14 @@ class OpenAIAdapter:
                     messages=self._messages,
                     tools=openai_tools,
                     tool_choice="auto",
+                    # Force one tool call per assistant message. Without
+                    # this, weak models (notably grok-3-mini) batch the
+                    # whole turn into [move, wait, move, wait, ...,
+                    # end_turn] and can't react to mid-batch failures or
+                    # observe state changes between actions. With it,
+                    # the model is forced into the act-observe-decide
+                    # loop a human would use.
+                    parallel_tool_calls=False,
                 )
             except Exception as e:
                 # log.exception already captures the traceback, but the
@@ -576,8 +584,31 @@ class OpenAIAdapter:
                 )
                 break
 
-            # Dispatch each tool call and append results.
-            for tc in msg.tool_calls:
+            # Layer 1 (parallel_tool_calls=False on the request) tells
+            # the model to emit at most one tool call per response.
+            # Layer 2 (here) is defense-in-depth: if the provider
+            # silently ignores Layer 1 — some OpenAI-compat endpoints
+            # do — we execute only the FIRST tool call and reply to
+            # the rest with synthetic dropped-call errors. The model
+            # sees explicit feedback per dropped call rather than
+            # thinking they ran as no-ops.
+            #
+            # The assistant message we just appended already carries
+            # all N tool_calls (required for API validity — orphaned
+            # tool_calls 400 the next request). What we control is
+            # the matching tool-result messages: one real, N-1 errors.
+            executed_tcs = msg.tool_calls[:1]
+            dropped_tcs = msg.tool_calls[1:]
+            if dropped_tcs:
+                log.warning(
+                    "iter %d: dropping %d parallel tool_calls past "
+                    "index 0 (Layer 2: provider ignored "
+                    "parallel_tool_calls=False?). kept=%s dropped=%s",
+                    _iter, len(dropped_tcs),
+                    executed_tcs[0].function.name,
+                    [t.function.name for t in dropped_tcs],
+                )
+            for tc in executed_tcs:
                 try:
                     args = json.loads(tc.function.arguments or "{}")
                 except json.JSONDecodeError:
@@ -619,6 +650,32 @@ class OpenAIAdapter:
                         "role": "tool",
                         "tool_call_id": tc.id,
                         "content": result_text,
+                    }
+                )
+            # Layer 2: synthetic tool-result for each dropped call.
+            # OpenAI requires every assistant.tool_calls[i] to have a
+            # matching tool message; using that channel to surface the
+            # drop is cleaner than a side-channel system message.
+            for tc in dropped_tcs:
+                err = {
+                    "error": {
+                        "code": "dropped_parallel_call",
+                        "message": (
+                            "Only one tool call is executed per "
+                            f"assistant message. Your call to "
+                            f"{tc.function.name!r} was DROPPED — it "
+                            "did not run, the game state did not "
+                            "change. Re-issue this call (or a "
+                            "different one informed by the first "
+                            "call's result) in your next message."
+                        ),
+                    }
+                }
+                self._messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "content": json.dumps(err),
                     }
                 )
 

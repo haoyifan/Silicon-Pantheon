@@ -122,6 +122,89 @@ async def test_play_turn_dispatches_tool_calls() -> None:
 
 
 @pytest.mark.asyncio
+async def test_layer2_drops_extra_parallel_tool_calls() -> None:
+    """If the provider ignores parallel_tool_calls=False and emits N
+    tool_calls in one assistant message, the adapter MUST execute only
+    the first and reply to the rest with synthetic dropped_parallel_call
+    errors (preserving the OpenAI invariant that every tool_calls[i]
+    needs a matching tool message)."""
+    tc1 = _FakeToolCall("call_1", "move", {"unit_id": "u1", "dest": {"x": 4, "y": 4}})
+    tc2 = _FakeToolCall("call_2", "wait", {"unit_id": "u1"})
+    tc3 = _FakeToolCall("call_3", "end_turn", {})
+    first = _FakeResp(_FakeMessage(content=None, tool_calls=[tc1, tc2, tc3]))
+    second = _FakeResp(_FakeMessage(content="done.", tool_calls=None))
+    adapter = _make_adapter_with_mock_client([first, second])
+
+    dispatched: list[tuple[str, dict]] = []
+
+    async def dispatcher(name, args):
+        dispatched.append((name, args))
+        return {"ok": True}
+
+    await adapter.play_turn(
+        system_prompt="sys", user_prompt="user",
+        tools=[
+            ToolSpec("move", "m", {"type": "object"}),
+            ToolSpec("wait", "w", {"type": "object"}),
+            ToolSpec("end_turn", "e", {"type": "object"}),
+        ],
+        tool_dispatcher=dispatcher, on_thought=None,
+    )
+
+    # Only the first tool call ran for real.
+    assert dispatched == [("move", {"unit_id": "u1", "dest": {"x": 4, "y": 4}})]
+
+    # Transcript must include one assistant message with all 3 tool_calls
+    # AND three matching tool messages (1 real + 2 synthetic errors).
+    assistant_msgs = [m for m in adapter._messages if m["role"] == "assistant"]
+    tool_msgs = [m for m in adapter._messages if m["role"] == "tool"]
+    assert len(tool_msgs) == 3
+    # tool_call_id pairing is preserved.
+    assert {m["tool_call_id"] for m in tool_msgs} == {"call_1", "call_2", "call_3"}
+    # call_1 is the real result; call_2 and call_3 carry the synthetic error.
+    by_id = {m["tool_call_id"]: json.loads(m["content"]) for m in tool_msgs}
+    assert by_id["call_1"] == {"ok": True}
+    for cid in ("call_2", "call_3"):
+        err = by_id[cid].get("error") or {}
+        assert err.get("code") == "dropped_parallel_call"
+        assert "DROPPED" in err.get("message", "")
+
+
+@pytest.mark.asyncio
+async def test_request_sends_parallel_tool_calls_false() -> None:
+    """Layer 1: every chat.completions.create call must include
+    parallel_tool_calls=False so the model is told at decode time not
+    to batch. Without this, weak models batch a whole turn into one
+    response and lose the act-observe-decide loop."""
+    captured: list[dict] = []
+
+    class _CapturingCompletions:
+        async def create(self, **kwargs):
+            captured.append(kwargs)
+            return _FakeResp(_FakeMessage(content="ok", tool_calls=None))
+
+    class _Chat:
+        def __init__(self):
+            self.completions = _CapturingCompletions()
+
+    class _Cli:
+        def __init__(self):
+            self.chat = _Chat()
+
+        async def close(self):
+            pass
+
+    adapter = OpenAIAdapter(model="gpt-5-mini", api_key="sk-fake")
+    adapter._client = _Cli()  # type: ignore[assignment]
+    await adapter.play_turn(
+        system_prompt="s", user_prompt="u",
+        tools=[], tool_dispatcher=None, on_thought=None,
+    )
+    assert len(captured) == 1
+    assert captured[0].get("parallel_tool_calls") is False
+
+
+@pytest.mark.asyncio
 async def test_play_turn_stops_on_empty_tool_calls_first_response() -> None:
     """If the first response has no tool calls, the loop exits cleanly."""
     adapter = _make_adapter_with_mock_client(
