@@ -102,6 +102,18 @@ def main() -> int:
             "~/.silicon-pantheon/logs/server-<pid>-<timestamp>.log"
         ),
     )
+    p.add_argument(
+        "--allowed-host",
+        action="append",
+        default=[],
+        help=(
+            "extra hostname allowed in the HTTP Host header (FastMCP "
+            "rejects unknown hosts with 421 by default to mitigate "
+            "DNS-rebinding). Pass once per host you'll be reached at "
+            "via a reverse proxy, e.g. --allowed-host game.example.com. "
+            "127.0.0.1 / localhost / [::1] are always allowed."
+        ),
+    )
     args = p.parse_args()
 
     log_file = _configure_server_logging(args.log_level, args.log_file)
@@ -117,6 +129,41 @@ def main() -> int:
     # from its settings object.
     mcp.settings.host = args.host
     mcp.settings.port = args.port
+
+    # When silicon-serve binds to localhost (typical: a reverse proxy
+    # like Caddy fronts it), FastMCP auto-enables DNS-rebinding
+    # protection that rejects any HTTP Host header outside
+    # 127.0.0.1 / localhost / [::1]. The proxy forwards the original
+    # public Host (game.example.com), which then gets
+    # rejected with 421 "Invalid Host header" — silicon-join logs this
+    # as "connect failed: unhandled errors in a TaskGroup".
+    #
+    # If the operator passed --allowed-host, append those to the
+    # protection list so the public hostname is accepted while the
+    # baseline localhost protection stays in place.
+    if args.allowed_host:
+        from mcp.server.transport_security import TransportSecuritySettings
+
+        baseline = ["127.0.0.1:*", "localhost:*", "[::1]:*"]
+        baseline_origins = [
+            "http://127.0.0.1:*", "http://localhost:*", "http://[::1]:*",
+        ]
+        extra_hosts: list[str] = []
+        extra_origins: list[str] = []
+        for h in args.allowed_host:
+            extra_hosts.extend([h, f"{h}:*"])
+            extra_origins.extend([f"http://{h}", f"https://{h}",
+                                  f"http://{h}:*", f"https://{h}:*"])
+        mcp.settings.transport_security = TransportSecuritySettings(
+            enable_dns_rebinding_protection=True,
+            allowed_hosts=baseline + extra_hosts,
+            allowed_origins=baseline_origins + extra_origins,
+        )
+        log.info(
+            "transport_security: allowed_hosts=%s allowed_origins=%s",
+            mcp.settings.transport_security.allowed_hosts,
+            mcp.settings.transport_security.allowed_origins,
+        )
 
     log.info("silicon-serve starting on http://%s:%d", args.host, args.port)
 
