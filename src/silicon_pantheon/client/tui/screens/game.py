@@ -296,7 +296,12 @@ class GameMapPanel(Panel):
                     g, st = _unit_cell_style(u)
                 else:
                     t = tile_by_pos.get((x, y), {})
-                    g, st = _terrain_cell(t.get("type", "unknown"))
+                    g, st = _terrain_cell(
+                        t.get("type", "unknown"),
+                        (self.screen.app.state.scenario_description or {}).get(
+                            "terrain_types"
+                        ),
+                    )
                 if focused and x == self.cx and y == self.cy:
                     text.append(f"[{g}]", style=f"reverse {st}")
                 else:
@@ -391,15 +396,36 @@ class GameMapPanel(Panel):
         return None
 
 
-def _terrain_cell(ttype: str) -> tuple[str, str]:
+def _terrain_cell(
+    ttype: str, scenario_terrain_types: dict | None = None
+) -> tuple[str, str]:
+    """Pick the (glyph, Rich style) for a terrain cell on the game map.
+
+    Honors scenario-defined terrain types (Troy's troy_wall / xanthus
+    / ford / greek_ship, Helm's Deep's deeping_wall, etc.) by looking
+    up the scenario_terrain_types map for glyph + color. Without this
+    lookup every custom terrain rendered as the catch-all dot, which
+    is why Troy's map looked blank.
+
+    Falls back to the built-in defaults for the canonical engine
+    terrains (plain / forest / mountain / fort / unknown) so scenarios
+    that don't declare a terrain_types block still render correctly.
+    """
     if ttype == "unknown":
         return "?", "bright_black"
+    spec = (scenario_terrain_types or {}).get(ttype) or {}
+    glyph = spec.get("glyph")
+    color = spec.get("color")
+    if glyph and color:
+        return str(glyph)[:1], str(color)
     if ttype == "forest":
         return "f", "green"
     if ttype == "mountain":
         return "^", "bright_black"
     if ttype == "fort":
         return "*", "yellow"
+    if glyph:
+        return str(glyph)[:1], "dim"
     return ".", "dim"
 
 
