@@ -72,8 +72,46 @@ class ServerClient:
         """
         args = {"connection_id": self.connection_id, **kwargs}
         level = logging.DEBUG if tool_name in _QUIET_TOOLS else logging.INFO
-        log.log(level, "call -> %s args=%s", tool_name, {k: v for k, v in kwargs.items()})
-        result = await self._session.call_tool(tool_name, args)
+        # Diagnostic identity for the underlying anyio streams. We're
+        # chasing a "ClosedResourceError after end_turn" repro: knowing
+        # whether the stream object identity changes between calls (vs.
+        # the SAME stream object getting closed mid-flight) tells us
+        # whether the MCP SDK rotated the session under us, or whether
+        # something on the wire / server killed the stream we still
+        # hold a reference to.
+        sess_id = id(self._session)
+        ws = getattr(self._session, "_write_stream", None)
+        rs = getattr(self._session, "_read_stream", None)
+        ws_id = id(ws) if ws is not None else None
+        rs_id = id(rs) if rs is not None else None
+        ws_closed = getattr(ws, "_closed", "?") if ws is not None else "?"
+        log.log(
+            level,
+            "call -> %s cid=%s sess=%s ws=%s ws_closed=%s rs=%s args=%s",
+            tool_name, self.connection_id, sess_id, ws_id, ws_closed, rs_id,
+            {k: v for k, v in kwargs.items()},
+        )
+        try:
+            result = await self._session.call_tool(tool_name, args)
+        except Exception as e:
+            # Re-snapshot stream state at failure time so we can see
+            # whether the close happened between request issue and the
+            # exception raise (e.g. server reset, or our own side
+            # tearing down). Log type explicitly because anyio's
+            # ClosedResourceError vs. EndOfStream vs. transport-level
+            # CancelledError each have different root causes.
+            ws2 = getattr(self._session, "_write_stream", None)
+            rs2 = getattr(self._session, "_read_stream", None)
+            log.error(
+                "call !! %s cid=%s exc_type=%s exc=%r "
+                "sess_now=%s ws_now=%s ws_closed_now=%s rs_now=%s",
+                tool_name, self.connection_id, type(e).__name__, e,
+                id(self._session),
+                id(ws2) if ws2 is not None else None,
+                getattr(ws2, "_closed", "?") if ws2 is not None else "?",
+                id(rs2) if rs2 is not None else None,
+            )
+            raise
         for block in result.content:
             text = getattr(block, "text", None)
             if text is not None:
