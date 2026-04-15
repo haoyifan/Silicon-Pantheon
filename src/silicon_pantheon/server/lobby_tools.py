@@ -51,6 +51,7 @@ def _serialize_room_summary(room: Room) -> dict[str, Any]:
         "host_team": room.config.host_team,
         "fog_of_war": room.config.fog_of_war,
         "max_turns": room.config.max_turns,
+        "turn_time_limit_s": room.config.turn_time_limit_s,
         "seats": {
             slot.value: {
                 "occupied": seat.player is not None,
@@ -342,6 +343,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         host_team: str | None = None,
         fog_of_war: str | None = None,
         max_turns: int | None = None,
+        turn_time_limit_s: int | None = None,
     ) -> dict:
         """Host-only: tweak room config while still in the lobby.
 
@@ -421,6 +423,13 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                     ErrorCode.BAD_INPUT, "max_turns must be between 1 and 200"
                 )
             room.config.max_turns = max_turns
+        if turn_time_limit_s is not None:
+            if turn_time_limit_s < 10 or turn_time_limit_s > 3600:
+                return _error(
+                    ErrorCode.BAD_INPUT,
+                    "turn_time_limit_s must be between 10 and 3600",
+                )
+            room.config.turn_time_limit_s = turn_time_limit_s
 
         # Config change resets readiness so both sides explicitly
         # re-agree on the new terms.

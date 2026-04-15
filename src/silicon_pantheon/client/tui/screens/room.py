@@ -774,6 +774,28 @@ class Button:
 _FOG_OPTIONS = ("none", "classic", "line_of_sight")
 _TEAM_MODE_OPTIONS = ("fixed", "random")
 _HOST_TEAM_OPTIONS = ("blue", "red")
+# Per-turn time limit (seconds). Same knob drives both the server's
+# turn-timer forfeit and the AI agent's own per-turn loop budget.
+# Short values punish weak models; long values are necessary for
+# scenarios with many units or reasoning models that take ~15-20s
+# per tool call.
+_TURN_TIME_OPTIONS = ("60", "120", "180", "300", "600", "1200")
+_TURN_TIME_DESCRIPTIONS = {
+    "60":   "1 minute. Fast / blitz games. AI players with many units "
+            "or slow reasoning models will run out of time — most "
+            "useful for humans-only matches or tiny scenarios.",
+    "120":  "2 minutes. OK for small/mid scenarios with strong AI "
+            "models (Claude Sonnet, GPT-5). Tight for weak models.",
+    "180":  "3 minutes. Default. Comfortable for most AI + scenario "
+            "combos; gives the model room to observe multiple units "
+            "before committing to an action.",
+    "300":  "5 minutes. Good for reasoning models (grok-3-mini, "
+            "o-series) on large scenarios (Agincourt, Troy).",
+    "600":  "10 minutes. Weak models + large rosters + deep "
+            "analysis. Matches take real time at this setting.",
+    "1200": "20 minutes. Debugging / demo settings only; a full "
+            "match can take several hours.",
+}
 
 _FOG_DESCRIPTIONS = {
     "none": "No fog. Both sides see the entire board at all times. "
@@ -893,6 +915,12 @@ class ActionsPanel(Panel):
                         value=rs.get("host_team", "?"),
                         enabled=editable
                         and rs.get("team_assignment") == "fixed",
+                    ),
+                    Button(
+                        label="Turn Time Limit",
+                        action="change_turn_time",
+                        value=f"{rs.get('turn_time_limit_s', '?')}s",
+                        enabled=editable,
                     ),
                 ]
             )
@@ -1364,6 +1392,9 @@ class RoomScreen(Screen):
         if action == "change_host_team":
             self._open_host_team_modal()
             return None
+        if action == "change_turn_time":
+            self._open_turn_time_modal()
+            return None
         if action == "change_strategy":
             self._open_strategy_modal()
             return None
@@ -1517,6 +1548,28 @@ class RoomScreen(Screen):
             selected_idx=idx,
             on_confirm=lambda v: self._apply_config({"host_team": v}),
             option_descriptions=dict(_HOST_TEAM_DESCRIPTIONS),
+        )
+
+    def _open_turn_time_modal(self) -> None:
+        current = str(
+            (self.app.state.last_room_state or {}).get("turn_time_limit_s", 180)
+        )
+        idx = (
+            _TURN_TIME_OPTIONS.index(current)
+            if current in _TURN_TIME_OPTIONS
+            else _TURN_TIME_OPTIONS.index("180")
+        )
+
+        async def _on_confirm(v: str) -> None:
+            # update_room_config expects turn_time_limit_s as an int.
+            await self._apply_config({"turn_time_limit_s": int(v)})
+
+        self._dropdown = Dropdown(
+            title="Per-turn time limit (seconds)",
+            options=list(_TURN_TIME_OPTIONS),
+            selected_idx=idx,
+            on_confirm=_on_confirm,
+            option_descriptions=dict(_TURN_TIME_DESCRIPTIONS),
         )
 
     # ---- server interactions ----

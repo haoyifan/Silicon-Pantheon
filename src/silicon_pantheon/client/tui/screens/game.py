@@ -793,6 +793,17 @@ class GameScreen(Screen):
         from pathlib import Path as _Path
 
         lessons_dir = _Path("lessons") if app.state.use_lessons else None
+        # Per-turn agent time budget = room's turn_time_limit_s when
+        # the host set it, otherwise the adapter's default (180s). The
+        # host configures this in the room-setup Actions panel.
+        # Matching the server-declared limit means the agent's loop
+        # exits roughly when the server's turn timer would forfeit
+        # anyway, so we don't burn requests past that point.
+        room_state = app.state.last_room_state or {}
+        turn_budget = room_state.get("turn_time_limit_s")
+        # Fall back to 180.0 if the room state didn't carry it (older
+        # server, or the field was dropped from the preview).
+        time_budget_s = float(turn_budget) if turn_budget else 180.0
         app.state.agent = NetworkedAgent(
             client=app.client,
             model=app.state.model,
@@ -804,6 +815,7 @@ class GameScreen(Screen):
             # fetched so the agent doesn't need to re-call the server.
             # Falls back to a first-turn fetch if it's missing.
             scenario_description=app.state.scenario_description,
+            time_budget_s=time_budget_s,
         )
 
     # ---- render ----

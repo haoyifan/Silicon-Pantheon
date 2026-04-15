@@ -407,7 +407,7 @@ class NetworkedAgent:
         strategy: str | None = None,
         lessons_dir: Path | None = Path("lessons"),
         thoughts_callback: ThoughtCallback | None = None,
-        time_budget_s: float = 90.0,
+        time_budget_s: float = 180.0,
         adapter: ProviderAdapter | None = None,
         scenario_description: dict | None = None,
     ):
