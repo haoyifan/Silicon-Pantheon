@@ -400,15 +400,25 @@ def build_system_prompt(
     )
 
 
-TURN_PROMPT_TEMPLATE = """It is turn {turn} and it is your ({team}) turn to play.
+TURN_PROMPT_TEMPLATE_BOOTSTRAP = """It is turn {turn} and it is your ({team}) turn to play.
 
-Here is a snapshot of the current game state (you can always call get_state to refresh):
+This is your first turn, so here is the full state snapshot. Subsequent
+turns will only include what changed (opponent actions, your unit
+status) — call `get_state` any time you need the full picture.
 
 ```json
 {state_json}
 ```
 
 Play your turn. Remember to call end_turn at the end."""
+
+
+TURN_PROMPT_TEMPLATE_DELTA = """It is turn {turn} and it is your ({team}) turn to play.
+
+{opponent_actions_section}\
+{your_units_section}\
+Call `get_state` if you need the full board / enemy positions /
+fog-of-war map. Remember to call `end_turn` at the end."""
 
 
 _TURN_PROMPT_MISMATCH_WARNING = """\
@@ -419,6 +429,11 @@ side ends their turn. Do NOT call move/attack/heal/wait/end_turn.
 Call get_state once to re-check; if still not your turn, reply with a
 short note acknowledging the mismatch and do nothing else.
 """
+
+
+# Kept as an alias for any existing callers still importing the old
+# name — the bootstrap template is the closest match to what they got.
+TURN_PROMPT_TEMPLATE = TURN_PROMPT_TEMPLATE_BOOTSTRAP
 
 
 def build_turn_prompt(session: Session, viewer: Team) -> str:
@@ -466,42 +481,143 @@ def _slim_unit(u: dict) -> dict:
     return {k: u.get(k) for k in _AGENT_UNIT_KEYS if k in u}
 
 
-def build_turn_prompt_from_state_dict(
-    state_dict: dict, viewer: Team
-) -> str:
-    """Same as build_turn_prompt but takes a pre-filtered state dict.
+def _format_action_event(ev: dict) -> str:
+    """One-line, human-first render of a server action record.
 
-    Used by the networked client which receives the state via a
-    `get_state` tool call rather than holding a local Session. The
-    dict should already be filtered for `viewer` by the server's
-    viewer-filter layer.
+    history entries come from _record_action and have shapes like
+    {"type":"move","unit_id":"u_r_speedboat_1","dest":{"x":5,"y":3}}
+    or {"type":"attack","unit_id":"a","target_id":"t",
+        "damage_dealt":8,"counter_damage":3,"target_killed":False,
+        "attacker_killed":False}
+    or end_turn variants. Keep this compact — it's read on every
+    turn prompt."""
+    t = ev.get("type")
+    if t == "move":
+        dest = ev.get("dest") or {}
+        return f"- {ev.get('unit_id')} moved to ({dest.get('x')}, {dest.get('y')})"
+    if t == "attack":
+        dmg = ev.get("damage_dealt")
+        ctr = ev.get("counter_damage")
+        killed_bits = []
+        if ev.get("target_killed"):
+            killed_bits.append(f"{ev.get('target_id')} killed")
+        if ev.get("attacker_killed"):
+            killed_bits.append(f"{ev.get('unit_id')} killed")
+        tail = f" — {', '.join(killed_bits)}" if killed_bits else ""
+        return (
+            f"- {ev.get('unit_id')} attacked {ev.get('target_id')}: "
+            f"damage={dmg}, counter={ctr}{tail}"
+        )
+    if t == "heal":
+        return (
+            f"- {ev.get('unit_id')} healed {ev.get('target_id')} "
+            f"(+{ev.get('heal_amount')})"
+        )
+    if t == "wait":
+        return f"- {ev.get('unit_id')} waited"
+    if t == "end_turn":
+        parts = [f"- {ev.get('by') or 'opponent'} ended turn"]
+        if ev.get("winner"):
+            parts.append(f"WINNER: {ev.get('winner')}")
+        if ev.get("reason"):
+            parts.append(f"reason={ev.get('reason')}")
+        return " | ".join(parts)
+    # Fallback — render whatever shape we got as compact json.
+    return f"- {json.dumps(ev, default=str)}"
+
+
+def build_turn_prompt_from_state_dict(
+    state_dict: dict,
+    viewer: Team,
+    *,
+    is_first_turn: bool = True,
+    new_history: list[dict] | None = None,
+) -> str:
+    """Per-turn user message for the networked client.
+
+    Two shapes:
+
+      - **Bootstrap** (`is_first_turn=True`): full state snapshot
+        so the model's session has a starting mental map.
+      - **Delta** (`is_first_turn=False`): only what changed since
+        the caller's last turn — enemy actions from `new_history`,
+        plus a compact HP/pos/status line per LIVE unit on the
+        caller's team. Previously every turn dumped the whole
+        state again, which (a) burned tokens duplicating info the
+        model already had in-session and (b) made long matches
+        hit the context window. The caller (NetworkedAgent) is
+        the one that knows "what's changed since last time",
+        hence this param.
 
     If the snapshot's active_player disagrees with `viewer`, a
     warning block is prepended so a misfired call to this function
-    can't silently lie to the model (see agent_bridge.play_turn
-    which guards against the same race earlier in the pipeline).
+    can't silently lie to the model.
     """
-    snapshot = {
-        "turn": state_dict.get("turn"),
-        "active_player": state_dict.get("active_player"),
-        "you": state_dict.get("you"),
-        "board": {
-            "width": state_dict.get("board", {}).get("width"),
-            "height": state_dict.get("board", {}).get("height"),
-            "forts": state_dict.get("board", {}).get("forts"),
-        },
-        "units": [_slim_unit(u) for u in state_dict.get("units", [])],
-        "last_action": state_dict.get("last_action"),
-    }
-    prompt = TURN_PROMPT_TEMPLATE.format(
-        turn=state_dict.get("turn", "?"),
-        team=viewer.value,
-        state_json=json.dumps(snapshot, indent=2),
-    )
+    team = viewer.value
+
+    if is_first_turn:
+        snapshot = {
+            "turn": state_dict.get("turn"),
+            "active_player": state_dict.get("active_player"),
+            "you": state_dict.get("you"),
+            "board": {
+                "width": state_dict.get("board", {}).get("width"),
+                "height": state_dict.get("board", {}).get("height"),
+                "forts": state_dict.get("board", {}).get("forts"),
+            },
+            "units": [_slim_unit(u) for u in state_dict.get("units", [])],
+            "last_action": state_dict.get("last_action"),
+        }
+        prompt = TURN_PROMPT_TEMPLATE_BOOTSTRAP.format(
+            turn=state_dict.get("turn", "?"),
+            team=team,
+            state_json=json.dumps(snapshot, indent=2),
+        )
+    else:
+        events = new_history or []
+        if events:
+            opponent_actions_section = (
+                "Opponent actions since your last turn:\n"
+                + "\n".join(_format_action_event(e) for e in events)
+                + "\n\n"
+            )
+        else:
+            opponent_actions_section = (
+                "Opponent did not act since your last turn.\n\n"
+            )
+
+        # Compact your-own-units block: a single line per live
+        # friendly unit with HP / pos / status. Small enough to
+        # include every turn; no enemy data (use get_state for that).
+        own_lines: list[str] = []
+        for u in state_dict.get("units", []):
+            if u.get("owner") != team:
+                continue
+            if not u.get("alive", u.get("hp", 0) > 0):
+                continue
+            pos = u.get("pos") or {}
+            own_lines.append(
+                f"- {u.get('id')} ({u.get('class')})  "
+                f"hp {u.get('hp')}  pos ({pos.get('x')}, {pos.get('y')})  "
+                f"status {u.get('status')}"
+            )
+        your_units_section = (
+            "Your units:\n" + "\n".join(own_lines) + "\n\n"
+            if own_lines else
+            "Your units: (none alive — you may have already lost)\n\n"
+        )
+
+        prompt = TURN_PROMPT_TEMPLATE_DELTA.format(
+            turn=state_dict.get("turn", "?"),
+            team=team,
+            opponent_actions_section=opponent_actions_section,
+            your_units_section=your_units_section,
+        )
+
     active = state_dict.get("active_player")
-    if active is not None and active != viewer.value:
+    if active is not None and active != team:
         prompt = (
-            _TURN_PROMPT_MISMATCH_WARNING.format(team=viewer.value)
+            _TURN_PROMPT_MISMATCH_WARNING.format(team=team)
             + "\n"
             + prompt
         )

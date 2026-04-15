@@ -378,6 +378,15 @@ class NetworkedAgent:
         # Lazily built once per session.
         self._system_prompt_cached: str | None = None
         self._prompt_log = logging.getLogger("silicon.agent.prompts")
+        # Bookkeeping for delta turn prompts: we sent turn 1 as a
+        # full snapshot to bootstrap; every subsequent turn should
+        # send only "what the opponent did since you last acted +
+        # your unit state". The session is persistent so the model
+        # already remembers the earlier turns — re-shipping the
+        # full state dump every turn is wasted tokens AND was the
+        # main driver behind the 351k-token blow-up.
+        self._turns_played: int = 0
+        self._history_cursor: int = 0
 
     async def close(self) -> None:
         try:
@@ -471,7 +480,27 @@ class NetworkedAgent:
                 active, viewer.value,
             )
             return state
-        user_prompt = build_turn_prompt_from_state_dict(state, viewer)
+        # Build the per-turn user prompt. First turn is a full
+        # bootstrap snapshot; every turn after is a delta — just
+        # the opponent's actions since our last turn and a compact
+        # friendly-unit status line. The adapter keeps a persistent
+        # conversation, so the model already remembers the earlier
+        # full snapshot and doesn't need a fresh one each turn.
+        new_history: list[dict] = []
+        if self._turns_played > 0:
+            try:
+                r = await self.client.call("get_history", last_n=0)
+                full_history = (r.get("result") or {}).get("history") or []
+                new_history = full_history[self._history_cursor :]
+            except Exception:
+                log.exception("get_history failed; delta prompt will omit opponent actions")
+
+        user_prompt = build_turn_prompt_from_state_dict(
+            state,
+            viewer,
+            is_first_turn=(self._turns_played == 0),
+            new_history=new_history,
+        )
         # Lazy-fetch scenario invariants on the first turn. The
         # Anthropic adapter reuses its ClaudeSDKClient across turns
         # so the system prompt is only consumed on turn 1; no point
@@ -515,6 +544,18 @@ class NetworkedAgent:
             on_thought=self.thoughts_callback,
             time_budget_s=self.time_budget_s,
         )
+
+        # Advance the delta cursors AFTER the adapter call returns, so
+        # a mid-turn exception (retry / concede path) doesn't leave us
+        # with a cursor pointing past events the agent never saw.
+        self._turns_played += 1
+        try:
+            r = await self.client.call("get_history", last_n=0)
+            self._history_cursor = len(
+                (r.get("result") or {}).get("history") or []
+            )
+        except Exception:
+            log.exception("get_history failed; delta cursor not advanced")
 
         return await self._fetch_state()
 
