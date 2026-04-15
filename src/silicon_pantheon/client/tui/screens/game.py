@@ -396,37 +396,11 @@ class GameMapPanel(Panel):
         return None
 
 
-def _terrain_cell(
-    ttype: str, scenario_terrain_types: dict | None = None
-) -> tuple[str, str]:
-    """Pick the (glyph, Rich style) for a terrain cell on the game map.
-
-    Honors scenario-defined terrain types (Troy's troy_wall / xanthus
-    / ford / greek_ship, Helm's Deep's deeping_wall, etc.) by looking
-    up the scenario_terrain_types map for glyph + color. Without this
-    lookup every custom terrain rendered as the catch-all dot, which
-    is why Troy's map looked blank.
-
-    Falls back to the built-in defaults for the canonical engine
-    terrains (plain / forest / mountain / fort / unknown) so scenarios
-    that don't declare a terrain_types block still render correctly.
-    """
-    if ttype == "unknown":
-        return "?", "bright_black"
-    spec = (scenario_terrain_types or {}).get(ttype) or {}
-    glyph = spec.get("glyph")
-    color = spec.get("color")
-    if glyph and color:
-        return str(glyph)[:1], str(color)
-    if ttype == "forest":
-        return "f", "green"
-    if ttype == "mountain":
-        return "^", "bright_black"
-    if ttype == "fort":
-        return "*", "yellow"
-    if glyph:
-        return str(glyph)[:1], "dim"
-    return ".", "dim"
+# Terrain rendering has moved to silicon_pantheon.client.tui.terrain
+# so the in-game map, room preview, and scenario picker all share one
+# source of truth (was three divergent copies — see that module's
+# docstring for the bug history).
+from silicon_pantheon.client.tui.terrain import terrain_cell as _terrain_cell  # noqa: E402
 
 
 # ---- panel: Reasoning (scrollable agent thoughts) ----

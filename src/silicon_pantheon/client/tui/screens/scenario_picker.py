@@ -26,6 +26,7 @@ from rich.panel import Panel as RichPanel
 from rich.text import Text
 
 from silicon_pantheon.client.tui.panels import border_style, wrap_rows_to_width
+from silicon_pantheon.client.tui.terrain import terrain_cell as _terrain_cell
 
 
 def _slug_to_title(slug: str) -> str:
@@ -205,6 +206,10 @@ class ScenarioPicker:
         h = int(board.get("height", 0))
         terrain_entries = board.get("terrain") or []
         armies = desc.get("armies") or {}
+        # Scenario-declared terrain_types (06_agincourt's mud / Troy's
+        # xanthus / etc.). Same source the in-game map and room
+        # preview use, so all three views agree on glyph + color.
+        scenario_terrain_types = desc.get("terrain_types") or {}
 
         tile_type: dict[tuple[int, int], str] = {}
         for t in terrain_entries:
@@ -245,12 +250,7 @@ class ScenarioPicker:
                     g, st = _unit_cell_style(u)
                 else:
                     ttype = tile_type.get((x, y), "plain")
-                    g, st = {
-                        "plain": (".", "dim"),
-                        "forest": ("f", "green"),
-                        "mountain": ("^", "bright_black"),
-                        "fort": ("*", "yellow"),
-                    }.get(ttype, (ttype[:1] or "?", "dim"))
+                    g, st = _terrain_cell(ttype, scenario_terrain_types)
                 if focused and x == cx and y == cy:
                     text.append(f"[{g}]", style=f"reverse {st}")
                 else:

@@ -570,21 +570,10 @@ class DescriptionPanel(Panel):
         )
 
 
-def _terrain_cell_style(ttype: str) -> tuple[str, str] | None:
-    """Map glyph + style for a terrain type. None means "let the
-    default empty-cell render handle it" (i.e. plain). Built-ins are
-    hard-coded to keep visuals consistent across renderers; scenarios
-    that introduce custom terrain names render via the first letter
-    of the name in dim until they're added here too."""
-    if ttype == "plain":
-        return None
-    if ttype == "forest":
-        return ("f", "green")
-    if ttype == "mountain":
-        return ("^", "bright_black")
-    if ttype == "fort":
-        return ("*", "yellow")
-    return (ttype[:1] or "?", "magenta")
+# Terrain styling lives in silicon_pantheon.client.tui.terrain so all
+# three map renderers (in-game, room preview, scenario picker) agree
+# on glyph + color for both built-in and scenario-declared terrain.
+from silicon_pantheon.client.tui.terrain import terrain_cell as _terrain_cell  # noqa: E402
 
 
 def _terrain_effect_summary(
@@ -980,13 +969,22 @@ class MapPanel(Panel):
         tile_lookup: dict[tuple[int, int], dict] = {
             (int(t.get("x", -1)), int(t.get("y", -1))): t for t in tiles
         }
+        # Pull scenario-declared terrain_types so custom terrain
+        # (06_agincourt's mud, Troy's xanthus, etc.) renders with the
+        # author-specified glyph + color rather than a fallback letter.
+        scenario_terrain_types = (
+            self.screen.app.state.scenario_description or {}
+        ).get("terrain_types") or {}
         for (tx, ty), t in tile_lookup.items():
             if not (0 <= tx < w and 0 <= ty < h):
                 continue
             ttype = str(t.get("type", "plain"))
-            cell = _terrain_cell_style(ttype)
-            if cell is not None:
-                styled[(tx, ty)] = cell
+            # Skip plain so we don't fill the styled dict with the
+            # default cell — the render path falls back to (".", "dim")
+            # already. (Same effect, smaller dict.)
+            if ttype == "plain":
+                continue
+            styled[(tx, ty)] = _terrain_cell(ttype, scenario_terrain_types)
         for f in forts:
             pos = f.get("pos") or {}
             x, y = int(pos.get("x", -1)), int(pos.get("y", -1))
