@@ -297,21 +297,45 @@ def _build_default_adapter(model: str) -> ProviderAdapter:
     from silicon_pantheon.shared.providers import get_provider
 
     model_lower = model.lower()
+    creds = load()
     provider_id: str
-    if model_lower.startswith(("claude", "sonnet", "opus")):
+    # Saved default_provider wins so a user who picked "OpenAI
+    # (subscription)" once doesn't get routed to the api-key adapter
+    # the next time just because the model name starts with "gpt".
+    if creds.default_provider:
+        provider_id = creds.default_provider
+    elif "codex" in model_lower:
+        # gpt-5-codex etc. — Codex-namespaced models go through the
+        # Codex subscription adapter, not the regular OpenAI API.
+        provider_id = "openai-codex"
+    elif model_lower.startswith(("claude", "sonnet", "opus")):
         provider_id = "anthropic"
     elif model_lower.startswith(("gpt", "o1", "o3", "o4")):
         provider_id = "openai"
     elif model_lower.startswith("grok"):
         provider_id = "xai"
     else:
-        creds = load()
-        provider_id = creds.default_provider or "anthropic"
+        provider_id = "anthropic"
 
     if provider_id == "anthropic":
         from silicon_pantheon.client.providers.anthropic import AnthropicAdapter
 
         return AnthropicAdapter(model=model)
+
+    if provider_id == "openai-codex":
+        from silicon_pantheon.client.providers.codex import (
+            CodexAdapter,
+            CodexAuthError,
+            load_credentials,
+        )
+
+        if load_credentials() is None:
+            raise RuntimeError(
+                "openai-codex selected but no Codex OAuth credentials "
+                "are saved yet. Run the TUI's provider picker to log in, "
+                "or call codex.login_interactive() programmatically."
+            )
+        return CodexAdapter(model=model)
 
     # OpenAI + xAI both use the OpenAI Chat Completions protocol.
     # The only difference is the base URL (xAI = https://api.x.ai/v1)

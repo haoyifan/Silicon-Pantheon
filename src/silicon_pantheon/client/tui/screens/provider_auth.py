@@ -365,7 +365,7 @@ class ProviderAuthScreen(Screen):
         if self._step.kind == "resume":
             return await self._handle_resume_key(key)
         if self._step.kind == "pick_provider":
-            return self._handle_pick_provider_key(key)
+            return await self._handle_pick_provider_key(key)
         if self._step.kind == "confirm_auth":
             return self._handle_confirm_auth_key(key)
         if self._step.kind == "api_key":
@@ -384,7 +384,7 @@ class ProviderAuthScreen(Screen):
             return None
         return None
 
-    def _handle_pick_provider_key(self, key: str) -> Screen | None:
+    async def _handle_pick_provider_key(self, key: str) -> Screen | None:
         if key in ("down", "j"):
             self._step.focused = (self._step.focused + 1) % len(PROVIDERS)
         elif key in ("up", "k"):
@@ -392,21 +392,23 @@ class ProviderAuthScreen(Screen):
         elif key == "enter":
             p = PROVIDERS[self._step.focused]
             # Branch on stored-credential state:
-            #   - api_key provider with a stored key → confirm_auth
-            #     step, which asks whether to reuse or rotate. This
-            #     keeps both paths reachable from one place.
-            #   - subscription_cli with a stored auth record → also
-            #     confirm_auth, same semantics (rerun `claude` login
-            #     or trust the existing one).
-            #   - no credential → straight to api_key (or pick_model
-            #     for subscription_cli, which validates in _apply).
+            #   - any provider with a stored creds → confirm_auth step
+            #     (keep / rotate)
+            #   - no credential, api_key mode → paste step
+            #   - no credential, subscription_oauth → run OAuth login
+            #     before reaching the model picker
+            #   - no credential, subscription_cli → straight to model
+            #     picker (validation happens in _apply via shutil.which)
             if self._has_usable_cred(p.id):
                 next_kind = "confirm_auth"
-                # focused=0 = "keep" (the fast-path default); 1 = "re-auth".
                 focused = 0
             elif p.auth_mode == "api_key":
                 next_kind = "api_key"
                 focused = 0
+            elif p.auth_mode == "subscription_oauth":
+                # OAuth flow needs to actually run — return a coroutine
+                # to the dispatcher to await, then advance.
+                return await self._run_oauth_login(p.id)
             else:
                 next_kind = "pick_model"
                 focused = 0
@@ -416,6 +418,47 @@ class ProviderAuthScreen(Screen):
                 focused=focused,
             )
             self.app.state.error_message = ""
+        return None
+
+    async def _run_oauth_login(self, provider_id: str) -> Screen | None:
+        """Trigger PKCE browser login for a subscription_oauth provider.
+
+        Currently only used by the openai-codex provider. Blocks the
+        TUI for the duration of the OAuth flow (typically 10-30 s)
+        which is fine — the user is in the browser anyway.
+        """
+        if provider_id != "openai-codex":
+            self.app.state.error_message = (
+                f"unsupported subscription_oauth provider: {provider_id}"
+            )
+            return None
+        from silicon_pantheon.client.providers.codex import (
+            CodexAuthError,
+            login_interactive,
+        )
+
+        self.app.state.error_message = (
+            "opening browser to sign in to ChatGPT…"
+        )
+        try:
+            await login_interactive()
+        except CodexAuthError as e:
+            self.app.state.error_message = f"Codex login failed: {e}"
+            return None
+        except Exception as e:  # defensive
+            self.app.state.error_message = f"Codex login error: {e}"
+            return None
+        # Mirror what _save_api_key_then_pick_model does for api-key:
+        # write a credential pointer so the resume / has_usable_cred
+        # path picks it up next time.
+        self._creds.providers[provider_id] = ProviderCredential(
+            auth_mode="subscription_oauth",
+        )
+        save(self._creds)
+        self._step = _Step(
+            kind="pick_model", provider_id=provider_id, focused=0,
+        )
+        self.app.state.error_message = ""
         return None
 
     def _handle_confirm_auth_key(self, key: str) -> Screen | None:
@@ -487,6 +530,16 @@ class ProviderAuthScreen(Screen):
             return False
         if cred.auth_mode == "subscription_cli":
             return True
+        if cred.auth_mode == "subscription_oauth":
+            # OAuth creds live in their own file (~/.silicon-pantheon/
+            # credentials/codex-oauth.json), not credentials.json. Check
+            # there for a usable token.
+            if provider_id == "openai-codex":
+                from silicon_pantheon.client.providers.codex import (
+                    load_credentials as _load_codex,
+                )
+                return _load_codex() is not None
+            return False
         try:
             key = resolve_key(cred)
         except CredentialsError:

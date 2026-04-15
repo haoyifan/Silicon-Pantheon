@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 
-AuthMode = Literal["api_key", "subscription_cli", "none"]
+AuthMode = Literal["api_key", "subscription_cli", "subscription_oauth", "none"]
 
 
 @dataclass(frozen=True)
@@ -80,6 +80,34 @@ PROVIDERS: list[ProviderSpec] = [
         token_cost_warning=(
             "Uses your Claude Code subscription. Subject to Anthropic "
             "rate limits — heavy play may throttle briefly."
+        ),
+    ),
+    ProviderSpec(
+        id="openai-codex",
+        display_name="OpenAI (ChatGPT subscription)",
+        auth_mode="subscription_oauth",
+        env_var=None,
+        keyring_service="silicon-pantheon-openai-codex",
+        models=[
+            ModelSpec(
+                "gpt-5-codex",
+                "GPT-5 Codex",
+                context_window=200_000,
+                cost_per_mtok_in=None,
+                cost_per_mtok_out=None,
+            ),
+            ModelSpec(
+                "gpt-5-codex-mini",
+                "GPT-5 Codex mini",
+                context_window=200_000,
+                cost_per_mtok_in=None,
+                cost_per_mtok_out=None,
+            ),
+        ],
+        token_cost_warning=(
+            "Uses your ChatGPT Plus / Pro / Business / Edu / Enterprise "
+            "subscription via Codex OAuth — flat-rate, no per-token API "
+            "billing. First use opens a browser to sign in."
         ),
     ),
     ProviderSpec(

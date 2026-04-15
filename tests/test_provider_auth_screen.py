@@ -31,6 +31,16 @@ def _render(screen) -> str:
     return console.export_text()
 
 
+def _focus_provider(screen, provider_id: str) -> None:
+    """Press `down` until the picker's focused provider matches.
+    Insulates tests from PROVIDERS list reordering."""
+    from silicon_pantheon.shared.providers import PROVIDERS
+
+    target = next(i for i, p in enumerate(PROVIDERS) if p.id == provider_id)
+    while screen._step.focused != target:
+        asyncio.run(screen.handle_key("down"))
+
+
 @pytest.fixture
 def fresh_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("HOME", str(tmp_path))
@@ -80,10 +90,17 @@ def test_down_key_moves_focus_in_picker(fresh_home) -> None:
 
 
 def test_enter_on_openai_drills_to_api_key(fresh_home) -> None:
+    """Picking the api-key OpenAI provider should land on the
+    paste-key step. We look up its index by id rather than by
+    keypress count so the test survives reordering of the provider
+    catalog (e.g. inserting openai-codex above openai)."""
+    from silicon_pantheon.shared.providers import PROVIDERS
+
     app = _FakeApp()
     screen = ProviderAuthScreen(app)
-    # Focus the second provider (OpenAI).
-    asyncio.run(screen.handle_key("down"))
+    target_idx = next(i for i, p in enumerate(PROVIDERS) if p.id == "openai")
+    for _ in range(target_idx):
+        asyncio.run(screen.handle_key("down"))
     asyncio.run(screen.handle_key("enter"))
     assert screen._step.kind == "api_key"
     assert screen._step.provider_id == "openai"
@@ -113,7 +130,7 @@ def test_saved_key_routes_through_confirm_auth(fresh_home) -> None:
     )
     app = _FakeApp()
     screen = ProviderAuthScreen(app)
-    asyncio.run(screen.handle_key("down"))  # focus OpenAI
+    _focus_provider(screen, "openai")
     asyncio.run(screen.handle_key("enter"))
     assert screen._step.kind == "confirm_auth"
     assert screen._step.provider_id == "openai"
@@ -142,7 +159,7 @@ def test_confirm_auth_reauth_branch_opens_paste(fresh_home) -> None:
     )
     app = _FakeApp()
     screen = ProviderAuthScreen(app)
-    asyncio.run(screen.handle_key("down"))
+    _focus_provider(screen, "openai")
     asyncio.run(screen.handle_key("enter"))
     assert screen._step.kind == "confirm_auth"
     # Move to "re-auth", then Enter.
@@ -176,7 +193,7 @@ def test_r_rotates_key_from_model_picker(fresh_home) -> None:
     )
     app = _FakeApp()
     screen = ProviderAuthScreen(app)
-    asyncio.run(screen.handle_key("down"))  # OpenAI
+    _focus_provider(screen, "openai")
     asyncio.run(screen.handle_key("enter"))
     # New flow: saved cred → confirm_auth, Enter on "keep" → pick_model.
     assert screen._step.kind == "confirm_auth"
@@ -195,7 +212,7 @@ def test_no_saved_key_still_goes_to_api_key_step(fresh_home) -> None:
     cred still land on the api_key prompt."""
     app = _FakeApp()
     screen = ProviderAuthScreen(app)
-    asyncio.run(screen.handle_key("down"))  # OpenAI
+    _focus_provider(screen, "openai")
     asyncio.run(screen.handle_key("enter"))
     assert screen._step.kind == "api_key"
 
