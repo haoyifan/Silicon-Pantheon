@@ -48,6 +48,14 @@ class Connection:
     player: PlayerMetadata | None = None
     token: str | None = None  # per-room token once joined
     last_heartbeat_at: float = field(default_factory=time.time)
+    # Distinct from last_heartbeat_at: tracks when the connection
+    # last issued a "meaningful" game tool (anything other than the
+    # bare heartbeat ping). Detects the case where a client's
+    # transport + heartbeat task are still alive but the TUI's game
+    # loop has died — the heartbeat lies about liveness for the
+    # purposes of forfeit-on-silence. Updated by the dispatcher on
+    # any tool except `heartbeat`.
+    last_game_activity_at: float = field(default_factory=time.time)
 
 
 class App:

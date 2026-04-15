@@ -174,9 +174,47 @@ def main() -> int:
 
     from silicon_pantheon.server.heartbeat import run_sweep_loop
 
+    # uvicorn calls logging.config.dictConfig() inside its startup,
+    # which re-initializes loggers and detaches our FileHandler.
+    # Symptom: ~/.silicon-pantheon/logs/server-*.log was 5 lines
+    # (only the pre-uvicorn startup banner), while the system journal
+    # had every tool dispatch. Re-attach 2s after startup so our log
+    # file actually captures runtime events.
+    async def _reattach_handlers() -> None:
+        await asyncio.sleep(2.0)
+        # The handlers we set up at the top — re-add them so anything
+        # uvicorn cleared during dictConfig comes back.
+        from logging import getLogger as _gl
+        target_loggers = (
+            "silicon", "silicon.lobby", "silicon.game", "silicon.engine",
+            "silicon-serve", "uvicorn", "uvicorn.error", "uvicorn.access",
+            "mcp", "mcp.server", "mcp.server.lowlevel.server",
+        )
+        # Find the FileHandler we created earlier by walking the
+        # silicon-serve logger's handlers.
+        seed_handlers = list(_gl("silicon-serve").handlers)
+        if not seed_handlers:
+            log.warning("re-attach: silicon-serve logger has no handlers")
+            return
+        reattached = 0
+        for name in target_loggers:
+            lg = _gl(name)
+            for h in seed_handlers:
+                if h not in lg.handlers:
+                    lg.addHandler(h)
+                    reattached += 1
+            lg.propagate = False
+        log.info(
+            "re-attached %d handler(s) across %d loggers after uvicorn startup",
+            reattached, len(target_loggers),
+        )
+
+    import asyncio  # for the reattach sleep
+
     async def _serve() -> None:
         async with anyio.create_task_group() as tg:
             tg.start_soon(run_sweep_loop, app)
+            tg.start_soon(_reattach_handlers)
             tg.start_soon(mcp.run_streamable_http_async)
 
     anyio.run(_serve)

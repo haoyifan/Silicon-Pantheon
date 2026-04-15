@@ -53,6 +53,10 @@ def _since_heartbeat(conn, now: float) -> float:  # noqa: ANN001
     return now - conn.last_heartbeat_at
 
 
+def _since_game_activity(conn, now: float) -> float:  # noqa: ANN001
+    return now - conn.last_game_activity_at
+
+
 def run_sweep_once(app: App, now: float | None = None) -> None:
     """Single sweep pass — public entry point so tests can run it
     deterministically without waiting on the asyncio loop."""
@@ -64,7 +68,17 @@ def run_sweep_once(app: App, now: float | None = None) -> None:
         conn = app.get_connection(cid)
         if conn is None:
             continue
-        idle = _since_heartbeat(conn, now)
+        idle_heartbeat = _since_heartbeat(conn, now)
+        # For IN_GAME connections we're more interested in actual
+        # game activity than the noise-level heartbeat ping. A client
+        # whose tick loop has crashed but whose heartbeat task is
+        # still alive will look healthy via heartbeat alone — the
+        # opponent waits forever. Use the more informative timer
+        # for IN_GAME silence detection.
+        if conn.state == ConnectionState.IN_GAME:
+            idle = _since_game_activity(conn, now)
+        else:
+            idle = idle_heartbeat
         hb = app.heartbeat_state.setdefault(cid, HeartbeatState())
 
         # Still alive: reset soft-disconnect bookkeeping.
@@ -77,7 +91,12 @@ def run_sweep_once(app: App, now: float | None = None) -> None:
         # Entered soft-disconnect.
         if hb.soft_disconnected_at is None:
             hb.soft_disconnected_at = now
-            log.info("soft_disconnect: cid=%s state=%s", cid, conn.state.value)
+            log.info(
+                "soft_disconnect: cid=%s state=%s "
+                "idle_heartbeat=%.1fs idle_game_activity=%.1fs",
+                cid, conn.state.value, idle_heartbeat,
+                _since_game_activity(conn, now),
+            )
 
         soft_age = now - hb.soft_disconnected_at
 
@@ -104,11 +123,21 @@ def run_sweep_once(app: App, now: float | None = None) -> None:
 
         elif conn.state == ConnectionState.IN_GAME:
             if soft_age >= IN_GAME_HARD_CONCEDE_S:
-                log.info("hard_disconnect: auto-concede cid=%s", cid)
+                log.warning(
+                    "hard_disconnect: auto-concede cid=%s "
+                    "soft_age=%.1fs idle_heartbeat=%.1fs "
+                    "idle_game_activity=%.1fs",
+                    cid, soft_age, idle_heartbeat,
+                    _since_game_activity(conn, now),
+                )
                 _auto_concede(app, cid)
                 app.heartbeat_state.pop(cid, None)
             elif soft_age >= IN_GAME_SOFT_NOTICE_S and not hb.notified_opponent:
                 hb.notified_opponent = True
+                log.info(
+                    "in-game soft notice: cid=%s soft_age=%.1fs",
+                    cid, soft_age,
+                )
                 _notify_opponent_of_disconnect(app, cid)
 
 

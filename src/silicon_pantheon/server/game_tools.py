@@ -212,6 +212,13 @@ def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
             ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
             f"game tools require state=in_game (current: {conn.state.value})",
         )
+    # Track last meaningful tool call so the heartbeat sweeper can
+    # detect "transport alive, game loop dead" — the case where a
+    # client's heartbeat task keeps pinging but the TUI's tick loop
+    # has crashed and the player can no longer act. Without this the
+    # heartbeat lies about liveness and the opponent waits forever.
+    import time as _time
+    conn.last_game_activity_at = _time.time()
     resolved = _viewer_for(conn, app)
     if resolved is None:
         return _error(ErrorCode.GAME_NOT_STARTED, "no active game for this connection")

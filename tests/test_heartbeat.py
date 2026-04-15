@@ -92,15 +92,20 @@ def test_in_game_soft_notice_logs_then_hard_forfeit() -> None:
     app.conn_to_room["red"] = (room.id, Slot.B)
 
     # T0: red goes silent just past grace. Sweep marks soft_disconnected_at.
+    # IN_GAME sweep uses last_game_activity_at (more informative than the
+    # bare heartbeat — see docstring on the field), so age both timers.
     t0 = 1_000_000.0
     red_conn.last_heartbeat_at = t0 - (HEARTBEAT_GRACE_S + 1)
+    red_conn.last_game_activity_at = t0 - (HEARTBEAT_GRACE_S + 1)
     blue_conn.last_heartbeat_at = t0
+    blue_conn.last_game_activity_at = t0
     run_sweep_once(app, now=t0)
     assert app.get_connection("red") is not None
 
     # T0 + soft-notice: sweep emits notice but does not yet forfeit.
     t1 = t0 + IN_GAME_SOFT_NOTICE_S + 1
     blue_conn.last_heartbeat_at = t1
+    blue_conn.last_game_activity_at = t1
     run_sweep_once(app, now=t1)
     assert session.state.status != GameStatus.GAME_OVER
     assert app.get_connection("red") is not None
@@ -108,6 +113,7 @@ def test_in_game_soft_notice_logs_then_hard_forfeit() -> None:
     # T0 + hard-concede: sweep forfeits.
     t2 = t0 + IN_GAME_HARD_CONCEDE_S + 1
     blue_conn.last_heartbeat_at = t2
+    blue_conn.last_game_activity_at = t2
     run_sweep_once(app, now=t2)
     assert session.state.status == GameStatus.GAME_OVER
     assert session.state.winner == Team.BLUE
@@ -122,3 +128,64 @@ def test_sweeper_idempotent_for_live_connection() -> None:
     run_sweep_once(app, now=now)
     run_sweep_once(app, now=now + 0.5)
     assert app.get_connection("c1") is not None
+
+
+def test_in_game_silent_with_alive_heartbeat_still_concedes() -> None:
+    """Regression for the production stuck-game case: a client whose
+    transport + heartbeat task are still alive but whose TUI tick
+    loop has died. The bare heartbeat lies about liveness; the IN_GAME
+    sweeper must use last_game_activity_at instead so the opponent
+    isn't left waiting forever on a wedged client."""
+    from silicon_pantheon.server.rooms import RoomStatus
+
+    app = App()
+    cfg = RoomConfig(scenario="01_tiny_skirmish")
+    host = PlayerMetadata(display_name="h", kind="human")
+    room, _slot = app.rooms.create(config=cfg, host=host)
+    room.status = RoomStatus.IN_GAME
+    state = load_scenario(cfg.scenario)
+    session = new_session(state)
+    app.sessions[room.id] = session
+    app.slot_to_team[room.id] = {Slot.A: Team.BLUE, Slot.B: Team.RED}
+
+    blue_conn = _seat(app, "blue", "a", ConnectionState.IN_GAME)
+    app.conn_to_room["blue"] = (room.id, Slot.A)
+    red_conn = _seat(app, "red", "b", ConnectionState.IN_GAME)
+    app.conn_to_room["red"] = (room.id, Slot.B)
+
+    # Red's HEARTBEAT keeps coming through (its background task is still
+    # alive), but the GAME LOOP is dead — last_game_activity_at hasn't
+    # advanced. Simulate by pinning game_activity to t0 while
+    # last_heartbeat_at stays current.
+    t0 = 1_000_000.0
+    red_conn.last_heartbeat_at = t0  # fresh — heartbeat task alive
+    red_conn.last_game_activity_at = t0  # baseline
+    blue_conn.last_heartbeat_at = t0
+    blue_conn.last_game_activity_at = t0
+
+    # Step 1: time advances past the heartbeat grace; red's game
+    # activity is stale, but its heartbeat task is still pinging.
+    # First sweep should mark soft_disconnect on red.
+    t1 = t0 + 60  # well past HEARTBEAT_GRACE_S (30)
+    red_conn.last_heartbeat_at = t1   # heartbeat ALIVE
+    # red_conn.last_game_activity_at intentionally NOT updated.
+    blue_conn.last_heartbeat_at = t1
+    blue_conn.last_game_activity_at = t1
+    run_sweep_once(app, now=t1)
+    assert session.state.status != GameStatus.GAME_OVER, \
+        "shouldn't forfeit yet — only just hit soft_disconnect"
+    # If the IN_GAME sweep were still using last_heartbeat_at, no
+    # soft_disconnect would have fired. Verify it did.
+    hb_state = app.heartbeat_state.get("red")
+    assert hb_state is not None and hb_state.soft_disconnected_at is not None, \
+        "IN_GAME sweep didn't notice red's silent game loop — heartbeat lied"
+
+    # Step 2: advance to past hard-concede.
+    t2 = t1 + IN_GAME_HARD_CONCEDE_S + 1
+    red_conn.last_heartbeat_at = t2  # heartbeat STILL alive
+    blue_conn.last_heartbeat_at = t2
+    blue_conn.last_game_activity_at = t2
+    run_sweep_once(app, now=t2)
+
+    assert session.state.status == GameStatus.GAME_OVER
+    assert session.state.winner == Team.BLUE
