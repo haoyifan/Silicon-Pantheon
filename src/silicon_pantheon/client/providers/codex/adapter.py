@@ -295,7 +295,7 @@ class CodexAdapter:
         tools: list[ToolSpec],
         tool_dispatcher: ToolDispatcher,
         on_thought: ThoughtCallback | None = None,
-        time_budget_s: float = 90.0,
+        time_budget_s: float = 1800.0,
     ) -> None:
         # Init: seed the persistent input with system + user.
         if not self._initialized:

@@ -92,7 +92,7 @@ class ProviderAdapter(Protocol):
         tools: list[ToolSpec],
         tool_dispatcher: ToolDispatcher,
         on_thought: ThoughtCallback | None = None,
-        time_budget_s: float = 90.0,
+        time_budget_s: float = 1800.0,
     ) -> None:
         """Run one turn's reasoning + tool calls.
 

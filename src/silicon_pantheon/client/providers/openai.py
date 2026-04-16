@@ -288,7 +288,7 @@ class OpenAIAdapter:
         tools: list[ToolSpec],
         tool_dispatcher: ToolDispatcher,
         on_thought: ThoughtCallback | None = None,
-        time_budget_s: float = 90.0,
+        time_budget_s: float = 1800.0,
     ) -> None:
         # First-turn init: seed the transcript with the system prompt.
         if not self._messages:

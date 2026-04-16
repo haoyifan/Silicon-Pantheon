@@ -144,7 +144,7 @@ class AnthropicAdapter:
         tools: list[ToolSpec],
         tool_dispatcher: ToolDispatcher,
         on_thought: ThoughtCallback | None = None,
-        time_budget_s: float = 90.0,
+        time_budget_s: float = 1800.0,
     ) -> None:
         client = await self._ensure_session(
             system_prompt=system_prompt,
