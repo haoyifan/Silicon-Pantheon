@@ -459,7 +459,8 @@ status) — call `get_state` any time you need the full picture.
 Play your turn. Remember to call end_turn at the end."""
 
 
-TURN_PROMPT_TEMPLATE_DELTA = """It is turn {turn} and it is your ({team}) turn to play.
+TURN_PROMPT_TEMPLATE_DELTA = """It is turn {turn} of {max_turns} and it is your ({team}) turn to play. \
+({turns_remaining} turn(s) remaining, including this one, before the turn cap.)
 
 {opponent_actions_section}\
 {your_units_section}\
@@ -646,7 +647,25 @@ def _build_tactical_section(summary: dict | None) -> str:
 
 def _build_own_units_section(state_dict: dict, team: str) -> str:
     """Compact HP/pos/status line per live friendly unit. Shared by
-    the delta turn-prompt and the retry continuation prompt."""
+    the delta turn-prompt and the retry continuation prompt.
+
+    Each unit line carries a positional-fact suffix when relevant —
+    currently `[on friendly fort]` for units standing on a fort this
+    team owns. Flags a recurring "fort heal" opportunity so the model
+    doesn't have to cross-reference the board.forts list each turn.
+    """
+    # Pre-compute the set of friendly fort positions so the per-unit
+    # loop is O(units). Only forts with owner == team count as
+    # "friendly" — neutral forts (owner=None) don't fort-heal anyone.
+    friendly_fort_positions: set[tuple[int, int]] = set()
+    board = state_dict.get("board") or {}
+    for f in board.get("forts") or []:
+        if f.get("owner") == team:
+            try:
+                friendly_fort_positions.add((int(f["x"]), int(f["y"])))
+            except (KeyError, TypeError, ValueError):
+                continue
+
     own_lines: list[str] = []
     for u in state_dict.get("units", []):
         if u.get("owner") != team:
@@ -654,10 +673,23 @@ def _build_own_units_section(state_dict: dict, team: str) -> str:
         if not u.get("alive", u.get("hp", 0) > 0):
             continue
         pos = u.get("pos") or {}
+        try:
+            px = int(pos.get("x", -1))
+            py = int(pos.get("y", -1))
+        except (TypeError, ValueError):
+            px, py = -1, -1
+        suffix = ""
+        if (px, py) in friendly_fort_positions:
+            # Fort-heal rule fires at the START of the OWNER's turn.
+            # So a unit on a friendly fort at the time this prompt
+            # renders has either JUST healed (turn-start) or will heal
+            # next turn if it stays. Either way, flagging the position
+            # saves the model a board-lookup round-trip.
+            suffix = "  [on friendly fort — +3 HP at start of each of your turns]"
         own_lines.append(
             f"- {u.get('id')} ({u.get('class')})  "
-            f"hp {u.get('hp')}  pos ({pos.get('x')}, {pos.get('y')})  "
-            f"status {u.get('status')}"
+            f"hp {u.get('hp')}  pos ({px}, {py})  "
+            f"status {u.get('status')}{suffix}"
         )
     if own_lines:
         return "Your units:\n" + "\n".join(own_lines) + "\n\n"
@@ -748,9 +780,17 @@ def build_turn_prompt_from_state_dict(
 
         your_units_section = _build_own_units_section(state_dict, team)
         tactical_section = _build_tactical_section(tactical_summary)
+        # max_turns + turns_remaining come from state_dict (serializer
+        # already computes both). Fall back to "?" if the server didn't
+        # ship them so the template render can't hard-fail.
+        max_turns = state_dict.get("max_turns", "?")
+        tc = state_dict.get("turn_clock") or {}
+        turns_remaining = tc.get("turns_remaining", "?")
 
         prompt = TURN_PROMPT_TEMPLATE_DELTA.format(
             turn=state_dict.get("turn", "?"),
+            max_turns=max_turns,
+            turns_remaining=turns_remaining,
             team=team,
             opponent_actions_section=opponent_actions_section,
             your_units_section=your_units_section,

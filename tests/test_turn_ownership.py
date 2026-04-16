@@ -74,8 +74,11 @@ def test_bootstrap_prompt_has_full_snapshot_delta_doesnt() -> None:
 
     # Delta is a text list — no JSON dump.
     assert "```json" not in delta
-    # Delta is substantially shorter.
-    assert len(delta) < len(bootstrap) // 2, (
+    # Delta is substantially shorter. The bootstrap ships the full
+    # state JSON so it's typically 2-3× the delta; use a loose bound
+    # so prompt-header additions (turns_remaining, fort tags, etc.)
+    # don't wobble the test.
+    assert len(delta) < int(len(bootstrap) * 0.75), (
         f"delta not shorter than bootstrap: {len(delta)} vs {len(bootstrap)}"
     )
     # Delta still tells the model it's their turn and names the team.

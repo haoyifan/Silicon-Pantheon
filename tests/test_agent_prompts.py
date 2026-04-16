@@ -195,6 +195,95 @@ def test_turn_prompt_only_carries_dynamic_state():
     assert "should not appear" not in p
 
 
+def test_delta_prompt_header_shows_turns_remaining():
+    """P1: the delta turn prompt header surfaces the turn clock so
+    the model can reason about tempo without doing arithmetic."""
+    state = {
+        "turn": 7, "active_player": "blue", "you": "blue",
+        "max_turns": 20,
+        "turn_clock": {"turns_remaining": 14, "max_turns": 20},
+        "board": {"width": 5, "height": 5, "forts": []},
+        "units": [{"id": "u_b_k1", "owner": "blue", "class": "k",
+                   "pos": {"x": 0, "y": 0}, "hp": 10, "hp_max": 10,
+                   "status": "ready", "alive": True}],
+        "last_action": None,
+    }
+    p = build_turn_prompt_from_state_dict(state, Team.BLUE, is_first_turn=False)
+    assert "turn 7 of 20" in p
+    assert "14 turn(s) remaining" in p
+
+
+def test_delta_prompt_header_tolerates_missing_turn_clock():
+    """Defensive: if an older server (or some future scenario) omits
+    `max_turns` / `turn_clock`, the prompt renders with `?` rather
+    than crashing — this function is called every poll, a crash here
+    freezes the agent loop."""
+    state = {
+        "turn": 3, "active_player": "blue", "you": "blue",
+        "board": {"width": 5, "height": 5, "forts": []},
+        "units": [{"id": "u_b_k1", "owner": "blue", "class": "k",
+                   "pos": {"x": 0, "y": 0}, "hp": 10, "hp_max": 10,
+                   "status": "ready", "alive": True}],
+        "last_action": None,
+    }
+    p = build_turn_prompt_from_state_dict(state, Team.BLUE, is_first_turn=False)
+    # Renders without raising and the unknown fields show as "?".
+    assert "turn 3 of ?" in p
+
+
+def test_delta_prompt_tags_units_on_friendly_forts():
+    """P3: a unit standing on a fort its own team owns gets an
+    "on friendly fort" annotation on its status line so the model
+    knows it's positioned to fort-heal without a board cross-reference."""
+    state = {
+        "turn": 2, "active_player": "blue", "you": "blue",
+        "max_turns": 20,
+        "turn_clock": {"turns_remaining": 19, "max_turns": 20},
+        "board": {
+            "width": 5, "height": 5,
+            # Blue fort at (1,1); red fort at (4,4); neutral fort at (2,2).
+            "forts": [
+                {"x": 1, "y": 1, "owner": "blue"},
+                {"x": 4, "y": 4, "owner": "red"},
+                {"x": 2, "y": 2, "owner": None},
+            ],
+        },
+        "units": [
+            # Blue knight on own fort → tagged.
+            {"id": "u_b_k1", "owner": "blue", "class": "knight",
+             "pos": {"x": 1, "y": 1}, "hp": 20, "hp_max": 30,
+             "status": "ready", "alive": True},
+            # Blue archer on enemy fort → NOT tagged.
+            {"id": "u_b_a1", "owner": "blue", "class": "archer",
+             "pos": {"x": 4, "y": 4}, "hp": 10, "hp_max": 15,
+             "status": "ready", "alive": True},
+            # Blue mage on neutral fort → NOT tagged.
+            {"id": "u_b_m1", "owner": "blue", "class": "mage",
+             "pos": {"x": 2, "y": 2}, "hp": 10, "hp_max": 15,
+             "status": "ready", "alive": True},
+            # Blue cavalry not on any fort → NOT tagged.
+            {"id": "u_b_c1", "owner": "blue", "class": "cavalry",
+             "pos": {"x": 3, "y": 3}, "hp": 12, "hp_max": 20,
+             "status": "ready", "alive": True},
+        ],
+        "last_action": None,
+    }
+    p = build_turn_prompt_from_state_dict(state, Team.BLUE, is_first_turn=False)
+    # Blue unit on own fort: tagged.
+    lines = p.splitlines()
+    k1_line = next(ln for ln in lines if "u_b_k1" in ln)
+    assert "on friendly fort" in k1_line
+    # Blue unit on enemy fort: NOT tagged (wrong owner).
+    a1_line = next(ln for ln in lines if "u_b_a1" in ln)
+    assert "on friendly fort" not in a1_line
+    # Blue unit on neutral fort: NOT tagged.
+    m1_line = next(ln for ln in lines if "u_b_m1" in ln)
+    assert "on friendly fort" not in m1_line
+    # Blue unit not on any fort: NOT tagged.
+    c1_line = next(ln for ln in lines if "u_b_c1" in ln)
+    assert "on friendly fort" not in c1_line
+
+
 def test_delta_prompt_renders_tactical_summary_when_provided():
     """C1: when a tactical_summary bundle is attached to the delta
     turn prompt, it renders as a human-readable 'opportunities /

@@ -401,6 +401,13 @@ def attack(session: Session, viewer: Team, unit_id: str, target_id: str) -> dict
         result = apply(session.state, AttackAction(unit_id=unit_id, target_id=target_id))
     except IllegalAction as e:
         raise ToolError(_enrich_attack_error(session, unit_id, target_id, e)) from e
+    # Post-action status hint. Attacker is DONE after attacking (or
+    # removed from state.units if killed in counter). Explicit
+    # `attacker_status` saves the model re-deriving the status rule.
+    attacker_after = session.state.units.get(unit_id)
+    result["attacker_status"] = (
+        attacker_after.status.value if attacker_after else "killed"
+    )
     _record_action(session, result)
     return result
 
@@ -466,6 +473,12 @@ def heal(session: Session, viewer: Team, healer_id: str, target_id: str) -> dict
         result = apply(session.state, HealAction(healer_id=healer_id, target_id=target_id))
     except IllegalAction as e:
         raise ToolError(_enrich_heal_error(session.state, healer_id, target_id, e)) from e
+    # Healer is DONE after healing. Status hint lets the model skip
+    # re-deriving the rule.
+    healer_after = session.state.units.get(healer_id)
+    result["healer_status"] = (
+        healer_after.status.value if healer_after else "killed"
+    )
     _record_action(session, result)
     return result
 
@@ -521,6 +534,11 @@ def wait_unit(session: Session, viewer: Team, unit_id: str) -> dict:
         result = apply(session.state, WaitAction(unit_id=unit_id))
     except IllegalAction as e:
         raise ToolError(str(e)) from e
+    # Unit flips to DONE after wait.
+    unit_after = session.state.units.get(unit_id)
+    result["unit_status"] = (
+        unit_after.status.value if unit_after else "killed"
+    )
     _record_action(session, result)
     return result
 
