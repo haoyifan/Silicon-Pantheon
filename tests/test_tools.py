@@ -98,7 +98,7 @@ def test_attack_out_of_range_error_lists_in_range_targets():
         )
     msg = str(exc.value)
     assert "out of attack range" in msg
-    assert "Enemies in range right now" in msg
+    assert "Visible enemies in range right now" in msg
 
 
 def test_move_success_includes_next_actions_hint():
@@ -227,6 +227,72 @@ def test_tactical_summary_surfaces_opportunities():
         assert "predicted_defender_dies" in opp
         assert "predicted_counter_damage" in opp
         assert "predicted_attacker_dies" in opp
+
+
+def test_tactical_summary_respects_fog_of_war():
+    """Regression: get_tactical_summary used to iterate all enemies
+    regardless of fog mode, leaking enemy IDs + positions in
+    classic / line_of_sight scenarios. Now it filters enemies by
+    visibility."""
+    # Build a 2-player session with fog=line_of_sight so enemies off
+    # sight never appear in opportunities/threats.
+    from silicon_pantheon.server.session import new_session
+    from silicon_pantheon.server.engine.scenarios import load_scenario
+
+    state = load_scenario("01_tiny_skirmish")
+    # Force all red units far from blue's sight — place them on the
+    # far edge. Use stat ops since scenario is small.
+    # Simplest check: set fog=line_of_sight with tight sight, then
+    # assert no red unit appears in the summary when out of LOS.
+    s = new_session(state, fog_of_war="line_of_sight")
+    out = call_tool(s, Team.BLUE, "get_tactical_summary", {})
+    # Collect every enemy id mentioned.
+    mentioned: set[str] = set()
+    for o in out["opportunities"]:
+        mentioned.add(o["attacker_id"])
+        mentioned.add(o["target_id"])
+    for t in out["threats"]:
+        mentioned.update(t["threatened_by"])
+    # Any red unit that's NOT currently visible to blue must not
+    # appear anywhere in the summary. We compute visibility the same
+    # way the filter_state path does and assert.
+    from silicon_pantheon.shared.viewer_filter import (
+        ViewerContext, currently_visible,
+    )
+    ctx = ViewerContext(team=Team.BLUE, fog_mode="line_of_sight")
+    visible = currently_visible(s.state, ctx)
+    for u in s.state.units_of(Team.RED):
+        if u.alive and u.pos not in visible:
+            assert u.id not in mentioned, (
+                f"fog leak: hidden enemy {u.id} at {u.pos} surfaced "
+                f"in tactical summary: {out}"
+            )
+
+
+def test_move_next_actions_respects_fog_of_war():
+    """Regression: _post_move_next_actions used to include enemies
+    regardless of fog. attack_targets must filter by visibility."""
+    from silicon_pantheon.server.session import new_session
+    from silicon_pantheon.server.engine.scenarios import load_scenario
+
+    state = load_scenario("01_tiny_skirmish")
+    s = new_session(state, fog_of_war="line_of_sight")
+    out = call_tool(
+        s, Team.BLUE, "move",
+        {"unit_id": "u_b_knight_1", "dest": {"x": 0, "y": 3}},
+    )
+    hint = out.get("next_actions", {})
+    from silicon_pantheon.shared.viewer_filter import (
+        ViewerContext, currently_visible,
+    )
+    ctx = ViewerContext(team=Team.BLUE, fog_mode="line_of_sight")
+    visible = currently_visible(s.state, ctx)
+    for enemy_id in hint.get("attack_targets", []):
+        u = s.state.units[enemy_id]
+        assert u.pos in visible, (
+            f"fog leak: hidden enemy {enemy_id} at {u.pos} in "
+            f"post-move attack_targets"
+        )
 
 
 def test_tactical_summary_flags_pending_action_after_move():

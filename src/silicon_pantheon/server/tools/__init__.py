@@ -29,6 +29,7 @@ from ..engine.rules import (
 from ..engine.serialize import state_to_dict
 from ..engine.state import GameState, Pos, Team, UnitStatus
 from ..session import CoachMessage, Session
+from ...shared.viewer_filter import ViewerContext, currently_visible
 
 
 class ToolError(Exception):
@@ -53,6 +54,31 @@ def _require_own_unit(state: GameState, unit_id: str, viewer: Team) -> None:
         raise ToolError(f"unit {unit_id} does not exist or is dead")
     if u.owner is not viewer:
         raise ToolError(f"unit {unit_id} is not yours (owner={u.owner.value})")
+
+
+def _visible_enemies(session: Session, viewer: Team) -> list:
+    """Enemy units visible to `viewer` under the session's fog mode.
+
+    Under fog=none this is every alive enemy. Under classic /
+    line_of_sight it's filtered to enemies standing on currently-
+    visible tiles, matching the fog contract the state-serializer
+    uses at filter_state.
+
+    Callers that generate agent-visible hints MUST use this instead
+    of state.units_of(enemy) directly — otherwise the hint leaks
+    enemy positions the agent shouldn't be able to see.
+    """
+    enemy = viewer.other()
+    enemies = [u for u in session.state.units_of(enemy) if u.alive]
+    if session.fog_of_war == "none":
+        return enemies
+    ctx = ViewerContext(
+        team=viewer,
+        fog_mode=session.fog_of_war,  # type: ignore[arg-type]
+        ever_seen=session.ever_seen.get(viewer, frozenset()),
+    )
+    visible = currently_visible(session.state, ctx)
+    return [u for u in enemies if u.pos in visible]
 
 
 # ---- read-only tools ----
@@ -187,8 +213,11 @@ def get_tactical_summary(session: Session, viewer: Team) -> dict:
     """
     state = session.state
     my_units = [u for u in state.units_of(viewer) if u.alive]
-    enemy = viewer.other()
-    enemy_units = [u for u in state.units_of(enemy) if u.alive]
+    # Fog-aware: enemies we can't see are NOT listed in opportunities
+    # or threats. Otherwise the tool would leak positions the fog
+    # filter redacts from get_state. Under fog=none this is all
+    # alive enemies.
+    enemy_units = _visible_enemies(session, viewer)
 
     # Opportunities: every pair where my unit can attack the enemy
     # from its current position and is still able to act this turn.
@@ -289,17 +318,20 @@ def move(session: Session, viewer: Team, unit_id: str, dest: dict) -> dict:
     # (at best) or guessing-then-erroring (at worst); this folds that
     # information into the move response so the next assistant message
     # can go straight to attack/heal/wait.
-    result["next_actions"] = _post_move_next_actions(session.state, unit_id)
+    result["next_actions"] = _post_move_next_actions(session, unit_id)
     _record_action(session, result)
     return result
 
 
-def _post_move_next_actions(state: GameState, unit_id: str) -> dict:
+def _post_move_next_actions(session: Session, unit_id: str) -> dict:
     """Compact summary of valid follow-ups after a move lands.
 
     Fields:
       status: "moved" (model occasionally loses track; spell it out)
-      attack_targets: IDs of enemies in range from the new position
+      attack_targets: IDs of VISIBLE enemies in range from the new
+                      position. Under fog modes this respects the
+                      viewer's sight — we do not leak enemies the
+                      fog would hide.
       heal_targets: IDs of wounded adjacent friendlies (only if the
                     unit has can_heal; empty otherwise)
       must_resolve: True if the unit MUST still act before end_turn
@@ -307,14 +339,17 @@ def _post_move_next_actions(state: GameState, unit_id: str) -> dict:
                     the model has an unambiguous flag rather than
                     having to derive it from `status`)
     """
+    state = session.state
     unit = state.units.get(unit_id)
     if unit is None:
         return {}
-    # Enemies currently in range from the new position.
+    # Visible enemies in range from the new position. Using
+    # _visible_enemies ensures consistency with get_tactical_summary
+    # + get_state's fog filter.
+    visible_enemies = _visible_enemies(session, unit.owner)
     in_range = [
-        u.id for u in state.units.values()
-        if u.alive and u.owner is not unit.owner
-        and in_attack_range(unit.pos, u.pos, unit.stats)
+        u.id for u in visible_enemies
+        if in_attack_range(unit.pos, u.pos, unit.stats)
     ]
     heal_tgts: list[str] = []
     if unit.stats.can_heal:
@@ -365,13 +400,13 @@ def attack(session: Session, viewer: Team, unit_id: str, target_id: str) -> dict
     try:
         result = apply(session.state, AttackAction(unit_id=unit_id, target_id=target_id))
     except IllegalAction as e:
-        raise ToolError(_enrich_attack_error(session.state, unit_id, target_id, e)) from e
+        raise ToolError(_enrich_attack_error(session, unit_id, target_id, e)) from e
     _record_action(session, result)
     return result
 
 
 def _enrich_attack_error(
-    state: GameState, unit_id: str, target_id: str, e: IllegalAction
+    session: Session, unit_id: str, target_id: str, e: IllegalAction
 ) -> str:
     """Add agent-usable hints to attack failures so the model doesn't
     need a follow-up get_state + get_legal_actions to recover.
@@ -384,26 +419,27 @@ def _enrich_attack_error(
         blue↔red mapping)
     """
     msg = str(e)
+    state = session.state
     attacker = state.units.get(unit_id)
     if attacker is None:
         return msg
-    enemies_alive = [
-        u for u in state.units.values()
-        if u.alive and u.owner is not attacker.owner
-    ]
+    # Fog-aware: only surface enemy IDs the viewer can see. Without
+    # this filter the enriched error leaks "alive enemies" + "in-range
+    # enemies" lists under classic / line_of_sight modes.
+    visible_enemies = _visible_enemies(session, attacker.owner)
     if "does not exist or is dead" in msg:
-        alive_ids = [u.id for u in enemies_alive]
-        return f"{msg}. Alive enemy units: [{', '.join(alive_ids) or '(none)'}]"
+        alive_ids = [u.id for u in visible_enemies]
+        return f"{msg}. Alive enemy units you can see: [{', '.join(alive_ids) or '(none)'}]"
     if "out of attack range" in msg:
         in_range = [
-            u.id for u in enemies_alive
+            u.id for u in visible_enemies
             if in_attack_range(attacker.pos, u.pos, attacker.stats)
         ]
         return (
             f"{msg}. Attacker {unit_id} is at ({attacker.pos.x},"
             f"{attacker.pos.y}) with range "
             f"[{attacker.stats.rng_min}, {attacker.stats.rng_max}]. "
-            f"Enemies in range right now: "
+            f"Visible enemies in range right now: "
             f"[{', '.join(in_range) or '(none)'}]."
         )
     if "already acted this turn" in msg:
