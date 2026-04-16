@@ -43,8 +43,79 @@ def test_move_then_attack_end_turn():
 def test_end_turn_blocks_if_unit_moved_but_not_acted():
     s = _session()
     call_tool(s, Team.BLUE, "move", {"unit_id": "u_b_knight_1", "dest": {"x": 0, "y": 3}})
-    with pytest.raises(ToolError, match="moved but has not acted"):
+    with pytest.raises(ToolError, match="moved but have not acted"):
         call_tool(s, Team.BLUE, "end_turn", {})
+
+
+def test_end_turn_error_hint_lists_all_pending_units():
+    """Agent-usability: end_turn rejection should name every still-
+    moved unit in one error so the agent can fix them in one response
+    round (call wait/attack on each, retry end_turn) instead of
+    discovering them one at a time."""
+    s = _session()
+    call_tool(s, Team.BLUE, "move", {"unit_id": "u_b_knight_1", "dest": {"x": 0, "y": 3}})
+    # u_b_archer_1 still ready (not moved) — won't be in the error.
+    # Just the knight should show up.
+    with pytest.raises(ToolError) as exc:
+        call_tool(s, Team.BLUE, "end_turn", {})
+    msg = str(exc.value)
+    assert "u_b_knight_1" in msg
+    assert "1 unit(s)" in msg
+    # And the hint tells the agent WHICH tools unstick the situation.
+    assert "attack/heal/wait" in msg
+
+
+def test_attack_dead_target_error_lists_alive_enemies():
+    """When the agent picks a stale/dead target, the error should
+    surface the currently-alive enemy IDs so it can retarget without
+    a get_state round-trip."""
+    s = _session()
+    # First give knight's target in range: just try to attack a
+    # bogus ID.
+    with pytest.raises(ToolError) as exc:
+        call_tool(
+            s, Team.BLUE, "attack",
+            {"unit_id": "u_b_knight_1", "target_id": "u_fake_999"},
+        )
+    msg = str(exc.value)
+    assert "does not exist or is dead" in msg
+    assert "Alive enemy units" in msg
+    # At least one red unit must be listed.
+    assert "u_r_" in msg
+
+
+def test_attack_out_of_range_error_lists_in_range_targets():
+    """Agent tries to attack an enemy outside range; server should
+    point at which enemies ARE in range (or say 'none') so the agent
+    knows whether to move first or pick a different attacker."""
+    s = _session()
+    # u_b_knight_1 is at (0,4); red units are far. Try to attack
+    # u_r_knight_1 which should be well out of range.
+    with pytest.raises(ToolError) as exc:
+        call_tool(
+            s, Team.BLUE, "attack",
+            {"unit_id": "u_b_knight_1", "target_id": "u_r_knight_1"},
+        )
+    msg = str(exc.value)
+    assert "out of attack range" in msg
+    assert "Enemies in range right now" in msg
+
+
+def test_move_unreachable_error_points_at_get_legal_actions():
+    """Agent picks an unreachable tile; error should include the
+    unit's current pos + move budget and tell it to call
+    get_legal_actions rather than guess again."""
+    s = _session()
+    # Board is small (6x6ish); try a guaranteed-out-of-range move.
+    with pytest.raises(ToolError) as exc:
+        call_tool(
+            s, Team.BLUE, "move",
+            {"unit_id": "u_b_knight_1", "dest": {"x": 5, "y": 5}},
+        )
+    msg = str(exc.value)
+    assert "not reachable" in msg
+    assert "move budget" in msg
+    assert "get_legal_actions" in msg
 
 
 def test_simulate_attack_no_mutation():

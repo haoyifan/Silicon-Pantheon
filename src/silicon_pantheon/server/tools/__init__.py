@@ -203,9 +203,36 @@ def move(session: Session, viewer: Team, unit_id: str, dest: dict) -> dict:
     try:
         result = apply(session.state, MoveAction(unit_id=unit_id, dest=Pos.from_dict(dest)))
     except IllegalAction as e:
-        raise ToolError(str(e)) from e
+        raise ToolError(_enrich_move_error(session.state, unit_id, e)) from e
     _record_action(session, result)
     return result
+
+
+def _enrich_move_error(
+    state: GameState, unit_id: str, e: IllegalAction
+) -> str:
+    """Hint on move failures. The "not reachable" case is the most
+    common — tell the agent the unit's pos + move budget so it can
+    re-plan without a get_state round-trip. We intentionally DON'T
+    enumerate reachable tiles (could be 30+); we point at
+    get_legal_actions for the exhaustive list."""
+    msg = str(e)
+    unit = state.units.get(unit_id)
+    if unit is None:
+        return msg
+    if "not reachable" in msg:
+        return (
+            f"{msg}. Unit {unit_id} is at ({unit.pos.x},{unit.pos.y}) "
+            f"with move budget {unit.stats.move}. Call "
+            f"`get_legal_actions(unit_id={unit_id!r})` for the "
+            f"authoritative reachable-tile list; don't guess."
+        )
+    if "has already moved" in msg:
+        return (
+            f"{msg}. {unit_id} status is {unit.status.value}. "
+            f"You can still call attack/heal/wait on it this turn."
+        )
+    return msg
 
 
 def attack(session: Session, viewer: Team, unit_id: str, target_id: str) -> dict:
@@ -214,9 +241,62 @@ def attack(session: Session, viewer: Team, unit_id: str, target_id: str) -> dict
     try:
         result = apply(session.state, AttackAction(unit_id=unit_id, target_id=target_id))
     except IllegalAction as e:
-        raise ToolError(str(e)) from e
+        raise ToolError(_enrich_attack_error(session.state, unit_id, target_id, e)) from e
     _record_action(session, result)
     return result
+
+
+def _enrich_attack_error(
+    state: GameState, unit_id: str, target_id: str, e: IllegalAction
+) -> str:
+    """Add agent-usable hints to attack failures so the model doesn't
+    need a follow-up get_state + get_legal_actions to recover.
+
+    Hint categories:
+      - target dead / nonexistent → list of alive enemy IDs
+      - out of range → attacker's pos + range + in-range enemy IDs
+      - attacker already DONE → "use a different unit this turn"
+      - target is ally → which team target belongs to (model confused
+        blue↔red mapping)
+    """
+    msg = str(e)
+    attacker = state.units.get(unit_id)
+    if attacker is None:
+        return msg
+    enemies_alive = [
+        u for u in state.units.values()
+        if u.alive and u.owner is not attacker.owner
+    ]
+    if "does not exist or is dead" in msg:
+        alive_ids = [u.id for u in enemies_alive]
+        return f"{msg}. Alive enemy units: [{', '.join(alive_ids) or '(none)'}]"
+    if "out of attack range" in msg:
+        in_range = [
+            u.id for u in enemies_alive
+            if in_attack_range(attacker.pos, u.pos, attacker.stats)
+        ]
+        return (
+            f"{msg}. Attacker {unit_id} is at ({attacker.pos.x},"
+            f"{attacker.pos.y}) with range "
+            f"[{attacker.stats.rng_min}, {attacker.stats.rng_max}]. "
+            f"Enemies in range right now: "
+            f"[{', '.join(in_range) or '(none)'}]."
+        )
+    if "already acted this turn" in msg:
+        ready_or_moved = [
+            u.id for u in state.units_of(attacker.owner)
+            if u.status is not UnitStatus.DONE
+        ]
+        return (
+            f"{msg}. Units that can still act this turn: "
+            f"[{', '.join(ready_or_moved) or '(none)'}]."
+        )
+    if "cannot attack allied" in msg:
+        return (
+            f"{msg}. Target {target_id} belongs to your own team "
+            f"({attacker.owner.value}). Pick an enemy unit."
+        )
+    return msg
 
 
 def heal(session: Session, viewer: Team, healer_id: str, target_id: str) -> dict:
@@ -225,9 +305,53 @@ def heal(session: Session, viewer: Team, healer_id: str, target_id: str) -> dict
     try:
         result = apply(session.state, HealAction(healer_id=healer_id, target_id=target_id))
     except IllegalAction as e:
-        raise ToolError(str(e)) from e
+        raise ToolError(_enrich_heal_error(session.state, healer_id, target_id, e)) from e
     _record_action(session, result)
     return result
+
+
+def _enrich_heal_error(
+    state: GameState, healer_id: str, target_id: str, e: IllegalAction
+) -> str:
+    """Hint on heal failures. The most frequent miss is picking a
+    non-adjacent target — name the adjacent wounded friendlies so the
+    agent doesn't burn a get_state + distance calc to recover."""
+    msg = str(e)
+    healer = state.units.get(healer_id)
+    if healer is None:
+        return msg
+    if "cannot heal" in msg and "enemy" not in msg and "self" not in msg:
+        # Class lacks can_heal.
+        healers = [
+            u.id for u in state.units_of(healer.owner)
+            if u.alive and u.stats.can_heal
+        ]
+        return (
+            f"{msg}. Your healers are: "
+            f"[{', '.join(healers) or '(none — no can_heal class fielded)'}]."
+        )
+    if "requires adjacent ally" in msg:
+        adjacent_wounded = [
+            u.id for u in state.units_of(healer.owner)
+            if u.alive and u.id != healer.id
+            and healer.pos.manhattan(u.pos) == 1
+            and u.hp < u.stats.hp_max
+        ]
+        return (
+            f"{msg}. Healer {healer_id} at ({healer.pos.x},"
+            f"{healer.pos.y}); wounded friendly units adjacent right "
+            f"now: [{', '.join(adjacent_wounded) or '(none)'}]."
+        )
+    if "cannot heal enemy" in msg:
+        return (
+            f"{msg}. Target {target_id} is on the opposing team. "
+            f"Heal targets your own team only."
+        )
+    if "cannot self-heal" in msg:
+        return (
+            f"{msg}. Pick a wounded teammate at Manhattan distance 1."
+        )
+    return msg
 
 
 def wait_unit(session: Session, viewer: Team, unit_id: str) -> dict:
@@ -243,11 +367,19 @@ def wait_unit(session: Session, viewer: Team, unit_id: str) -> dict:
 
 def end_turn(session: Session, viewer: Team) -> dict:
     _require_active(session, viewer)
-    for u in session.state.units_of(viewer):
-        if u.status is UnitStatus.MOVED:
-            raise ToolError(
-                f"unit {u.id} moved but has not acted; call attack/heal/wait before end_turn"
-            )
+    # Collect ALL units still pending action in one pass so the agent
+    # gets a complete list in one error — not "fix unit A, retry, fail
+    # on unit B, retry" back-and-forth. For grok-3-mini on a 5-unit
+    # turn this used to cost 5 extra round-trips; now it's one.
+    pending = [u.id for u in session.state.units_of(viewer)
+               if u.status is UnitStatus.MOVED]
+    if pending:
+        pending_str = ", ".join(pending)
+        raise ToolError(
+            f"cannot end_turn yet: {len(pending)} unit(s) moved but "
+            f"have not acted — [{pending_str}]. Call "
+            f"attack/heal/wait on each before retrying end_turn."
+        )
     try:
         result = apply(session.state, EndTurnAction())
     except IllegalAction as e:
