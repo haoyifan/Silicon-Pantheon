@@ -2,9 +2,11 @@
 subscription's OAuth bearer token.
 
 Architecture is parallel to providers/openai.py — same outer loop
-shape, same compaction strategy, same error classification — but
-the wire protocol is the Responses API instead of Chat Completions
-and the auth is OAuth refresh-token based instead of an API key.
+shape, same compaction strategy (truncate old user / assistant
+content, stub function_call_output, drop reasoning items), same
+error classification — but the wire protocol is the Responses API
+instead of Chat Completions and the auth is OAuth refresh-token
+based instead of an API key.
 
 Per-turn loop:
   1. Append the new user message to a persistent `_input` array
@@ -170,6 +172,121 @@ class CodexAdapter:
 
     # ---- play_turn ------------------------------------------------------
 
+    # Compaction constants — match openai.py so the two adapters
+    # behave identically at the transcript-shrinking layer.
+    _STUB_TOOL_RESULT = "[result trimmed for context bound]"
+    _ASST_CONTENT_CAP = 1500
+    _USER_CONTENT_CAP = 3000
+
+    def _compact_prior_turns(self) -> None:
+        """Shrink completed turns in self._input without breaking the
+        Responses-API pairing invariants.
+
+        Responses-API item types and how we handle each:
+
+          - message(role=developer) — system prompt. Keep the FIRST
+            one verbatim (canonical system prompt); drop subsequent
+            ones (those are per-turn corrective nudges from earlier
+            turns, same as openai.py's corrective system messages).
+          - message(role=user) — user turn prompt. Truncate .content
+            text over _USER_CONTENT_CAP chars — catches the turn-1
+            bootstrap snapshot while letting small deltas pass through.
+          - message(role=assistant, output_text) — assistant's prose.
+            Truncate text over _ASST_CONTENT_CAP chars.
+          - function_call — model's tool call. KEEP intact; we need
+            the paired function_call_output below it to stay valid.
+          - function_call_output — tool result. Replace .output with
+            _STUB_TOOL_RESULT. Pairing with function_call preserved.
+          - reasoning — chain-of-thought. DROP; old reasoning adds
+            significant token weight and rarely carries cross-turn
+            signal. The model's final decisions are already captured
+            in the function_call items that followed.
+
+        Invalidates the provider's prompt cache from the first
+        rewritten item onward (same tradeoff as openai.py). See TODO
+        for a cache-friendlier pass.
+        """
+        if len(self._input) <= 1:
+            return
+
+        compacted: list[dict] = []
+        dev_kept = 0
+        for item in self._input:
+            if not isinstance(item, dict):
+                compacted.append(item)
+                continue
+            t = item.get("type")
+
+            if t == "message":
+                role = item.get("role")
+                if role == "developer":
+                    dev_kept += 1
+                    if dev_kept == 1:
+                        compacted.append(item)
+                    # Drop subsequent developer messages.
+                    continue
+
+                # user / assistant — truncate their text content.
+                cap = (
+                    self._USER_CONTENT_CAP if role == "user"
+                    else self._ASST_CONTENT_CAP
+                )
+                new_content: list[dict] = []
+                truncated = False
+                for c in item.get("content") or []:
+                    if not isinstance(c, dict):
+                        new_content.append(c)
+                        continue
+                    text = c.get("text")
+                    if isinstance(text, str) and len(text) > cap:
+                        suffix = (
+                            "…[bootstrap snapshot truncated; call "
+                            "`get_state` if you need fresh board data]"
+                            if role == "user"
+                            else "…[truncated]"
+                        )
+                        new_c = dict(c)
+                        new_c["text"] = text[:cap] + suffix
+                        new_content.append(new_c)
+                        truncated = True
+                    else:
+                        new_content.append(c)
+                if truncated:
+                    new_item = dict(item)
+                    new_item["content"] = new_content
+                    compacted.append(new_item)
+                else:
+                    compacted.append(item)
+                continue
+
+            if t == "function_call":
+                # Keep the call intact so its output pairing stays
+                # valid. (Also preserves the native-tool-call protocol
+                # shape in the model's own history.)
+                compacted.append(item)
+                continue
+
+            if t == "function_call_output":
+                compacted.append({
+                    "type": "function_call_output",
+                    "call_id": item.get("call_id", ""),
+                    "output": self._STUB_TOOL_RESULT,
+                })
+                continue
+
+            if t == "reasoning":
+                # Drop old chain-of-thought — it's the biggest
+                # token sink across turns and rarely informs the
+                # next turn's play beyond what's already encoded
+                # in the function_calls the model subsequently made.
+                continue
+
+            # Unknown item types pass through so a future Responses-API
+            # extension doesn't get silently dropped.
+            compacted.append(item)
+
+        self._input = compacted
+
     async def play_turn(
         self,
         *,
@@ -188,6 +305,17 @@ class CodexAdapter:
                 "codex session init: system_prompt_bytes=%d (~%d est_tokens)",
                 len(system_prompt), len(system_prompt) // 4,
             )
+        else:
+            # Turn 2+: shrink completed turns before we append the new
+            # user prompt. Same cadence and rationale as openai.py.
+            before = self._estimate_tokens(self._input)
+            self._compact_prior_turns()
+            after = self._estimate_tokens(self._input)
+            if before != after:
+                log.info(
+                    "codex compacted: %d→%d est_tokens (%d items)",
+                    before, after, len(self._input),
+                )
         self._input.append(user_to_input_item(user_prompt))
         self._corrections_this_turn = 0
 
@@ -359,7 +487,7 @@ class CodexAdapter:
             "reasoning": {"summary": "auto"},
         }
 
-    # ---- compaction (parallel to openai.py) -----------------------------
+    # ---- token accounting -----------------------------------------------
 
     @staticmethod
     def _estimate_tokens(items: list[dict]) -> int:

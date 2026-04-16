@@ -337,6 +337,147 @@ async def test_play_turn_refreshes_token_on_401(stub_creds, monkeypatch):
     assert "responses-200" in call_log
 
 
+# ---- compaction across turns ------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_compaction_shrinks_prior_turn_items(stub_creds, monkeypatch):
+    """Cross-turn compaction must shrink the _input array without
+    breaking the Responses-API pairing invariants. Pins all four
+    transformations in one go: developer deduped, oversize user
+    message truncated, function_call_output stubbed, reasoning
+    dropped — and function_call items stay intact so pairing holds."""
+    calls_seen = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls_seen
+        calls_seen += 1
+        # Turn 1: model calls get_state, then stops.
+        if calls_seen == 1:
+            return httpx.Response(200, json={
+                "output": [
+                    {"type": "reasoning", "summary": [
+                        {"type": "summary_text",
+                         "text": "Thinking through turn 1 plan in detail."}
+                    ]},
+                    {"type": "function_call", "call_id": "call_1",
+                     "name": "get_state", "arguments": "{}"},
+                ],
+            })
+        if calls_seen == 2:
+            return httpx.Response(200, json={
+                "output": [
+                    {"type": "message", "role": "assistant", "content": [
+                        {"type": "output_text", "text": "Done turn 1."}
+                    ]},
+                ],
+            })
+        # Turn 2: just exits cleanly.
+        return httpx.Response(200, json={
+            "output": [
+                {"type": "message", "role": "assistant", "content": [
+                    {"type": "output_text", "text": "Done turn 2."}
+                ]},
+            ],
+        })
+
+    _patch_async_client(monkeypatch, httpx.MockTransport(handler))
+    adapter = CodexAdapter(credentials=stub_creds)
+
+    async def dispatch(_n, _a):
+        # Huge tool result simulating a state dump — compaction must
+        # stub this on the next turn.
+        return {"big": "x" * 8000}
+
+    # Turn 1 with an oversize bootstrap user prompt.
+    big_bootstrap = "TURN 1 BOOTSTRAP: " + ("b" * 8000)
+    await adapter.play_turn(
+        system_prompt="sys",
+        user_prompt=big_bootstrap,
+        tools=[ToolSpec("get_state", "gs",
+                        {"type": "object", "properties": {}})],
+        tool_dispatcher=dispatch, on_thought=None,
+    )
+    # Inject a second developer message (simulates a corrective
+    # nudge from some prior turn-scoped path) so we can prove the
+    # subsequent-developer drop rule fires too.
+    adapter._input.insert(1, {
+        "type": "message", "role": "developer",
+        "content": [{"type": "input_text", "text": "nudge from earlier"}],
+    })
+    # And one more reasoning item hiding in prior history.
+    adapter._input.append({
+        "type": "reasoning", "summary": [
+            {"type": "summary_text", "text": "late reasoning " * 100},
+        ],
+    })
+
+    before = adapter._estimate_tokens(adapter._input)
+
+    # Turn 2: compaction runs at entry.
+    await adapter.play_turn(
+        system_prompt="sys", user_prompt="turn 2 small delta",
+        tools=[ToolSpec("get_state", "gs",
+                        {"type": "object", "properties": {}})],
+        tool_dispatcher=dispatch, on_thought=None,
+    )
+    # NOTE: don't close() yet — close() wipes self._input. Snapshot
+    # what we need first, then close at the end.
+
+    after = adapter._estimate_tokens(adapter._input)
+
+    # Shrank meaningfully — the oversize bootstrap + huge tool
+    # output + reasoning items together were the majority of
+    # tokens; all three were collapsed.
+    assert after < before // 2, (
+        f"compaction didn't shrink: {before}→{after}"
+    )
+
+    # Only ONE developer message survived (the canonical system
+    # prompt). The injected nudge was dropped.
+    dev_msgs = [
+        i for i in adapter._input
+        if isinstance(i, dict)
+        and i.get("type") == "message"
+        and i.get("role") == "developer"
+    ]
+    assert len(dev_msgs) == 1
+
+    # No reasoning items survived — old chain-of-thought dropped.
+    assert not any(
+        isinstance(i, dict) and i.get("type") == "reasoning"
+        for i in adapter._input
+    )
+
+    # function_call items still present (pairing invariant) —
+    # AND their function_call_output pairs still present with
+    # stubbed output.
+    fcos = [
+        i for i in adapter._input
+        if isinstance(i, dict) and i.get("type") == "function_call_output"
+    ]
+    assert fcos, "function_call_output items must survive for pairing"
+    for fco in fcos:
+        # Stubbed output, not the original 8KB payload.
+        assert fco.get("output") == adapter._STUB_TOOL_RESULT, (
+            f"stub not applied: {fco.get('output', '')[:60]!r}"
+        )
+
+    # Bootstrap user message truncated (was ~8KB, must be well under).
+    user_msgs = [
+        i for i in adapter._input
+        if isinstance(i, dict)
+        and i.get("type") == "message"
+        and i.get("role") == "user"
+    ]
+    bootstrap = user_msgs[0]
+    text = (bootstrap["content"][0] or {}).get("text", "")
+    assert len(text) < 4000, f"bootstrap not truncated: {len(text)} chars"
+    assert "bootstrap snapshot truncated" in text
+
+    await adapter.close()
+
+
 # ---- close is idempotent ----------------------------------------------
 
 
