@@ -210,6 +210,39 @@ def test_simulate_attack_no_mutation():
     assert s.state.units["u_r_archer_1"].hp == s.state.units["u_r_archer_1"].stats.hp_max
 
 
+def test_get_history_last_n_zero_means_all():
+    """Regression: agent_bridge calls get_history(last_n=0) intending
+    "give me everything since this cursor." The implementation used
+    to interpret 0 as "give me nothing", returning [] — which made
+    the per-turn prompt say 'Opponent did not act' even when the
+    opponent had moved, AND prevented the history cursor from ever
+    advancing (cursor was set to len([]) = 0 every turn end). Real
+    agincourt game from 01:54:25 hit this."""
+    s = _session()
+    # Generate some history.
+    call_tool(s, Team.BLUE, "wait", {"unit_id": "u_b_knight_1"})
+    call_tool(s, Team.BLUE, "wait", {"unit_id": "u_b_archer_1"})
+    call_tool(s, Team.BLUE, "end_turn", {})
+
+    # last_n=0 → full history (was: empty list). Bug.
+    out0 = call_tool(s, Team.BLUE, "get_history", {"last_n": 0})
+    assert len(out0["history"]) >= 3, (
+        "last_n=0 should return all history, not empty"
+    )
+
+    # Negative also means "all" — defensive.
+    out_neg = call_tool(s, Team.BLUE, "get_history", {"last_n": -1})
+    assert len(out_neg["history"]) >= 3
+
+    # Default (no last_n) returns last 10.
+    out_default = call_tool(s, Team.BLUE, "get_history", {})
+    assert "history" in out_default
+
+    # last_n=2 returns last 2.
+    out2 = call_tool(s, Team.BLUE, "get_history", {"last_n": 2})
+    assert len(out2["history"]) == 2
+
+
 def test_coach_message_queue():
     """The send_to_agent → coach_messages auto-delivery path
     (replaces the old explicit get_coach_messages tool)."""

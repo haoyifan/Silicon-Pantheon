@@ -308,7 +308,20 @@ def get_tactical_summary(session: Session, viewer: Team) -> dict:
 
 
 def get_history(session: Session, viewer: Team, last_n: int = 10) -> dict:
-    hist = session.state.history[-last_n:] if last_n > 0 else []
+    """Return the full action history (or the last `last_n` events).
+
+    `last_n <= 0` is treated as "give me everything" — that's the
+    convention agent_bridge.play_turn relies on when computing the
+    opponent-actions delta from a history cursor. The previous
+    behavior (last_n=0 → empty list) made the agent see "Opponent
+    did not act since your last turn" on EVERY turn, even when the
+    opponent had clearly moved — and the cursor-update call also
+    used last_n=0, so the history cursor was stuck at 0 forever.
+    """
+    if last_n <= 0:
+        hist = list(session.state.history)
+    else:
+        hist = session.state.history[-last_n:]
     return {
         "history": hist,
         "last_action": session.state.last_action,
