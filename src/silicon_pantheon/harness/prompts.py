@@ -611,7 +611,8 @@ def _build_tactical_section(summary: dict | None) -> str:
     opps = summary.get("opportunities") or []
     threats = summary.get("threats") or []
     pending = summary.get("pending_action") or []
-    if not (opps or threats or pending):
+    win_progress = summary.get("win_progress") or []
+    if not (opps or threats or pending or win_progress):
         return ""
     lines: list[str] = []
     if opps:
@@ -642,6 +643,12 @@ def _build_tactical_section(summary: dict | None) -> str:
             "Units still in MOVED status (MUST act before end_turn): "
             f"[{', '.join(pending)}]"
         )
+    if win_progress:
+        if lines:
+            lines.append("")
+        lines.append("Win progress (per condition):")
+        for w in win_progress:
+            lines.append(f"  - {w}")
     return "\n".join(lines) + "\n\n"
 
 

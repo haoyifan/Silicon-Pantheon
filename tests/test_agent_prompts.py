@@ -330,6 +330,36 @@ def test_delta_prompt_renders_tactical_summary_when_provided():
     assert "u_b_m1" in p
 
 
+def test_delta_prompt_renders_win_progress_block():
+    """P4: when tactical_summary carries win_progress lines, the
+    delta prompt renders them as their own subsection."""
+    state = {
+        "turn": 5, "active_player": "blue", "you": "blue",
+        "max_turns": 20,
+        "turn_clock": {"turns_remaining": 16, "max_turns": 20},
+        "board": {"width": 5, "height": 5, "forts": []},
+        "units": [{"id": "u_b_k1", "owner": "blue", "class": "k",
+                   "pos": {"x": 0, "y": 0}, "hp": 10, "hp_max": 10,
+                   "status": "ready", "alive": True}],
+        "last_action": None,
+    }
+    summary = {
+        "opportunities": [],
+        "threats": [],
+        "pending_action": [],
+        "win_progress": [
+            "PROTECT your VIP u_b_henry_v_1 (HP 24/30, at (4,12))",
+            "Turn cap: 16 turn(s) remain (turn 5 of 20)",
+        ],
+    }
+    p = build_turn_prompt_from_state_dict(
+        state, Team.BLUE, is_first_turn=False, tactical_summary=summary,
+    )
+    assert "Win progress (per condition):" in p
+    assert "PROTECT your VIP u_b_henry_v_1" in p
+    assert "Turn cap" in p
+
+
 def test_delta_prompt_skips_tactical_section_when_empty():
     """Quiet turns (no opps / threats / pending) shouldn't pollute
     the prompt with an empty section header — render nothing."""

@@ -262,10 +262,37 @@ def get_tactical_summary(session: Session, viewer: Team) -> dict:
             })
 
     pending = [u.id for u in my_units if u.status is UnitStatus.MOVED]
+
+    # Win-condition progress: one line per condition, describing
+    # where the viewer stands on the scoreboard. Lets the model
+    # reason about "am I winning" without enumerating conditions
+    # and counting units itself each turn. See
+    # engine/win_conditions/rules.py for per-type formatters.
+    win_progress: list[str] = []
+    conds = getattr(state, "_win_conditions", None) or []
+    for wc in conds:
+        describe = getattr(wc, "describe_progress", None)
+        if not callable(describe):
+            continue
+        try:
+            line = describe(state, viewer)
+        except Exception:
+            # Don't let one misbehaving rule take down the whole
+            # tactical summary — skip it and log so we know.
+            import logging as _logging
+            _logging.getLogger("silicon.engine").exception(
+                "win condition %r describe_progress raised; skipping",
+                type(wc).__name__,
+            )
+            continue
+        if isinstance(line, str) and line.strip():
+            win_progress.append(line.strip())
+
     return {
         "opportunities": opportunities,
         "threats": threats,
         "pending_action": pending,
+        "win_progress": win_progress,
     }
 
 

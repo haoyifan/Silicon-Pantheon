@@ -242,16 +242,17 @@ def test_registry_has_all_tools():
 
 
 def test_tactical_summary_shape():
-    """C1: get_tactical_summary returns opportunities + threats +
-    pending_action keys, each a list of dicts with the documented
-    shape."""
+    """C1+P4: get_tactical_summary returns opportunities + threats +
+    pending_action + win_progress keys, each a list."""
     s = _session()
     out = call_tool(s, Team.BLUE, "get_tactical_summary", {})
-    assert set(out.keys()) == {"opportunities", "threats", "pending_action"}
-    # All three are lists.
+    assert set(out.keys()) == {
+        "opportunities", "threats", "pending_action", "win_progress",
+    }
     assert isinstance(out["opportunities"], list)
     assert isinstance(out["threats"], list)
     assert isinstance(out["pending_action"], list)
+    assert isinstance(out["win_progress"], list)
 
 
 def test_tactical_summary_surfaces_opportunities():
@@ -340,6 +341,48 @@ def test_move_next_actions_respects_fog_of_war():
             f"fog leak: hidden enemy {enemy_id} at {u.pos} in "
             f"post-move attack_targets"
         )
+
+
+def test_tactical_summary_includes_win_progress_per_condition():
+    """P4: get_tactical_summary returns one progress line per active
+    win condition. Verifies the default-conditions scenario covers
+    the three baseline types (seize_enemy_fort, eliminate_all,
+    max_turns_draw)."""
+    s = _session()
+    out = call_tool(s, Team.BLUE, "get_tactical_summary", {})
+    assert "win_progress" in out
+    progress = out["win_progress"]
+    assert isinstance(progress, list)
+    # Default conditions yield three lines (one per built-in rule).
+    joined = " | ".join(progress)
+    assert "Eliminate all enemies" in joined
+    assert "Turn cap" in joined or "draw" in joined
+    # Seize-fort condition should fire on a scenario with a red fort.
+    # 01_tiny_skirmish has both blue and red forts.
+    assert "Seize" in joined or "fort" in joined
+
+
+def test_win_progress_protect_unit_perspective_flips_per_viewer():
+    """A protect_unit condition reads as 'PROTECT your VIP' for the
+    owning team and 'KILL enemy VIP' for the opponent. Same condition,
+    two different prompts depending on viewer."""
+    from silicon_pantheon.server.engine.win_conditions.rules import ProtectUnit
+    from silicon_pantheon.server.engine.scenarios import load_scenario
+    from silicon_pantheon.server.session import new_session
+
+    state = load_scenario("01_tiny_skirmish")
+    s = new_session(state)
+    # Override conditions list to a single protect_unit rule on a
+    # known blue unit.
+    s.state._win_conditions = [
+        ProtectUnit(unit_id="u_b_knight_1", owning_team="blue"),
+    ]
+    out_blue = call_tool(s, Team.BLUE, "get_tactical_summary", {})
+    out_red = call_tool(s, Team.RED, "get_tactical_summary", {})
+    blue_progress = " | ".join(out_blue["win_progress"])
+    red_progress = " | ".join(out_red["win_progress"])
+    assert "PROTECT your VIP" in blue_progress
+    assert "KILL enemy VIP" in red_progress
 
 
 def test_tactical_summary_flags_pending_action_after_move():

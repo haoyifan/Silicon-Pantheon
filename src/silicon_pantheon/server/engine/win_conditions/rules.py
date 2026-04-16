@@ -36,6 +36,37 @@ class SeizeEnemyFort:
                 )
         return None
 
+    def describe_progress(self, state, viewer) -> str | None:
+        """Closest-own-unit-to-enemy-fort progress hint. For each
+        enemy fort, the Manhattan distance of the viewer's nearest
+        unit to that fort; plus a flag if the viewer already has a
+        unit sitting on one (about to win at end_turn)."""
+        enemy = viewer.other()
+        enemy_forts = []
+        for pos, tile in state.board.tiles.items():
+            if tile.is_fort and tile.fort_owner is enemy:
+                enemy_forts.append(pos)
+        if not enemy_forts:
+            return None
+        my_units = [u for u in state.units_of(viewer) if u.alive]
+        if not my_units:
+            return f"Seize any enemy fort to win: {len(enemy_forts)} enemy fort(s); you have no units left"
+        parts: list[str] = []
+        for fp in enemy_forts:
+            closest = min(my_units, key=lambda u: u.pos.manhattan(fp))
+            d = closest.pos.manhattan(fp)
+            if d == 0:
+                parts.append(
+                    f"({fp.x},{fp.y}): {closest.id} IS ON IT — "
+                    "end_turn here WINS"
+                )
+            else:
+                parts.append(
+                    f"({fp.x},{fp.y}): closest is {closest.id} at "
+                    f"({closest.pos.x},{closest.pos.y}), {d} tile(s) away"
+                )
+        return "Seize any enemy fort to win: " + "; ".join(parts)
+
 
 @register("eliminate_all_enemy_units")
 @dataclass
@@ -52,6 +83,15 @@ class EliminateAllEnemyUnits:
             return WinResult(winner=winner.value, reason="elimination")
         return None
 
+    def describe_progress(self, state, viewer) -> str | None:
+        enemy = viewer.other()
+        enemy_alive = sum(1 for u in state.units_of(enemy) if u.alive)
+        my_alive = sum(1 for u in state.units_of(viewer) if u.alive)
+        return (
+            f"Eliminate all enemies to win: {enemy_alive} enemy "
+            f"unit(s) still alive; you have {my_alive}"
+        )
+
 
 @register("max_turns_draw")
 @dataclass
@@ -66,6 +106,14 @@ class MaxTurnsDraw:
         if state.turn > cap:
             return WinResult(winner=None, reason="max_turns")
         return None
+
+    def describe_progress(self, state, viewer) -> str | None:
+        cap = self.turns if self.turns is not None else state.max_turns
+        remaining = max(0, cap - state.turn + 1)
+        return (
+            f"Turn cap: {remaining} turn(s) remain before draw "
+            f"(turn {state.turn} of {cap})"
+        )
 
 
 @register("protect_unit")
@@ -99,6 +147,31 @@ class ProtectUnit:
             details={"dead_unit": self.unit_id},
         )
 
+    def describe_progress(self, state, viewer) -> str | None:
+        u = state.units.get(self.unit_id)
+        viewer_is_protector = viewer.value == self.owning_team
+        if u is not None and u.alive:
+            hp_frac = f"HP {u.hp}/{u.stats.hp_max}"
+            pos = f"at ({u.pos.x},{u.pos.y})"
+            if viewer_is_protector:
+                return (
+                    f"PROTECT your VIP {self.unit_id} ({hp_frac}, "
+                    f"{pos}): if it dies you lose immediately"
+                )
+            return (
+                f"KILL enemy VIP {self.unit_id} ({hp_frac}, {pos}): "
+                f"killing it wins the match"
+            )
+        # VIP not in live units. Distinguish "died this match" from
+        # "never existed (typo'd unit_id in the scenario YAML)" — the
+        # latter is silent because there's no game-state signal to
+        # report.
+        if self.unit_id not in getattr(state, "dead_unit_ids", set()):
+            return None
+        if viewer_is_protector:
+            return f"Your VIP {self.unit_id} is DEAD — you will lose at end_turn"
+        return f"Enemy VIP {self.unit_id} is DEAD — you win at end_turn"
+
 
 @register("reach_tile")
 @dataclass
@@ -129,6 +202,37 @@ class ReachTile:
                     },
                 )
         return None
+
+    def describe_progress(self, state, viewer) -> str | None:
+        if self.pos is None:
+            return None
+        target = Pos(int(self.pos["x"]), int(self.pos["y"]))
+        is_mine = viewer.value == self.team
+        eligible = [u for u in state.units_of(Team(self.team)) if u.alive]
+        if self.unit_id is not None:
+            eligible = [u for u in eligible if u.id == self.unit_id]
+        if not eligible:
+            if is_mine:
+                return (
+                    f"Reach ({target.x},{target.y}) with your "
+                    f"{'team' if self.unit_id is None else self.unit_id} "
+                    "to win: no eligible unit alive"
+                )
+            return (
+                f"Opponent wins if their "
+                f"{'team' if self.unit_id is None else self.unit_id} "
+                f"reaches ({target.x},{target.y}): no eligible unit alive"
+            )
+        closest = min(eligible, key=lambda u: u.pos.manhattan(target))
+        d = closest.pos.manhattan(target)
+        who = "your" if is_mine else f"{self.team}'s"
+        win_verb = "to win" if is_mine else "and that team wins"
+        return (
+            f"Reach ({target.x},{target.y}) with {who} "
+            f"{'units' if self.unit_id is None else self.unit_id} "
+            f"{win_verb}: closest is {closest.id} at "
+            f"({closest.pos.x},{closest.pos.y}), {d} tile(s) away"
+        )
 
 
 @register("hold_tile")
@@ -165,6 +269,28 @@ class HoldTile:
             )
         return None
 
+    def describe_progress(self, state, viewer) -> str | None:
+        if self.pos is None:
+            return None
+        target = Pos(int(self.pos["x"]), int(self.pos["y"]))
+        is_mine = viewer.value == self.team
+        occupant = state.unit_at(target)
+        held_by_right_team = (
+            occupant is not None and occupant.owner is Team(self.team)
+        )
+        who = "your" if is_mine else f"{self.team}'s"
+        win_verb = "to win" if is_mine else "(opponent wins)"
+        status = (
+            f"held {self._count}/{self.consecutive_turns} consecutive end_turn(s)"
+            if held_by_right_team
+            else f"currently NOT held (counter reset, needs {self.consecutive_turns} in a row)"
+        )
+        return (
+            f"Hold ({target.x},{target.y}) with {who} units for "
+            f"{self.consecutive_turns} consecutive end_turns {win_verb}: "
+            f"{status}"
+        )
+
 
 @register("reach_goal_line")
 @dataclass
@@ -191,6 +317,24 @@ class ReachGoalLine:
                     },
                 )
         return None
+
+    def describe_progress(self, state, viewer) -> str | None:
+        is_mine = viewer.value == self.team
+        eligible = [u for u in state.units_of(Team(self.team)) if u.alive]
+        if not eligible:
+            return None
+        def _dist(u):
+            coord = u.pos.x if self.axis == "x" else u.pos.y
+            return abs(coord - self.value)
+        closest = min(eligible, key=_dist)
+        d = _dist(closest)
+        who = "your" if is_mine else f"{self.team}'s"
+        win_verb = "to win" if is_mine else "and that team wins"
+        return (
+            f"Cross {self.axis}={self.value} with any {who} unit "
+            f"{win_verb}: closest is {closest.id} at "
+            f"({closest.pos.x},{closest.pos.y}), {d} tile(s) away"
+        )
 
 
 @register("plugin")
@@ -223,4 +367,29 @@ class PluginRule:
             winner=result.get("winner"),
             reason=str(result.get("reason", "plugin")),
             details=result.get("details"),
+        )
+
+    def describe_progress(self, state, viewer) -> str | None:
+        """If the plugin module exposes a companion describe function
+        (name = check_fn + "_describe"), call it and use its string.
+        Otherwise return a generic fallback so the agent at least
+        knows a custom rule is in play."""
+        ns = getattr(state, "_plugin_namespace", {}) or {}
+        describe_name = self.check_fn + "_describe"
+        fn = ns.get(describe_name)
+        if callable(fn):
+            try:
+                out = fn(state, viewer, **(self.kwargs or {}))
+                if isinstance(out, str) and out.strip():
+                    return out.strip()
+            except Exception:
+                import logging as _logging
+                _logging.getLogger("silicon.engine").exception(
+                    "plugin describe_progress %r raised; omitting hint",
+                    describe_name,
+                )
+                return None
+        return (
+            f"(custom plugin win rule `{self.check_fn}` in play — "
+            "see scenario rules for details)"
         )
