@@ -545,8 +545,13 @@ def _read_key_blocking() -> str:
                     return "left"
                 # Function keys. SS3 form: ESC O P/Q/R/S = F1-F4.
                 # CSI form: ESC [ 11~ ... 15~ = F1-F5; 17~..21~ = F6-F10.
-                if c1 == "O" and final == "Q":
-                    return "f2"
+                # Most modern terminals (xterm, iTerm2, Terminal.app,
+                # tmux in default mode) send F1-F4 via SS3, not CSI —
+                # missing any of these here means the key falls through
+                # to "esc". F3's SS3 form was the one the in-game
+                # scenario-overlay couldn't open from.
+                if c1 == "O" and final in ("P", "Q", "R", "S"):
+                    return {"P": "f1", "Q": "f2", "R": "f3", "S": "f4"}[final]
                 if c1 == "[" and final == "~":
                     # Bracketed-paste: terminals wrap clipboard paste
                     # with ESC[200~ ... ESC[201~ when we enable mode
