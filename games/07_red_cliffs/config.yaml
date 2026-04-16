@@ -287,6 +287,9 @@ rules:
 win_conditions:
   - {type: protect_unit, unit_id: u_r_cao_cao_1, owning_team: red}
   - {type: eliminate_all_enemy_units}
+  # Cao Cao survives the turn cap → Wei withdraws successfully.
+  # Red wins (the Shu-Wu alliance failed to kill Cao Cao).
+  - {type: protect_unit_survives, unit_id: u_r_cao_cao_1, owning_team: red}
   - {type: max_turns_draw}
 
 plugin_hooks:

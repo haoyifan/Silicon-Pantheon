@@ -243,6 +243,9 @@ win_conditions:
   # historical outcome; Rome's is to break the Carthaginian line
   # before the flanks close.
   - {type: eliminate_all_enemy_units}
+  # Varro survives the turn cap → Rome held off Hannibal's
+  # encirclement. Blue wins.
+  - {type: protect_unit_survives, unit_id: u_b_varro_1, owning_team: blue}
   - {type: max_turns_draw}
 
 narrative:

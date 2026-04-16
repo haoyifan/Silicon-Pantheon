@@ -243,6 +243,8 @@ win_conditions:
   - {type: hold_tile, team: blue, pos: {x: 6, y: 4}, consecutive_turns: 6}
   # Or by elimination either way.
   - {type: eliminate_all_enemy_units}
+  # Wallace survives the turn cap → Scots hold the bridge. Blue wins.
+  - {type: protect_unit_survives, unit_id: u_b_wallace_1, owning_team: blue}
   - {type: max_turns_draw}
 
 narrative:

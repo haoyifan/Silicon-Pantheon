@@ -221,9 +221,9 @@ win_conditions:
   - {type: reach_goal_line, team: red, axis: x, value: 1}
   # Either side wins by wiping the other out.
   - {type: eliminate_all_enemy_units}
-  # Leonidas survives turn 25 → Greeks have bought enough time for
-  # the rest of Greece to prepare. Draw counts as a blue victory
-  # in the narrative; the engine records it as a draw.
+  # Leonidas survives the turn cap → Greeks bought enough time for
+  # the rest of Greece to prepare. Blue wins.
+  - {type: protect_unit_survives, unit_id: u_b_leonidas_1, owning_team: blue}
   - {type: max_turns_draw}
 
 narrative:
