@@ -73,6 +73,71 @@ def test_system_prompt_carries_scenario_specific_context():
     assert "describe_class" in sp
 
 
+def test_system_prompt_teaches_batching_contract():
+    """The Tool call batching rule is load-bearing — without it the
+    model won't understand why its parallel mutations are dropped.
+    A future refactor could accidentally lose the section. Pin it."""
+    sp = build_system_prompt(
+        team=Team.BLUE, max_turns=20, strategy=None, lessons=None,
+        scenario_description=_fake_bundle(),
+    )
+    assert "Tool call batching rule" in sp
+    # Both halves of the contract must be present.
+    assert "Unlimited READ calls" in sp
+    assert "ONE mutating call" in sp
+    # Canonical mutation list must be named — if a new mutation is
+    # added to GAME_TOOLS, the prompt here should also list it or
+    # the model won't know it's capped.
+    for tool in ("move", "attack", "heal", "wait", "end_turn"):
+        assert f"`{tool}`" in sp, f"{tool} missing from batching rule"
+
+
+def test_how_to_pace_section_is_merged_not_duplicated():
+    """Regression: we used to have a separate 'How to pace your turn'
+    section that said much the same thing as the batching rule. Two
+    adjacent sections teaching the same rule with different examples
+    is confusing. If that heading comes back, something regressed."""
+    sp = build_system_prompt(
+        team=Team.BLUE, max_turns=20, strategy=None, lessons=None,
+        scenario_description=_fake_bundle(),
+    )
+    assert "How to pace your turn" not in sp
+
+
+def test_get_coach_messages_cued_to_turn_start_prompt():
+    """Step 1 should tie `get_coach_messages` to the specific
+    start-of-turn user message, not a generic 'start of your turn'
+    which a literal-minded model might re-interpret on retries."""
+    sp = build_system_prompt(
+        team=Team.BLUE, max_turns=20, strategy=None, lessons=None,
+        scenario_description=_fake_bundle(),
+    )
+    # The "It is turn N..." trigger must be explicit.
+    assert "It is turn N" in sp
+    # And the anti-cue on continuation/retry messages must be
+    # explicit so the model doesn't re-drain coach messages on
+    # every retry.
+    assert "CONTINUATION" in sp or "continuation" in sp
+
+
+def test_turn_prompt_mismatch_warning_prepends_when_not_my_turn():
+    """Defensive: if build_turn_prompt_from_state_dict is called
+    with a state that says active_player != viewer (e.g. a stale
+    poll), we prepend a warning block so the model doesn't emit
+    mutations that'd get rejected with 'not_your_turn' errors."""
+    state = {
+        "turn": 4,
+        "active_player": "red",  # stale — blue shouldn't act
+        "you": "blue",
+        "board": {"width": 4, "height": 4, "forts": []},
+        "units": [],
+        "last_action": None,
+    }
+    p = build_turn_prompt_from_state_dict(state, Team.BLUE, is_first_turn=False)
+    assert "WARNING" in p
+    assert "active_player does not match" in p
+
+
 def test_system_prompt_survives_empty_scenario_bundle():
     """If describe_scenario failed, the system prompt should still
     render without blowing up — we don't want a prompt error to

@@ -83,43 +83,41 @@ history but they can't be moved, attacked, healed, or countered.
 
 ## How to play
 
-1. Call `get_coach_messages` at the start of your turn — a human coach may have
-   left strategic advice.
-2. The per-turn user message you're about to receive contains only **dynamic
-   state** (turn number, unit positions, HP, status, last action). Everything
-   else — class stats, terrain effects, win conditions — is in this system
-   prompt above. You do not need to call `get_state` unless something changed
-   unexpectedly (e.g. a plugin mutated the board).
+1. When you see a user message that begins with "It is turn N and it is
+   your (…) turn to play", call `get_coach_messages` FIRST to drain any
+   strategic advice from your human coach. Only call this on a real
+   start-of-turn prompt — do NOT re-call it on continuation messages
+   (those begin with "You did NOT call end_turn" or "CONTINUATION").
+2. The per-turn user message you're about to receive contains only
+   **dynamic state** (turn number, unit positions, HP, status, last
+   action). Class stats, terrain effects, and win conditions are in
+   this system prompt above. You do not need to call `get_state`
+   unless something changed unexpectedly (e.g. a plugin mutated the
+   board).
 3. For each ready unit, decide what to do:
-   - `get_legal_actions(unit_id)` shows moves / attacks / heals available.
-     Requires it to be your turn and the unit to be yours. **Call this
-     whenever you are unsure where a unit can go or whom it can hit.**
-     Do NOT reason about reachability by hand — the server's BFS knows
-     about terrain costs (e.g. mud cost 3, forest cost 1), friendly
-     units blocking tiles, edge-of-board, impassable tiles, and unit-
-     specific move budgets. Computing this in your head is tedious
-     and a frequent source of "all my units are stuck" mistakes.
-     Friendly units block their own tile, but the BFS routes AROUND
-     them — a unit boxed in by friendlies on its 4 immediate neighbours
-     can still have legal moves further out, as long as a path within
-     its move budget exists.
-   - `simulate_attack(attacker_id, target_id, from_tile?)` PREDICTS the
-     outcome but does NOT change the board. Its response is clearly
-     marked (`kind: "prediction"`, `predicted_*` fields). If you want
-     the damage to actually happen you MUST follow it with `attack`.
-     Never reason as if a simulation already killed the target.
-     Pass `from_tile` to preview from a hypothetical post-move
-     position.
-   - `move(unit_id, dest)` then `attack(unit_id, target_id)` / `heal(...)` /
-     `wait(unit_id)`, or skip the move and act directly from `ready`, or
-     just `wait` if the unit has nothing useful to do.
-   - `heal` requires a unit with `can_heal: true` in its class spec (not
-     just "mage" — any can_heal class). Target must be an adjacent
+   - `get_legal_actions(unit_id)` shows moves / attacks / heals available
+     for one of your units. **Call this whenever you're unsure where a
+     unit can go or whom it can hit; do not reason about reachability
+     by hand.** (The server runs BFS over the board with exact terrain
+     costs, friendly blocking, and impassable tiles; reproducing that
+     in your head is a frequent source of "all my units are stuck"
+     errors. Friendly units block their own tile but the BFS routes
+     around them.)
+   - `simulate_attack(attacker_id, target_id, from_tile?)` PREDICTS
+     the outcome — `kind: "prediction"`, `predicted_*` fields — but
+     does NOT change the board. To actually deal the damage you MUST
+     follow up with `attack`. Pass `from_tile` to preview from a
+     hypothetical post-move position.
+   - `move(unit_id, dest)` then `attack(unit_id, target_id)` /
+     `heal(...)` / `wait(unit_id)`, or skip the move and act directly
+     from `ready`, or just `wait` if the unit has nothing useful to do.
+   - `heal` requires a unit with `can_heal: true` in its class spec
+     (not just "mage" — any can_heal class). Target must be an adjacent
      (Manhattan distance 1) friendly unit that is not the healer itself.
 4. Before you call `end_turn`, every unit with status `moved` must have
-   acted (attack/heal/wait). A unit that only moved and then you try to
-   end the turn will reject the end_turn with an "moved but has not acted"
-   error — send `wait(unit_id)` on it if you want it to hold.
+   acted (attack/heal/wait). A `moved` unit left hanging will make
+   `end_turn` reject with "moved but has not acted" — send
+   `wait(unit_id)` on it if you want it to hold.
 5. When all desired units have acted, call `end_turn`. **You MUST call
    `end_turn`** — the game will not advance otherwise.
 
@@ -138,60 +136,40 @@ it belongs to.
 The client enforces this contract on every assistant message:
 
   - **Unlimited READ calls per message.** You can batch as many of
-    these as you like in one response:
-    `get_state`, `get_unit`, `get_legal_actions`, `simulate_attack`,
-    `get_threat_map`, `get_history`, `get_coach_messages`,
-    `describe_class`. Ask 10 things at once, get 10 answers back.
+    these as you like in one response: `get_state`, `get_unit`,
+    `get_legal_actions`, `simulate_attack`, `get_threat_map`,
+    `get_history`, `get_coach_messages`, `describe_class`. Ask 10
+    things at once, get 10 answers back.
 
   - **At most ONE mutating call per message.** Only the FIRST of these
-    will execute per response; any subsequent ones are DROPPED with a
+    runs per response; any subsequent ones are DROPPED with a
     `dropped_parallel_mutation` error and the game state does NOT
-    change for those dropped calls:
-    `move`, `attack`, `heal`, `wait`, `end_turn`.
+    change for those dropped calls: `move`, `attack`, `heal`, `wait`,
+    `end_turn`.
 
-This mirrors how a human plays: observe broadly, then take one
-concrete action, then observe the result.
+This mirrors how a human plays: observe broadly, commit to one
+action, observe the result, repeat. There is NO limit on how many
+rounds of messages you may use in a turn — take as many
+observe-act-observe rounds as you need.
 
 Good pattern:
   message 1: `get_coach_messages`, `get_legal_actions(u1)`,
              `get_legal_actions(u2)`, `simulate_attack(u1, e3)`
-  message 2: `attack(u1, e3)`     ← ONE mutation based on above
-  message 3: `get_state`, `get_legal_actions(u2)` ← re-observe after the attack
-  message 4: `move(u2, dest)`     ← ONE mutation again
+  message 2: `attack(u1, e3)`       ← ONE mutation based on above
+  message 3: `get_state`, `get_legal_actions(u2)` ← observe after
+  message 4: `move(u2, dest)`       ← ONE mutation again
   ...
   final:     `end_turn`
 
 Bad pattern (most of these mutations will be dropped):
   message 1: `move(u1)`, `wait(u1)`, `move(u2)`, `wait(u2)`,
              `move(u3)`, `wait(u3)`, `end_turn`
-  → only the first `move(u1)` runs. Everything else is dropped.
+  → only the first `move(u1)` runs. Everything else is dropped
+    and the game state reflects none of it.
 
-## How to pace your turn
-
-You are NOT required to plan and emit your entire turn as a single batch
-of tool calls. The opposite is preferred: think in short rounds. After
-each round of tool calls you'll receive their results, then decide the
-next round. There's no penalty for taking many small rounds — only for
-emitting a giant batch you can't react to.
-
-A healthy pattern is:
-  round 1: `get_coach_messages`, then `get_legal_actions(unit_id)` for the
-           unit you're considering moving.
-  round 2: based on what came back, `move(...)` then
-           `simulate_attack(...)` if a target is now in range.
-  round 3: based on the simulate_attack result, `attack(...)` or `wait(...)`
-           on that unit.
-  ...repeat for each unit you want to act this turn.
-  final round: `end_turn`.
-
-Avoid emitting a long sequence like `[move, wait, move, wait, ..., end_turn]`
-in one assistant message — when one of those calls fails (e.g. the
-destination wasn't actually legal), you can't react and the rest of
-the batch goes to waste. One unit at a time, observe, then decide.
-
-When the turn really is finished, call `end_turn`. Do not keep issuing
-tool calls after `end_turn` succeeds — the next user message will tell
-you when it's your turn again."""
+When the turn is truly finished, call `end_turn`. Do NOT keep
+issuing tool calls after `end_turn` succeeds — the next user
+message will tell you when it's your turn again."""
 
 
 STRATEGY_SECTION_TEMPLATE = """## Your coach's strategy playbook
