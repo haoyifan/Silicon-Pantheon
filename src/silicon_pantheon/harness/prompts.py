@@ -445,26 +445,38 @@ def build_system_prompt(
     )
 
 
-TURN_PROMPT_TEMPLATE_BOOTSTRAP = """It is turn {turn} and it is your ({team}) turn to play.
+_NO_CONSTRAINT_REMINDER = (
+    "Reason as fully as you need. There are no token / time penalties "
+    "for thinking — you have a 30-minute wall clock per turn. Do NOT "
+    "default to mass `wait` + `end_turn` to 'preserve tokens'; that's "
+    "a learned shortcut that does not apply here. Plan completely, then act."
+)
+
+
+TURN_PROMPT_TEMPLATE_BOOTSTRAP = f"""It is turn {{turn}} and it is your ({{team}}) turn to play.
+
+{_NO_CONSTRAINT_REMINDER}
 
 This is your first turn, so here is the full state snapshot. Subsequent
 turns will only include what changed (opponent actions, your unit
 status) — call `get_state` any time you need the full picture.
 
 ```json
-{state_json}
+{{state_json}}
 ```
 
-{tactical_section}\
+{{tactical_section}}\
 Play your turn. Remember to call end_turn at the end."""
 
 
-TURN_PROMPT_TEMPLATE_DELTA = """It is turn {turn} of {max_turns} and it is your ({team}) turn to play. \
-({turns_remaining} turn(s) remaining, including this one, before the turn cap.)
+TURN_PROMPT_TEMPLATE_DELTA = f"""It is turn {{turn}} of {{max_turns}} and it is your ({{team}}) turn to play. \
+({{turns_remaining}} turn(s) remaining, including this one, before the turn cap.)
 
-{opponent_actions_section}\
-{your_units_section}\
-{tactical_section}\
+{_NO_CONSTRAINT_REMINDER}
+
+{{opponent_actions_section}}\
+{{your_units_section}}\
+{{tactical_section}}\
 Call `get_state` if you need the full board / enemy positions /
 fog-of-war map. Remember to call `end_turn` at the end."""
 
@@ -482,17 +494,19 @@ fog-of-war map. Remember to call `end_turn` at the end."""
 # fresh turn and restarted its "step 1: call get_coach_messages"
 # routine. This template explicitly frames the retry as a continuation
 # so the model picks up where it left off instead of starting over.
-TURN_PROMPT_TEMPLATE_RETRY = """You did NOT call `end_turn` on turn \
-{turn} before your last response ended. This is a CONTINUATION of \
-the SAME turn {turn} — it has NOT restarted. Do NOT re-plan from \
+TURN_PROMPT_TEMPLATE_RETRY = f"""You did NOT call `end_turn` on turn \
+{{turn}} before your last response ended. This is a CONTINUATION of \
+the SAME turn {{turn}} — it has NOT restarted. Do NOT re-plan from \
 scratch.
+
+{_NO_CONSTRAINT_REMINDER}
 
 Your own tool-call history in this conversation shows which actions \
 you already took. Look at it, identify the units that still need to \
 act, finish them, and call `end_turn` to pass control to the opponent.
 
-{your_units_section}\
-{tactical_section}"""
+{{your_units_section}}\
+{{tactical_section}}"""
 
 
 _TURN_PROMPT_MISMATCH_WARNING = """\
@@ -624,11 +638,7 @@ def _build_tactical_section(summary: dict | None) -> str:
         lines.append("📢 Coach messages (read these FIRST — they may override your default plan):")
         for m in coach:
             text = (m.get("text") or "").strip().replace("\n", " ")
-            turn = m.get("turn")
-            if turn is not None:
-                lines.append(f"  - (sent turn {turn}) {text}")
-            else:
-                lines.append(f"  - {text}")
+            lines.append(f"  - {text}")
         lines.append("")  # spacer before opps
     if opps:
         lines.append("Opportunities this turn (attacks you can execute from current positions):")

@@ -363,6 +363,30 @@ def test_delta_prompt_renders_win_progress_block():
     assert "Turn cap" in p
 
 
+def test_no_constraint_reminder_appears_in_every_turn_prompt():
+    """All three turn templates (bootstrap, delta, retry) must carry
+    the 'no token/time penalty' reminder near the top, where Haiku-
+    class models will see it before falling into their 'preserve
+    tokens, mass-wait, end_turn' shortcut pattern."""
+    state = {
+        "turn": 5, "active_player": "blue", "you": "blue",
+        "max_turns": 20,
+        "turn_clock": {"turns_remaining": 16, "max_turns": 20},
+        "board": {"width": 5, "height": 5, "forts": []},
+        "units": [{"id": "u_b_k1", "owner": "blue", "class": "k",
+                   "pos": {"x": 0, "y": 0}, "hp": 10, "hp_max": 10,
+                   "status": "ready", "alive": True}],
+        "last_action": None,
+    }
+    bootstrap = build_turn_prompt_from_state_dict(state, Team.BLUE, is_first_turn=True)
+    delta = build_turn_prompt_from_state_dict(state, Team.BLUE, is_first_turn=False)
+    retry = build_turn_prompt_from_state_dict(state, Team.BLUE, retry_n=1)
+    expected = "no token / time penalties for thinking"
+    assert expected in bootstrap, "bootstrap missing no-constraint reminder"
+    assert expected in delta, "delta missing no-constraint reminder"
+    assert expected in retry, "retry missing no-constraint reminder"
+
+
 def test_delta_prompt_renders_coach_messages_at_top():
     """Coach messages must appear at the top of the tactical
     section so they're impossible to miss — they're human-authored
