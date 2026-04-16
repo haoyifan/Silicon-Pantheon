@@ -263,6 +263,16 @@ def get_tactical_summary(session: Session, viewer: Team) -> dict:
 
     pending = [u.id for u in my_units if u.status is UnitStatus.MOVED]
 
+    # Drain unread coach messages for this viewer. Auto-delivery in
+    # this digest replaces the old `get_coach_messages` tool — agents
+    # were missing coach advice because they only polled the tool
+    # once per session (Haiku's "checked once, no need to check
+    # again" pattern). Now the messages are shipped proactively in
+    # the same response the agent fetches every turn-start.
+    coach_queue = session.coach_queues.get(viewer, [])
+    coach_messages = [{"turn": m.turn, "text": m.text} for m in coach_queue]
+    session.coach_queues[viewer] = []
+
     # Win-condition progress: one line per condition, describing
     # where the viewer stands on the scoreboard. Lets the model
     # reason about "am I winning" without enumerating conditions
@@ -293,6 +303,7 @@ def get_tactical_summary(session: Session, viewer: Team) -> dict:
         "threats": threats,
         "pending_action": pending,
         "win_progress": win_progress,
+        "coach_messages": coach_messages,
     }
 
 
@@ -304,14 +315,6 @@ def get_history(session: Session, viewer: Team, last_n: int = 10) -> dict:
         "turn": session.state.turn,
         "active_player": session.state.active_player.value,
     }
-
-
-def get_coach_messages(session: Session, viewer: Team, since_turn: int = 0) -> dict:
-    queue = session.coach_queues[viewer]
-    msgs = [{"turn": m.turn, "text": m.text} for m in queue if m.turn >= since_turn]
-    # Clear once read.
-    session.coach_queues[viewer] = []
-    return {"messages": msgs}
 
 
 # ---- write tools ----
@@ -672,15 +675,6 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "input_schema": {
             "type": "object",
             "properties": {"last_n": {"type": "integer", "default": 10}},
-            "required": [],
-        },
-    },
-    "get_coach_messages": {
-        "fn": get_coach_messages,
-        "description": "Retrieve unread coach messages for your team. Drains the queue on read.",
-        "input_schema": {
-            "type": "object",
-            "properties": {"since_turn": {"type": "integer", "default": 0}},
             "required": [],
         },
     },

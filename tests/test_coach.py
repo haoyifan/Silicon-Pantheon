@@ -26,9 +26,11 @@ def test_file_watcher_pushes_new_lines(tmp_path: Path):
     msgs = watcher.poll(session)
     assert msgs == ["push the knight forward"]
 
-    # Blue agent retrieves via tool
-    out = call_tool(session, Team.BLUE, "get_coach_messages", {})
-    assert [m["text"] for m in out["messages"]] == ["push the knight forward"]
+    # Blue agent retrieves via the auto-delivered coach_messages
+    # field on get_tactical_summary (the dedicated get_coach_messages
+    # tool was removed in favor of proactive delivery).
+    out = call_tool(session, Team.BLUE, "get_tactical_summary", {})
+    assert [m["text"] for m in out["coach_messages"]] == ["push the knight forward"]
 
 
 def test_file_watcher_handles_multiple_appends(tmp_path: Path):

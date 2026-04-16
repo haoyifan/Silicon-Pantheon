@@ -83,17 +83,16 @@ history but they can't be moved, attacked, healed, or countered.
 
 ## How to play
 
-1. When you see a user message that begins with "It is turn N and it is
-   your (…) turn to play", call `get_coach_messages` FIRST to drain any
-   strategic advice from your human coach. Only call this on a real
-   start-of-turn prompt — do NOT re-call it on continuation messages
-   (those begin with "You did NOT call end_turn" or "CONTINUATION").
-2. The per-turn user message you're about to receive contains only
-   **dynamic state** (turn number, unit positions, HP, status, last
-   action). Class stats, terrain effects, and win conditions are in
-   this system prompt above. You do not need to call `get_state`
-   unless something changed unexpectedly (e.g. a plugin mutated the
-   board).
+1. The per-turn user message you receive at turn-start automatically
+   includes any strategic advice your human coach left for you (under
+   a "📢 Coach messages" section, when present). Read it FIRST — it
+   often supersedes your default playbook. You do NOT need to poll
+   for coach messages; they are delivered proactively each turn.
+2. The per-turn user message contains only **dynamic state** (turn
+   number, unit positions, HP, status, last action). Class stats,
+   terrain effects, and win conditions are in this system prompt
+   above. You do not need to call `get_state` unless something
+   changed unexpectedly (e.g. a plugin mutated the board).
 3. For each ready unit, decide what to do:
    - `get_legal_actions(unit_id)` shows moves / attacks / heals available
      for one of your units. **Call this whenever you're unsure where a
@@ -138,8 +137,8 @@ The client enforces this contract on every assistant message:
   - **Unlimited READ calls per message.** You can batch as many of
     these as you like in one response: `get_state`, `get_unit`,
     `get_legal_actions`, `simulate_attack`, `get_threat_map`,
-    `get_tactical_summary`, `get_history`, `get_coach_messages`,
-    `describe_class`. Ask 10 things at once, get 10 answers back.
+    `get_tactical_summary`, `get_history`, `describe_class`.
+    Ask 10 things at once, get 10 answers back.
 
   - **At most ONE mutating call per message.** Only the FIRST of these
     runs per response; any subsequent ones are DROPPED with a
@@ -153,8 +152,8 @@ rounds of messages you may use in a turn — take as many
 observe-act-observe rounds as you need.
 
 Good pattern:
-  message 1: `get_coach_messages`, `get_legal_actions(u1)`,
-             `get_legal_actions(u2)`, `simulate_attack(u1, e3)`
+  message 1: `get_legal_actions(u1)`, `get_legal_actions(u2)`,
+             `simulate_attack(u1, e3)`
   message 2: `attack(u1, e3)`       ← ONE mutation based on above
   message 3: `get_state`, `get_legal_actions(u2)` ← observe after
   message 4: `move(u2, dest)`       ← ONE mutation again
@@ -456,6 +455,7 @@ status) — call `get_state` any time you need the full picture.
 {state_json}
 ```
 
+{tactical_section}\
 Play your turn. Remember to call end_turn at the end."""
 
 
@@ -484,15 +484,15 @@ fog-of-war map. Remember to call `end_turn` at the end."""
 # so the model picks up where it left off instead of starting over.
 TURN_PROMPT_TEMPLATE_RETRY = """You did NOT call `end_turn` on turn \
 {turn} before your last response ended. This is a CONTINUATION of \
-the SAME turn {turn} — it has NOT restarted. Do NOT call \
-`get_coach_messages` again (you already drained them at the start \
-of this turn), do NOT re-plan from scratch.
+the SAME turn {turn} — it has NOT restarted. Do NOT re-plan from \
+scratch.
 
 Your own tool-call history in this conversation shows which actions \
 you already took. Look at it, identify the units that still need to \
 act, finish them, and call `end_turn` to pass control to the opponent.
 
-{your_units_section}"""
+{your_units_section}\
+{tactical_section}"""
 
 
 _TURN_PROMPT_MISMATCH_WARNING = """\
@@ -612,9 +612,24 @@ def _build_tactical_section(summary: dict | None) -> str:
     threats = summary.get("threats") or []
     pending = summary.get("pending_action") or []
     win_progress = summary.get("win_progress") or []
-    if not (opps or threats or pending or win_progress):
+    coach = summary.get("coach_messages") or []
+    if not (opps or threats or pending or win_progress or coach):
         return ""
     lines: list[str] = []
+    # Coach messages first — they're human-authored strategic
+    # overrides and the agent should weigh them above the algorithmic
+    # hints. Each is one entry from the team's coach queue, drained
+    # by get_tactical_summary on this call.
+    if coach:
+        lines.append("📢 Coach messages (read these FIRST — they may override your default plan):")
+        for m in coach:
+            text = (m.get("text") or "").strip().replace("\n", " ")
+            turn = m.get("turn")
+            if turn is not None:
+                lines.append(f"  - (sent turn {turn}) {text}")
+            else:
+                lines.append(f"  - {text}")
+        lines.append("")  # spacer before opps
     if opps:
         lines.append("Opportunities this turn (attacks you can execute from current positions):")
         for o in opps:
@@ -744,6 +759,7 @@ def build_turn_prompt_from_state_dict(
         prompt = TURN_PROMPT_TEMPLATE_RETRY.format(
             turn=state_dict.get("turn", "?"),
             your_units_section=_build_own_units_section(state_dict, team),
+            tactical_section=_build_tactical_section(tactical_summary),
         )
         active = state_dict.get("active_player")
         if active is not None and active != team:
@@ -771,6 +787,7 @@ def build_turn_prompt_from_state_dict(
             turn=state_dict.get("turn", "?"),
             team=team,
             state_json=json.dumps(snapshot, indent=2),
+            tactical_section=_build_tactical_section(tactical_summary),
         )
     else:
         events = new_history or []

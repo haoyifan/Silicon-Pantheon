@@ -104,20 +104,23 @@ def test_how_to_pace_section_is_merged_not_duplicated():
     assert "How to pace your turn" not in sp
 
 
-def test_get_coach_messages_cued_to_turn_start_prompt():
-    """Step 1 should tie `get_coach_messages` to the specific
-    start-of-turn user message, not a generic 'start of your turn'
-    which a literal-minded model might re-interpret on retries."""
+def test_coach_messages_auto_delivered_per_system_prompt():
+    """The system prompt must tell the model coach messages arrive
+    automatically in the per-turn prompt — no polling required.
+    Otherwise the model wastes a tool call per turn (or worse,
+    forgets to poll and silently misses messages, which is what
+    grok-3-mini and Haiku both did before this fix)."""
     sp = build_system_prompt(
         team=Team.BLUE, max_turns=20, strategy=None, lessons=None,
         scenario_description=_fake_bundle(),
     )
-    # The "It is turn N..." trigger must be explicit.
-    assert "It is turn N" in sp
-    # And the anti-cue on continuation/retry messages must be
-    # explicit so the model doesn't re-drain coach messages on
-    # every retry.
-    assert "CONTINUATION" in sp or "continuation" in sp
+    # Wording should mention auto-delivery and explicitly NOT
+    # mention the deprecated get_coach_messages tool.
+    assert "automatically" in sp.lower() or "proactively" in sp.lower()
+    assert "get_coach_messages" not in sp
+    # Coach-section header should be referenced so the model knows
+    # what to look for.
+    assert "Coach messages" in sp
 
 
 def test_turn_prompt_mismatch_warning_prepends_when_not_my_turn():
@@ -360,6 +363,50 @@ def test_delta_prompt_renders_win_progress_block():
     assert "Turn cap" in p
 
 
+def test_delta_prompt_renders_coach_messages_at_top():
+    """Coach messages must appear at the top of the tactical
+    section so they're impossible to miss — they're human-authored
+    overrides and should be read before algorithmic hints."""
+    state = {
+        "turn": 5, "active_player": "blue", "you": "blue",
+        "max_turns": 20,
+        "turn_clock": {"turns_remaining": 16, "max_turns": 20},
+        "board": {"width": 5, "height": 5, "forts": []},
+        "units": [{"id": "u_b_k1", "owner": "blue", "class": "k",
+                   "pos": {"x": 0, "y": 0}, "hp": 10, "hp_max": 10,
+                   "status": "ready", "alive": True}],
+        "last_action": None,
+    }
+    summary = {
+        "opportunities": [
+            {"attacker_id": "u_b_k1", "target_id": "u_r_k1",
+             "predicted_damage_to_defender": 5,
+             "predicted_counter_damage": 0,
+             "predicted_defender_dies": False,
+             "predicted_attacker_dies": False},
+        ],
+        "threats": [],
+        "pending_action": [],
+        "win_progress": [],
+        "coach_messages": [
+            {"turn": 4, "text": "push your knights through the center"},
+            {"turn": 5, "text": "ignore the right flank"},
+        ],
+    }
+    p = build_turn_prompt_from_state_dict(
+        state, Team.BLUE, is_first_turn=False, tactical_summary=summary,
+    )
+    # Coach header present.
+    assert "📢 Coach messages" in p
+    # Both coach lines render.
+    assert "push your knights through the center" in p
+    assert "ignore the right flank" in p
+    # Coach appears BEFORE the opportunity block (human guidance reads first).
+    coach_idx = p.index("Coach messages")
+    opp_idx = p.index("Opportunities this turn")
+    assert coach_idx < opp_idx, "coach should come before opportunities"
+
+
 def test_delta_prompt_skips_tactical_section_when_empty():
     """Quiet turns (no opps / threats / pending) shouldn't pollute
     the prompt with an empty section header — render nothing."""
@@ -410,10 +457,9 @@ def test_retry_prompt_is_continuation_not_start_of_turn():
     # Must explicitly be a continuation.
     assert "CONTINUATION" in p
     assert "turn 5" in p
-    # Must tell the model NOT to re-drain coach messages — the
-    # whole point of this prompt is to suppress that routine.
-    assert "get_coach_messages" in p
-    assert "do NOT" in p.lower() or "not" in p.lower()
+    # Must tell the model NOT to re-plan from scratch (the original
+    # bug was the model restarting at every retry).
+    assert "Do NOT re-plan" in p or "do not re-plan" in p.lower()
     # Units section still present so the model knows what's left.
     assert "u_b_h_1" in p
     assert "ready" in p

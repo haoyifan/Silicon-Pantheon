@@ -211,17 +211,21 @@ def test_simulate_attack_no_mutation():
 
 
 def test_coach_message_queue():
+    """The send_to_agent → coach_messages auto-delivery path
+    (replaces the old explicit get_coach_messages tool)."""
     s = _session()
     call_tool(s, Team.BLUE, "send_to_agent", {"team": "blue", "text": "push the knight"})
-    out = call_tool(s, Team.BLUE, "get_coach_messages", {})
-    assert len(out["messages"]) == 1
-    assert out["messages"][0]["text"] == "push the knight"
+    out = call_tool(s, Team.BLUE, "get_tactical_summary", {})
+    assert len(out["coach_messages"]) == 1
+    assert out["coach_messages"][0]["text"] == "push the knight"
     # Queue drained on read
-    out2 = call_tool(s, Team.BLUE, "get_coach_messages", {})
-    assert out2["messages"] == []
+    out2 = call_tool(s, Team.BLUE, "get_tactical_summary", {})
+    assert out2["coach_messages"] == []
 
 
 def test_registry_has_all_tools():
+    """get_coach_messages was removed — coach messages are now
+    auto-delivered via get_tactical_summary on every turn-start."""
     expected = {
         "get_state",
         "get_unit",
@@ -230,7 +234,6 @@ def test_registry_has_all_tools():
         "get_threat_map",
         "get_tactical_summary",
         "get_history",
-        "get_coach_messages",
         "move",
         "attack",
         "heal",
@@ -241,18 +244,60 @@ def test_registry_has_all_tools():
     assert expected == set(TOOL_REGISTRY.keys())
 
 
+def test_tactical_summary_drains_coach_queue():
+    """Coach messages queued for the viewer's team are delivered in
+    get_tactical_summary's response and removed from the queue (drain
+    semantics, same as the old get_coach_messages tool)."""
+    s = _session()
+    # Pre-load two messages for blue.
+    call_tool(
+        s, Team.BLUE, "send_to_agent",
+        {"team": "blue", "text": "push the right flank"},
+    )
+    call_tool(
+        s, Team.BLUE, "send_to_agent",
+        {"team": "blue", "text": "save the archer"},
+    )
+    out = call_tool(s, Team.BLUE, "get_tactical_summary", {})
+    msgs = out["coach_messages"]
+    assert len(msgs) == 2
+    assert msgs[0]["text"] == "push the right flank"
+    assert msgs[1]["text"] == "save the archer"
+    # Drained.
+    out2 = call_tool(s, Team.BLUE, "get_tactical_summary", {})
+    assert out2["coach_messages"] == []
+
+
+def test_tactical_summary_only_delivers_own_team_coach_messages():
+    """A coach message addressed to red is NOT visible to blue's
+    tactical summary, even though the same Session holds both queues."""
+    s = _session()
+    call_tool(
+        s, Team.BLUE, "send_to_agent",
+        {"team": "red", "text": "secret strategy for red"},
+    )
+    out_blue = call_tool(s, Team.BLUE, "get_tactical_summary", {})
+    assert out_blue["coach_messages"] == []
+    # Red, when active, gets the message. Force red active so we can
+    # call.
+    s.state.active_player = Team.RED
+    out_red = call_tool(s, Team.RED, "get_tactical_summary", {})
+    assert len(out_red["coach_messages"]) == 1
+    assert "secret strategy" in out_red["coach_messages"][0]["text"]
+
+
 def test_tactical_summary_shape():
-    """C1+P4: get_tactical_summary returns opportunities + threats +
-    pending_action + win_progress keys, each a list."""
+    """C1+P4+coach: get_tactical_summary returns opportunities,
+    threats, pending_action, win_progress, coach_messages."""
     s = _session()
     out = call_tool(s, Team.BLUE, "get_tactical_summary", {})
     assert set(out.keys()) == {
-        "opportunities", "threats", "pending_action", "win_progress",
+        "opportunities", "threats", "pending_action",
+        "win_progress", "coach_messages",
     }
-    assert isinstance(out["opportunities"], list)
-    assert isinstance(out["threats"], list)
-    assert isinstance(out["pending_action"], list)
-    assert isinstance(out["win_progress"], list)
+    for k in ("opportunities", "threats", "pending_action",
+              "win_progress", "coach_messages"):
+        assert isinstance(out[k], list), f"{k} should be a list"
 
 
 def test_tactical_summary_surfaces_opportunities():

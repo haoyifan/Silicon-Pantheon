@@ -399,11 +399,6 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         return _dispatch(app, connection_id, "get_history", {"last_n": last_n})
 
     @mcp.tool()
-    def get_coach_messages(connection_id: str, since_turn: int = 0) -> dict:
-        """Drain unread coach messages for your team."""
-        return _dispatch(app, connection_id, "get_coach_messages", {"since_turn": since_turn})
-
-    @mcp.tool()
     def move(connection_id: str, unit_id: str, dest: dict) -> dict:
         """Move a ready unit to a destination tile."""
         return _dispatch(app, connection_id, "move", {"unit_id": unit_id, "dest": dest})

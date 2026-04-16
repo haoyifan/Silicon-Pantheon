@@ -180,19 +180,6 @@ GAME_TOOLS: list[ToolSpec] = [
         },
     ),
     ToolSpec(
-        "get_coach_messages",
-        (
-            "Drain unread coach messages for your team. Call once at the "
-            "start of each turn — the human coach may have left strategic "
-            "advice that supersedes your playbook."
-        ),
-        {
-            "type": "object",
-            "properties": {"since_turn": {"type": "integer", "default": 0}},
-            "required": [],
-        },
-    ),
-    ToolSpec(
         "move",
         (
             "Move one of your READY units to a destination tile. "
@@ -577,23 +564,24 @@ class NetworkedAgent:
             except Exception:
                 log.exception("get_history failed; delta prompt will omit opponent actions")
 
-        # Fetch the precomputed tactical digest (opportunities +
-        # threats + pending-action) so the delta prompt can surface
-        # "what's worth doing" before the model has to call
-        # simulate_attack / get_threat_map manually. Delta turns only
-        # — turn 1 uses the bootstrap template which already ships
-        # full state; retries also skip it (continuation framing
-        # leans on the prior attempt's transcript).
+        # Fetch the precomputed tactical digest on EVERY turn entry
+        # (turn 1, deltas, retries). Two reasons:
+        #   - get_tactical_summary now drains coach messages too, and
+        #     coach messages can arrive at any time (including before
+        #     turn 1 or between retries); we must drain on each entry
+        #     so they reach the agent the very next turn-prompt.
+        #   - Cheap server call; even on bootstrap turns the
+        #     opportunities/threats/win_progress lines are useful
+        #     additions on top of the full state snapshot.
         tactical_summary: dict | None = None
-        if self._turns_played > 0 and self._no_progress_retries == 0:
-            try:
-                r = await self.client.call("get_tactical_summary")
-                if r.get("ok"):
-                    tactical_summary = r.get("result") or r
-            except Exception:
-                log.exception(
-                    "get_tactical_summary failed; delta prompt will omit tactical section"
-                )
+        try:
+            r = await self.client.call("get_tactical_summary")
+            if r.get("ok"):
+                tactical_summary = r.get("result") or r
+        except Exception:
+            log.exception(
+                "get_tactical_summary failed; turn prompt will omit tactical section"
+            )
 
         user_prompt = build_turn_prompt_from_state_dict(
             state,
