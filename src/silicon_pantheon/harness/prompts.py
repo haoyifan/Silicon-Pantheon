@@ -138,8 +138,8 @@ The client enforces this contract on every assistant message:
   - **Unlimited READ calls per message.** You can batch as many of
     these as you like in one response: `get_state`, `get_unit`,
     `get_legal_actions`, `simulate_attack`, `get_threat_map`,
-    `get_history`, `get_coach_messages`, `describe_class`. Ask 10
-    things at once, get 10 answers back.
+    `get_tactical_summary`, `get_history`, `get_coach_messages`,
+    `describe_class`. Ask 10 things at once, get 10 answers back.
 
   - **At most ONE mutating call per message.** Only the FIRST of these
     runs per response; any subsequent ones are DROPPED with a
@@ -463,6 +463,7 @@ TURN_PROMPT_TEMPLATE_DELTA = """It is turn {turn} and it is your ({team}) turn t
 
 {opponent_actions_section}\
 {your_units_section}\
+{tactical_section}\
 Call `get_state` if you need the full board / enemy positions /
 fog-of-war map. Remember to call `end_turn` at the end."""
 
@@ -598,6 +599,51 @@ def _format_action_event(ev: dict) -> str:
     return f"- {json.dumps(ev, default=str)}"
 
 
+def _build_tactical_section(summary: dict | None) -> str:
+    """Render the get_tactical_summary bundle into the turn prompt so
+    the agent starts its turn with "what's worth doing right now"
+    pre-chewed. Empty if the summary is None or has nothing to say —
+    we don't want to pollute the prompt with a header followed by
+    three "(none)" lines on a quiet turn."""
+    if not summary:
+        return ""
+    opps = summary.get("opportunities") or []
+    threats = summary.get("threats") or []
+    pending = summary.get("pending_action") or []
+    if not (opps or threats or pending):
+        return ""
+    lines: list[str] = []
+    if opps:
+        lines.append("Opportunities this turn (attacks you can execute from current positions):")
+        for o in opps:
+            kill = " → KILL" if o.get("predicted_defender_dies") else ""
+            counter = o.get("predicted_counter_damage") or 0
+            own_dies = " (you die to counter)" if o.get("predicted_attacker_dies") else ""
+            lines.append(
+                f"  - {o['attacker_id']} → {o['target_id']}: "
+                f"deal {o.get('predicted_damage_to_defender', 0)} "
+                f"(take {counter} counter){kill}{own_dies}"
+            )
+    if threats:
+        if lines:
+            lines.append("")
+        lines.append("Threats against your units (enemies that can reach your current tiles):")
+        for t in threats:
+            lines.append(
+                f"  - {t['defender_id']} (hp {t.get('defender_hp','?')}/"
+                f"{t.get('defender_hp_max','?')}): threatened by "
+                f"[{', '.join(t.get('threatened_by') or [])}]"
+            )
+    if pending:
+        if lines:
+            lines.append("")
+        lines.append(
+            "Units still in MOVED status (MUST act before end_turn): "
+            f"[{', '.join(pending)}]"
+        )
+    return "\n".join(lines) + "\n\n"
+
+
 def _build_own_units_section(state_dict: dict, team: str) -> str:
     """Compact HP/pos/status line per live friendly unit. Shared by
     the delta turn-prompt and the retry continuation prompt."""
@@ -625,6 +671,7 @@ def build_turn_prompt_from_state_dict(
     is_first_turn: bool = True,
     new_history: list[dict] | None = None,
     retry_n: int = 0,
+    tactical_summary: dict | None = None,
 ) -> str:
     """Per-turn user message for the networked client.
 
@@ -700,12 +747,14 @@ def build_turn_prompt_from_state_dict(
             )
 
         your_units_section = _build_own_units_section(state_dict, team)
+        tactical_section = _build_tactical_section(tactical_summary)
 
         prompt = TURN_PROMPT_TEMPLATE_DELTA.format(
             turn=state_dict.get("turn", "?"),
             team=team,
             opponent_actions_section=opponent_actions_section,
             your_units_section=your_units_section,
+            tactical_section=tactical_section,
         )
 
     active = state_dict.get("active_player")

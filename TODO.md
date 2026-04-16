@@ -278,6 +278,39 @@ current symptom warrants.
       the current scheme is cheap enough at ≤30-turn matches that
       this may not matter in practice.
 
+- [ ] **Additional success-side / error-side agent hints** (continuation
+      of the 7b2c88c "server error hints" + B1/C1 work). Tracked here
+      because each is small but the queue matters:
+
+      - `wait` error path: when the unit is DONE, list units that can
+        still act.
+      - `simulate_attack` errors: mirror the `attack` enrichment (dead
+        target → alive enemy list; out-of-range → in-range enemy list).
+      - "not your turn" errors: quote the start-of-turn message header
+        the agent should look for.
+      - `attack` success response: add `attacker_status: done` so the
+        model stops trying to act on a spent attacker.
+      - `end_turn` success response: add compact turn-summary
+        `{turn: N → N+1, active: me → other, remaining_turns: X}` so
+        the agent doesn't need a get_state + arithmetic.
+      - Turn-prompt "last turn outcome" block: auto-render damage
+        dealt / taken / kills / losses since the previous turn so
+        get_history calls become rare.
+      - `get_pending_actions` read tool: same info pending_action now
+        surfaces in get_tactical_summary, but standalone for agents
+        that don't fetch the full tactical digest.
+      - Post-move tactical_summary refresh: `move` response currently
+        includes next_actions (attack / heal target IDs). Consider
+        embedding a mini tactical delta so the agent sees how the
+        move changed opportunities / threats without a follow-up
+        get_tactical_summary call.
+      - Move-then-attack opportunities in `get_tactical_summary`:
+        today only attacks from CURRENT positions are listed. Adding
+        "if u moves to X, it can attack target Y for Z damage" would
+        save the back-and-forth of simulate_attack(from_tile=...)
+        exploration. Bigger search space; worth it for scenarios
+        with many reachable attack positions.
+
 - [ ] **Explicit `cache_control` hints.** We benefit from opportunistic
       provider-side prompt caching but don't annotate cache boundaries.
       Adding an `"cache_control": {"type": "ephemeral"}` marker on

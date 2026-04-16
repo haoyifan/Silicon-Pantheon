@@ -161,6 +161,85 @@ def get_threat_map(session: Session, viewer: Team) -> dict:
     return {"threats": threats}
 
 
+def get_tactical_summary(session: Session, viewer: Team) -> dict:
+    """One-shot "what's worth doing this turn" digest.
+
+    Precomputes the observations a thoughtful player would reach by
+    calling simulate_attack/get_threat_map across every own-unit ×
+    enemy pair. For a 5-unit-per-side scenario this replaces ~10-20
+    model round-trips with one server call.
+
+    Output:
+      opportunities: predicted-attack pairs your live ready/moved
+                     units can execute right now from their CURRENT
+                     positions. Each entry is the same shape as
+                     simulate_attack's response so the agent can
+                     reason with familiar fields.
+      threats:      for each of your living units, which visible
+                    enemy units can reach (and attack) its current
+                    tile. A subset of get_threat_map filtered to
+                    just the tiles your units occupy — the signal
+                    is "which of your units is in danger now?".
+      pending_action: unit IDs currently in MOVED status that MUST
+                     still act before end_turn. The same info
+                     end_turn's error would give you, but surfaced
+                     proactively so the retry loop never fires.
+    """
+    state = session.state
+    my_units = [u for u in state.units_of(viewer) if u.alive]
+    enemy = viewer.other()
+    enemy_units = [u for u in state.units_of(enemy) if u.alive]
+
+    # Opportunities: every pair where my unit can attack the enemy
+    # from its current position and is still able to act this turn.
+    opportunities: list[dict] = []
+    for atk in my_units:
+        if atk.status is UnitStatus.DONE:
+            continue
+        for tgt in enemy_units:
+            if not in_attack_range(atk.pos, tgt.pos, atk.stats):
+                continue
+            pred = predict_attack(
+                atk, tgt,
+                attacker_tile=state.board.tile(atk.pos),
+                defender_tile=state.board.tile(tgt.pos),
+                attacker_pos=atk.pos,
+            )
+            opportunities.append({
+                "attacker_id": atk.id,
+                "target_id": tgt.id,
+                "predicted_damage_to_defender": pred.total_damage_to_defender,
+                "predicted_counter_damage": pred.total_counter_damage,
+                "predicted_defender_dies": pred.defender_dies,
+                "predicted_attacker_dies": pred.attacker_dies,
+            })
+
+    # Threats: which enemies can reach (and attack) my units at their
+    # current positions. Uses the same "tiles_in_attack_range" logic
+    # as get_threat_map but scoped just to my occupied tiles.
+    tiles_at_risk: dict[str, list[str]] = {}
+    for eu in enemy_units:
+        for p in tiles_in_attack_range(eu.pos, eu.stats, state.board):
+            tiles_at_risk.setdefault(f"{p.x},{p.y}", []).append(eu.id)
+    threats: list[dict] = []
+    for u in my_units:
+        k = f"{u.pos.x},{u.pos.y}"
+        if k in tiles_at_risk:
+            threats.append({
+                "defender_id": u.id,
+                "defender_hp": u.hp,
+                "defender_hp_max": u.stats.hp_max,
+                "threatened_by": list(tiles_at_risk[k]),
+            })
+
+    pending = [u.id for u in my_units if u.status is UnitStatus.MOVED]
+    return {
+        "opportunities": opportunities,
+        "threats": threats,
+        "pending_action": pending,
+    }
+
+
 def get_history(session: Session, viewer: Team, last_n: int = 10) -> dict:
     hist = session.state.history[-last_n:] if last_n > 0 else []
     return {
@@ -491,6 +570,19 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
     "get_threat_map": {
         "fn": get_threat_map,
         "description": "For each tile, which enemy units could attack a unit standing there. Returns {threats: {'x,y': [unit_id,...]}}.",
+        "input_schema": {"type": "object", "properties": {}, "required": []},
+    },
+    "get_tactical_summary": {
+        "fn": get_tactical_summary,
+        "description": (
+            "Precomputed 'what's worth doing this turn' digest: attack "
+            "opportunities your units can execute from current positions "
+            "(with predicted damage / counter / kill outcomes), threats "
+            "against your units from currently-visible enemies, and the "
+            "list of your units still in MOVED status pending action. "
+            "Call once per turn-start instead of many simulate_attack / "
+            "get_threat_map calls."
+        ),
         "input_schema": {"type": "object", "properties": {}, "required": []},
     },
     "get_history": {

@@ -195,6 +195,72 @@ def test_turn_prompt_only_carries_dynamic_state():
     assert "should not appear" not in p
 
 
+def test_delta_prompt_renders_tactical_summary_when_provided():
+    """C1: when a tactical_summary bundle is attached to the delta
+    turn prompt, it renders as a human-readable 'opportunities /
+    threats / pending' section the agent can read without extra
+    simulate_attack / get_threat_map calls."""
+    state = {
+        "turn": 3,
+        "active_player": "blue",
+        "you": "blue",
+        "board": {"width": 10, "height": 10, "forts": []},
+        "units": [
+            {"id": "u_b_k1", "owner": "blue", "class": "knight",
+             "pos": {"x": 1, "y": 1}, "hp": 30, "hp_max": 30,
+             "status": "ready", "alive": True},
+        ],
+        "last_action": None,
+    }
+    summary = {
+        "opportunities": [
+            {"attacker_id": "u_b_k1", "target_id": "u_r_k2",
+             "predicted_damage_to_defender": 12,
+             "predicted_counter_damage": 3,
+             "predicted_defender_dies": False,
+             "predicted_attacker_dies": False},
+        ],
+        "threats": [
+            {"defender_id": "u_b_a1", "defender_hp": 10,
+             "defender_hp_max": 18, "threatened_by": ["u_r_c1"]},
+        ],
+        "pending_action": ["u_b_m1"],
+    }
+    p = build_turn_prompt_from_state_dict(
+        state, Team.BLUE, is_first_turn=False, tactical_summary=summary,
+    )
+    # Header + each entry visible.
+    assert "Opportunities this turn" in p
+    assert "u_b_k1 → u_r_k2" in p
+    assert "deal 12" in p
+    assert "take 3 counter" in p
+    assert "Threats against your units" in p
+    assert "u_b_a1" in p
+    assert "u_r_c1" in p
+    assert "MUST act before end_turn" in p
+    assert "u_b_m1" in p
+
+
+def test_delta_prompt_skips_tactical_section_when_empty():
+    """Quiet turns (no opps / threats / pending) shouldn't pollute
+    the prompt with an empty section header — render nothing."""
+    state = {
+        "turn": 2, "active_player": "blue", "you": "blue",
+        "board": {"width": 5, "height": 5, "forts": []},
+        "units": [{"id": "u_b_k1", "owner": "blue", "class": "knight",
+                   "pos": {"x": 0, "y": 0}, "hp": 30, "hp_max": 30,
+                   "status": "ready", "alive": True}],
+        "last_action": None,
+    }
+    empty = {"opportunities": [], "threats": [], "pending_action": []}
+    p = build_turn_prompt_from_state_dict(
+        state, Team.BLUE, is_first_turn=False, tactical_summary=empty,
+    )
+    assert "Opportunities this turn" not in p
+    assert "Threats against your units" not in p
+    assert "MUST act before end_turn" not in p
+
+
 def test_retry_prompt_is_continuation_not_start_of_turn():
     """Regression: on no_progress retries, shipping the normal
     TURN_PROMPT_TEMPLATE_DELTA ("It is turn N and it is your turn

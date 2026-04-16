@@ -156,6 +156,21 @@ GAME_TOOLS: list[ToolSpec] = [
         {"type": "object", "properties": {}, "required": []},
     ),
     ToolSpec(
+        "get_tactical_summary",
+        (
+            "Precomputed digest of 'what's worth doing this turn': "
+            "attacks you can execute from current positions (with "
+            "predicted damage / counter / kill outcomes), threats "
+            "against your units, and any units still in MOVED status "
+            "pending action. Equivalent to many simulate_attack + "
+            "get_threat_map calls in one shot. The per-turn prompt "
+            "already carries this at turn-start; call ad-hoc if state "
+            "changed meaningfully (e.g. after moving a unit) and you "
+            "want a fresh digest before deciding next actions."
+        ),
+        {"type": "object", "properties": {}, "required": []},
+    ),
+    ToolSpec(
         "get_history",
         "Recent action history (move/attack/heal/wait/end_turn events).",
         {
@@ -562,6 +577,24 @@ class NetworkedAgent:
             except Exception:
                 log.exception("get_history failed; delta prompt will omit opponent actions")
 
+        # Fetch the precomputed tactical digest (opportunities +
+        # threats + pending-action) so the delta prompt can surface
+        # "what's worth doing" before the model has to call
+        # simulate_attack / get_threat_map manually. Delta turns only
+        # — turn 1 uses the bootstrap template which already ships
+        # full state; retries also skip it (continuation framing
+        # leans on the prior attempt's transcript).
+        tactical_summary: dict | None = None
+        if self._turns_played > 0 and self._no_progress_retries == 0:
+            try:
+                r = await self.client.call("get_tactical_summary")
+                if r.get("ok"):
+                    tactical_summary = r.get("result") or r
+            except Exception:
+                log.exception(
+                    "get_tactical_summary failed; delta prompt will omit tactical section"
+                )
+
         user_prompt = build_turn_prompt_from_state_dict(
             state,
             viewer,
@@ -572,6 +605,7 @@ class NetworkedAgent:
             # model from restarting its "call get_coach_messages"
             # routine on every retry.
             retry_n=self._no_progress_retries,
+            tactical_summary=tactical_summary,
         )
         # Lazy-fetch scenario invariants on the first turn. The
         # Anthropic adapter reuses its ClaudeSDKClient across turns

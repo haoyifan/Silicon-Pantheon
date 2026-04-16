@@ -384,6 +384,16 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         return _dispatch(app, connection_id, "get_threat_map", {})
 
     @mcp.tool()
+    def get_tactical_summary(connection_id: str) -> dict:
+        """Precomputed 'what's worth doing this turn' digest:
+        attack opportunities your units can execute right now
+        (with predicted damage/counter/kill outcomes), threats
+        against your units from visible enemies, and units still
+        in MOVED status pending action. Call once per turn-start
+        instead of many simulate_attack / get_threat_map calls."""
+        return _dispatch(app, connection_id, "get_tactical_summary", {})
+
+    @mcp.tool()
     def get_history(connection_id: str, last_n: int = 10) -> dict:
         """Get recent action history."""
         return _dispatch(app, connection_id, "get_history", {"last_n": last_n})
