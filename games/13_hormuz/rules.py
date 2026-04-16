@@ -101,6 +101,46 @@ enriched_uranium_strike_check.description = (
 )
 
 
+def enriched_uranium_strike_check_describe(state, viewer, **_):
+    """Companion to enriched_uranium_strike_check — called by
+    get_tactical_summary's win-progress renderer when it looks for
+    `<check_fn>_describe` in the plugin namespace.
+
+    Returns a viewer-relative one-liner showing objective status +
+    turn countdown.
+    """
+    dead = getattr(state, "dead_unit_ids", set())
+    khamenei_dead = _KHAMENEI_ID in dead
+    blue_on_bunker = any(
+        u.pos == _URANIUM_BUNKER_POS for u in state.units_of(Team.BLUE)
+    )
+    remaining = max(0, state.max_turns - state.turn + 1)
+
+    obj1 = "✓ killed" if khamenei_dead else "✗ alive"
+    obj2 = "✓ occupied" if blue_on_bunker else "✗ not reached"
+
+    # Closest blue unit to the bunker (useful when not yet occupied).
+    blue_units = [u for u in state.units_of(Team.BLUE) if u.alive]
+    bunker_dist = ""
+    if not blue_on_bunker and blue_units:
+        closest = min(blue_units, key=lambda u: u.pos.manhattan(_URANIUM_BUNKER_POS))
+        d = closest.pos.manhattan(_URANIUM_BUNKER_POS)
+        bunker_dist = f" (closest: {closest.id}, {d} tile(s) away)"
+
+    if viewer is Team.BLUE:
+        return (
+            f"Operation Epic Fury: Khamenei {obj1} / bunker at "
+            f"({_URANIUM_BUNKER_POS.x},{_URANIUM_BUNKER_POS.y}) {obj2}"
+            f"{bunker_dist}. MUST complete BOTH within "
+            f"{remaining} turn(s) or Iran wins."
+        )
+    return (
+        f"Hold the line: Khamenei {obj1} / bunker {obj2}. "
+        f"Survive {remaining} more turn(s) without blue completing "
+        f"both objectives and you win."
+    )
+
+
 def sea_mine_effect(state, unit, tile, hook: str, **_):
     """Terrain effect for sea_mine tiles.
 
