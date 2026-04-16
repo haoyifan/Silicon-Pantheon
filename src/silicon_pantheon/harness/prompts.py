@@ -489,6 +489,35 @@ Call `get_state` if you need the full board / enemy positions /
 fog-of-war map. Remember to call `end_turn` at the end."""
 
 
+# Retry / continuation prompt. Fired when the previous play_turn loop
+# exited without the model calling end_turn (time budget exhausted,
+# token cap hit, repeat-detector tripped, etc.). Crucially, this is
+# NOT a new turn — the server still has the same turn N active, the
+# same units are half-acted, and the model's own transcript already
+# carries everything it did so far.
+#
+# Shipping the normal TURN_PROMPT_TEMPLATE_DELTA ("It is turn N and it
+# is your turn...") on a retry is what caused the 34-coach-messages-
+# for-20-turns pattern in the Agincourt log: the model read it as a
+# fresh turn and restarted its "step 1: call get_coach_messages"
+# routine. This template explicitly frames the retry as a continuation
+# so the model picks up where it left off instead of starting over.
+TURN_PROMPT_TEMPLATE_RETRY = """You did NOT call `end_turn` on turn \
+{turn} before your last response ended. This is a CONTINUATION of \
+the SAME turn {turn} — it has NOT restarted. Do NOT call \
+`get_coach_messages` again (you already drained them at the start \
+of this turn), do NOT re-plan from scratch.
+
+Your own tool-call history in this conversation shows which actions \
+you already took. Look at it, identify the units that still need to \
+act, finish them, and call `end_turn` to pass control to the opponent.
+
+{your_units_section}\
+Retry attempt {retry_n} of 3. If you run out of attempts, the server \
+will force-end your turn and you will lose this turn's remaining \
+opportunities."""
+
+
 _TURN_PROMPT_MISMATCH_WARNING = """\
 WARNING: the per-turn prompt builder was invoked but the snapshot's
 active_player does not match you ({team}). The server is authoritative —
@@ -594,34 +623,76 @@ def _format_action_event(ev: dict) -> str:
     return f"- {json.dumps(ev, default=str)}"
 
 
+def _build_own_units_section(state_dict: dict, team: str) -> str:
+    """Compact HP/pos/status line per live friendly unit. Shared by
+    the delta turn-prompt and the retry continuation prompt."""
+    own_lines: list[str] = []
+    for u in state_dict.get("units", []):
+        if u.get("owner") != team:
+            continue
+        if not u.get("alive", u.get("hp", 0) > 0):
+            continue
+        pos = u.get("pos") or {}
+        own_lines.append(
+            f"- {u.get('id')} ({u.get('class')})  "
+            f"hp {u.get('hp')}  pos ({pos.get('x')}, {pos.get('y')})  "
+            f"status {u.get('status')}"
+        )
+    if own_lines:
+        return "Your units:\n" + "\n".join(own_lines) + "\n\n"
+    return "Your units: (none alive — you may have already lost)\n\n"
+
+
 def build_turn_prompt_from_state_dict(
     state_dict: dict,
     viewer: Team,
     *,
     is_first_turn: bool = True,
     new_history: list[dict] | None = None,
+    retry_n: int = 0,
 ) -> str:
     """Per-turn user message for the networked client.
 
-    Two shapes:
+    Three shapes:
 
-      - **Bootstrap** (`is_first_turn=True`): full state snapshot
-        so the model's session has a starting mental map.
-      - **Delta** (`is_first_turn=False`): only what changed since
-        the caller's last turn — enemy actions from `new_history`,
-        plus a compact HP/pos/status line per LIVE unit on the
-        caller's team. Previously every turn dumped the whole
-        state again, which (a) burned tokens duplicating info the
-        model already had in-session and (b) made long matches
-        hit the context window. The caller (NetworkedAgent) is
-        the one that knows "what's changed since last time",
-        hence this param.
+      - **Bootstrap** (`is_first_turn=True`, retry_n=0): full state
+        snapshot so the model's session has a starting mental map.
+      - **Delta** (`is_first_turn=False`, retry_n=0): only what
+        changed since the caller's last turn — enemy actions from
+        `new_history`, plus a compact HP/pos/status line per LIVE
+        unit on the caller's team. The model already has the prior
+        turns in-session, so we only ship "what's new".
+      - **Retry / continuation** (`retry_n > 0`): the previous
+        play_turn loop exited without end_turn and the TUI is
+        retrying the same game turn. Frames the message as a
+        CONTINUATION so the model resumes instead of restarting
+        (which otherwise caused double get_coach_messages calls
+        and replayed "start-of-turn" planning). See
+        TURN_PROMPT_TEMPLATE_RETRY for the full rationale.
 
     If the snapshot's active_player disagrees with `viewer`, a
     warning block is prepended so a misfired call to this function
     can't silently lie to the model.
     """
     team = viewer.value
+
+    # Retry path wins over both bootstrap and delta: a retry is never
+    # a fresh turn, even on the notional "first turn" (the model has
+    # already seen a turn-prompt once — this is a continuation).
+    if retry_n > 0:
+        prompt = TURN_PROMPT_TEMPLATE_RETRY.format(
+            turn=state_dict.get("turn", "?"),
+            your_units_section=_build_own_units_section(state_dict, team),
+            retry_n=retry_n,
+        )
+        active = state_dict.get("active_player")
+        if active is not None and active != team:
+            prompt = (
+                _TURN_PROMPT_MISMATCH_WARNING.format(team=team)
+                + "\n"
+                + prompt
+            )
+        return prompt
 
     if is_first_turn:
         snapshot = {
@@ -654,26 +725,7 @@ def build_turn_prompt_from_state_dict(
                 "Opponent did not act since your last turn.\n\n"
             )
 
-        # Compact your-own-units block: a single line per live
-        # friendly unit with HP / pos / status. Small enough to
-        # include every turn; no enemy data (use get_state for that).
-        own_lines: list[str] = []
-        for u in state_dict.get("units", []):
-            if u.get("owner") != team:
-                continue
-            if not u.get("alive", u.get("hp", 0) > 0):
-                continue
-            pos = u.get("pos") or {}
-            own_lines.append(
-                f"- {u.get('id')} ({u.get('class')})  "
-                f"hp {u.get('hp')}  pos ({pos.get('x')}, {pos.get('y')})  "
-                f"status {u.get('status')}"
-            )
-        your_units_section = (
-            "Your units:\n" + "\n".join(own_lines) + "\n\n"
-            if own_lines else
-            "Your units: (none alive — you may have already lost)\n\n"
-        )
+        your_units_section = _build_own_units_section(state_dict, team)
 
         prompt = TURN_PROMPT_TEMPLATE_DELTA.format(
             turn=state_dict.get("turn", "?"),

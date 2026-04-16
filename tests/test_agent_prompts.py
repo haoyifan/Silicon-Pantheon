@@ -130,6 +130,52 @@ def test_turn_prompt_only_carries_dynamic_state():
     assert "should not appear" not in p
 
 
+def test_retry_prompt_is_continuation_not_start_of_turn():
+    """Regression: on no_progress retries, shipping the normal
+    TURN_PROMPT_TEMPLATE_DELTA ("It is turn N and it is your turn
+    to play") caused the model to re-run its "step 1: call
+    get_coach_messages" routine, producing 34 coach-messages calls
+    across 12 real turns. The retry prompt must frame the message
+    as a CONTINUATION so the model resumes instead of restarting."""
+    state = {
+        "turn": 5,
+        "active_player": "blue",
+        "you": "blue",
+        "board": {"width": 10, "height": 10, "forts": []},
+        "units": [
+            {"id": "u_b_h_1", "owner": "blue", "class": "hero",
+             "pos": {"x": 1, "y": 1}, "hp": 30, "hp_max": 30,
+             "status": "ready", "alive": True},
+            {"id": "u_b_h_2", "owner": "blue", "class": "hero",
+             "pos": {"x": 2, "y": 1}, "hp": 30, "hp_max": 30,
+             "status": "done", "alive": True},
+        ],
+        "last_action": None,
+    }
+    # retry_n > 0 → continuation framing.
+    p = build_turn_prompt_from_state_dict(state, Team.BLUE, retry_n=1)
+    # Must NOT say "turn N and it is your turn to play" — that's
+    # the start-of-turn phrasing that confuses the model.
+    assert "it is your (blue) turn to play" not in p
+    # Must explicitly be a continuation.
+    assert "CONTINUATION" in p
+    assert "turn 5" in p
+    # Must tell the model NOT to re-drain coach messages — the
+    # whole point of this prompt is to suppress that routine.
+    assert "get_coach_messages" in p
+    assert "do NOT" in p.lower() or "not" in p.lower()
+    # Units section still present so the model knows what's left.
+    assert "u_b_h_1" in p
+    assert "ready" in p
+
+    # retry_n=0 → normal delta path (no continuation framing).
+    p0 = build_turn_prompt_from_state_dict(
+        state, Team.BLUE, is_first_turn=False, retry_n=0,
+    )
+    assert "CONTINUATION" not in p0
+    assert "it is your (blue) turn to play" in p0
+
+
 def test_slim_tool_response_drops_board_tiles_from_get_state():
     """Regression: get_state's board.tiles array (180+ entries on
     an 18x10 board, ~5KB per call) was the dominant within-turn

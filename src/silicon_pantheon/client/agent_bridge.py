@@ -550,7 +550,11 @@ class NetworkedAgent:
         # conversation, so the model already remembers the earlier
         # full snapshot and doesn't need a fresh one each turn.
         new_history: list[dict] = []
-        if self._turns_played > 0:
+        # Only fetch history on a fresh turn (not on a retry — we
+        # already shipped opponent actions in the previous play_turn
+        # entry for this same game turn, and the retry prompt
+        # intentionally skips re-shipping them).
+        if self._turns_played > 0 and self._no_progress_retries == 0:
             try:
                 r = await self.client.call("get_history", last_n=0)
                 full_history = (r.get("result") or {}).get("history") or []
@@ -563,6 +567,11 @@ class NetworkedAgent:
             viewer,
             is_first_turn=(self._turns_played == 0),
             new_history=new_history,
+            # retry_n > 0 frames the prompt as a CONTINUATION of the
+            # same turn, not a fresh "start of turn". Prevents the
+            # model from restarting its "call get_coach_messages"
+            # routine on every retry.
+            retry_n=self._no_progress_retries,
         )
         # Lazy-fetch scenario invariants on the first turn. The
         # Anthropic adapter reuses its ClaudeSDKClient across turns
