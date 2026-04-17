@@ -1,0 +1,280 @@
+schema_version: 1
+name: Madara Unleashed
+description: |
+  Fourth Great Ninja War. Madara Uchiha has been resurrected and
+  stands alone against the entire Allied Shinobi Forces. With the
+  Rinnegan and near-infinite chakra, he is a one-man army. The
+  Five Kage and Naruto in Sage Mode must survive long enough for
+  the sealing jutsu to be prepared. Killing Madara is nearly
+  impossible — the alliance wins through endurance, not force.
+
+board:
+  width: 14
+  height: 12
+  terrain:
+    # Rocky outcroppings scattered across the battlefield
+    - {x: 3, y: 3, type: rock}
+    - {x: 10, y: 3, type: rock}
+    - {x: 6, y: 4, type: rock}
+    - {x: 8, y: 4, type: rock}
+    - {x: 2, y: 5, type: rock}
+    - {x: 11, y: 5, type: rock}
+    - {x: 5, y: 6, type: rock}
+    - {x: 9, y: 6, type: rock}
+    - {x: 1, y: 7, type: rock}
+    - {x: 7, y: 7, type: rock}
+    - {x: 12, y: 7, type: rock}
+    - {x: 4, y: 9, type: rock}
+    - {x: 10, y: 9, type: rock}
+  forts: []
+
+terrain_types:
+  rock:
+    move_cost: 2
+    defense_bonus: 3
+    glyph: "^"
+    color: bright_black
+    description: |
+      Jagged rock formations thrust up from the battlefield by
+      previous jutsu impacts. Hard to cross but excellent cover.
+
+unit_classes:
+  naruto:
+    display_name: Naruto Uzumaki
+    description: |
+      In Sage Mode, fused with nature energy. His Rasengan variants
+      and shadow clones make him the alliance's strongest fighter.
+      If he survives, the sealing jutsu will end the war.
+    hp_max: 35
+    atk: 13
+    defense: 5
+    res: 7
+    spd: 8
+    move: 5
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "N"
+    color: bright_yellow
+
+  gaara:
+    display_name: Gaara
+    description: |
+      Fifth Kazekage. His Sand Shield provides unmatched defense,
+      and his Sand Coffin strikes from range. The alliance's
+      defensive anchor.
+    hp_max: 28
+    atk: 10
+    defense: 10
+    res: 6
+    spd: 4
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "G"
+    color: yellow
+
+  onoki:
+    display_name: Onoki
+    description: |
+      Third Tsuchikage. His Particle Style disintegrates anything
+      at the molecular level — the longest range jutsu on the
+      field. Old and fragile, but devastating.
+    hp_max: 20
+    atk: 12
+    defense: 3
+    res: 7
+    spd: 3
+    move: 3
+    rng_min: 2
+    rng_max: 4
+    is_magic: true
+    glyph: "O"
+    color: bright_black
+
+  tsunade:
+    display_name: Tsunade
+    description: |
+      Fifth Hokage. Her Creation Rebirth technique and medical
+      ninjutsu keep the alliance fighting. Also punches holes
+      in mountains.
+    hp_max: 30
+    atk: 9
+    defense: 4
+    res: 8
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    is_magic: true
+    can_heal: true
+    heal_amount: 8
+    glyph: "T"
+    color: yellow
+
+  raikage:
+    display_name: Raikage
+    description: |
+      Fourth Raikage. Lightning armor makes him the fastest shinobi
+      alive. His Lariat hits like a freight train. All speed, no
+      subtlety.
+    hp_max: 32
+    atk: 14
+    defense: 6
+    res: 4
+    spd: 9
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "A"
+    color: bright_cyan
+
+  mei:
+    display_name: Mei Terumi
+    description: |
+      Fifth Mizukage. Dual kekkei genkai — Lava Release and Boil
+      Release. Her corrosive mist and lava streams control space
+      at medium range.
+    hp_max: 24
+    atk: 10
+    defense: 3
+    res: 7
+    spd: 5
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "M"
+    color: bright_blue
+
+  allied_shinobi:
+    display_name: Allied Shinobi
+    description: |
+      Rank-and-file shinobi from the Five Great Nations, fighting
+      together for the first time in history. They know they cannot
+      beat Madara — but they can buy time.
+    hp_max: 16
+    atk: 6
+    defense: 4
+    res: 3
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "a"
+    color: cyan
+
+  madara:
+    display_name: Madara Uchiha
+    description: |
+      The legendary Uchiha. Rinnegan, Susanoo, meteor summoning,
+      infinite Tsukuyomi — the most powerful shinobi who ever
+      lived. INTENTIONALLY OVERPOWERED. This is a boss fight.
+    hp_max: 60
+    atk: 16
+    defense: 12
+    res: 10
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 3
+    is_magic: true
+    glyph: "!"
+    color: bright_red
+
+  white_zetsu:
+    display_name: White Zetsu Clone
+    description: |
+      Mass-produced plant soldiers from Madara's army. Weak and
+      expendable — they exist to distract and overwhelm through
+      sheer numbers.
+    hp_max: 12
+    atk: 5
+    defense: 3
+    res: 2
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "w"
+    color: green
+
+armies:
+  blue:
+    # Naruto — forward position
+    - {class: naruto, pos: {x: 7, y: 8}}
+    # Five Kage — spread across the southern line
+    - {class: gaara, pos: {x: 5, y: 9}}
+    - {class: onoki, pos: {x: 9, y: 10}}
+    - {class: tsunade, pos: {x: 7, y: 10}}
+    - {class: raikage, pos: {x: 3, y: 8}}
+    - {class: mei, pos: {x: 11, y: 9}}
+    # Allied shinobi — defensive screen
+    - {class: allied_shinobi, pos: {x: 2, y: 9}}
+    - {class: allied_shinobi, pos: {x: 4, y: 10}}
+    - {class: allied_shinobi, pos: {x: 6, y: 11}}
+    - {class: allied_shinobi, pos: {x: 8, y: 11}}
+    - {class: allied_shinobi, pos: {x: 10, y: 10}}
+    - {class: allied_shinobi, pos: {x: 12, y: 10}}
+    - {class: allied_shinobi, pos: {x: 5, y: 11}}
+    - {class: allied_shinobi, pos: {x: 9, y: 11}}
+
+  red:
+    # Madara — center-north, alone and terrifying
+    - {class: madara, pos: {x: 7, y: 2}}
+    # White Zetsu — spread around Madara
+    - {class: white_zetsu, pos: {x: 3, y: 1}}
+    - {class: white_zetsu, pos: {x: 5, y: 1}}
+    - {class: white_zetsu, pos: {x: 9, y: 1}}
+    - {class: white_zetsu, pos: {x: 11, y: 1}}
+    - {class: white_zetsu, pos: {x: 4, y: 2}}
+    - {class: white_zetsu, pos: {x: 10, y: 2}}
+    - {class: white_zetsu, pos: {x: 6, y: 3}}
+    - {class: white_zetsu, pos: {x: 8, y: 3}}
+    - {class: white_zetsu, pos: {x: 7, y: 0}}
+
+rules:
+  max_turns: 16
+  first_player: red
+
+win_conditions:
+  # Naruto dies → blue loses (sealing jutsu fails)
+  - {type: protect_unit, unit_id: u_b_naruto_1, owning_team: blue}
+  # Naruto alive at turn cap → sealing jutsu prepared, blue wins
+  - {type: protect_unit_survives, unit_id: u_b_naruto_1, owning_team: blue}
+  # Either side wins by total elimination
+  - {type: eliminate_all_enemy_units}
+  # Backstop
+  - {type: max_turns_draw}
+
+narrative:
+  title: Madara Unleashed
+  description: |
+    The Fourth Great Ninja War. Madara Uchiha, resurrected in his
+    prime, faces the entire Allied Shinobi Forces. The Five Kage
+    and Naruto must survive until the sealing jutsu is ready.
+  intro: |
+    The sky darkens. A single figure stands on the ridge, Rinnegan
+    eyes glowing purple. Madara Uchiha smiles — he hasn't had a
+    real fight in decades. Behind him, an army of White Zetsu
+    stretches to the horizon.
+  events:
+    - trigger: on_turn_start
+      turn: 4
+      text: |
+        Madara drops two meteors from the sky. The Kage barely
+        deflect them — Onoki strains under the weight, his back
+        cracking. "Is that all you've got, Onoki?"
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        Madara activates his perfect Susanoo. A colossal armored
+        warrior materializes around him, blade cleaving through
+        mountains. The alliance staggers.
+    - trigger: on_unit_killed
+      unit_id: u_b_naruto_1
+      text: |
+        Naruto falls. The Sage Mode chakra fades from his eyes.
+        Without the Nine-Tails jinchuriki, the sealing jutsu
+        cannot be completed. The war is lost.

@@ -1,0 +1,287 @@
+schema_version: 1
+name: Battle of Zion Dock
+description: |
+  Zion, the last human city. The machines have breached the dock
+  ceiling and sentinels pour in by the thousand. APU pilots man
+  their exoskeletons along the defensive line, firing ammunition
+  belts into the swarm. Captain Mifune commands the defense while
+  Niobe races through the chaos to reach the power terminal and
+  restore the city's EMP grid. Two massive drill machines grind
+  toward the Zion core — if even one reaches it, the city falls.
+
+board:
+  width: 16
+  height: 10
+  terrain:
+    # Machine walls — structural pillars and wreckage
+    - {x: 0, y: 4, type: machine_wall}
+    - {x: 15, y: 4, type: machine_wall}
+    - {x: 3, y: 3, type: machine_wall}
+    - {x: 12, y: 3, type: machine_wall}
+    - {x: 0, y: 7, type: machine_wall}
+    - {x: 15, y: 7, type: machine_wall}
+    - {x: 5, y: 8, type: machine_wall}
+    - {x: 10, y: 8, type: machine_wall}
+    # Catwalks — elevated walkways along the defensive line
+    - {x: 2, y: 5, type: catwalk}
+    - {x: 3, y: 5, type: catwalk}
+    - {x: 4, y: 5, type: catwalk}
+    - {x: 6, y: 5, type: catwalk}
+    - {x: 7, y: 5, type: catwalk}
+    - {x: 9, y: 5, type: catwalk}
+    - {x: 10, y: 5, type: catwalk}
+    - {x: 12, y: 5, type: catwalk}
+    - {x: 13, y: 5, type: catwalk}
+    - {x: 2, y: 6, type: catwalk}
+    - {x: 13, y: 6, type: catwalk}
+    - {x: 2, y: 7, type: catwalk}
+    - {x: 13, y: 7, type: catwalk}
+    # Power conduits — running to the terminal
+    - {x: 1, y: 6, type: power_conduit}
+    - {x: 1, y: 7, type: power_conduit}
+    - {x: 1, y: 8, type: power_conduit}
+  forts: []
+
+terrain_types:
+  machine_wall:
+    move_cost: 99
+    passable: false
+    defense_bonus: 0
+    glyph: "#"
+    color: dim
+    description: |
+      Structural pillars and twisted wreckage of the dock interior.
+      Impassable even to sentinels.
+
+  catwalk:
+    move_cost: 1
+    defense_bonus: 1
+    glyph: "="
+    color: yellow
+    description: |
+      Elevated metal walkways spanning the dock. Offer a slight
+      defensive advantage from the high ground.
+
+  power_conduit:
+    move_cost: 1
+    defense_bonus: 0
+    glyph: "|"
+    color: bright_yellow
+    description: |
+      Exposed power conduits running along the dock wall toward
+      the terminal. Niobe must follow these to restore power.
+
+unit_classes:
+  mifune:
+    display_name: Captain Mifune
+    description: |
+      Commander of the Zion defense. Fights from the lead APU,
+      refusing to retreat even as ammunition runs dry. His courage
+      holds the line when all seems lost.
+    hp_max: 30
+    atk: 12
+    defense: 6
+    res: 3
+    spd: 4
+    move: 2
+    rng_min: 2
+    rng_max: 4
+    glyph: "M"
+    color: bright_cyan
+
+  apu_pilot:
+    display_name: APU Pilot
+    description: |
+      Armored Personnel Unit operators. Their exoskeletons are
+      bolted to the dock floor — stationary gun platforms that
+      pour fire into the sentinel swarm. High firepower, zero
+      mobility.
+    hp_max: 28
+    atk: 11
+    defense: 7
+    res: 2
+    spd: 1
+    move: 0
+    rng_min: 2
+    rng_max: 4
+    glyph: "^"
+    color: cyan
+
+  niobe:
+    display_name: Niobe
+    description: |
+      Captain of the Logos. The fastest hovercraft pilot in the
+      fleet, now sprinting through the dock on foot. She must
+      reach the power terminal to restore the EMP defense grid.
+    hp_max: 20
+    atk: 8
+    defense: 4
+    res: 5
+    spd: 7
+    move: 5
+    rng_min: 1
+    rng_max: 2
+    glyph: "N"
+    color: white
+
+  zion_infantry:
+    display_name: Zion Infantry
+    description: |
+      Volunteer defenders armed with rocket launchers. Lightly
+      armored but determined to protect their home — the last
+      refuge of the human race.
+    hp_max: 16
+    atk: 7
+    defense: 4
+    res: 3
+    spd: 5
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    glyph: "z"
+    color: white
+
+  sentinel:
+    display_name: Sentinel
+    description: |
+      Machine squid — tentacled killing machines that swarm in
+      overwhelming numbers. Individually fragile, but their speed
+      and numbers make them deadly. They pour through the breach
+      in the dock ceiling.
+    hp_max: 10
+    atk: 5
+    defense: 2
+    res: 1
+    spd: 7
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "s"
+    color: red
+
+  sentinel_cluster:
+    display_name: Sentinel Cluster
+    description: |
+      A dense mass of sentinels moving as one — dozens fused into
+      a writhing ball of metal tentacles. Far tougher than any
+      single sentinel.
+    hp_max: 30
+    atk: 10
+    defense: 5
+    res: 2
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    glyph: "S"
+    color: bright_red
+
+  drill_machine:
+    display_name: Drill Machine
+    description: |
+      Massive boring machines designed to drill through Zion's
+      outer shell. Slow, heavily armored, and unstoppable if they
+      reach the core. The dock defense exists to stop these.
+    hp_max: 45
+    atk: 8
+    defense: 10
+    res: 1
+    spd: 1
+    move: 1
+    rng_min: 1
+    rng_max: 1
+    glyph: "D"
+    color: bright_red
+
+armies:
+  blue:
+    # Mifune — center of the defensive line
+    - {class: mifune, pos: {x: 8, y: 6}}
+    # APU pilots — spread across the defensive line y=5-7
+    - {class: apu_pilot, pos: {x: 4, y: 6}}
+    - {class: apu_pilot, pos: {x: 6, y: 6}}
+    - {class: apu_pilot, pos: {x: 10, y: 6}}
+    - {class: apu_pilot, pos: {x: 12, y: 6}}
+    - {class: apu_pilot, pos: {x: 14, y: 7}}
+    # Niobe — starting near the conduits, must reach (1, 5)
+    - {class: niobe, pos: {x: 3, y: 8}}
+    # Zion infantry — supporting positions
+    - {class: zion_infantry, pos: {x: 3, y: 7}}
+    - {class: zion_infantry, pos: {x: 5, y: 7}}
+    - {class: zion_infantry, pos: {x: 7, y: 7}}
+    - {class: zion_infantry, pos: {x: 9, y: 7}}
+    - {class: zion_infantry, pos: {x: 11, y: 7}}
+    - {class: zion_infantry, pos: {x: 6, y: 8}}
+    - {class: zion_infantry, pos: {x: 8, y: 8}}
+
+  red:
+    # Sentinels — swarm approaching from north
+    - {class: sentinel, pos: {x: 1, y: 0}}
+    - {class: sentinel, pos: {x: 3, y: 0}}
+    - {class: sentinel, pos: {x: 5, y: 0}}
+    - {class: sentinel, pos: {x: 7, y: 0}}
+    - {class: sentinel, pos: {x: 9, y: 0}}
+    - {class: sentinel, pos: {x: 11, y: 0}}
+    - {class: sentinel, pos: {x: 13, y: 0}}
+    - {class: sentinel, pos: {x: 14, y: 0}}
+    - {class: sentinel, pos: {x: 2, y: 1}}
+    - {class: sentinel, pos: {x: 4, y: 1}}
+    - {class: sentinel, pos: {x: 6, y: 1}}
+    - {class: sentinel, pos: {x: 8, y: 1}}
+    - {class: sentinel, pos: {x: 10, y: 1}}
+    - {class: sentinel, pos: {x: 12, y: 1}}
+    - {class: sentinel, pos: {x: 14, y: 1}}
+    - {class: sentinel, pos: {x: 0, y: 2}}
+    # Sentinel clusters — heavier units in the swarm
+    - {class: sentinel_cluster, pos: {x: 5, y: 2}}
+    - {class: sentinel_cluster, pos: {x: 10, y: 2}}
+    # Drill machines — slow but devastating
+    - {class: drill_machine, pos: {x: 4, y: 0}}
+    - {class: drill_machine, pos: {x: 11, y: 2}}
+
+rules:
+  max_turns: 18
+  first_player: red
+
+win_conditions:
+  # Niobe reaches the power terminal → blue wins
+  - {type: reach_tile, team: blue, pos: {x: 1, y: 5}, unit_id: u_b_niobe_1}
+  # A drill machine reaches the Zion core → red wins
+  - {type: reach_tile, team: red, pos: {x: 1, y: 9}}
+  # Mifune alive at turn cap → Neo negotiated peace, blue wins
+  - {type: protect_unit_survives, unit_id: u_b_mifune_1, owning_team: blue}
+  # Either side wins by total elimination
+  - {type: eliminate_all_enemy_units}
+  # Backstop
+  - {type: max_turns_draw}
+
+narrative:
+  title: Battle of Zion Dock
+  description: |
+    The machines have breached Zion's dock. Sentinels flood through
+    the ceiling while drill machines bore toward the city core.
+    Captain Mifune leads the APU defense as Niobe races to restore
+    power.
+  intro: |
+    Klaxons howl through the dock as the ceiling buckles. Metal
+    tentacles writhe through the breach — the sentinels have arrived.
+    APU pilots power up their exoskeletons and open fire.
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        Ammunition belts run dry on the outer APUs. The sentinels
+        keep coming, an endless metal tide pouring through the
+        breach above.
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        The drill machines grind forward, shaking the dock floor.
+        Mifune screams for his men to hold the line — they cannot
+        let those machines reach the core.
+    - trigger: on_unit_killed
+      unit_id: u_b_mifune_1
+      text: |
+        Mifune's APU crashes to its knees, torn apart by sentinels.
+        The captain fires his sidearm until the swarm engulfs him.
+        "For Zion..."

@@ -1,0 +1,371 @@
+schema_version: 1
+name: Infinity Castle
+description: |
+  The Infinity Castle — Muzan Kibutsuji's dimensional fortress that
+  shifts and warps at his will. The Demon Slayer Corps launches its
+  final assault, sending every Hashira and promising slayer into the
+  labyrinth to reach and kill the Demon King before dawn. If Tanjiro
+  survives until the turn cap, sunrise will disintegrate the demons.
+  Muzan's throne room fort grants him regeneration — he must be
+  drawn away from it or overwhelmed.
+
+board:
+  width: 16
+  height: 12
+  terrain:
+    # Castle walls — corridors and rooms
+    # Northern chamber walls
+    - {x: 0, y: 2, type: castle_wall}
+    - {x: 1, y: 2, type: castle_wall}
+    - {x: 3, y: 2, type: castle_wall}
+    - {x: 4, y: 2, type: castle_wall}
+    - {x: 6, y: 2, type: castle_wall}
+    - {x: 10, y: 2, type: castle_wall}
+    - {x: 11, y: 2, type: castle_wall}
+    - {x: 12, y: 2, type: castle_wall}
+    - {x: 14, y: 2, type: castle_wall}
+    - {x: 15, y: 2, type: castle_wall}
+    # Central corridor walls
+    - {x: 0, y: 5, type: castle_wall}
+    - {x: 1, y: 5, type: castle_wall}
+    - {x: 3, y: 5, type: castle_wall}
+    - {x: 5, y: 5, type: castle_wall}
+    - {x: 6, y: 5, type: castle_wall}
+    - {x: 10, y: 5, type: castle_wall}
+    - {x: 11, y: 5, type: castle_wall}
+    - {x: 13, y: 5, type: castle_wall}
+    - {x: 14, y: 5, type: castle_wall}
+    - {x: 15, y: 5, type: castle_wall}
+    # Southern walls
+    - {x: 0, y: 8, type: castle_wall}
+    - {x: 1, y: 8, type: castle_wall}
+    - {x: 4, y: 8, type: castle_wall}
+    - {x: 5, y: 8, type: castle_wall}
+    - {x: 10, y: 8, type: castle_wall}
+    - {x: 11, y: 8, type: castle_wall}
+    - {x: 14, y: 8, type: castle_wall}
+    - {x: 15, y: 8, type: castle_wall}
+    # Wisteria patches — healing terrain for blue
+    - {x: 7, y: 6, type: wisteria}
+    - {x: 8, y: 6, type: wisteria}
+    - {x: 7, y: 7, type: wisteria}
+    - {x: 8, y: 7, type: wisteria}
+    - {x: 3, y: 9, type: wisteria}
+    - {x: 12, y: 9, type: wisteria}
+  forts:
+    # Muzan's throne — red fort grants +3 HP regen per turn
+    - {x: 8, y: 1, owner: red}
+
+terrain_types:
+  castle_wall:
+    move_cost: 99
+    passable: false
+    defense_bonus: 0
+    glyph: "#"
+    color: dim
+    description: |
+      The shifting walls of the Infinity Castle. They rearrange
+      at Muzan's will, creating an ever-changing labyrinth.
+
+  wisteria:
+    move_cost: 1
+    defense_bonus: 1
+    heals: 2
+    glyph: "*"
+    color: magenta
+    description: |
+      Wisteria flowers — poisonous to demons, restorative to
+      slayers. Demons avoid these patches instinctively.
+
+unit_classes:
+  tanjiro:
+    display_name: Tanjiro Kamado
+    description: |
+      Sun Breathing user, the first in centuries. His determination
+      and empathy make him the one slayer who might reach Muzan.
+      If he survives until dawn, the sun will finish what he started.
+    hp_max: 26
+    atk: 12
+    defense: 5
+    res: 6
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "T"
+    color: bright_yellow
+
+  zenitsu:
+    display_name: Zenitsu Agatsuma
+    description: |
+      Thunder Breathing, First Form — Thunderclap and Flash. Fights
+      in his sleep with devastating speed. One strike, maximum
+      lethality. SPD 10.
+    hp_max: 18
+    atk: 14
+    defense: 3
+    res: 4
+    spd: 10
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "Z"
+    color: bright_yellow
+
+  inosuke:
+    display_name: Inosuke Hashibira
+    description: |
+      Beast Breathing — dual serrated blades and animal instincts.
+      Raised by boars, fights with feral unpredictability. No fear,
+      no hesitation.
+    hp_max: 22
+    atk: 11
+    defense: 4
+    res: 3
+    spd: 8
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "I"
+    color: green
+
+  giyu:
+    display_name: Giyu Tomioka
+    description: |
+      Water Hashira. His Dead Calm technique creates an absolute
+      defense — nothing passes through. The highest DEF among the
+      Hashira.
+    hp_max: 26
+    atk: 11
+    defense: 8
+    res: 5
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "G"
+    color: blue
+
+  shinobu:
+    display_name: Shinobu Kocho
+    description: |
+      Insect Hashira. Too small to decapitate demons, she instead
+      poisons them with wisteria-laced thrusts. Her attacks deal
+      magic (poison) damage, bypassing physical defense.
+    hp_max: 16
+    atk: 8
+    defense: 2
+    res: 6
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "S"
+    color: magenta
+
+  mitsuri:
+    display_name: Mitsuri Kanroji
+    description: |
+      Love Hashira. Her whip-like sword gives her unusual range for
+      a slayer, and her muscle density grants superhuman strength
+      despite her slight frame.
+    hp_max: 22
+    atk: 10
+    defense: 4
+    res: 5
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    glyph: "M"
+    color: bright_red
+
+  demon_slayer:
+    display_name: Demon Slayer
+    description: |
+      Corps members wielding nichirin blades. Trained in breathing
+      techniques, they fight demons in the darkness of the castle
+      corridors.
+    hp_max: 16
+    atk: 7
+    defense: 4
+    res: 3
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "d"
+    color: cyan
+
+  muzan:
+    display_name: Muzan Kibutsuji
+    description: |
+      The Demon King. A thousand years old, creator of all demons.
+      His throne room fort grants regeneration — he heals each turn
+      while standing on it. Draw him out or overwhelm him.
+    hp_max: 50
+    atk: 15
+    defense: 6
+    res: 8
+    spd: 6
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "!"
+    color: bright_red
+
+  kokushibo:
+    display_name: Kokushibo
+    description: |
+      Upper Moon One. A former demon slayer who became a demon
+      four centuries ago. Moon Breathing — sixteen forms, each
+      deadlier than the last. The strongest Upper Moon.
+    hp_max: 38
+    atk: 14
+    defense: 7
+    res: 5
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    glyph: "K"
+    color: bright_black
+
+  doma:
+    display_name: Doma
+    description: |
+      Upper Moon Two. Cryokinetic blood demon art — freezing mist
+      and ice clones. Fights at range with a serene smile that
+      masks absolute emptiness.
+    hp_max: 32
+    atk: 11
+    defense: 4
+    res: 8
+    spd: 6
+    move: 4
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "D"
+    color: bright_blue
+
+  akaza:
+    display_name: Akaza
+    description: |
+      Upper Moon Three. A martial artist who fights with his fists,
+      seeking the thrill of combat against the strong. Fast and
+      relentless — he never stops pressing the attack.
+    hp_max: 34
+    atk: 13
+    defense: 6
+    res: 4
+    spd: 8
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "A"
+    color: red
+
+  lower_moon:
+    display_name: Lower Moon Demon
+    description: |
+      Lower-ranked demons of the Twelve Kizuki. Individually weaker
+      than the Upper Moons, but they guard the castle corridors in
+      numbers.
+    hp_max: 22
+    atk: 8
+    defense: 4
+    res: 4
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "x"
+    color: red
+
+armies:
+  blue:
+    # Tanjiro — leading the charge
+    - {class: tanjiro, pos: {x: 8, y: 10}}
+    # Zenitsu and Inosuke — flanking Tanjiro
+    - {class: zenitsu, pos: {x: 6, y: 10}}
+    - {class: inosuke, pos: {x: 10, y: 10}}
+    # Hashira — spread across the southern entry
+    - {class: giyu, pos: {x: 7, y: 11}}
+    - {class: shinobu, pos: {x: 9, y: 11}}
+    - {class: mitsuri, pos: {x: 5, y: 11}}
+    # Demon slayers — support line
+    - {class: demon_slayer, pos: {x: 2, y: 10}}
+    - {class: demon_slayer, pos: {x: 3, y: 11}}
+    - {class: demon_slayer, pos: {x: 4, y: 10}}
+    - {class: demon_slayer, pos: {x: 12, y: 10}}
+    - {class: demon_slayer, pos: {x: 13, y: 11}}
+    - {class: demon_slayer, pos: {x: 11, y: 11}}
+
+  red:
+    # Muzan — on his throne (fort tile)
+    - {class: muzan, pos: {x: 8, y: 1}}
+    # Upper Moons — guarding the approaches
+    - {class: kokushibo, pos: {x: 7, y: 3}}
+    - {class: doma, pos: {x: 9, y: 3}}
+    - {class: akaza, pos: {x: 8, y: 4}}
+    # Lower Moons — scattered through corridors
+    - {class: lower_moon, pos: {x: 2, y: 3}}
+    - {class: lower_moon, pos: {x: 13, y: 3}}
+    - {class: lower_moon, pos: {x: 2, y: 6}}
+    - {class: lower_moon, pos: {x: 13, y: 6}}
+    - {class: lower_moon, pos: {x: 7, y: 4}}
+    - {class: lower_moon, pos: {x: 9, y: 4}}
+
+rules:
+  max_turns: 20
+  first_player: blue
+
+win_conditions:
+  # Tanjiro dies → blue loses
+  - {type: protect_unit, unit_id: u_b_tanjiro_1, owning_team: blue}
+  # Tanjiro alive at turn cap → dawn arrives, blue wins
+  - {type: protect_unit_survives, unit_id: u_b_tanjiro_1, owning_team: blue}
+  # Either side wins by total elimination
+  - {type: eliminate_all_enemy_units}
+  # Backstop
+  - {type: max_turns_draw}
+
+narrative:
+  title: Infinity Castle
+  description: |
+    The final battle. The Demon Slayer Corps descends into Muzan's
+    Infinity Castle to end a thousand years of darkness. Every
+    Hashira, every slayer — all or nothing before dawn.
+  intro: |
+    The floor gives way. The Demon Slayer Corps plunges into the
+    Infinity Castle — a vast, impossible space of floating platforms
+    and shifting corridors. Somewhere in the depths, Muzan waits
+    on his throne.
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        The castle shifts. Corridors rotate, stairs fold into walls.
+        The slayers press forward through the disorienting labyrinth,
+        guided by the scent of wisteria and blood.
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        The first light of dawn creeps through cracks in the castle's
+        dimension. The demons sense it — sunrise is coming. Muzan's
+        regeneration falters as light seeps in.
+    - trigger: on_unit_killed
+      unit_id: u_r_muzan_1
+      text: |
+        Muzan Kibutsuji disintegrates. A thousand years of terror,
+        ended by a boy with a sun-marked forehead and an unbreakable
+        will. Every demon spawned from his blood begins to crumble.
+    - trigger: on_unit_killed
+      unit_id: u_b_tanjiro_1
+      text: |
+        Tanjiro falls. The Sun Breathing is extinguished — and with
+        it, the only technique that could truly threaten Muzan.
+        Dawn is hours away. Too far.

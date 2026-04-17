@@ -1,0 +1,326 @@
+schema_version: 1
+name: Battle of Trost
+description: |
+  Trost District, Wall Rose. The Colossal Titan has kicked a hole
+  in the wall and titans pour through the breach. The Survey Corps
+  and Garrison mount a desperate defense of the district. Mikasa,
+  Armin, and Captain Levi fight to hold the line while waiting for
+  Eren to transform at turn 8. Once in Titan form, Eren must reach
+  the breach at (7, 10) to seal it with the boulder.
+
+board:
+  width: 14
+  height: 12
+  terrain:
+    # Buildings — ODM gear anchor points, scattered through city
+    - {x: 2, y: 3, type: building}
+    - {x: 5, y: 3, type: building}
+    - {x: 8, y: 3, type: building}
+    - {x: 11, y: 3, type: building}
+    - {x: 1, y: 5, type: building}
+    - {x: 4, y: 5, type: building}
+    - {x: 9, y: 5, type: building}
+    - {x: 12, y: 5, type: building}
+    - {x: 3, y: 6, type: building}
+    - {x: 6, y: 6, type: building}
+    - {x: 10, y: 6, type: building}
+    - {x: 2, y: 7, type: building}
+    - {x: 5, y: 7, type: building}
+    - {x: 8, y: 7, type: building}
+    - {x: 11, y: 7, type: building}
+    - {x: 3, y: 8, type: building}
+    - {x: 10, y: 8, type: building}
+    # Wall Rose at y=10-11 — impassable except the breach
+    - {x: 0, y: 10, type: titan_wall}
+    - {x: 1, y: 10, type: titan_wall}
+    - {x: 2, y: 10, type: titan_wall}
+    - {x: 3, y: 10, type: titan_wall}
+    - {x: 4, y: 10, type: titan_wall}
+    - {x: 5, y: 10, type: titan_wall}
+    - {x: 6, y: 10, type: titan_wall}
+    # Breach at (7, 10) — plain tile, no wall
+    - {x: 8, y: 10, type: titan_wall}
+    - {x: 9, y: 10, type: titan_wall}
+    - {x: 10, y: 10, type: titan_wall}
+    - {x: 11, y: 10, type: titan_wall}
+    - {x: 12, y: 10, type: titan_wall}
+    - {x: 13, y: 10, type: titan_wall}
+    - {x: 0, y: 11, type: titan_wall}
+    - {x: 1, y: 11, type: titan_wall}
+    - {x: 2, y: 11, type: titan_wall}
+    - {x: 3, y: 11, type: titan_wall}
+    - {x: 4, y: 11, type: titan_wall}
+    - {x: 5, y: 11, type: titan_wall}
+    - {x: 6, y: 11, type: titan_wall}
+    - {x: 7, y: 11, type: titan_wall}
+    - {x: 8, y: 11, type: titan_wall}
+    - {x: 9, y: 11, type: titan_wall}
+    - {x: 10, y: 11, type: titan_wall}
+    - {x: 11, y: 11, type: titan_wall}
+    - {x: 12, y: 11, type: titan_wall}
+    - {x: 13, y: 11, type: titan_wall}
+  forts: []
+
+terrain_types:
+  building:
+    move_cost: 1
+    defense_bonus: 2
+    glyph: "B"
+    color: dim
+    description: |
+      Trost district buildings. Survey Corps soldiers use them as
+      anchor points for ODM gear, swinging between rooftops to
+      strike titan napes.
+
+  titan_wall:
+    move_cost: 99
+    passable: false
+    defense_bonus: 0
+    glyph: "#"
+    color: bright_black
+    description: |
+      Wall Rose — fifty meters of hardened material that has kept
+      titans out for a century. Impassable except at the breach.
+
+unit_classes:
+  mikasa:
+    display_name: Mikasa Ackerman
+    description: |
+      Humanity's second strongest soldier. Her combat instincts
+      are unmatched among the cadets — she fights with the cold
+      precision of an Ackerman. Protect her at all costs.
+    hp_max: 22
+    atk: 13
+    defense: 5
+    res: 4
+    spd: 9
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "M"
+    color: white
+
+  armin:
+    display_name: Armin Arlert
+    description: |
+      The weakest soldier physically, but the sharpest mind in the
+      Corps. His tactical plans have saved more lives than any blade.
+      Fights at range with signal flares and distractions.
+    hp_max: 14
+    atk: 6
+    defense: 3
+    res: 7
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "A"
+    color: yellow
+
+  levi:
+    display_name: Captain Levi
+    description: |
+      Humanity's strongest soldier. His spinning blade technique
+      can carve through any titan's nape. SPD 10 — he doubles
+      everything on the field.
+    hp_max: 20
+    atk: 14
+    defense: 4
+    res: 5
+    spd: 10
+    move: 6
+    rng_min: 1
+    rng_max: 1
+    glyph: "L"
+    color: white
+
+  survey_corps:
+    display_name: Survey Corps Soldier
+    description: |
+      Wings of Freedom. Elite titan-fighters equipped with ODM gear
+      and ultrahard steel blades. Fast and mobile — born to fight
+      in urban terrain.
+    hp_max: 16
+    atk: 8
+    defense: 3
+    res: 3
+    spd: 7
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "s"
+    color: green
+
+  garrison:
+    display_name: Garrison Soldier
+    description: |
+      Wall garrison troops. Less skilled than the Survey Corps but
+      more numerous. They man the cannons and hold the line.
+    hp_max: 16
+    atk: 6
+    defense: 4
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "g"
+    color: yellow
+
+  eren_titan:
+    display_name: Eren (Attack Titan)
+    description: |
+      Eren Yeager in Attack Titan form. Fifteen meters of rage and
+      hardened fists. He must carry the boulder to the breach and
+      seal Wall Rose — humanity's only hope.
+    hp_max: 50
+    atk: 14
+    defense: 8
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "E"
+    color: bright_yellow
+
+  armored_titan:
+    display_name: Armored Titan
+    description: |
+      Encased in hardened titan skin, nearly immune to blades and
+      cannons. Slow but unstoppable — DEF 14 makes it a walking
+      fortress.
+    hp_max: 60
+    atk: 12
+    defense: 14
+    res: 1
+    spd: 2
+    move: 1
+    rng_min: 1
+    rng_max: 1
+    glyph: "!"
+    color: bright_red
+
+  titan:
+    display_name: Titan
+    description: |
+      A regular titan — three to fifteen meters of mindless hunger.
+      Tough and strong but slow. Can only be killed by cutting the
+      nape of the neck.
+    hp_max: 30
+    atk: 10
+    defense: 4
+    res: 1
+    spd: 3
+    move: 2
+    rng_min: 1
+    rng_max: 1
+    glyph: "T"
+    color: red
+
+  abnormal_titan:
+    display_name: Abnormal Titan
+    description: |
+      Unpredictable titans that run, jump, and ignore normal prey
+      in favor of strategic targets. Faster and harder to predict
+      than regular titans.
+    hp_max: 24
+    atk: 8
+    defense: 3
+    res: 1
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "X"
+    color: bright_red
+
+armies:
+  blue:
+    # Mikasa — forward position in the city
+    - {class: mikasa, pos: {x: 7, y: 7}}
+    # Armin — behind the line
+    - {class: armin, pos: {x: 6, y: 8}}
+    # Levi — rooftop position
+    - {class: levi, pos: {x: 4, y: 7}}
+    # Survey Corps — mobile defense across the city
+    - {class: survey_corps, pos: {x: 3, y: 6}}
+    - {class: survey_corps, pos: {x: 6, y: 6}}
+    - {class: survey_corps, pos: {x: 9, y: 7}}
+    - {class: survey_corps, pos: {x: 10, y: 6}}
+    - {class: survey_corps, pos: {x: 7, y: 5}}
+    - {class: survey_corps, pos: {x: 12, y: 7}}
+    # Garrison — near the wall breach
+    - {class: garrison, pos: {x: 5, y: 9}}
+    - {class: garrison, pos: {x: 4, y: 9}}
+    - {class: garrison, pos: {x: 9, y: 9}}
+    - {class: garrison, pos: {x: 6, y: 9}}
+    - {class: garrison, pos: {x: 8, y: 9}}
+
+  red:
+    # Armored Titan — leading the charge
+    - {class: armored_titan, pos: {x: 7, y: 1}}
+    # Regular titans — approaching from the north
+    - {class: titan, pos: {x: 3, y: 0}}
+    - {class: titan, pos: {x: 6, y: 0}}
+    - {class: titan, pos: {x: 9, y: 0}}
+    - {class: titan, pos: {x: 12, y: 0}}
+    - {class: titan, pos: {x: 4, y: 2}}
+    - {class: titan, pos: {x: 10, y: 2}}
+    # Abnormal titans — fast flankers
+    - {class: abnormal_titan, pos: {x: 1, y: 1}}
+    - {class: abnormal_titan, pos: {x: 13, y: 1}}
+    - {class: abnormal_titan, pos: {x: 7, y: 3}}
+
+rules:
+  max_turns: 16
+  first_player: red
+
+win_conditions:
+  # Mikasa dies → blue loses
+  - {type: protect_unit, unit_id: u_b_mikasa_1, owning_team: blue}
+  # Eren seals the breach (after spawning at turn 8)
+  - {type: reach_tile, team: blue, pos: {x: 7, y: 10}, unit_id: u_b_eren_titan_1}
+  # Any titan gets past the wall → red wins
+  - {type: reach_goal_line, team: red, axis: y, value: 11}
+  # Either side wins by total elimination
+  - {type: eliminate_all_enemy_units}
+  # Backstop
+  - {type: max_turns_draw}
+
+plugin_hooks:
+  on_turn_start:
+    - eren_reinforcement
+
+narrative:
+  title: Battle of Trost
+  description: |
+    Trost District — the first battle where humanity fights back.
+    The Survey Corps defends the breach in Wall Rose while waiting
+    for Eren's titan transformation.
+  intro: |
+    Smoke rises from Trost. The Colossal Titan appeared, kicked
+    open the gate, and vanished. Now titans stream through the
+    breach and the Garrison scrambles to evacuate civilians while
+    the Survey Corps engages.
+  events:
+    - trigger: on_turn_start
+      turn: 4
+      text: |
+        The titans push deeper into the district. Buildings crumble
+        as they wade through streets designed for humans, not
+        fifteen-meter monsters.
+    - trigger: on_turn_start
+      turn: 8
+      text: |
+        A bolt of lightning strikes inside the wall. Where a cadet
+        once stood, a fifteen-meter titan rises — Eren Yeager has
+        transformed. He picks up the boulder. Armin screams the
+        plan: "CARRY IT TO THE BREACH!"
+    - trigger: on_unit_killed
+      unit_id: u_b_mikasa_1
+      text: |
+        Mikasa falls to the titans. The strongest of the 104th —
+        gone. Without her, the defense crumbles and the retreat
+        becomes a rout.
