@@ -148,6 +148,37 @@ def test_wait_success_includes_unit_status():
     assert out.get("unit_status") == "done"
 
 
+def test_get_unit_range_returns_move_and_attack_tiles():
+    """get_unit_range returns the full threat zone: tiles the unit
+    can move to + tiles it can attack from any reachable position."""
+    s = _session()
+    out = call_tool(
+        s, Team.BLUE, "get_unit_range", {"unit_id": "u_b_knight_1"},
+    )
+    assert "move_tiles" in out
+    assert "attack_tiles" in out
+    # Knight with move=3 should have several reachable tiles.
+    assert len(out["move_tiles"]) > 1
+    # Knight with rng=[1,1] — attack tiles are the 1-ring around
+    # each move tile minus the move set. Should be non-empty.
+    assert isinstance(out["attack_tiles"], list)
+    # Each tile is {x, y}.
+    for t in out["move_tiles"]:
+        assert "x" in t and "y" in t
+
+
+def test_get_unit_range_done_unit_returns_empty():
+    """Units with status DONE can't act — range should be empty."""
+    s = _session()
+    # Wait the unit so it becomes DONE.
+    call_tool(s, Team.BLUE, "wait", {"unit_id": "u_b_knight_1"})
+    out = call_tool(
+        s, Team.BLUE, "get_unit_range", {"unit_id": "u_b_knight_1"},
+    )
+    assert out["move_tiles"] == []
+    assert out["attack_tiles"] == []
+
+
 def test_move_success_includes_next_actions_hint():
     """B1: every successful move response includes the follow-up
     action menu so the agent doesn't need a get_legal_actions call
@@ -262,6 +293,7 @@ def test_registry_has_all_tools():
     expected = {
         "get_state",
         "get_unit",
+        "get_unit_range",
         "get_legal_actions",
         "simulate_attack",
         "get_threat_map",

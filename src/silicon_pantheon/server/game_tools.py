@@ -361,6 +361,13 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         return _dispatch(app, connection_id, "get_unit", {"unit_id": unit_id})
 
     @mcp.tool()
+    def get_unit_range(connection_id: str, unit_id: str) -> dict:
+        """Full threat zone: tiles the unit can move to + tiles it
+        can attack from any reachable position. Works for any alive
+        unit (own or enemy)."""
+        return _dispatch(app, connection_id, "get_unit_range", {"unit_id": unit_id})
+
+    @mcp.tool()
     def get_legal_actions(connection_id: str, unit_id: str) -> dict:
         """Get legal moves/attacks/heals/wait for one of your units."""
         return _dispatch(app, connection_id, "get_legal_actions", {"unit_id": unit_id})

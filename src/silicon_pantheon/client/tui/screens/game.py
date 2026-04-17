@@ -129,9 +129,13 @@ class PlayerPanel(Panel):
             u = self._roster[self.cursor_idx]
             if u.get("alive", u.get("hp", 0) > 0):
                 self.screen.open_unit_card(u)
-        # Drive the cross-highlight on every key.
+        # Drive the cross-highlight on every key and clear range
+        # overlay (user must press `r` again on the new unit).
         if 0 <= self.cursor_idx < n:
-            self.screen.highlighted_unit_id = self._roster[self.cursor_idx].get("id")
+            new_id = self._roster[self.cursor_idx].get("id")
+            if new_id != self.screen.highlighted_unit_id:
+                self.screen._clear_range_overlay()
+            self.screen.highlighted_unit_id = new_id
         return None
 
     def render(self, focused: bool) -> RenderableType:
@@ -352,19 +356,26 @@ class GameMapPanel(Panel):
                         ),
                     )
                 is_cursor = focused and x == self.cx and y == self.cy
-                # Cross-highlight: when PlayerPanel cursor is on a
-                # unit, highlight that unit's cell on the map even
-                # when the map doesn't have focus. Use underline so
-                # it's visually distinct from the cursor's reverse.
+                # Cross-highlight from PlayerPanel cursor.
                 is_highlight = (
                     u is not None
                     and u.get("id") == self.screen.highlighted_unit_id
                     and not is_cursor
                 )
+                # Range overlay: move tiles (blue bg) / attack tiles
+                # (red bg). Rendered BEHIND the glyph so units are
+                # still readable. Only when range_overlay_unit is set.
+                in_move_range = (x, y) in self.screen.range_move_tiles
+                in_atk_range = (x, y) in self.screen.range_attack_tiles
+
                 if is_cursor:
                     text.append(f"[{g}]", style=f"reverse {st}")
                 elif is_highlight:
                     text.append(f"({g})", style=f"bold underline {st}")
+                elif in_move_range:
+                    text.append(f" {g} ", style=f"on dark_blue {st}")
+                elif in_atk_range:
+                    text.append(f" {g} ", style=f"on dark_red {st}")
                 else:
                     text.append(f" {g} ", style=st)
             text.append("\n")
@@ -463,6 +474,9 @@ class GameMapPanel(Panel):
         self.screen.highlighted_unit_id = (
             unit_here.get("id") if unit_here else None
         )
+        # Clear range overlay on any cursor movement — user must
+        # press `r` again on the new unit to see its range.
+        self.screen._clear_range_overlay()
         return None
 
 
@@ -764,6 +778,12 @@ class GameScreen(Screen):
         # cursor sitting on a unit. Cleared when focus moves to a
         # panel that doesn't participate (reasoning / coach).
         self.highlighted_unit_id: str | None = None
+        # Range overlay: toggle with `r`. Shows move tiles (blue bg)
+        # and attack tiles (red bg) for the highlighted unit. Cleared
+        # on cursor move or second `r` press.
+        self.range_overlay_unit: str | None = None
+        self.range_move_tiles: set[tuple[int, int]] = set()
+        self.range_attack_tiles: set[tuple[int, int]] = set()
         # Per-unit last-action cache. Populated from get_history at
         # turn boundaries. Maps unit_id → compact one-line description
         # like "moved (3,2)→(5,4)" or "attacked u_r_k1 dealt 8 dmg".
@@ -973,7 +993,7 @@ class GameScreen(Screen):
                 hints.append(f"[{focused.title}] ", style="bold yellow")
                 hints.append(panel_hints, style="white")
                 hints.append("   ", style="dim")
-            hints.append("Tab next panel   F2 help   F3 scenario   q quit", style="dim")
+            hints.append("Tab next panel   r range   F2 help   F3 scenario   q quit", style="dim")
             footer_line = hints
 
         root = Layout()
@@ -1039,6 +1059,18 @@ class GameScreen(Screen):
             )
 
             self._scenario_overlay = _DescriptionPanel(self.app)
+            return None
+        # Range overlay toggle: `r` shows/hides move + attack range
+        # for the highlighted unit. Works from Map or Player panel.
+        if key == "r" and self.highlighted_unit_id:
+            if self.range_overlay_unit == self.highlighted_unit_id:
+                # Already showing this unit's range → dismiss.
+                self._clear_range_overlay()
+            else:
+                # Fetch range from server and cache.
+                import asyncio as _asyncio
+
+                _asyncio.create_task(self._fetch_range_overlay(self.highlighted_unit_id))
             return None
         # When the Coach panel is focused, the buffer captures everything
         # so users can type 'q' / 'tab' / etc. into a message.
@@ -1131,6 +1163,29 @@ class GameScreen(Screen):
             self.app.state.scenario_description or {}
         ).get("unit_classes") or {}
         self.unit_card = UnitCard(units=units, index=idx, unit_classes=unit_classes)
+
+    def _clear_range_overlay(self) -> None:
+        self.range_overlay_unit = None
+        self.range_move_tiles = set()
+        self.range_attack_tiles = set()
+
+    async def _fetch_range_overlay(self, unit_id: str) -> None:
+        if self.app.client is None:
+            return
+        try:
+            r = await self.app.client.call("get_unit_range", unit_id=unit_id)
+        except Exception:
+            return
+        if not r.get("ok"):
+            return
+        result = r.get("result") or {}
+        self.range_overlay_unit = unit_id
+        self.range_move_tiles = {
+            (t["x"], t["y"]) for t in result.get("move_tiles") or []
+        }
+        self.range_attack_tiles = {
+            (t["x"], t["y"]) for t in result.get("attack_tiles") or []
+        }
 
     async def send_coach_message(self, text: str) -> None:
         gs = self.state or {}

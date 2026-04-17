@@ -88,6 +88,48 @@ def get_state(session: Session, viewer: Team) -> dict:
     return state_to_dict(session.state, viewer=viewer)
 
 
+def get_unit_range(session: Session, viewer: Team, unit_id: str) -> dict:
+    """Return the full threat zone for a unit: tiles it can move to
+    (BFS reachable set) AND tiles it can attack from any reachable
+    position (the outer threat ring). Read-only, works for ANY alive
+    unit (own or enemy), no turn-ownership check.
+
+    Units with status DONE return empty sets (they can't act this
+    turn — nothing to show).
+    """
+    from ..engine.board import reachable_tiles, tiles_in_attack_range
+
+    state = session.state
+    u = state.units.get(unit_id)
+    if u is None or not u.alive:
+        raise ToolError(f"unit {unit_id} does not exist or is dead")
+    if u.status is UnitStatus.DONE:
+        return {"unit_id": unit_id, "move_tiles": [], "attack_tiles": []}
+
+    # Movement range — BFS from current position.
+    reach = reachable_tiles(state, u)
+    move_set = set(reach.keys())
+    move_tiles = [{"x": p.x, "y": p.y} for p in sorted(move_set, key=lambda p: (p.y, p.x))]
+
+    # Attack range — expand each reachable tile by the unit's
+    # attack range, subtract the move set itself. This is the
+    # "outer ring" of threat: tiles the unit can hit if it moves
+    # optimally first. Current position is included in reach so
+    # standing attacks are covered.
+    attack_set: set[Pos] = set()
+    for p in move_set:
+        for t in tiles_in_attack_range(p, u.stats, state.board):
+            if t not in move_set:
+                attack_set.add(t)
+    attack_tiles = [{"x": p.x, "y": p.y} for p in sorted(attack_set, key=lambda p: (p.y, p.x))]
+
+    return {
+        "unit_id": unit_id,
+        "move_tiles": move_tiles,
+        "attack_tiles": attack_tiles,
+    }
+
+
 def get_unit(session: Session, viewer: Team, unit_id: str) -> dict:
     u = session.state.units.get(unit_id)
     if u is None or not u.alive:
@@ -632,6 +674,20 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
     "get_unit": {
         "fn": get_unit,
         "description": "Get a single unit's details by id.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"unit_id": {"type": "string"}},
+            "required": ["unit_id"],
+        },
+    },
+    "get_unit_range": {
+        "fn": get_unit_range,
+        "description": (
+            "Full threat zone for a unit: tiles it can move to (BFS "
+            "reachable) + tiles it can attack from any reachable "
+            "position (the outer threat ring). Works for any alive "
+            "unit, own or enemy. Units with status=done return empty."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {"unit_id": {"type": "string"}},
