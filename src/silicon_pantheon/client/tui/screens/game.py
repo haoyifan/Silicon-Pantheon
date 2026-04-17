@@ -37,7 +37,7 @@ from rich.table import Table
 from rich.text import Text
 from silicon_pantheon.client.locale import t
 from silicon_pantheon.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
-from silicon_pantheon.client.tui.panels import Panel, border_style
+from silicon_pantheon.client.tui.panels import Panel, border_style, estimate_panel_height
 from silicon_pantheon.client.tui.widgets import ConfirmModal, UnitCard
 from silicon_pantheon.client.tui.scenario_display import (
     describe_win_condition,
@@ -290,7 +290,7 @@ class PlayerPanel(Panel):
             ch = self.screen.app.console.height
         except Exception:
             ch = 30
-        visible = max(1, int(ch * 3 / 5) - 4)
+        visible = estimate_panel_height(ch, 3/5, 4)
         if cursor_row_idx is not None:
             if self.cursor_idx == 0:
                 # First unit: always show from the top so the turn
@@ -619,7 +619,7 @@ class ReasoningPanel(Panel):
             ch = self.screen.app.console.height
         except Exception:
             ch = 30
-        visible_rows = max(4, (ch - 2) * 2 // 5 - 2)
+        visible_rows = max(4, estimate_panel_height(ch, 2/5))
 
         end = total - self.line_offset
         start = max(0, end - visible_rows)

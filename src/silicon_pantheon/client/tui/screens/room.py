@@ -31,7 +31,7 @@ from rich.text import Text
 
 from silicon_pantheon.client.locale import t
 from silicon_pantheon.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
-from silicon_pantheon.client.tui.panels import Panel, border_style, wrap_rows_to_width
+from silicon_pantheon.client.tui.panels import Panel, border_style, estimate_panel_height, wrap_rows_to_width
 from silicon_pantheon.client.tui.widgets import (
     ART_FRAME_SECONDS,
     ConfirmModal,
@@ -253,7 +253,7 @@ class DescriptionPanel(Panel):
         if self._fullscreen:
             panel_height = max(1, ch - 4)  # full screen minus footer + borders
         else:
-            panel_height = max(1, int((ch - 2) * 2 / 5) - 2)
+            panel_height = estimate_panel_height(ch, 2/5)
         visible_window = max(1, panel_height)
         max_scroll = max(0, len(rows) - visible_window)
         if self.scroll > max_scroll:

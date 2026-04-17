@@ -29,6 +29,11 @@ FOCUSED_BORDER_STYLE = "bright_yellow"
 IDLE_BORDER_STYLE = "bright_black"
 
 
+def estimate_panel_height(console_height: int, ratio: float, border_lines: int = 2) -> int:
+    """Estimate visible rows for a panel that occupies `ratio` of the terminal."""
+    return max(1, int((console_height - 2) * ratio) - border_lines)
+
+
 def border_style(focused: bool) -> str:
     return FOCUSED_BORDER_STYLE if focused else IDLE_BORDER_STYLE
 

@@ -30,45 +30,11 @@ from silicon_pantheon.client.providers.base import (
 )
 from silicon_pantheon.client.providers.anthropic import _parse_lesson_json
 from silicon_pantheon.client.providers.errors import classify
+from silicon_pantheon.client.providers.reasoning import _extract_reasoning
 from silicon_pantheon.lessons import Lesson, slugify
 from silicon_pantheon.server.engine.state import Team
 
 log = logging.getLogger("silicon.provider.openai")
-
-
-def _extract_reasoning(msg: Any) -> str | None:
-    """Dig chain-of-thought text out of a chat-completions message.
-
-    Providers disagree on where reasoning lives:
-      - xAI Grok 3/4:       `reasoning_content`  (str)
-      - OpenAI o-series:    `reasoning_content`  (str)
-      - xAI (some builds):  `reasoning`          (str)
-      - DeepSeek R1 etc.:   `reasoning`          (str)
-      - Anthropic via OAI-compat: `thinking`     (str)
-
-    Pydantic models in newer openai SDKs stash unknown fields in
-    `model_extra`; older versions expose them as attributes directly.
-    Walk both.
-    """
-    for name in ("reasoning_content", "reasoning", "thinking"):
-        val = getattr(msg, name, None)
-        if isinstance(val, str) and val.strip():
-            return val
-        # List-of-blocks form (rare but used by some OAI-compat proxies).
-        if isinstance(val, list):
-            parts = [
-                b.get("text") if isinstance(b, dict) else str(b)
-                for b in val
-            ]
-            joined = "\n".join(p for p in parts if p)
-            if joined.strip():
-                return joined
-    extra = getattr(msg, "model_extra", None) or {}
-    for name in ("reasoning_content", "reasoning", "thinking"):
-        val = extra.get(name)
-        if isinstance(val, str) and val.strip():
-            return val
-    return None
 
 
 def _as_openai_tool(spec: ToolSpec) -> dict:
