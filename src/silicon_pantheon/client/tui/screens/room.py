@@ -1695,7 +1695,7 @@ class RoomScreen(Screen):
             self.app.state.error_message = f"get_room_state failed: {e}"
             return None
         if not r.get("ok"):
-            err_msg = r.get("error", {}).get(
+            err_msg = (r.get("error") or {}).get(
                 "message", "get_room_state rejected"
             )
             log.warning(
@@ -1735,7 +1735,7 @@ class RoomScreen(Screen):
             self.app.state.error_message = f"update_room_config failed: {e}"
             return
         if not r.get("ok"):
-            self.app.state.error_message = r.get("error", {}).get(
+            self.app.state.error_message = (r.get("error") or {}).get(
                 "message", "update_room_config rejected"
             )
             return
@@ -1771,7 +1771,7 @@ class RoomScreen(Screen):
             return
         log.info("toggle_ready: set_ready ok=%s", r.get("ok"))
         if not r.get("ok"):
-            self.app.state.error_message = r.get("error", {}).get(
+            self.app.state.error_message = (r.get("error") or {}).get(
                 "message", "set_ready rejected"
             )
             return

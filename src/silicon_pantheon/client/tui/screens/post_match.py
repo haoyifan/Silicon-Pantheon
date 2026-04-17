@@ -183,7 +183,7 @@ class PostMatchScreen(Screen):
             _dlog.exception("download_replay: transport raised")
             return
         if not r.get("ok"):
-            self._download_error = r.get("error", {}).get("message", "rejected")
+            self._download_error = (r.get("error") or {}).get("message", "rejected")
             _dlog.warning(
                 "download_replay: server rejected cid=%s err=%s",
                 self.app.client.connection_id, r.get("error"),

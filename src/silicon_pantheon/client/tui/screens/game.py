@@ -1279,7 +1279,7 @@ class GameScreen(Screen):
         if r.get("ok"):
             self.app.state.error_message = ""
         else:
-            self.app.state.error_message = r.get("error", {}).get(
+            self.app.state.error_message = (r.get("error") or {}).get(
                 "message", "send_to_agent rejected"
             )
 
@@ -1304,7 +1304,7 @@ class GameScreen(Screen):
             self.app.state.error_message = f"get_state failed: {e}"
             return None
         if not r.get("ok"):
-            self.app.state.error_message = r.get("error", {}).get(
+            self.app.state.error_message = (r.get("error") or {}).get(
                 "message", "get_state rejected"
             )
             return None
@@ -1474,7 +1474,7 @@ class GameScreen(Screen):
             self.app.state.error_message = f"{tool} failed: {e}"
             return None
         if not r.get("ok"):
-            self.app.state.error_message = r.get("error", {}).get(
+            self.app.state.error_message = (r.get("error") or {}).get(
                 "message", f"{tool} rejected"
             )
         else:

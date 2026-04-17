@@ -125,7 +125,7 @@ class LobbyScreen(Screen):
             self.app.state.error_message = f"list_rooms failed: {e}"
             return
         if not r.get("ok"):
-            err_msg = r.get("error", {}).get("message", "list_rooms rejected")
+            err_msg = (r.get("error") or {}).get("message", "list_rooms rejected")
             self.app.state.error_message = err_msg
             # Diagnostic: if the server says "set_player_metadata first",
             # the connection was dropped/re-established and lost its
@@ -162,7 +162,7 @@ class LobbyScreen(Screen):
             self.app.state.error_message = f"create_room failed: {e}"
             return None
         if not r.get("ok"):
-            self.app.state.error_message = r.get("error", {}).get("message", "create_room rejected")
+            self.app.state.error_message = (r.get("error") or {}).get("message", "create_room rejected")
             return None
         self.app.state.room_id = r.get("room_id")
         self.app.state.slot = r.get("slot")
@@ -183,7 +183,7 @@ class LobbyScreen(Screen):
             self.app.state.error_message = f"join_room failed: {e}"
             return None
         if not r.get("ok"):
-            self.app.state.error_message = r.get("error", {}).get("message", "join_room rejected")
+            self.app.state.error_message = (r.get("error") or {}).get("message", "join_room rejected")
             return None
         self.app.state.room_id = room_id
         self.app.state.slot = r.get("slot")
@@ -204,7 +204,7 @@ class LobbyScreen(Screen):
             self.app.state.error_message = f"preview_room failed: {e}"
             return None
         if not r.get("ok"):
-            self.app.state.error_message = r.get("error", {}).get("message", "preview rejected")
+            self.app.state.error_message = (r.get("error") or {}).get("message", "preview rejected")
             return None
         # Stash preview on state for a (future) preview screen; for now
         # render a concise banner on the lobby.

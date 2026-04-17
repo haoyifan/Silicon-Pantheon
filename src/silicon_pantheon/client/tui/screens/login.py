@@ -174,6 +174,6 @@ async def _connect_and_declare(app: TUIApp) -> None:
         client_protocol_version=PROTOCOL_VERSION,
     )
     if not r.get("ok"):
-        raise RuntimeError(r.get("error", {}).get("message", "metadata rejected"))
+        raise RuntimeError((r.get("error") or {}).get("message", "metadata rejected"))
     app.state.connection_id = client.connection_id
     await client.start_heartbeat()
