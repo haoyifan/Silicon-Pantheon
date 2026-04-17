@@ -327,27 +327,28 @@ class UnitCard:
         stats.add_column()
         hp_now = u.get("hp")
         hp_max = self._stat("hp_max")
+        _lc = self.locale
         stats.add_row(
-            "HP",
+            t("stat.hp", _lc),
             f"{hp_now if hp_now is not None else hp_max} / {hp_max}",
         )
-        stats.add_row("ATK", self._stat("atk"))
+        stats.add_row(t("stat.atk", _lc), self._stat("atk"))
         def_val = u.get("def")
         if def_val is None:
             def_val = spec.get("defense") or spec.get("def") or "?"
-        stats.add_row("DEF", str(def_val))
-        stats.add_row("RES", self._stat("res"))
-        stats.add_row("SPD", self._stat("spd"))
-        stats.add_row("MOVE", self._stat("move"))
+        stats.add_row(t("stat.def", _lc), str(def_val))
+        stats.add_row(t("stat.res", _lc), self._stat("res"))
+        stats.add_row(t("stat.spd", _lc), self._stat("spd"))
+        stats.add_row(t("stat.move", _lc), self._stat("move"))
         rng = u.get("rng") or [
             spec.get("rng_min", self._stat("rng_min")),
             spec.get("rng_max", self._stat("rng_max")),
         ]
-        stats.add_row("RANGE", f"{rng[0]}–{rng[1]}")
+        stats.add_row(t("stat.range", _lc), f"{rng[0]}–{rng[1]}")
         if u.get("is_magic") or spec.get("is_magic"):
-            stats.add_row("type", "magic")
+            stats.add_row(t("stat.type", _lc), t("stat.magic", _lc))
         if u.get("can_heal") or spec.get("can_heal"):
-            stats.add_row("can_heal", "yes")
+            stats.add_row(t("stat.can_heal", _lc), t("stat.yes", _lc))
         rows.append(stats)
 
         tags = u.get("tags") or spec.get("tags") or []
@@ -601,7 +602,8 @@ from silicon_pantheon.client.tui.terrain import terrain_cell as _terrain_cell  #
 
 
 def _terrain_effect_summary(
-    scenario_description: dict[str, Any] | None, terrain: str
+    scenario_description: dict[str, Any] | None, terrain: str,
+    locale: str = "en",
 ) -> str:
     """One-line summary of what a terrain does, built from the cached
     describe_scenario bundle. Empty if we don't have the data.
@@ -617,23 +619,23 @@ def _terrain_effect_summary(
     parts: list[str] = []
     mc = spec.get("move_cost")
     if mc is not None:
-        parts.append(f"move={mc}")
+        parts.append(t("terrain_fx.move", locale).replace("{n}", str(mc)))
     db = spec.get("defense_bonus")
     if db:
-        parts.append(f"+{db} DEF")
+        parts.append(t("terrain_fx.def_bonus", locale).replace("{n}", str(db)))
     rb = spec.get("res_bonus") or spec.get("magic_bonus")
     if rb:
-        parts.append(f"+{rb} RES")
+        parts.append(t("terrain_fx.res_bonus", locale).replace("{n}", str(rb)))
     heals = spec.get("heals")
     if heals:
         sign = "+" if heals > 0 else ""
-        parts.append(f"{sign}{heals} HP/turn")
+        parts.append(t("terrain_fx.hp_turn", locale).replace("{n}", f"{sign}{heals}"))
     if spec.get("blocks_sight"):
-        parts.append("blocks LoS")
+        parts.append(t("terrain_fx.blocks_los", locale))
     if spec.get("passable") is False:
-        parts.append("impassable")
+        parts.append(t("terrain_fx.impassable", locale))
     if spec.get("effects_plugin"):
-        parts.append(f"plugin: {spec['effects_plugin']}")
+        parts.append(t("terrain_fx.plugin", locale).replace("{name}", str(spec["effects_plugin"])))
     return ", ".join(parts)
 
 
@@ -736,7 +738,7 @@ def _describe_win_condition(
         pos = wc.get("pos") or {}
         team = wc.get("team", "?")
         u = wc.get("unit_id")
-        who = _humanize_unit_id(u, scenario_description) if u else f"any {team} unit"
+        who = _humanize_unit_id(u, scenario_description) if u else t("button_val.any_unit", locale).replace("{team}", team)
         return (t("win.reach_tile", locale)
                 .replace("{team}", team.capitalize())
                 .replace("{who}", who)
@@ -813,43 +815,33 @@ _HOST_TEAM_OPTIONS = ("blue", "red")
 # scenarios with many units or reasoning models that take ~15-20s
 # per tool call.
 _TURN_TIME_OPTIONS = ("60", "180", "600", "1800", "3600")
-_TURN_TIME_DESCRIPTIONS = {
-    "60":   "1 minute. Blitz. AI players with many units or slow "
-            "reasoning models will run out of time — most useful for "
-            "humans-only matches or tiny scenarios.",
-    "180":  "3 minutes. Fast AI games with strong models (Claude "
-            "Sonnet, GPT-5) on small rosters.",
-    "600":  "10 minutes. Reasonable for reasoning models on mid-size "
-            "scenarios.",
-    "1800": "30 minutes. Default. Large safety margin so weak models "
-            "can reason at length without the turn timer being the "
-            "bottleneck for debugging.",
-    "3600": "1 hour. Effectively unlimited — only the hard token "
-            "cap will stop a turn.",
-}
+def _turn_time_descriptions(lc: str) -> dict[str, str]:
+    return {
+        "60": t("dropdown_desc.turn_60", lc),
+        "180": t("dropdown_desc.turn_180", lc),
+        "600": t("dropdown_desc.turn_600", lc),
+        "1800": t("dropdown_desc.turn_1800", lc),
+        "3600": t("dropdown_desc.turn_3600", lc),
+    }
 
-_FOG_DESCRIPTIONS = {
-    "none": "No fog. Both sides see the entire board at all times. "
-            "Best for learning a new scenario.",
-    "classic": "Fire Emblem-style fog. A tile is visible if any of "
-               "your units is within sight range of it. Once seen, "
-               "the tile stays visible for the rest of the match.",
-    "line_of_sight": "Strict fog. A tile is visible only while a unit "
-                     "can see it THIS turn. Forests and mountains block "
-                     "sight past them — use them for ambushes.",
-}
-_TEAM_MODE_DESCRIPTIONS = {
-    "fixed": "Host picks which color they play (see 'Change Host "
-             "Team'). The other player gets the opposite color.",
-    "random": "Teams are assigned randomly at match start. Useful for "
-              "tournaments where first-player advantage matters.",
-}
-_HOST_TEAM_DESCRIPTIONS = {
-    "blue": "Host plays blue, who moves first. The game reveals the "
-            "map from blue's perspective in line_of_sight fog.",
-    "red": "Host plays red, the second-mover. Good if you want to "
-           "give a new player the simpler first-move option.",
-}
+def _fog_descriptions(lc: str) -> dict[str, str]:
+    return {
+        "none": t("dropdown_desc.fog_none", lc),
+        "classic": t("dropdown_desc.fog_classic", lc),
+        "line_of_sight": t("dropdown_desc.fog_los", lc),
+    }
+
+def _team_mode_descriptions(lc: str) -> dict[str, str]:
+    return {
+        "fixed": t("dropdown_desc.team_fixed", lc),
+        "random": t("dropdown_desc.team_random", lc),
+    }
+
+def _host_team_descriptions(lc: str) -> dict[str, str]:
+    return {
+        "blue": t("dropdown_desc.host_blue", lc),
+        "red": t("dropdown_desc.host_red", lc),
+    }
 
 
 class ActionsPanel(Panel):
@@ -899,15 +891,12 @@ class ActionsPanel(Panel):
         # Strategy is per-player (each side picks their own playbook),
         # not a host-only setting. Renders the current file's stem so
         # the player can see what's loaded without opening the picker.
-        strat_label = "(none)"
+        lc = self.screen.app.state.locale
+        strat_label = t("button_val.none", lc)
         sp = self.screen.app.state.strategy_path
         if sp is not None:
             strat_label = sp.stem
-        # Lessons toggle: per-player (each side's agent reads/writes
-        # its own store), only editable pre-match like strategy.
-        lessons_label = "on" if self.screen.app.state.use_lessons else "off"
-        from silicon_pantheon.client.locale import t
-        lc = self.screen.app.state.locale
+        lessons_label = t("button_val.on", lc) if self.screen.app.state.use_lessons else t("button_val.off", lc)
         buttons: list[Button] = [
             Button(label=t("room_buttons.toggle_ready", lc), action="toggle_ready", enabled=editable),
             Button(
@@ -1114,7 +1103,7 @@ class MapPanel(Panel):
         line.append(f"{t('game_map.terrain_label', _lc)}: {terrain}", style="yellow")
         # Terrain effect summary from the cached scenario bundle.
         summary = _terrain_effect_summary(
-            self.screen.app.state.scenario_description, terrain
+            self.screen.app.state.scenario_description, terrain, _lc
         )
         if summary:
             line.append(f" — {summary}", style="dim")
@@ -1558,7 +1547,7 @@ class RoomScreen(Screen):
             options=list(_FOG_OPTIONS),
             selected_idx=idx,
             on_confirm=lambda v: self._apply_config({"fog_of_war": v}),
-            option_descriptions=dict(_FOG_DESCRIPTIONS),
+            option_descriptions=_fog_descriptions(self.app.state.locale),
             locale=self.app.state.locale,
         )
 
@@ -1576,7 +1565,7 @@ class RoomScreen(Screen):
             options=list(_TEAM_MODE_OPTIONS),
             selected_idx=idx,
             on_confirm=lambda v: self._apply_config({"team_assignment": v}),
-            option_descriptions=dict(_TEAM_MODE_DESCRIPTIONS),
+            option_descriptions=_team_mode_descriptions(self.app.state.locale),
             locale=self.app.state.locale,
         )
 
@@ -1592,7 +1581,7 @@ class RoomScreen(Screen):
             options=list(_HOST_TEAM_OPTIONS),
             selected_idx=idx,
             on_confirm=lambda v: self._apply_config({"host_team": v}),
-            option_descriptions=dict(_HOST_TEAM_DESCRIPTIONS),
+            option_descriptions=_host_team_descriptions(self.app.state.locale),
             locale=self.app.state.locale,
         )
 
@@ -1615,7 +1604,7 @@ class RoomScreen(Screen):
             options=list(_TURN_TIME_OPTIONS),
             selected_idx=idx,
             on_confirm=_on_confirm,
-            option_descriptions=dict(_TURN_TIME_DESCRIPTIONS),
+            option_descriptions=_turn_time_descriptions(self.app.state.locale),
             locale=self.app.state.locale,
         )
 

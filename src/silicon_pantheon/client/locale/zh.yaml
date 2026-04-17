@@ -477,6 +477,62 @@ provider_cli:
   stored_auth: "已保存认证：{label} CLI 订阅"
   reauth_cli: "重新认证（再次运行 claude login）"
 
+# 单位卡片属性标签
+stat:
+  hp: "HP"
+  atk: "攻击"
+  def: "防御"
+  res: "魔防"
+  spd: "速度"
+  move: "移动"
+  range: "射程"
+  type: "类型"
+  magic: "魔法"
+  can_heal: "可治疗"
+  yes: "是"
+
+# 地形效果摘要
+terrain_fx:
+  move: "移动={n}"
+  def_bonus: "+{n} 防御"
+  res_bonus: "+{n} 魔防"
+  hp_turn: "{n} HP/回合"
+  blocks_los: "遮挡视线"
+  impassable: "不可通行"
+  plugin: "插件：{name}"
+
+# 行动标注
+action:
+  moved: "移动 → ({x},{y})"
+  atk: "攻击 {tid} 造成 {dmg}"
+  killed: "（击杀）"
+  healed: "治疗 {tid} +{amt}"
+
+# 下拉框选项描述
+dropdown_desc:
+  turn_60: "1分钟。闪电战——适合纯人类对战或小场景。"
+  turn_180: "3分钟。强模型小阵容的快速AI对战。"
+  turn_600: "10分钟。中等场景推理模型的合理时间。"
+  turn_1800: "30分钟。默认值。调试用的大安全边际。"
+  turn_3600: "1小时。几乎无限制。"
+  fog_none: "无迷雾。双方全程可见整个棋盘。适合学习。"
+  fog_classic: "火焰纹章式迷雾。被发现的格子永久可见。"
+  fog_los: "严格迷雾。格子仅在单位视线内可见。森林和山地遮挡视线。"
+  team_fixed: "房主选择颜色。另一方获得相反颜色。"
+  team_random: "比赛开始时随机分配队伍。"
+  host_blue: "房主为蓝队（先手）。"
+  host_red: "房主为红队（后手）。"
+
+# 按钮值标签
+button_val:
+  none: "（无）"
+  on: "开启"
+  off: "关闭"
+  any_unit: "{team}方任意单位"
+
+# 帮助浮层底栏
+help_footer: "↑/↓ 滚动   PgUp/PgDn 翻页   Esc / F2 关闭"
+
 # 错误消息
 errors:
   not_connected: "未连接"

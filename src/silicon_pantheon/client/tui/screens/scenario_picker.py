@@ -267,7 +267,7 @@ class ScenarioPicker:
         footer = self._cursor_tooltip(tile_type, unit_at)
         return RichPanel(
             Group(text, Text(""), footer),
-            title="Map",
+            title=t("scenario_picker.map", self.locale),
             border_style=border_style(focused),
             padding=(0, 1),
         )
@@ -282,7 +282,7 @@ class ScenarioPicker:
         line = Text()
         line.append(f"({cx}, {cy}) ", style="dim")
         line.append(f"{t('scenario_pick.terrain_label', self.locale)}: {terrain}", style="yellow")
-        summary = _terrain_effect_summary(self._current_desc(), terrain)
+        summary = _terrain_effect_summary(self._current_desc(), terrain, self.locale)
         if summary:
             line.append(f" — {summary}", style="dim")
         u = unit_at.get((cx, cy))

@@ -431,7 +431,7 @@ class GameMapPanel(Panel):
         line.append(f"({self.cx}, {self.cy}) ", style="dim")
         line.append(f"{_loc('game_map.terrain_label', _lc2)}: {terrain}", style="yellow")
         summary = _terrain_effect_summary(
-            self.screen.app.state.scenario_description, terrain
+            self.screen.app.state.scenario_description, terrain, _lc2
         )
         if summary:
             line.append(f" — {summary}", style="dim")
@@ -1324,23 +1324,34 @@ class GameScreen(Screen):
             self._last_action_seen = la
             uid = la.get("unit_id") or la.get("healer_id")
             if uid:
-                t = la.get("type")
-                if t == "move":
+                from silicon_pantheon.client.locale import t as _lt
+                _alc = self.app.state.locale
+                la_type = la.get("type")
+                if la_type == "move":
                     dest = la.get("dest") or {}
                     self.unit_last_actions[uid] = (
-                        f"moved → ({dest.get('x','?')},{dest.get('y','?')})"
+                        _lt("action.moved", _alc)
+                        .replace("{x}", str(dest.get("x", "?")))
+                        .replace("{y}", str(dest.get("y", "?")))
                     )
-                elif t == "attack":
+                elif la_type == "attack":
                     tid = la.get("target_id", "?")
                     dmg = la.get("damage_dealt", "?")
-                    killed = " (killed)" if la.get("target_killed") else ""
+                    killed = f" {_lt('action.killed', _alc)}" if la.get("target_killed") else ""
                     self.unit_last_actions[uid] = (
-                        f"atk {tid} dealt {dmg}{killed}"
+                        _lt("action.atk", _alc)
+                        .replace("{tid}", str(tid))
+                        .replace("{dmg}", str(dmg))
+                        + killed
                     )
-                elif t == "heal":
+                elif la_type == "heal":
                     tid = la.get("target_id", "?")
                     amt = la.get("heal_amount", la.get("healed", "?"))
-                    self.unit_last_actions[uid] = f"healed {tid} +{amt}"
+                    self.unit_last_actions[uid] = (
+                        _lt("action.healed", _alc)
+                        .replace("{tid}", str(tid))
+                        .replace("{amt}", str(amt))
+                    )
                 # "wait" and "end_turn" are intentionally skipped.
 
         await self._maybe_trigger_agent()

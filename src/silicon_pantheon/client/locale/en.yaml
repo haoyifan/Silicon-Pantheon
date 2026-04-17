@@ -490,6 +490,62 @@ provider_cli:
   stored_auth: "Stored auth: {label} CLI subscription"
   reauth_cli: "Re-authenticate (run claude login again)"
 
+# Unit card stat labels
+stat:
+  hp: "HP"
+  atk: "ATK"
+  def: "DEF"
+  res: "RES"
+  spd: "SPD"
+  move: "MOVE"
+  range: "RANGE"
+  type: "type"
+  magic: "magic"
+  can_heal: "can_heal"
+  yes: "yes"
+
+# Terrain effect summary (fallback when no description field)
+terrain_fx:
+  move: "move={n}"
+  def_bonus: "+{n} DEF"
+  res_bonus: "+{n} RES"
+  hp_turn: "{n} HP/turn"
+  blocks_los: "blocks LoS"
+  impassable: "impassable"
+  plugin: "plugin: {name}"
+
+# Action annotations (player panel last-action sub-line)
+action:
+  moved: "moved → ({x},{y})"
+  atk: "atk {tid} dealt {dmg}"
+  killed: "(killed)"
+  healed: "healed {tid} +{amt}"
+
+# Dropdown option descriptions
+dropdown_desc:
+  turn_60: "1 minute. Blitz — most useful for humans-only or tiny scenarios."
+  turn_180: "3 minutes. Fast AI games with strong models on small rosters."
+  turn_600: "10 minutes. Reasonable for reasoning models on mid-size scenarios."
+  turn_1800: "30 minutes. Default. Large safety margin for debugging."
+  turn_3600: "1 hour. Effectively unlimited."
+  fog_none: "No fog. Both sides see the entire board. Best for learning."
+  fog_classic: "Fire Emblem-style fog. Tiles stay visible once seen."
+  fog_los: "Strict fog. Tiles visible only while a unit can see them. Forests and mountains block sight."
+  team_fixed: "Host picks which color they play. The other gets the opposite."
+  team_random: "Teams assigned randomly at match start."
+  host_blue: "Host plays blue (moves first)."
+  host_red: "Host plays red (second-mover)."
+
+# Button value labels
+button_val:
+  none: "(none)"
+  on: "on"
+  off: "off"
+  any_unit: "any {team} unit"
+
+# Help overlay footer
+help_footer: "↑/↓ scroll   PgUp/PgDn page   Esc / F2 close"
+
 # Error messages
 errors:
   not_connected: "not connected"

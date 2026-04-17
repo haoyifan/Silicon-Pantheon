@@ -709,7 +709,7 @@ class _HelpOverlay:
             lines = lines[self.scroll:]
         body = Text("\n".join(lines))
         footer = Text(
-            "↑/↓ scroll   PgUp/PgDn page   Esc / F2 close",
+            _tl("help_footer", self.locale),
             style="dim",
         )
         return Align.center(
