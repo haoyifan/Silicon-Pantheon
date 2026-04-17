@@ -203,7 +203,9 @@ class PlayerPanel(Panel):
         # Per-unit action lookup for "last turn" annotations.
         last_actions = self.screen.unit_last_actions
 
-        # Render per-team roster.
+        # Render per-team roster. Track which row in `rows` the
+        # cursor unit occupies so we can auto-scroll to it.
+        cursor_row_idx: int | None = None
         roster_idx = 0
         for team in ("blue", "red"):
             team_units = [u for u in self._roster if u.get("owner") == team]
@@ -224,17 +226,13 @@ class PlayerPanel(Panel):
                 hp_max = u.get("hp_max", "?")
                 uid = u.get("id", "")
                 name = _unit_display_name(u, scen_desc)
-                # Is this the cursor row (focused) or cross-highlighted
-                # (other panel focused)?
                 is_cursor = focused and roster_idx == self.cursor_idx
                 is_highlight = (not focused) and uid == highlight_id
-                row_suffix = " ◄" if is_cursor else ""
+                if is_cursor:
+                    cursor_row_idx = len(rows)
                 if alive:
                     unit_status = str(u.get("status", "ready"))
                     hp_str = f"{hp}/{hp_max}"
-                    # Last-action annotation — compact, same line.
-                    action_desc = last_actions.get(uid, "")
-                    action_suffix = f"  {action_desc}" if action_desc else ""
                     if is_cursor or is_highlight:
                         row = Text.assemble(
                             ("► ", "bold yellow" if is_cursor else "bold white"),
@@ -243,7 +241,6 @@ class PlayerPanel(Panel):
                             (f"{hp_str:>7}", _hp_style(hp, hp_max)),
                             ("  ", None),
                             (unit_status, _status_style(unit_status)),
-                            (action_suffix, "dim italic"),
                         )
                     else:
                         row = Text.assemble(
@@ -253,9 +250,16 @@ class PlayerPanel(Panel):
                             (f"{hp_str:>7}", _hp_style(hp, hp_max)),
                             ("  ", None),
                             (unit_status, _status_style(unit_status)),
-                            (action_suffix, "dim italic"),
                         )
                     rows.append(row)
+                    # Last-action annotation on a sub-line below the
+                    # unit — only for meaningful actions (move/attack/
+                    # heal), cleared at turn start.
+                    action_desc = last_actions.get(uid)
+                    if action_desc:
+                        rows.append(
+                            Text(f"    └ {action_desc}", style="dim italic")
+                        )
                 else:
                     marker = f"✗ {name[:12]}"
                     hp_str = f"0/{hp_max}"
@@ -274,15 +278,18 @@ class PlayerPanel(Panel):
                     rows.append(row)
                 roster_idx += 1
 
-        # Auto-scroll so the cursor row is always visible. Compute
-        # which row the cursor is at in the `rows` list. Rough: the
-        # header lines + per-unit rows. Easier: just keep scroll = 0
-        # for short rosters, or scroll so cursor_idx's row is centered.
+        # Auto-scroll: ensure the cursor row is always visible.
         try:
             ch = self.screen.app.console.height
         except Exception:
             ch = 30
         visible = max(1, ch - 5)
+        if cursor_row_idx is not None:
+            # Scroll so cursor is within the visible window.
+            if cursor_row_idx < self.scroll:
+                self.scroll = cursor_row_idx
+            elif cursor_row_idx >= self.scroll + visible:
+                self.scroll = cursor_row_idx - visible + 1
         max_scroll = max(0, len(rows) - visible)
         if self.scroll > max_scroll:
             self.scroll = max_scroll
@@ -1241,7 +1248,17 @@ class GameScreen(Screen):
         # needed — we just track each new action as it appears on
         # every 1s poll. Only meaningful actions (move / attack /
         # heal) are cached; "wait" and "end_turn" are not informational.
+        #
+        # Clear the cache when a new turn starts (active_player
+        # flipped). Units are back to READY — showing stale actions
+        # from the previous turn is confusing ("it says moved but
+        # the unit is in ready state").
         la = self.state.get("last_action")
+        if la is not None and la.get("type") == "end_turn":
+            # end_turn = turn boundary. Clear all annotations so the
+            # new turn starts clean.
+            if la is not self._last_action_seen:
+                self.unit_last_actions.clear()
         if la is not None and la is not self._last_action_seen:
             self._last_action_seen = la
             uid = la.get("unit_id") or la.get("healer_id")
@@ -1263,8 +1280,7 @@ class GameScreen(Screen):
                     tid = la.get("target_id", "?")
                     amt = la.get("healed", "?")
                     self.unit_last_actions[uid] = f"healed {tid} +{amt}"
-                # "wait" and "end_turn" are intentionally skipped —
-                # not informational per user request.
+                # "wait" and "end_turn" are intentionally skipped.
 
         await self._maybe_trigger_agent()
 

@@ -708,6 +708,13 @@ def _describe_win_condition(
         loser = wc.get("owning_team", "?")
         winner = _other(loser)
         return f"{winner.capitalize()} wins if {name} dies (protected by {loser})."
+    if t == "protect_unit_survives":
+        name = _humanize_unit_id(wc.get("unit_id", ""), scenario_description)
+        protector = wc.get("owning_team", "?")
+        return (
+            f"{protector.capitalize()} wins if {name} survives to the "
+            f"turn cap (hold out to win)."
+        )
     if t == "reach_tile":
         pos = wc.get("pos") or {}
         team = wc.get("team", "?")
