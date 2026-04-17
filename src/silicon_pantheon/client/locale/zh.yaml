@@ -1,0 +1,100 @@
+# 中文 UI 字符串
+# 缺失的键自动回退到英文 (en.yaml)
+
+language_name: 中文
+
+# 登录 / 语言选择
+login:
+  pick_language: "选择语言"
+  language_note: >
+    语言设置会影响所有游戏文字以及AI的思考方式。
+    AI的系统提示、推理过程和战略规划将完全使用所选语言。
+
+# 面板标题
+panel:
+  player: "玩家"
+  map: "地图"
+  reasoning: "推理"
+  coach: "教练"
+  description: "说明"
+
+# 游戏状态
+status:
+  your_turn: "你的回合"
+  opponent_turn: "对手回合"
+  game_over: "游戏结束"
+  agent_thinking: "AI思考中…"
+  agent_idle: "AI空闲"
+  you: "你"
+  turn: "回合"
+
+# 底部按键提示
+keys:
+  tab_next: "Tab 下一面板"
+  range: "r 范围"
+  help: "F2 帮助"
+  scenario: "F3 剧情"
+  quit: "q 退出"
+  close: "关闭"
+  scroll: "j/k 滚动"
+  page: "^f/^b 翻页"
+  half_page: "^d/^u 半页"
+  top: "gg 顶部"
+  bottom: "G 底部"
+  enter_details: "Enter 详情"
+  move_cursor: "←↑↓→ (或 h/j/k/l) 移动"
+
+# 单位状态
+unit_status:
+  ready: "就绪"
+  moved: "已移动"
+  done: "完成"
+  dead: "阵亡"
+
+# 胜利条件描述
+win:
+  seize_enemy_fort: "任一方将单位移动到对方堡垒即可获胜。"
+  eliminate_all: "任一方消灭所有敌方单位即可获胜。"
+  max_turns_draw: "达到回合上限时平局。"
+  protect_unit: "如果{name}阵亡，{winner}方获胜（由{loser}方保护）。"
+  protect_unit_survives: "如果{name}存活到回合上限，{protector}方获胜（坚持到最后）。"
+  reach_tile: "如果{who}在({x}, {y})结束回合，{team}方获胜。"
+  hold_tile: "{team}方连续占领({x}, {y}){n}个回合即可获胜。"
+  reach_goal_line: "{team}方任意单位越过{axis}={value}即可获胜。"
+
+# 赛后界面
+post_match:
+  download_replay: "d 下载回放"
+  back_to_lobby: "l 返回大厅"
+  replay_saved: "回放已保存至"
+  download_failed: "下载失败"
+  lesson_pending: "AI正在复盘…"
+  lesson_done: "复盘已保存"
+  lesson_failed: "复盘失败"
+
+# 大厅
+lobby:
+  create_room: "创建房间"
+  join: "加入"
+  refresh: "刷新"
+  no_rooms: "暂无房间，创建一个吧！"
+
+# 房间设置
+room:
+  toggle_ready: "切换准备状态"
+  strategy: "策略"
+  lessons: "复盘"
+  change_scenario: "更换剧本"
+  change_fog: "更换战争迷雾"
+  change_teams: "更换队伍模式"
+  change_host_team: "更换主队"
+  turn_time: "回合时间限制"
+  leave: "离开房间"
+
+# 其他
+misc:
+  on_friendly_fort: "在己方堡垒上 — 每回合开始+3生命值"
+  no_constraint_reminder: >
+    请充分思考。思考没有任何token或时间惩罚——每回合有30分钟的
+    时间限制。请不要为了"节省token"而默认全部等待+结束回合；
+    这是一种不适用于此系统的习惯性快捷方式。请完整规划后再行动。

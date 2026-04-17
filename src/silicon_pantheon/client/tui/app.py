@@ -85,6 +85,7 @@ class SharedState:
     """
 
     server_url: str = "http://127.0.0.1:8080/mcp/"
+    locale: str = "en"  # set at login; threads through to TUI + prompts
     display_name: str = ""
     kind: str = "ai"
     provider: str | None = None

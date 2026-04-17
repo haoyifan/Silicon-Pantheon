@@ -102,7 +102,10 @@ class PlayerPanel(Panel):
     when the Map is focused and its cursor sits on a unit, the
     roster highlights that unit's row."""
 
-    title = "Player"
+    @property
+    def title(self) -> str:
+        from silicon_pantheon.client.locale import t
+        return t("panel.player", self.screen.app.state.locale)
 
     def __init__(self, screen: "GameScreen") -> None:
         self.screen = screen
@@ -315,7 +318,10 @@ class PlayerPanel(Panel):
 
 
 class GameMapPanel(Panel):
-    title = "Map"
+    @property
+    def title(self) -> str:
+        from silicon_pantheon.client.locale import t
+        return t("panel.map", self.screen.app.state.locale)
 
     def __init__(self, screen: "GameScreen") -> None:
         self.screen = screen
@@ -517,7 +523,10 @@ class ReasoningPanel(Panel):
     silicon.agent.thoughts for out-of-band review.
     """
 
-    title = "Agent Reasoning"
+    @property
+    def title(self) -> str:
+        from silicon_pantheon.client.locale import t
+        return t("panel.reasoning", self.screen.app.state.locale)
 
     def __init__(self, screen: "GameScreen") -> None:
         self.screen = screen
@@ -708,7 +717,10 @@ class ReasoningPanel(Panel):
 
 
 class CoachPanel(Panel):
-    title = "Coach"
+    @property
+    def title(self) -> str:
+        from silicon_pantheon.client.locale import t
+        return t("panel.coach", self.screen.app.state.locale)
 
     def __init__(self, screen: "GameScreen") -> None:
         self.screen = screen
@@ -960,11 +972,23 @@ class GameScreen(Screen):
             lessons_dir=lessons_dir,
             thoughts_callback=on_thought,
             # Hand over the scenario bundle the room screen already
-            # fetched so the agent doesn't need to re-call the server.
-            # Falls back to a first-turn fetch if it's missing.
-            scenario_description=app.state.scenario_description,
+            # fetched, localized for the user's language. The locale
+            # merge only affects display strings (names, descriptions,
+            # narrative); stats come from the base config unchanged.
+            scenario_description=self._localized_scenario(app),
             time_budget_s=time_budget_s,
         )
+
+    def _localized_scenario(self, app: TUIApp) -> dict | None:
+        """Apply locale overrides to the cached scenario bundle."""
+        bundle = app.state.scenario_description
+        if bundle is None:
+            return None
+        locale = app.state.locale
+        if locale == "en":
+            return bundle
+        from silicon_pantheon.client.locale.scenario import localize_scenario
+        return localize_scenario(bundle, locale)
 
     # ---- render ----
 
@@ -1008,7 +1032,14 @@ class GameScreen(Screen):
                 hints.append(f"[{focused.title}] ", style="bold yellow")
                 hints.append(panel_hints, style="white")
                 hints.append("   ", style="dim")
-            hints.append("Tab next panel   r range   F2 help   F3 scenario   q quit", style="dim")
+            from silicon_pantheon.client.locale import t as _t
+            lc = self.app.state.locale
+            hints.append(
+                f"{_t('keys.tab_next', lc)}   {_t('keys.range', lc)}   "
+                f"{_t('keys.help', lc)}   {_t('keys.scenario', lc)}   "
+                f"{_t('keys.quit', lc)}",
+                style="dim",
+            )
             footer_line = hints
 
         root = Layout()

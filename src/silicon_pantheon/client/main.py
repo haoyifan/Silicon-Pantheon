@@ -118,14 +118,16 @@ def _run_tui(
     from pathlib import Path
 
     from silicon_pantheon.client.tui.app import TUIApp
-    from silicon_pantheon.client.tui.screens.login import LoginScreen
+    from silicon_pantheon.client.tui.screens.language_picker import LanguagePickerScreen
     from silicon_pantheon.harness.prompts import load_strategy
 
     log_path = _configure_client_logging(display_name_hint=name)
     # Print BEFORE the TUI takes the terminal so the user can grep/tail.
     print(f"client log: {log_path}", flush=True)
 
-    app = TUIApp(initial_screen_factory=LoginScreen)
+    # Language picker fires first; it transitions to the login/provider
+    # screen after the user picks a locale.
+    app = TUIApp(initial_screen_factory=LanguagePickerScreen)
     if url:
         app.state.server_url = url
     if name:

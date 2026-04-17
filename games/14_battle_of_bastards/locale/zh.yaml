@@ -1,0 +1,112 @@
+# 私生子之战 — 中文本地化
+name: 私生子之战
+description: |
+  临冬城，303年。琼恩·雪诺从死中复活，率领一支由自由民、
+  北境小领主和一个名叫旺旺的巨人组成的杂牌军北上，
+  从拉姆塞·波顿手中夺回临冬城。拉姆塞拥有更多的兵力、
+  更好的装甲和残忍的战术头脑。他的长矛兵组成盾墙，
+  威胁着将史塔克军困在收拢的钳形阵中。琼恩必须坚持
+  足够长的时间等到珊莎的信带来谷地骑士——或者在陷阱
+  合拢之前杀死拉姆塞。
+
+unit_classes:
+  jon_snow:
+    display_name: 琼恩·雪诺
+    description: |
+      白狼，北境之王。手持瓦雷利亚钢剑长爪，独自冲向敌阵
+      企图救出瑞肯，差点在部下赶到前阵亡。
+  tormund:
+    display_name: 托蒙德·裂骨
+    description: |
+      野人族长。像熊一样战斗，也像熊一样咬人。自由民追随他
+      因为每场战斗后他都是最后站着的人。
+  wun_wun:
+    display_name: 旺旺
+    description: |
+      绝境长城以南最后一个巨人。比战场上所有人都高出一截，
+      挥舞着一根树干。几乎不可杀死——但行动缓慢。
+  free_folk:
+    display_name: 自由民战士
+    description: |
+      野人战士——凶猛、快速、轻甲。他们在纪律上的不足
+      用凶猛来弥补。
+  stark_infantry:
+    display_name: 史塔克步兵
+    description: |
+      忠于史塔克家族的北境旗手。比自由民装甲更好，
+      训练有盾墙战术素养。
+  melisandre:
+    display_name: 梅丽珊卓
+    description: |
+      红袍女巫。光之王拉赫洛的女祭司，将琼恩·雪诺从死亡中
+      唤醒。她的火焰魔法既能治愈盟友也能灼伤敌人。
+  bolton_cavalry:
+    display_name: 波顿骑兵
+    description: |
+      打着剥皮人旗帜的骑枪手。快速侧翼部队，
+      包围史塔克军并封闭陷阱。
+  bolton_pikeman:
+    display_name: 波顿长矛兵
+    description: |
+      手持长矛和联锁盾牌的重步兵。他们组成碾压琼恩部下的
+      盾墙。缓慢但极难突破。
+  bolton_archer:
+    display_name: 波顿弓箭手
+    description: |
+      拉姆塞的弓箭手，不分敌我地向混战中射箭——因为
+      拉姆塞不在乎己方伤亡。
+  ramsay:
+    display_name: 拉姆塞·波顿
+    description: |
+      波顿家的私生子。残忍、精于算计、胆小——躲在阵线后面
+      让部下去送死。箭术不错，有虐待癖。
+  vale_knight:
+    display_name: 谷地骑士
+    description: |
+      鹰巢城的重装骑兵，在珊莎的请求下由小指头率领。
+      精力充沛、装甲齐全、冲锋时势不可挡。
+      他们来得晚——但他们来了。
+
+terrain_types:
+  corpse_pile:
+    description: |
+      初次骑兵冲锋中倒下的尸堆。难以穿越但能提供箭矢掩护。
+
+narrative:
+  title: 私生子之战
+  description: |
+    临冬城，303年。白狼对阵疯犬。琼恩·雪诺率领的自由民和
+    北境忠臣杂牌军在临冬城前的空地上面对拉姆塞·波顿的
+    训练有素的部队。
+  intro: |
+    黎明。两军在一片已经堆满了第一次骑兵冲锋中阵亡者的
+    战场上对峙。琼恩独自站在两军之间，手持长爪，
+    拉姆塞的弓箭手搭起了箭。
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        波顿盾墙开始收拢。长矛兵从两翼推进，
+        长矛林立如钢铁之林。
+    - trigger: on_turn_start
+      turn: 8
+      text: |
+        钳形阵收紧。琼恩的部下被挤压在一起，
+        几乎无法挥剑。尸体在脚下堆积。
+        托蒙德咬断了一个人的喉咙。
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        一声号角从南方传来。鹰和月亮的旗帜——
+        谷地骑士冲入波顿后方！六名精锐重装骑兵
+        撞入包围圈。
+    - trigger: on_unit_killed
+      unit_id: u_r_ramsay_1
+      text: |
+        拉姆塞脸上的表情变得空白，意识到已无处可逃。
+        琼恩在临冬城庭院的泥泞中将他打得血肉模糊。
+    - trigger: on_unit_killed
+      unit_id: u_b_wun_wun_1
+      text: |
+        旺旺撞破了临冬城的大门，身上插满了箭矢。
+        最后的巨人倒下了。

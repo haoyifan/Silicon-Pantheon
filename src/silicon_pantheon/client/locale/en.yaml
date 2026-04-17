@@ -1,0 +1,102 @@
+# English UI strings — the default / fallback locale.
+# Every key used by t() must exist here.
+
+language_name: English
+
+# Login / language picker
+login:
+  pick_language: "Pick Language"
+  language_note: >
+    Language affects all game text AND how the AI agent thinks.
+    The agent's system prompt, reasoning, and strategic planning
+    will be entirely in the selected language.
+
+# Panel titles
+panel:
+  player: "Player"
+  map: "Map"
+  reasoning: "Reasoning"
+  coach: "Coach"
+  description: "Description"
+
+# Game status
+status:
+  your_turn: "YOUR TURN"
+  opponent_turn: "opponent's turn"
+  game_over: "GAME OVER"
+  agent_thinking: "agent thinking…"
+  agent_idle: "agent idle"
+  you: "You"
+  turn: "Turn"
+
+# Key hints shown in footer
+keys:
+  tab_next: "Tab next panel"
+  range: "r range"
+  help: "F2 help"
+  scenario: "F3 scenario"
+  quit: "q quit"
+  close: "close"
+  scroll: "j/k"
+  page: "^f/^b page"
+  half_page: "^d/^u ½page"
+  top: "gg top"
+  bottom: "G bottom"
+  enter_details: "Enter details"
+  move_cursor: "←↑↓→ (or h/j/k/l) move"
+
+# Unit status names (engine uses English enums; display is localized)
+unit_status:
+  ready: "ready"
+  moved: "moved"
+  done: "done"
+  dead: "dead"
+
+# Win condition descriptions (used by _describe_win_condition)
+win:
+  seize_enemy_fort: "Either side wins by moving a unit onto the opponent's fort."
+  eliminate_all: "Either side wins by eliminating every enemy unit."
+  max_turns_draw: "Match ends in a draw at the turn cap."
+  protect_unit: "{winner} wins if {name} dies (protected by {loser})."
+  protect_unit_survives: "{protector} wins if {name} survives to the turn cap (hold out to win)."
+  reach_tile: "{team} wins if {who} ends a turn on ({x}, {y})."
+  hold_tile: "{team} wins by holding ({x}, {y}) for {n} consecutive turns."
+  reach_goal_line: "{team} wins by crossing {axis}={value} with any unit."
+
+# Post-match screen
+post_match:
+  download_replay: "d download replay"
+  back_to_lobby: "l back to lobby"
+  replay_saved: "Replay saved to"
+  download_failed: "Download failed"
+  lesson_pending: "agent reviewing the match…"
+  lesson_done: "lesson saved"
+  lesson_failed: "lesson summary failed"
+
+# Lobby
+lobby:
+  create_room: "Create Room"
+  join: "Join"
+  refresh: "Refresh"
+  no_rooms: "No rooms available. Create one!"
+
+# Room setup
+room:
+  toggle_ready: "Toggle Ready"
+  strategy: "Strategy"
+  lessons: "Lessons"
+  change_scenario: "Change Scenario"
+  change_fog: "Change Fog"
+  change_teams: "Change Team Mode"
+  change_host_team: "Change Host Team"
+  turn_time: "Turn Time Limit"
+  leave: "Leave Room"
+
+# Misc
+misc:
+  on_friendly_fort: "on friendly fort — +3 HP at start of each of your turns"
+  no_constraint_reminder: >
+    Reason as fully as you need. There are no token / time penalties
+    for thinking — you have a 30-minute wall clock per turn. Do NOT
+    default to mass `wait` + `end_turn` to 'preserve tokens'; that's
+    a learned shortcut that does not apply here. Plan completely, then act.
