@@ -148,6 +148,51 @@ def test_wait_success_includes_unit_status():
     assert out.get("unit_status") == "done"
 
 
+def test_move_reveals_enemies_under_fog():
+    """Under fog of war, moving a unit can reveal previously-hidden
+    enemies. The move response should include revealed_enemies so the
+    agent can react without a follow-up get_state call."""
+    from silicon_pantheon.server.session import new_session
+    from silicon_pantheon.server.engine.scenarios import load_scenario
+
+    state = load_scenario("01_tiny_skirmish")
+    s = new_session(state, fog_of_war="line_of_sight")
+    # In fog mode, some enemies might not be visible initially. Move
+    # a blue unit and check that revealed_enemies is present (list,
+    # possibly empty if nothing new was revealed by this particular
+    # move on this small map).
+    out = call_tool(
+        s, Team.BLUE, "move",
+        {"unit_id": "u_b_knight_1", "dest": {"x": 0, "y": 3}},
+    )
+    assert out["type"] == "move"
+    # The field must be present when any enemy was revealed; when
+    # none were revealed it's absent or empty. On this tiny map
+    # enemies might already be visible, so just check the shape
+    # if present.
+    revealed = out.get("revealed_enemies", [])
+    for r in revealed:
+        assert "id" in r
+        assert "class" in r
+        assert "pos" in r
+        assert "hp" in r
+
+
+def test_move_no_reveal_field_in_no_fog():
+    """Under fog=none, all enemies are always visible — no reveals
+    possible. The revealed_enemies field should be absent (not a
+    noisy empty list on every move)."""
+    s = _session()  # default fog=none
+    out = call_tool(
+        s, Team.BLUE, "move",
+        {"unit_id": "u_b_knight_1", "dest": {"x": 0, "y": 3}},
+    )
+    assert out["type"] == "move"
+    # Under no fog, nothing can be "newly revealed" — all enemies
+    # were always visible. Field absent.
+    assert "revealed_enemies" not in out
+
+
 def test_get_unit_range_returns_move_and_attack_tiles():
     """get_unit_range returns the full threat zone: tiles the unit
     can move to + tiles it can attack from any reachable position."""

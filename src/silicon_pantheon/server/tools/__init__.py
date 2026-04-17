@@ -393,17 +393,41 @@ def _record_action(session: Session, result: dict) -> None:
 def move(session: Session, viewer: Team, unit_id: str, dest: dict) -> dict:
     _require_active(session, viewer)
     _require_own_unit(session.state, unit_id, viewer)
+
+    # Pre-move visibility snapshot for fog-of-war reveal detection.
+    # Under fog=none this is a no-op set comparison (everything is
+    # always visible), so the cost is negligible.
+    pre_visible_enemies = set(u.id for u in _visible_enemies(session, viewer))
+
     try:
         result = apply(session.state, MoveAction(unit_id=unit_id, dest=Pos.from_dict(dest)))
     except IllegalAction as e:
         raise ToolError(_enrich_move_error(session.state, unit_id, e)) from e
-    # Post-move hint: enumerate the follow-up actions the agent can
-    # still take on this unit this turn, with concrete target IDs. A
-    # typical move was previously followed by a get_legal_actions call
-    # (at best) or guessing-then-erroring (at worst); this folds that
-    # information into the move response so the next assistant message
-    # can go straight to attack/heal/wait.
+
+    # Post-move hints.
     result["next_actions"] = _post_move_next_actions(session, unit_id)
+
+    # Fog-of-war reveal: which enemy units became visible because of
+    # this move? The unit's new position changes the viewer's sight
+    # footprint. Any enemy that's now visible but wasn't before is
+    # "revealed" — the agent should know immediately so it can react
+    # without a follow-up get_state call.
+    post_visible_enemies = _visible_enemies(session, viewer)
+    newly_revealed = [
+        u for u in post_visible_enemies if u.id not in pre_visible_enemies
+    ]
+    if newly_revealed:
+        result["revealed_enemies"] = [
+            {
+                "id": u.id,
+                "class": u.class_,
+                "pos": {"x": u.pos.x, "y": u.pos.y},
+                "hp": u.hp,
+                "hp_max": u.stats.hp_max,
+            }
+            for u in newly_revealed
+        ]
+
     _record_action(session, result)
     return result
 
