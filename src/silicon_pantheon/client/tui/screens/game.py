@@ -228,8 +228,10 @@ class PlayerPanel(Panel):
                 if alive:
                     unit_status = str(u.get("status", "ready"))
                     hp_str = f"{hp}/{hp_max}"
+                    # Last-action annotation — compact, same line.
+                    action_desc = last_actions.get(uid, "")
+                    action_suffix = f"  {action_desc}" if action_desc else ""
                     if is_cursor or is_highlight:
-                        # Highlighted row: reverse the name + status.
                         row = Text.assemble(
                             ("► ", "bold yellow" if is_cursor else "bold white"),
                             (f"{name[:14]:<14}", "reverse white"),
@@ -237,6 +239,7 @@ class PlayerPanel(Panel):
                             (f"{hp_str:>7}", _hp_style(hp, hp_max)),
                             ("  ", None),
                             (unit_status, _status_style(unit_status)),
+                            (action_suffix, "dim italic"),
                         )
                     else:
                         row = Text.assemble(
@@ -246,14 +249,9 @@ class PlayerPanel(Panel):
                             (f"{hp_str:>7}", _hp_style(hp, hp_max)),
                             ("  ", None),
                             (unit_status, _status_style(unit_status)),
+                            (action_suffix, "dim italic"),
                         )
                     rows.append(row)
-                    # Last-action annotation (compact, below the row).
-                    action_desc = last_actions.get(uid)
-                    if action_desc:
-                        rows.append(
-                            Text(f"    └ {action_desc}", style="dim")
-                        )
                 else:
                     marker = f"✗ {name[:12]}"
                     hp_str = f"0/{hp_max}"
@@ -770,7 +768,7 @@ class GameScreen(Screen):
         # turn boundaries. Maps unit_id → compact one-line description
         # like "moved (3,2)→(5,4)" or "attacked u_r_k1 dealt 8 dmg".
         self.unit_last_actions: dict[str, str] = {}
-        self._last_history_turn: int | None = None
+        self._last_history_turn: Any = None
 
         self.map_panel = GameMapPanel(self)
         self.reasoning_panel = ReasoningPanel(self)
@@ -1159,11 +1157,13 @@ class GameScreen(Screen):
         self.app.state.last_game_state = self.state
 
         # Refresh per-unit last-action annotations when the turn
-        # changes. One get_history call per turn boundary; the cache
-        # persists until the next boundary.
+        # changes OR when the active player flips (mid-turn actions
+        # become visible). One get_history call per state change.
         current_turn = self.state.get("turn")
-        if current_turn is not None and current_turn != self._last_history_turn:
-            self._last_history_turn = current_turn
+        current_active = self.state.get("active_player")
+        history_key = (current_turn, current_active)
+        if history_key != self._last_history_turn:
+            self._last_history_turn = history_key
             await self._refresh_unit_last_actions()
 
         await self._maybe_trigger_agent()
@@ -1179,10 +1179,10 @@ class GameScreen(Screen):
     async def _refresh_unit_last_actions(self) -> None:
         """Fetch recent history and build per-unit action descriptions.
 
-        Called once per turn boundary. Iterates the last ~30 events in
-        reverse to find the most recent action per unit_id. Renders a
-        compact one-line string like "moved (3,2)→(5,4)" or "attacked
-        u_r_k1 dealt 8 dmg (killed)".
+        Called when the turn or active_player changes. Iterates the
+        last ~50 events in reverse to find the most recent action per
+        unit_id. Renders a compact one-line string like
+        "moved → (5,4)" or "atk u_r_k1 dealt 8 (killed)".
         """
         if self.app.client is None:
             return
@@ -1190,7 +1190,9 @@ class GameScreen(Screen):
             r = await self.app.client.call("get_history", last_n=50)
         except Exception:
             return
-        history = (r.get("result") or r).get("history") or []
+        if not r.get("ok"):
+            return
+        history = (r.get("result") or {}).get("history") or []
         actions: dict[str, str] = {}
         # Walk in reverse so the first match per unit is the most recent.
         for ev in reversed(history):
