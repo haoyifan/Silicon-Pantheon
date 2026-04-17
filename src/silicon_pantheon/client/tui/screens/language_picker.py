@@ -79,12 +79,14 @@ class LanguagePickerScreen(Screen):
         if key == "enter":
             chosen = self._locales[self._selected]
             self.app.state.locale = chosen
-            # Proceed to the provider/auth screen.
-            from silicon_pantheon.client.tui.screens.provider_auth import (
-                ProviderAuthScreen,
-            )
+            # Proceed to the LOGIN screen (not directly to provider
+            # auth). LoginScreen connects to the server and calls
+            # set_player_metadata, then transitions to ProviderAuthScreen.
+            # Skipping it means app.client is None and the lobby can't
+            # create/join rooms.
+            from silicon_pantheon.client.tui.screens.login import LoginScreen
 
-            return ProviderAuthScreen(self.app)
+            return LoginScreen(self.app)
         if key == "q":
             self.app.exit()
             return None
