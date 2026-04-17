@@ -41,18 +41,24 @@ log = logging.getLogger("silicon.tui.room")
 def _unit_cell_style(u: dict[str, Any]) -> tuple[str, str]:
     """Pick the (glyph, Rich style) for a unit cell on any map view.
 
-    Honors scenario-provided glyph / color from the unit_classes block.
-    Falls back to the first letter of the class name (uppercase for
-    blue, lowercase for red) so legacy scenarios still render."""
+    Color is ALWAYS team-based (cyan for blue, red for red) so the
+    map is immediately readable at a glance. Per-class colors from
+    the YAML are intentionally ignored here — they created a rainbow
+    of yellows, greens, magentas, whites that made it impossible to
+    tell teams apart. The glyph letter (uppercase=blue, lowercase=red)
+    already differentiates unit classes; color's job is to show the
+    team.
+
+    Per-class colors still appear in the unit card (detailed stat
+    view) and the player panel roster header."""
     cls = str(u.get("class", "") or "")
     owner = u.get("owner")
     glyph = u.get("glyph")
     if not glyph:
         glyph = (cls[:1] or "?")
     glyph = glyph.upper() if owner == "blue" else glyph.lower()
-    color = u.get("color")
-    if not color:
-        color = "cyan" if owner == "blue" else "red"
+    # Team-based color: one hue per side, instantly readable.
+    color = "cyan" if owner == "blue" else "red"
     return glyph, f"bold {color}"
 
 
