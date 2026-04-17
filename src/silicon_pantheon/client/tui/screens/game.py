@@ -768,7 +768,9 @@ class GameScreen(Screen):
         # turn boundaries. Maps unit_id → compact one-line description
         # like "moved (3,2)→(5,4)" or "attacked u_r_k1 dealt 8 dmg".
         self.unit_last_actions: dict[str, str] = {}
-        self._last_history_turn: Any = None
+        # Track last_action identity so we update incrementally on
+        # each state poll rather than fetching full history.
+        self._last_action_seen: dict | None = None
 
         self.map_panel = GameMapPanel(self)
         self.reasoning_panel = ReasoningPanel(self)
@@ -1156,15 +1158,35 @@ class GameScreen(Screen):
         self.state = r.get("result", {})
         self.app.state.last_game_state = self.state
 
-        # Refresh per-unit last-action annotations when the turn
-        # changes OR when the active player flips (mid-turn actions
-        # become visible). One get_history call per state change.
-        current_turn = self.state.get("turn")
-        current_active = self.state.get("active_player")
-        history_key = (current_turn, current_active)
-        if history_key != self._last_history_turn:
-            self._last_history_turn = history_key
-            await self._refresh_unit_last_actions()
+        # Update per-unit last-action annotation incrementally from
+        # the polled state's last_action field. No get_history call
+        # needed — we just track each new action as it appears on
+        # every 1s poll. Only meaningful actions (move / attack /
+        # heal) are cached; "wait" and "end_turn" are not informational.
+        la = self.state.get("last_action")
+        if la is not None and la is not self._last_action_seen:
+            self._last_action_seen = la
+            uid = la.get("unit_id") or la.get("healer_id")
+            if uid:
+                t = la.get("type")
+                if t == "move":
+                    dest = la.get("dest") or {}
+                    self.unit_last_actions[uid] = (
+                        f"moved → ({dest.get('x','?')},{dest.get('y','?')})"
+                    )
+                elif t == "attack":
+                    tid = la.get("target_id", "?")
+                    dmg = la.get("damage_dealt", "?")
+                    killed = " (killed)" if la.get("target_killed") else ""
+                    self.unit_last_actions[uid] = (
+                        f"atk {tid} dealt {dmg}{killed}"
+                    )
+                elif t == "heal":
+                    tid = la.get("target_id", "?")
+                    amt = la.get("healed", "?")
+                    self.unit_last_actions[uid] = f"healed {tid} +{amt}"
+                # "wait" and "end_turn" are intentionally skipped —
+                # not informational per user request.
 
         await self._maybe_trigger_agent()
 
@@ -1175,48 +1197,6 @@ class GameScreen(Screen):
             await self.app.transition(next_screen)
             return next_screen
         return None
-
-    async def _refresh_unit_last_actions(self) -> None:
-        """Fetch recent history and build per-unit action descriptions.
-
-        Called when the turn or active_player changes. Iterates the
-        last ~50 events in reverse to find the most recent action per
-        unit_id. Renders a compact one-line string like
-        "moved → (5,4)" or "atk u_r_k1 dealt 8 (killed)".
-        """
-        if self.app.client is None:
-            return
-        try:
-            r = await self.app.client.call("get_history", last_n=50)
-        except Exception:
-            return
-        if not r.get("ok"):
-            return
-        history = (r.get("result") or {}).get("history") or []
-        actions: dict[str, str] = {}
-        # Walk in reverse so the first match per unit is the most recent.
-        for ev in reversed(history):
-            if not isinstance(ev, dict):
-                continue
-            uid = ev.get("unit_id") or ev.get("healer_id")
-            if not uid or uid in actions:
-                continue
-            t = ev.get("type")
-            if t == "move":
-                dest = ev.get("dest") or {}
-                actions[uid] = f"moved → ({dest.get('x','?')},{dest.get('y','?')})"
-            elif t == "attack":
-                tid = ev.get("target_id", "?")
-                dmg = ev.get("damage_dealt", "?")
-                killed = " (killed)" if ev.get("target_killed") else ""
-                actions[uid] = f"atk {tid} dealt {dmg}{killed}"
-            elif t == "heal":
-                tid = ev.get("target_id", "?")
-                amt = ev.get("healed", "?")
-                actions[uid] = f"healed {tid} +{amt}"
-            elif t == "wait":
-                actions[uid] = "waited"
-        self.unit_last_actions = actions
 
     async def _maybe_trigger_agent(self) -> None:
         # Each early return gets a WHY log so the Q3 "blue just stops
