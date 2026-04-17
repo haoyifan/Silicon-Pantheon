@@ -100,3 +100,20 @@ misc:
     for thinking — you have a 30-minute wall clock per turn. Do NOT
     default to mass `wait` + `end_turn` to 'preserve tokens'; that's
     a learned shortcut that does not apply here. Plan completely, then act.
+
+# Provider auth screen
+provider:
+  title: "provider"
+  pick_provider_model: "Pick LLM provider & model"
+  pick_provider: "Pick LLM provider"
+  using_saved: "Using saved defaults"
+  continue: "[Enter] continue"
+  change: "[c] change"
+  quit: "[q] quit"
+  pick_model: "Pick model"
+  paste_key: "Paste API key"
+  env_var: "Use env variable"
+  confirm_auth: "Keep saved credentials?"
+  keep: "Keep"
+  reauth: "Re-authenticate"
+  rotate_key: "[r] rotate key"

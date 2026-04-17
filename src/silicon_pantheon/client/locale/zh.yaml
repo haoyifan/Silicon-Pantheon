@@ -98,3 +98,20 @@ misc:
     请充分思考。思考没有任何token或时间惩罚——每回合有30分钟的
     时间限制。请不要为了"节省token"而默认全部等待+结束回合；
     这是一种不适用于此系统的习惯性快捷方式。请完整规划后再行动。
+
+# 供应商认证界面
+provider:
+  title: "供应商"
+  pick_provider_model: "选择LLM供应商和模型"
+  pick_provider: "选择LLM供应商"
+  using_saved: "使用已保存的默认设置"
+  continue: "[Enter] 继续"
+  change: "[c] 更改"
+  quit: "[q] 退出"
+  pick_model: "选择模型"
+  paste_key: "粘贴API密钥"
+  env_var: "使用环境变量"
+  confirm_auth: "保留已保存的凭据？"
+  keep: "保留"
+  reauth: "重新认证"
+  rotate_key: "[r] 更换密钥"
