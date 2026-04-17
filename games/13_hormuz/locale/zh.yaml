@@ -1,0 +1,120 @@
+# 霍尔木兹海峡 — 中文本地化
+name: 霍尔木兹海峡
+description: |
+  2026年2月——美国和以色列发动"史诗之怒行动"，十二小时内
+  对伊朗领导层、导弹设施和核设施实施近九百次协同打击。
+  哈梅内伊在德黑兰于第一天被暗杀。伊朗革命卫队以快艇群、
+  沙希德无人机、岸防导弹和水雷封锁霍尔木兹海峡进行报复。
+
+  本场景将开场行动压缩为十回合的竞速：美以打击编队必须
+  突破海峡，完成对伊朗政权的斩首，并在革命卫队将他们
+  消耗殆尽之前占领浓缩铀掩体。
+
+unit_classes:
+  trump:
+    display_name: 美国总统（特朗普）
+    description: |
+      航母战斗群上的总司令，通过中央司令部数据链指挥
+      打击行动。本身几乎没有战斗力——阵亡则行动失去
+      政治支持而终止。
+  netanyahu:
+    display_name: 以色列总理（内塔尼亚胡）
+    description: |
+      通过战争内阁协调打击行动的以色列总理。与美国总统
+      同样脆弱——失去他则以色列退出行动。
+  f35:
+    display_name: F-35隐身战斗机
+    description: |
+      第五代隐身多用途战机。快速、中程、可观的伤害——
+      清除水雷、无人机和快艇的主力。
+  b2:
+    display_name: B-2幽灵轰炸机
+    description: |
+      唯一有足够火力在防区外威胁铀掩体守军的蓝方单位。
+      一旦投入就难以重新部署；保持在F-35屏障之后。
+  destroyer:
+    display_name: 阿利·伯克级驱逐舰
+    description: |
+      宙斯盾驱逐舰，搭载战斧巡航导弹。强力远程平台
+      但通过海峡很慢——水雷和岸防导弹是它的噩梦。
+  tomahawk_sub:
+    display_name: 战斧潜艇
+    description: |
+      水下战斧发射平台。装甲薄如纸但防区外射程极远。
+  navy_seal:
+    display_name: 海豹突击队
+    description: |
+      唯一能实际登上铀掩体并插旗的单位。近战、快速、
+      如果被民兵缠上就很脆弱。
+  shayetet:
+    display_name: 第13突击队
+    description: |
+      以色列海军突击队。与海豹突击队配对——一个诱敌，
+      一个登陆。
+  khamenei:
+    display_name: 最高领袖（哈梅内伊）
+    description: |
+      场景开场设定：哈梅内伊在海峡西端的一艘革命卫队
+      前哨艇上，仅有1点生命——第一天暗杀的历史回声，
+      蓝方第一回合就能击杀。
+  irgc_speedboat:
+    display_name: 革命卫队快艇
+    description: |
+      廉价蜂群单位。低生命、快速、近战。成群结队时
+      对孤立的蓝方舰艇很危险。
+  shahed_drone:
+    display_name: 沙希德无人机
+    description: |
+      单程攻击无人机。脆弱，但射程足以骚扰蓝方纵队后方。
+  coastal_missile:
+    display_name: 岸防导弹阵地
+    description: |
+      伊朗沿海的固定反舰/防空发射架。移动力0——
+      不会重新部署。射程远，打击力强。
+  basij:
+    display_name: 巴斯基民兵
+    description: |
+      准军事民兵。属性普通，但便宜且众多——
+      掩体周围的防线守军。
+  irgc_commando:
+    display_name: 革命卫队突击兵
+    description: |
+      革命卫队职业地面部队。掩体周围对抗海豹/第13突击队
+      的对手——属性类似蓝方特种部队。
+
+terrain_types:
+  island:
+    description: |
+      岛屿——不可通行。
+  beach:
+    description: |
+      伊朗海岸沙滩——轻微防御加成。
+  desert:
+    description: |
+      伊朗内陆沙漠。
+  mountain:
+    description: |
+      山脉——不可通行。
+  uranium_bunker:
+    description: |
+      强化浓缩铀掩体——极高防御加成。蓝方的目标地块。
+  sea_mine:
+    description: |
+      革命卫队布设的触发水雷——踩上去会受到伤害。
+
+narrative:
+  title: 霍尔木兹海峡（史诗之怒行动，2026）
+  description: |
+    2026年2月美以打击伊朗的十回合压缩版：突破海峡，
+    完成第一天开始的斩首行动，并占领浓缩铀掩体。
+  intro: |
+    2026年2月28日。哈梅内伊已在德黑兰遭到打击但尚未
+    确认死亡；他的护卫艇仍在海峡入口。B-2已飞越
+    阿曼湾上空。革命卫队已在海峡布雷并部署岸防导弹。
+    十回合到达掩体。
+  events:
+    - trigger: on_unit_killed
+      unit_id: u_r_khamenei_1
+      text: |
+        最高领袖阵亡确认。打击计划完成一半——
+        现在是掩体。

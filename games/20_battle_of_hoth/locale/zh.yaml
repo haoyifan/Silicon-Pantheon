@@ -1,0 +1,110 @@
+# 霍斯战役 — 中文本地化
+name: 霍斯战役
+description: |
+  霍斯星，帝国历3年。银河帝国发现了反叛军联盟藏在冰雪星球
+  霍斯上的秘密基地。维尔斯将军率领AT-AT步行机——能抵御
+  激光炮火的巨型装甲巨兽——发起地面进攻。反叛军必须
+  坚守足够长的时间撤离运输船。雪地飞行器在步行机腿间
+  穿梭，炮台猛轰帝国推进线。
+
+unit_classes:
+  luke:
+    display_name: 卢克·天行者
+    description: |
+      游侠中队长。飞行员、绝地学徒、亚文之英雄。
+      驾驶雪地飞行器，用光剑和热能雷管击倒AT-AT。
+  han:
+    display_name: 韩·索罗
+    description: |
+      那个无赖。腰间别着爆能枪，嘴上挂着俏皮话。
+      掩护撤离，因为他还没走——他有一种不好的预感。
+  leia:
+    display_name: 莱娅公主
+    description: |
+      反叛基地指挥官。从指挥中心协调撤离行动。
+      她倒下，撤离就失败。
+  snowspeeder:
+    display_name: 雪地飞行器
+    description: |
+      T-47气垫飞行器的寒地改型。快速灵活，装备
+      激光炮和牵引缆。反叛军对抗步行机的最大希望。
+  turret:
+    display_name: 反叛军炮台
+    description: |
+      DF.9反步兵炮台。固定但强力，在远程打击
+      逼近的地面部队。
+  rebel_soldier:
+    display_name: 反叛军士兵
+    description: |
+      联盟步兵，在雪地战壕中。爆能步枪和厚大衣
+      对抗严寒和帝国。
+  rebel_trooper:
+    display_name: 反叛军突击兵
+    description: |
+      近战防御者。以手雷和决心守住壕沟线。
+  medic_droid:
+    display_name: 2-1B医疗机器人
+    description: |
+      改装为战地分检用途的2-1B外科机器人。脆弱
+      但不可或缺——让伤兵继续战斗。
+  veers:
+    display_name: 维尔斯将军
+    description: |
+      帝国将军，从先导AT-AT中指挥地面进攻。有条不紊、
+      冷酷、高效。目标：护盾发生器。
+  at_at:
+    display_name: AT-AT步行机
+    description: |
+      全地形装甲运输载具。二十米高，几乎不受爆能枪火
+      影响。重型激光炮一次齐射就能摧毁一座工事。
+      缓慢但毁灭性十足。
+  at_st:
+    display_name: AT-ST侦察步行机
+    description: |
+      全地形侦察运输载具。双足侦察步行机，比AT-AT快
+      但装甲差得多。下巴挂载爆能枪。
+  snowtrooper:
+    display_name: 雪地冲锋队
+    description: |
+      帝国寒地突击冲锋队。比普通冲锋队训练更好，
+      专为极寒作战装备。
+
+terrain_types:
+  snow:
+    description: |
+      霍斯无尽的白色雪原。没有掩体，没有温暖。
+  ice:
+    description: |
+      湿滑的冰面。难以保持阵地——防御减值。
+
+narrative:
+  title: 霍斯战役
+  description: |
+    霍斯星，帝国历3年。帝国打击隐藏的反叛基地。
+    AT-AT步行机横跨冰原向护盾发生器推进。
+    反叛军必须为撤离争取时间。
+  intro: |
+    大地震颤。在飞雪中，巨大的轮廓浮现——
+    四条腿的庞然大物。帝国步行机。反叛军
+    纷纷奔向战位。
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        "到能量发生器的距离？""一七，点二八。"
+        AT-AT发射第一轮齐射。一座炮台爆炸。
+    - trigger: on_turn_start
+      turn: 7
+      text: |
+        游侠二号用牵引缆缠住了AT-AT的腿。步行机
+        像被砍倒的树一样轰然倒塌，砸入雪中。
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        "开始撤退！"最后的运输船正在装载。离子炮开火，
+        在头顶的歼星舰中清出一条通道。再多一点时间。
+    - trigger: on_unit_killed
+      unit_id: u_b_leia_1
+      text: |
+        指挥中心被直接命中。莱娅公主被埋在废墟中。
+        撤离行动崩溃。

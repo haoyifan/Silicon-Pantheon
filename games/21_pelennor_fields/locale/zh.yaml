@@ -1,0 +1,120 @@
+# 帕兰诺平原之战 — 中文本地化
+name: 帕兰诺平原之战
+description: |
+  米那斯提力斯，第三纪元3019年3月15日。魔多大军围攻白城。
+  安格玛巫王率领庞大的兽人、哈拉德人和战象大军猛攻刚铎
+  城墙。甘道夫守住城门。阿拉贡在帕兰诺平原上奋战。
+  如果兽人攻破城池，中洲将陷落——除非洛汗骑兵赶来救援。
+
+unit_classes:
+  gandalf:
+    display_name: 甘道夫（白袍）
+    description: |
+      白袍巫师。从死亡中归来，挥舞敌击剑和安诺之光。
+      他的法杖在米那斯提力斯城门前大放光明。法术型。
+  aragorn:
+    display_name: 阿拉贡
+    description: |
+      伊西尔杜尔的后裔，挥舞重铸的安都瑞尔。
+      这个时代最伟大的剑士，鼓舞着刚铎的守军。
+  legolas:
+    display_name: 莱戈拉斯
+    description: |
+      密林王子。箭无虚发。在世界燃烧时和金雳比赛杀敌数。
+  gimli:
+    display_name: 金雳
+    description: |
+      格洛因之子，闪耀洞穴之主。他的战斧比他的吹嘘
+      声音更响。重甲，近战毁灭性。
+  gondor_soldier:
+    display_name: 刚铎士兵
+    description: |
+      白城子弟。塔楼卫队和守军，为城墙后的家园和亲人
+      而战。
+  gondor_archer:
+    display_name: 刚铎弓箭手
+    description: |
+      刚铎弓手。从城墙和帕兰诺平原向推进的兽人射箭如雨。
+  gondor_knight:
+    display_name: 刚铎骑士
+    description: |
+      多尔安罗斯的天鹅骑士和帕兰诺的骑士。
+      重骑兵，忠于摄政王。
+  healer_of_gondor:
+    display_name: 刚铎治疗师
+    description: |
+      米那斯提力斯治愈之殿的治疗师。精通王者之叶
+      和草药学的古老医术，在盾墙后方照料伤员。
+  rohirrim:
+    display_name: 洛汗骑兵
+    description: |
+      洛汗骠骑，响应刚铎的召唤。冲锋势不可挡的快速骑兵。
+      "冲锋吧！为毁灭和世界的终结而冲！"
+  witch_king:
+    display_name: 安格玛巫王
+    description: |
+      戒灵之首，索伦最强大的仆人。骑在堕落兽上
+      俯瞰战场。他的存在摧毁人类的意志。法术型。
+  gothmog:
+    display_name: 哥斯莫格
+    description: |
+      帕兰诺平原上的兽人指挥官。丑陋、狡猾、残忍。
+      以蛮力效率指挥围攻。
+  orc:
+    display_name: 兽人
+    description: |
+      魔多兽人。无数、可消耗、被对主人的恐惧驱使。
+      技术不足，数量弥补。
+  haradrim:
+    display_name: 哈拉德人
+    description: |
+      哈拉德的战士，骑着猛犸象——巨大的战象，
+      践踏面前一切。缓慢但极为坚韧。
+  siege_troll:
+    display_name: 攻城洞穴巨魔
+    description: |
+      在魔多深坑中培育的战争巨魔。比兽人高出数倍，
+      挥舞巨锤。用于撞破城门和粉碎阵型。
+
+terrain_types:
+  city_wall:
+    description: |
+      米那斯提力斯的白色城墙。七层石墙，人类最伟大的
+      堡垒。除城门外不可通行。
+  river:
+    description: |
+      安都因大河。深邃湍急，不可通行。
+  ruins:
+    description: |
+      帕兰诺上的废弃农舍和瞭望塔。残垣断壁提供些许掩护。
+
+narrative:
+  title: 帕兰诺平原之战
+  description: |
+    米那斯提力斯，第三纪元3019年。魔多大军围攻白城。
+    甘道夫守卫城门。阿拉贡在帕兰诺平原上战斗。
+    洛汗骠骑南下——但他们能及时赶到吗？
+  intro: |
+    天空变暗。魔多大军如黑色潮水般铺满帕兰诺平原。
+    攻城锤格隆德猛撞城门。巫王的堕落兽在头顶尖啸。
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        "格隆德！格隆德！格隆德！"攻城锤猛击米那斯提力斯
+        城门。石头开裂。甘道夫骑着影疾奔来，法杖光芒闪耀。
+    - trigger: on_turn_start
+      turn: 8
+      text: |
+        南方传来号角声——深沉、浑厚，回荡在帕兰诺平原上。
+        "洛汗来了！"六名骑士翻过山丘，骑枪放平。
+    - trigger: on_unit_killed
+      unit_id: u_r_witch_king_1
+      text: |
+        "吾非男儿。"巫王的王冠空空如也坠落在地。
+        戒灵之首已不复存在。
+    - trigger: on_unit_killed
+      unit_id: u_b_gandalf_1
+      text: |
+        甘道夫的光芒熄灭。米那斯提力斯城门无人守卫。
+        黑暗涌入城中。

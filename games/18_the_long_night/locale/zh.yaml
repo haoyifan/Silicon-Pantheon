@@ -1,0 +1,115 @@
+# 长夜之战 — 中文本地化
+name: 长夜之战
+description: |
+  临冬城，305年。亡者大军南下。琼恩·雪诺、丹妮莉丝·坦格利安
+  和活人联军在临冬城进行最后的抵抗。多斯拉克冲入黑暗，
+  无垢者守住壕沟线，龙焰照亮长夜。但死者不断涌来。
+  唯一的办法：杀死夜王。
+
+unit_classes:
+  jon_snow:
+    display_name: 琼恩·雪诺
+    description: |
+      白狼，北境之王。手持瓦雷利亚钢剑长爪——
+      一击即可粉碎异鬼。
+  daenerys:
+    display_name: 丹妮莉丝·坦格利安
+    description: |
+      龙女王。骑乘卓耿在战场上空倾泻龙焰。
+      法术型——伤害由魔抗减免。
+  brienne:
+    display_name: 布蕾妮
+    description: |
+      塔斯的布蕾妮爵士，新封骑士。维斯特洛最强的剑士，
+      全身铠甲。在死亡之潮前守住防线。
+  grey_worm:
+    display_name: 灰虫子
+    description: |
+      无垢者统帅。纪律严明、快速、长矛致命。
+      守住壕沟线。
+  jorah:
+    display_name: 乔拉·莫尔蒙
+    description: |
+      安达尔人乔拉爵士。手持山姆·塔利赠送的瓦雷利亚钢剑。
+      保护他的女王至最后一息。
+  unsullied:
+    display_name: 无垢者
+    description: |
+      从出生就训练的精锐步兵。盾与矛，完美的纪律。
+      他们不崩溃。
+  arya:
+    display_name: 艾莉亚·史塔克
+    description: |
+      无面之人。在布拉佛斯无面者学院训练的少女。
+      她携带瓦雷利亚钢匕首——猫爪匕首——如影子般移动。
+      速度极快，极其脆弱。在剧中她从黑暗中跃出一击
+      杀死夜王。将她送到夜王身边，战争就结束了。
+  dothraki:
+    display_name: 多斯拉克尖啸者
+    description: |
+      大草海的骑兵。快速、激进、轻甲。他们燃烧的
+      弯刀是黑暗中的第一道光。
+  melisandre:
+    display_name: 梅丽珊卓
+    description: |
+      红袍女巫。拉赫洛的火焰女祭司，点燃多斯拉克弯刀
+      和壕沟。她的火焰治愈活人、灼烧亡者。
+  night_king:
+    display_name: 夜王
+    description: |
+      第一个异鬼，森林之子所造。一个手势就能指挥死者。
+      冰之魔法粉碎钢铁、复活阵亡者。杀死他，
+      所有尸鬼都会倒下。
+  white_walker:
+    display_name: 异鬼
+    description: |
+      远古冰之生物，夜王的副将。手持冰之利刃，
+      粉碎普通钢铁。法术型。
+  wight:
+    display_name: 尸鬼
+    description: |
+      复活的尸体。单个很弱，成群令人恐惧。他们不疲倦、
+      不恐惧、不停止。
+
+terrain_types:
+  trench:
+    description: |
+      注满焦油和龙焰的壕沟。减缓亡者但无法永远阻挡。
+  stone_wall:
+    description: |
+      临冬城的古老城墙。不可通行——除了城门。
+
+narrative:
+  title: 长夜之战
+  description: |
+    临冬城，305年。活人对亡者大军进行最后的抵抗。
+    夜王必须被消灭，否则黎明永远不会到来。
+  intro: |
+    黑暗。多斯拉克弯刀点燃火焰冲向北方的黑暗。
+    一个接一个，火焰熄灭了。然后死者来了。
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        壕沟点燃。一道火墙将活人和死者隔开——暂时如此。
+        尸鬼开始堆积在火焰上，用自己的身体将火扑灭。
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        夜王举起双臂。战场上每一个倒下的士兵都睁开
+        蓝色的眼睛站了起来。
+    - trigger: on_unit_killed
+      unit_id: u_r_night_king_1
+      text: |
+        夜王如冰般碎裂。战场上每一具尸鬼都瘫倒在地。
+        黎明在临冬城上方破晓。
+    - trigger: on_unit_killed
+      unit_id: u_b_arya_1
+      text: |
+        艾莉亚倒下了。猫爪匕首叮当落在冰冻的地面上。
+        没有她，无人能及时到达夜王身边。
+    - trigger: on_unit_killed
+      unit_id: u_b_jon_snow_1
+      text: |
+        琼恩·雪诺最后一次倒下。没有红袍女巫能再次
+        将他唤回。活人失去了他们的王。

@@ -1,0 +1,110 @@
+# 黑水湾之战 — 中文本地化
+name: 黑水湾之战
+description: |
+  君临城，299年。史坦尼斯·拜拉席恩的舰队驶入黑水湾
+  夺取铁王座。代理国王之手提利昂·兰尼斯特准备了一个
+  惊喜——一艘装满野火的船将海湾变成绿色地狱。但史坦尼斯
+  强行登陆。提利昂必须守住城墙直到泰温大军到来。
+
+unit_classes:
+  stannis:
+    display_name: 史坦尼斯·拜拉席恩
+    description: |
+      合法的国王——依法而非依爱。刻板、不屈，手持利剑
+      第一个踏上海滩。从前线指挥。
+  davos:
+    display_name: 达沃斯·海沃斯
+    description: |
+      洋葱骑士。走私者变国王之手。对史坦尼斯忠诚到
+      超出理性。率领舰队驶入海湾。
+  baratheon_infantry:
+    display_name: 拜拉席恩步兵
+    description: |
+      史坦尼斯的步兵。训练有素、意志坚定，在箭雨和
+      野火中强行登陆。
+  baratheon_archer:
+    display_name: 拜拉席恩弓箭手
+    description: |
+      从船上和海滩提供掩护射击的弓手。
+  siege_tower:
+    display_name: 攻城塔
+    description: |
+      用于攀登城墙的巨型轮式塔楼。慢如蜗牛但坚如堡垒。
+  baratheon_maester:
+    display_name: 拜拉席恩学士
+    description: |
+      随军学士。在箭雨和野火的间隙照料海滩上的伤员。
+  lannister_maester:
+    display_name: 兰尼斯特学士
+    description: |
+      服务于君临城的学城学士。在城墙后方包扎伤口。
+  tyrion:
+    display_name: 提利昂·兰尼斯特
+    description: |
+      小恶魔。半个人，两倍的智慧。代理国王之手，野火
+      陷阱的设计者。在猎狗崩溃时亲自率领突击队穿过地道。
+  clegane:
+    display_name: 桑铎·克里冈
+    description: |
+      猎狗。恐惧火焰，剑术致命。城墙上最危险的人——
+      直到野火摧毁了他的意志。
+  bronn:
+    display_name: 波隆
+    description: |
+      佣兵变骑士。射出点燃野火船的那一箭的人。
+      远近皆致命。
+  lannister_guard:
+    display_name: 兰尼斯特卫兵
+    description: |
+      西境武装步兵。装甲精良、薪酬丰厚，守卫首都城墙。
+  city_watch:
+    display_name: 都城守卫
+    description: |
+      君临城的金袍卫。训练不足、不可靠，但填补城墙上的空隙。
+  tyrell_knight:
+    display_name: 提利尔骑士
+    description: |
+      高庭重骑兵，随泰温·兰尼斯特到来。精力充沛、
+      装甲齐全、摧枯拉朽。战局逆转。
+
+terrain_types:
+  water:
+    description: |
+      黑水湾的海水。深不可测，步行无法通过。
+  wildfire:
+    description: |
+      野火——炼金术士行会最可怕的武器。烧绿色、烧高温、
+      烧一切。站在上面的单位每回合受到巨大伤害。
+  city_wall:
+    description: |
+      君临城城墙。百年历史，厚重石料。
+
+narrative:
+  title: 黑水湾之战
+  description: |
+    君临城，299年。史坦尼斯·拜拉席恩的舰队攻击首都。
+    提利昂·兰尼斯特只有一次机会守住这座城。
+  intro: |
+    夜晚。拜拉席恩的舰队驶入黑水湾。一艘船向他们
+    漂来，泄漏着绿色液体。波隆搭上了火箭。
+  events:
+    - trigger: on_turn_start
+      turn: 2
+      text: |
+        野火。海湾在绿色火焰中爆发。船只粉碎。
+        人在燃烧。但史坦尼斯继续推进——登陆战开始了。
+    - trigger: on_turn_start
+      turn: 8
+      text: |
+        猎狗扔下了剑。"去他的御林铁卫。去他的这座城。
+        去他的国王。"提利昂必须亲自率领突击。
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        国王大道传来号角。泰温·兰尼斯特率领提利尔
+        先锋骑至。四名精锐骑士撞入史坦尼斯侧翼。
+    - trigger: on_unit_killed
+      unit_id: u_r_tyrion_1
+      text: |
+        提利昂倒下，脸上被砍了一刀。没有他，
+        君临城的城墙守不住。

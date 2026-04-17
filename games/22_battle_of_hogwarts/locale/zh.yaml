@@ -1,0 +1,124 @@
+# 霍格沃茨之战 — 中文本地化
+name: 霍格沃茨之战
+description: |
+  霍格沃茨，1998年。黑魔王的军队进攻这座古老城堡。
+  哈利·波特和霍格沃茨的守军——学生、教师和凤凰社成员——
+  对抗伏地魔、他的食死徒和黑暗生物。所有战斗皆为魔法：
+  魔杖交锋、诅咒横飞，城堡本身在猛攻下颤抖。
+  哈利必须存活。伏地魔或纳吉尼必须倒下。
+
+unit_classes:
+  harry:
+    display_name: 哈利·波特
+    description: |
+      大难不死的男孩。老魔杖的主人、隐形衣的持有者，
+      唯一能终结伏地魔的人。
+  hermione:
+    display_name: 赫敏·格兰杰
+    description: |
+      她那个时代最聪明的女巫。广博的咒语储备和敏捷的
+      头脑无数次拯救了哈利。
+  ron:
+    display_name: 罗恩·韦斯莱
+    description: |
+      哈利最好的朋友。忠诚、关键时刻勇敢、
+      压力下出人意料地足智多谋。
+  mcgonagall:
+    display_name: 米勒娃·麦格
+    description: |
+      副校长兼变形术大师。赋予城堡石像守卫生命，
+      以致命精准度决斗。
+  neville:
+    display_name: 纳威·隆巴顿
+    description: |
+      曾经那个丢蟾蜍的胆小男孩。现在他挥舞格兰芬多之剑，
+      站在黑魔王面前。
+  kingsley:
+    display_name: 金斯利·沙克尔
+    description: |
+      高级傲罗和凤凰社成员。冷静、强大，护盾咒和
+      攻击咒都精准致命。
+  da_member:
+    display_name: 邓布利多军成员
+    description: |
+      由哈利秘密训练的邓布利多军学生巫师。年轻但
+      坚定的学校守卫者。
+  order_member:
+    display_name: 凤凰社成员
+    description: |
+      凤凰社的成年女巫和巫师。与黑魔法作战经验丰富。
+  pomfrey:
+    display_name: 庞弗雷夫人
+    description: |
+      霍格沃茨护士长兼治疗大师。哈利每次断骨都是她接的。
+      今夜她在大礼堂照料伤员——必要时也上阵战斗。
+  voldemort:
+    display_name: 伏地魔
+    description: |
+      黑魔王。汤姆·马沃罗·里德尔。史上最令人畏惧的
+      黑巫师，随意挥洒杀戮咒。
+  bellatrix:
+    display_name: 贝拉特里克斯·莱斯特兰奇
+    description: |
+      伏地魔最忠诚的追随者。疯狂、虐待狂、技术可怕。
+      杀了小天狼星·布莱克，折磨隆巴顿夫妇至疯。
+  nagini:
+    display_name: 纳吉尼
+    description: |
+      伏地魔的巨蛇，最后一个魂器。只要她活着，
+      黑魔王就无法被真正击败。纳威必须摧毁她。
+  death_eater:
+    display_name: 食死徒
+    description: |
+      黑魔王的蒙面追随者。以残忍和不可饶恕咒为乐的
+      黑巫师。
+  snatcher:
+    display_name: 搜捕者
+    description: |
+      猎捕麻瓜出身巫师领赏金的底层暴徒。弱小、
+      怯懦，但数量众多。
+  giant:
+    display_name: 巨人
+    description: |
+      被伏地魔拉拢的巨型蛮兽。近战毁灭性但愚蠢缓慢。
+
+terrain_types:
+  forest:
+    description: |
+      禁林。茂密的树木提供掩护，但藏着效忠伏地魔的
+      黑暗生物。
+  stone_wall:
+    description: |
+      霍格沃茨古老城堡墙壁，数百年魔法附魔。不可逾越。
+
+narrative:
+  title: 霍格沃茨之战
+  description: |
+    霍格沃茨，1998年5月。伏地魔的军队围攻这座古老学校。
+    哈利·波特和守军——学生、教师和凤凰社成员——
+    进行最后的抵抗。
+  intro: |
+    保护魔法粉碎。食死徒从禁林中涌出。巨人向城墙
+    蹒跚而来。城内，学生们紧握魔杖，准备为学校、
+    朋友和魔法世界而战。
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        咒语如烟花般照亮夜空。城堡在巨人撞击城墙时
+        颤抖。石像守卫们列队迎战。
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        守军被逼退。伏地魔的声音在校园上空回荡：
+        "把哈利·波特交给我，一个人都不会受伤。"
+    - trigger: on_unit_killed
+      unit_id: u_r_nagini_1
+      text: |
+        纳威挥下格兰芬多之剑。纳吉尼的头与身体分离。
+        最后一个魂器被摧毁。伏地魔发出惨叫。
+    - trigger: on_unit_killed
+      unit_id: u_r_voldemort_1
+      text: |
+        黑魔王自己的杀戮咒反弹了回来。汤姆·里德尔的
+        身体瘫倒在地，凡人而平凡。一切结束了。

@@ -1,0 +1,104 @@
+# 劫粮列车之战 — 中文本地化
+name: 劫粮列车之战
+description: |
+  玫瑰大道，305年。丹妮莉丝·坦格利安受够了精明的计划。
+  她骑上卓耿，率领多斯拉克骑兵突袭正押送高庭战利品
+  回君临城的兰尼斯特军队。纵队沿路延伸，满载金银粮草——
+  对龙焰和尖啸骑兵来说是绝佳猎物。詹姆·兰尼斯特必须
+  守住防线，否则一切皆失。
+
+unit_classes:
+  dragon_rider:
+    display_name: 丹妮莉丝与卓耿
+    description: |
+      龙之母骑在卓耿——黑死神重生——之上。她低空掠过
+      纵队，将马车和士兵淹没在黑色烈焰之中。天空本身
+      已成为敌人。
+  dothraki:
+    display_name: 多斯拉克尖啸者
+    description: |
+      大草海的骑马战士。全速奔驰中站立在马鞍上，
+      放箭挥刀。兰尼斯特士兵从未见过这样的敌人。
+  bloodrider:
+    display_name: 多斯拉克血骑
+    description: |
+      卡丽熙的血之誓言护卫——以命相许的精英护卫。
+      更大的马，更好的刀，没有撤退的概念。
+  dothraki_shaman:
+    display_name: 多斯拉克萨满
+    description: |
+      大草海的治疗者，在冲锋间隙以草药和吟唱治伤。
+      脆弱但能保持骑兵战斗力。
+  lannister_medic:
+    display_name: 兰尼斯特军医
+    description: |
+      随兰尼斯特纵队的战地外科医生。用绷带和煮沸的
+      葡萄酒维持伤兵战斗。
+  jaime:
+    display_name: 詹姆·兰尼斯特
+    description: |
+      弑君者。金发、金手、固执到拿着骑枪冲向一条龙。
+      指挥后卫并拒绝抛弃部下。
+  bronn:
+    display_name: 波隆
+    description: |
+      佣兵变英雄。在混乱中冲向天蝎弩——一台为杀龙
+      设计的巨型弩炮。务实、粗俗、射术一流。
+  supply_wagon:
+    display_name: 补给马车
+    description: |
+      满载高庭金银和粮草的牛拉马车——整场战争的意义。
+      静止不动、易燃、在龙焰面前毫无防御。
+  lannister_infantry:
+    display_name: 兰尼斯特步兵
+    description: |
+      身穿深红与金色的职业军人。训练有素、装甲精良、
+      训练过盾墙——但没人训练他们应对这个。
+  lannister_archer:
+    display_name: 兰尼斯特弓箭手
+    description: |
+      凯岩城弩手。精准、有纪律，但他们的弩箭打在
+      龙鳞上就像树枝打在石头上。
+
+terrain_types:
+  road:
+    description: |
+      玫瑰大道——被夏日烤硬的宽阔土路。行军快速
+      但无法躲避龙焰。
+
+narrative:
+  title: 劫粮列车之战
+  description: |
+    玫瑰大道，305年。丹妮莉丝·坦格利安以火与血降临
+    兰尼斯特补给车队。多斯拉克从西方冲来。无处可逃。
+  intro: |
+    西方传来低沉的隆隆声。兰尼斯特士兵望向地平线——
+    一条暗色的骑兵线，越来越大。然后一个影子掠过太阳，
+    某种东西发出了非人的尖啸。迪肯·塔利中士颤抖着
+    拔出了剑。天空裂开了，黑色烈焰倾泻而下。
+  events:
+    - trigger: on_turn_start
+      turn: 2
+      text: |
+        卓耿的第一轮俯冲点燃了道路两侧的高草。浓烟
+        弥漫战场。在烟雾中，多斯拉克的战吼越来越近。
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        兰尼斯特盾墙崩溃。多斯拉克骑兵跃过燃烧的残骸，
+        从三个方向撞入步兵。
+    - trigger: on_turn_start
+      turn: 8
+      text: |
+        马车沿整条道路燃烧。黑烟柱从君临城都能看到。
+        高庭的黄金融化在泥土中。
+    - trigger: on_unit_killed
+      unit_id: u_r_jaime_1
+      text: |
+        金手最后一次在阳光下闪耀，詹姆倒下了。
+        兰尼斯特军队随指挥官一同覆灭。
+    - trigger: on_unit_killed
+      unit_id: u_b_dragon_rider_1
+      text: |
+        卓耿惨叫着螺旋下坠。丹妮莉丝从龙背上滑落。
+        多斯拉克人动摇了——他们的女王倒下了。

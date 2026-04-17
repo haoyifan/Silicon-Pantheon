@@ -1,0 +1,70 @@
+# 天文塔之战 — 中文本地化
+name: 天文塔之战
+description: |
+  霍格沃茨，1997年6月。食死徒通过消失柜入侵城堡。
+  德拉科·马尔福在天文塔顶对峙虚弱的邓布利多，
+  黑巫师和狼人在下方走廊中搏杀。凤凰社卫兵必须
+  坚守足够长的时间让邓布利多逃脱——或者战死。
+
+unit_classes:
+  dumbledore:
+    display_name: 阿不思·邓布利多
+    description: |
+      当世最伟大的巫师——但被诅咒的戒指和洞穴中的
+      药水削弱了。他的魔杖手已发黑腐坏。即使虚弱，
+      他依然可畏。
+  order_guard:
+    display_name: 凤凰社卫兵
+    description: |
+      在城堡走廊中巡逻的凤凰社成员。经验丰富的
+      成年女巫和巫师。掌握基本的战地治疗咒。
+  da_student:
+    display_name: 邓布利多军学生
+    description: |
+      邓布利多军的年轻成员。勇气超越年龄，
+      血管里流着福灵剂在走廊中巡逻。
+  draco:
+    display_name: 德拉科·马尔福
+    description: |
+      被黑魔标记折磨的矛盾少年。被交付杀死邓布利多
+      的任务却下不了手。他的心不在这场战斗中。
+  fenrir:
+    display_name: 芬里尔·格雷伯克
+    description: |
+      凶残的狼人。不是因为意识形态加入食死徒——
+      只是享受暴力的怪物。近战猛兽，不是巫师。
+  death_eater:
+    display_name: 食死徒
+    description: |
+      通过消失柜潜入霍格沃茨的黑巫师。蒙面无情。
+
+terrain_types:
+  stone_wall:
+    description: |
+      霍格沃茨城堡石墙。古老而不可通行。
+
+narrative:
+  title: 天文塔之战
+  description: |
+    霍格沃茨，1997年6月。食死徒通过消失柜入侵城堡。
+    邓布利多在取回魂器后虚弱不堪，在塔顶面对德拉科·马尔福。
+  intro: |
+    黑魔标记悬挂在天文塔上空。走廊中咒语闪光。
+    邓布利多站在城垛旁，被诅咒的手藏在长袍之下。
+    德拉科的魔杖手在颤抖。
+  events:
+    - trigger: on_turn_start
+      turn: 4
+      text: |
+        芬里尔·格雷伯克在走廊中嗥叫。碎石声回荡着，
+        咒语在城堡墙上轰出窟窿。
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        战斗愈发绝望。凤凰社成员向塔楼阶梯撤退，
+        为争取时间而战。
+    - trigger: on_unit_killed
+      unit_id: u_b_dumbledore_1
+      text: |
+        当世最伟大的巫师从塔顶坠落。
+        守军的士气碎裂。

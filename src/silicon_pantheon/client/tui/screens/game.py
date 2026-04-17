@@ -775,8 +775,18 @@ class CoachPanel(Panel):
         if key == "backspace":
             self.buffer = self.buffer[:-1]
             return None
-        if len(key) == 1 and key.isprintable():
-            self.buffer += key
+        # Use the RAW key (before lowercasing) so capital letters,
+        # question marks, and other shifted characters reach the
+        # buffer intact. The app stores _raw_key on each dispatch
+        # cycle; fall back to `key` if unavailable.
+        raw = getattr(self.screen.app, "_raw_key", key)
+        if len(raw) == 1 and raw.isprintable():
+            self.buffer += raw
+            return None
+        # Also accept paste events (bracketed paste delivers
+        # multi-char strings prefixed with "paste:").
+        if key.startswith("paste:"):
+            self.buffer += key[6:]
             return None
         return None
 

@@ -578,9 +578,12 @@ class ProviderAuthScreen(Screen):
         if in_paste and key == "backspace":
             self._step.key_buffer = self._step.key_buffer[:-1]
             return None
-        if in_paste and len(key) == 1 and key.isprintable():
-            self._step.key_buffer += key
-            return None
+        if in_paste:
+            # Use raw key to preserve case (API keys are case-sensitive).
+            raw = getattr(self.app, "_raw_key", key)
+            if len(raw) == 1 and raw.isprintable():
+                self._step.key_buffer += raw
+                return None
         if key in ("down", "j"):
             self._step.focused = (self._step.focused + 1) % 2
             self._step.key_buffer = ""

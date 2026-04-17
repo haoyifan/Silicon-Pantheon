@@ -138,6 +138,10 @@ class TUIApp:
         self._should_exit = False
         self._live: Live | None = None
         self._initial_factory = initial_screen_factory
+        # Raw key before lowercasing — text-input panels (coach,
+        # API-key paste) read this to preserve capital letters,
+        # question marks, and other shifted characters.
+        self._raw_key: str = ""
         # Help overlay state. App-level so it works on every screen
         # without each one having to wire it. The overlay is purely
         # client-side: tick / poll / agent loops keep running while
@@ -295,9 +299,17 @@ class TUIApp:
         """
         try:
             while not self._should_exit:
-                key = await self._key_queue.get()
+                raw_key = await self._key_queue.get()
                 if self._screen is None:
                     continue
+                # Normalize for navigation (j/k/q/etc.) but preserve
+                # the raw key for text-input screens (coach panel,
+                # API-key paste). Single printable chars get lowercased
+                # for navigation matching; multi-char tokens (escape,
+                # ctrl-d, f3, etc.) stay as-is. The raw_key is stored
+                # on the app so text-input handlers can read it.
+                self._raw_key = raw_key
+                key = raw_key.lower() if len(raw_key) == 1 else raw_key
                 # Help overlay intercepts before any screen handler.
                 if self._handle_help_key(key):
                     self._refresh()
@@ -316,9 +328,11 @@ class TUIApp:
                 # this one — apply them all before painting.
                 while not self._key_queue.empty():
                     try:
-                        next_key = self._key_queue.get_nowait()
+                        raw_next = self._key_queue.get_nowait()
                     except asyncio.QueueEmpty:
                         break
+                    self._raw_key = raw_next
+                    next_key = raw_next.lower() if len(raw_next) == 1 else raw_next
                     if self._handle_help_key(next_key):
                         continue
                     try:
@@ -653,11 +667,20 @@ def _read_key_blocking() -> str:
     if ch in _CTRL:
         return _CTRL[ch]
     # Preserve 'G' (shift-g) as a distinct token so "G = bottom /
-    # gg = top" works. Other uppercase letters fall through to
-    # lowercase so existing handlers keep working.
+    # gg = top" works.
     if ch == "G":
         return "shift-g"
-    return ch.lower()
+    # DON'T lowercase printable characters — text-input panels
+    # (coach, API-key paste) need the raw case and symbols like
+    # ?, !, @, capital letters. Navigation handlers use lowercase
+    # comparisons (if key in ("j", "k")) which naturally match
+    # lowercase input; uppercase input from Caps Lock is rare and
+    # handled below.
+    #
+    # Return the raw char for all printable single characters.
+    # Non-printable control chars (already handled above as named
+    # tokens like "ctrl-d") don't reach here.
+    return ch
 
 
 # ---- help overlay ----

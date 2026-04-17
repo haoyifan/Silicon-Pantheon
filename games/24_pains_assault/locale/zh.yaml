@@ -1,0 +1,108 @@
+# 佩恩袭击木叶 — 中文本地化
+name: 佩恩袭击木叶
+description: |
+  木叶隐村。佩恩六道——由长门操控的傀儡——以神一般的力量
+  降临村庄。卡卡西率领防御战，纲手治疗伤员。村庄必须坚守
+  到第10回合鸣人以仙人模式归来扭转战局。
+
+unit_classes:
+  kakashi:
+    display_name: 旗木卡卡西
+    description: |
+      拷贝忍者。写轮眼使用者，已拷贝超过千种忍术。
+      木叶的战术天才，鸣人到来前村庄的最后防线。
+  tsunade:
+    display_name: 纲手
+    description: |
+      第五代火影，传奇医疗忍者。三忍之一。以医疗忍术
+      维持村庄生存，同时指挥防御。
+  choji:
+    display_name: 秋道丁次
+    description: |
+      倍化术专家。能膨胀到巨大体型，成为行走的攻城锤。
+      坚韧、力量惊人，尽管性格温和。
+  shikamaru:
+    display_name: 奈良鹿丸
+    description: |
+      智商超过200的影子战术师。影子技术能在远处
+      麻痹敌人。懒得拼命，聪明到不会输。
+  konoha_chunin:
+    display_name: 木叶中忍
+    description: |
+      木叶忍者中级忍者。构成村庄防御骨干的职业忍者。
+  anbu:
+    display_name: 暗部成员
+    description: |
+      精锐黑暗行动忍者。面具刺客，在暗影中行动。
+      快速、致命、对村庄绝对忠诚。
+  deva:
+    display_name: 天道
+    description: |
+      佩恩的本体。控制引力本身——神罗天征推开一切，
+      地爆天星将一切吸入。六道中最危险的。
+  animal:
+    display_name: 畜生道
+    description: |
+      召唤巨大生物作战。每个召唤兽共享轮回眼的
+      连锁视觉，使伏击变得不可能。
+  asura:
+    display_name: 修罗道
+    description: |
+      浑身武器的机械躯体。发射导弹、伸出额外手臂，
+      充当佩恩的重火力。
+  human:
+    display_name: 人间道
+    description: |
+      读心术，一触即可扯出灵魂。六道中最令人恐惧的
+      之一——一次抓握意味着即死。
+  preta:
+    display_name: 饿鬼道
+    description: |
+      吸收一切查克拉攻击。忍术对此道无效——
+      只有物理攻击能造成伤害。
+  naraka:
+    display_name: 地狱道
+    description: |
+      召唤阎王审判和治疗。能修复被摧毁的其他道，
+      使佩恩的力量几乎无法杀尽——必须先消灭此道。
+  naruto_sage:
+    display_name: 鸣人（仙人模式）
+    description: |
+      漩涡鸣人的仙人模式。注入自然能量后，他的速度、
+      力量和感知被放大到佩恩六道从未面对过的程度。
+      全场最强单位。
+
+terrain_types:
+  building:
+    description: |
+      木叶村庄建筑。提供优秀掩护但在废墟中行动缓慢。
+  village_wall:
+    description: |
+      围绕木叶隐村的巨大围墙。不可通行。
+
+narrative:
+  title: 佩恩袭击木叶
+  description: |
+    木叶隐村，火之国。六具拥有轮回眼的躯体从天而降。
+    佩恩来夺取九尾了。
+  intro: |
+    爆炸撕裂村庄。佩恩六道如毁灭之神般从天而降。
+    卡卡西集结防御者，但面对控制引力本身的敌人，
+    村庄能撑到鸣人归来吗？
+  events:
+    - trigger: on_turn_start
+      turn: 4
+      text: |
+        神罗天征！天道释放巨大的引力脉冲。建筑崩塌。
+        村庄中心被夷为平地。
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        一只巨大的蛤蟆砸落在村庄大门口。站在它头上，
+        双眼闪耀自然能量的金色光芒——漩涡鸣人以仙人
+        模式到来！"我不会让你摧毁我的村庄！"
+    - trigger: on_unit_killed
+      unit_id: u_r_deva_1
+      text: |
+        天道崩碎。但在村庄远处的树林中，长门咳出了血。
+        真正的佩恩仍然在那里。

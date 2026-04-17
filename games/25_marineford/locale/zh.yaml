@@ -1,0 +1,115 @@
+# 马林梵多顶上战争 — 中文本地化
+name: 马林梵多——顶上战争
+description: |
+  马林梵多，海军本部。白胡子及其海贼联盟强攻要塞，
+  营救即将被处刑的波特卡斯·D·艾斯。三大将、元帅
+  和世界最强剑豪挡在他们面前。白胡子海贼团必须在
+  时间耗尽前到达处刑台。
+
+unit_classes:
+  whitebeard:
+    display_name: 爱德华·纽盖特（白胡子）
+    description: |
+      世界最强之人。震震果实能力者，能震碎空气本身、
+      引发海啸。年迈多病，但依然令人恐惧。一拳能裂天。
+  marco:
+    display_name: 不死鸟马尔科
+    description: |
+      第一队队长。不死鸟之焰治愈自身和盟友的伤口。
+      几乎不可能杀死——蓝色火焰再生一切伤害。
+  jozu:
+    display_name: 钻石乔兹
+    description: |
+      第三队队长。身体变为钻石，几乎坚不可摧。
+      终极肉盾。
+  vista:
+    display_name: 比斯塔
+    description: |
+      第五队队长。花剑比斯塔，能与鹰眼比剑不落下风。
+      快速而优雅。
+  whitebeard_commander:
+    display_name: 白胡子队长
+    description: |
+      白胡子海贼团的各队队长。每个人本身就是一名
+      可怕的海贼船长。
+  whitebeard_pirate:
+    display_name: 白胡子海贼
+    description: |
+      白胡子舰队的普通成员。至死忠于老爹。
+  akainu:
+    display_name: 赤犬大将
+    description: |
+      赤犬，岩浆大将。绝对正义的化身。熔岩拳头能
+      烧穿一切——甚至连火焰本身都能烧毁。
+      海军最致命的攻击力量。
+  aokiji:
+    display_name: 青雉大将
+    description: |
+      库赞，冰冻大将。冻结了整个海湾让海贼能走过来——
+      同时让海军能在上面战斗。懒散但远程杀伤力致命。
+  kizaru:
+    display_name: 黄猿大将
+    description: |
+      波鲁萨利诺，光速大将。以光速移动。全场最快，
+      以无聊的表情从指尖发射激光。
+  sengoku:
+    display_name: 战国元帅
+    description: |
+      佛之战国。策划艾斯处刑以引出白胡子的人。
+      人人果实·大佛形态能力者，战略天才。
+  mihawk:
+    display_name: 鸠拉克尔·鹰眼·米霍克
+    description: |
+      世界最强剑豪。夜之黑刀，最强黑刀。以随意的
+      优雅斩断一切。以七武海身份参战，非自愿。
+  marine_captain:
+    display_name: 海军上校
+    description: |
+      防守马林梵多的海军军官。训练有素、纪律严明，
+      但被新世界海贼碾压。
+  marine_soldier:
+    display_name: 海军士兵
+    description: |
+      普通海军。勇敢但平凡，面对拥有恶魔果实力量的怪物。
+  marine_medic:
+    display_name: 海军军医
+    description: |
+      马林梵多战场上的军医。在混战中维持伤员战斗力。
+
+terrain_types:
+  building:
+    description: |
+      马林梵多广场建筑。在混战中提供坚实掩护。
+  ice:
+    description: |
+      青雉冻结的海湾。湿滑表面无掩护——但海贼可以走过去。
+  platform:
+    description: |
+      波特卡斯·D·艾斯等待死刑的处刑台。
+      到达此地块意味着自由。
+
+narrative:
+  title: 马林梵多——顶上战争
+  description: |
+    马林梵多，海军权力中枢。白胡子的舰队出现在海湾。
+    顶上战争——这个时代最伟大的战斗——开始了。
+  intro: |
+    冰封的海湾嘎吱作响。白胡子的薙刀斩开空气，
+    大海本身裂开。冰面上，海贼舰队向处刑台冲去，
+    艾斯双膝跪地被锁链束缚。三大将起身迎敌。
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        白胡子倾斜薙刀击碎空气。震动波纹横扫马林梵多——
+        建筑开裂，大地分裂。世界最强之人入场了。
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        广场陷入混战。海贼和海军在冰封海湾和碎裂石地
+        的每一寸上交战。处刑台在一切之上高耸。
+    - trigger: on_unit_killed
+      unit_id: u_b_whitebeard_1
+      text: |
+        老爹倒下了——但站着死的，背脊挺直。即使在
+        死亡中，爱德华·纽盖特也没有后退一步。
