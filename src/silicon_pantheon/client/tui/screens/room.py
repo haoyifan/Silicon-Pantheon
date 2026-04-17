@@ -29,6 +29,7 @@ from rich.panel import Panel as RichPanel
 from rich.table import Table
 from rich.text import Text
 
+from silicon_pantheon.client.locale import t
 from silicon_pantheon.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
 from silicon_pantheon.client.tui.panels import Panel, border_style, wrap_rows_to_width
 
@@ -892,16 +893,18 @@ class ActionsPanel(Panel):
         # Lessons toggle: per-player (each side's agent reads/writes
         # its own store), only editable pre-match like strategy.
         lessons_label = "on" if self.screen.app.state.use_lessons else "off"
+        from silicon_pantheon.client.locale import t
+        lc = self.screen.app.state.locale
         buttons: list[Button] = [
-            Button(label="Toggle Ready", action="toggle_ready", enabled=editable),
+            Button(label=t("room_buttons.toggle_ready", lc), action="toggle_ready", enabled=editable),
             Button(
-                label="Strategy",
+                label=t("room_buttons.strategy", lc),
                 action="change_strategy",
                 value=strat_label,
                 enabled=editable,
             ),
             Button(
-                label="Lessons",
+                label=t("room_buttons.lessons", lc),
                 action="toggle_lessons",
                 value=lessons_label,
                 enabled=editable,
@@ -911,32 +914,32 @@ class ActionsPanel(Panel):
             buttons.extend(
                 [
                     Button(
-                        label="Change Scenario",
+                        label=t("room_buttons.change_scenario", lc),
                         action="change_scenario",
                         value=rs.get("scenario", "?"),
                         enabled=editable and bool(self.screen.scenarios),
                     ),
                     Button(
-                        label="Change Fog",
+                        label=t("room_buttons.change_fog", lc),
                         action="change_fog",
                         value=rs.get("fog_of_war", "?"),
                         enabled=editable,
                     ),
                     Button(
-                        label="Change Team Mode",
+                        label=t("room_buttons.change_teams", lc),
                         action="change_teams",
                         value=rs.get("team_assignment", "?"),
                         enabled=editable,
                     ),
                     Button(
-                        label="Change Host Team",
+                        label=t("room_buttons.change_host_team", lc),
                         action="change_host_team",
                         value=rs.get("host_team", "?"),
                         enabled=editable
                         and rs.get("team_assignment") == "fixed",
                     ),
                     Button(
-                        label="Turn Time Limit",
+                        label=t("room_buttons.turn_time", lc),
                         action="change_turn_time",
                         value=f"{rs.get('turn_time_limit_s', '?')}s",
                         enabled=editable,
@@ -945,8 +948,8 @@ class ActionsPanel(Panel):
             )
         buttons.extend(
             [
-                Button(label="Leave Room", action="leave"),
-                Button(label="Quit", action="quit"),
+                Button(label=t("room_buttons.leave", lc), action="leave"),
+                Button(label=t("room_buttons.quit_game", lc), action="quit"),
             ]
         )
         return buttons
@@ -1477,7 +1480,7 @@ class RoomScreen(Screen):
             descriptions[p.stem] = _strip_frontmatter(txt).strip()
 
         self._dropdown = Dropdown(
-            title="Pick Strategy (your side only)",
+            title=t("room_buttons.pick_strategy", self.app.state.locale),
             options=options,
             selected_idx=idx,
             on_confirm=_on_pick,
@@ -1490,7 +1493,7 @@ class RoomScreen(Screen):
                 self._pending_transition = await self._leave()
 
         self._confirm = ConfirmModal(
-            prompt="Leave this room and return to the lobby?",
+            prompt=t("room_buttons.leave_confirm", self.app.state.locale),
             on_confirm=_on_confirm,
         )
 
@@ -1500,7 +1503,7 @@ class RoomScreen(Screen):
                 self.app.exit()
 
         self._confirm = ConfirmModal(
-            prompt="Quit SiliconPantheon?",
+            prompt=t("room_buttons.quit_confirm", self.app.state.locale),
             on_confirm=_on_confirm,
         )
 
@@ -1530,7 +1533,7 @@ class RoomScreen(Screen):
         current = (self.app.state.last_room_state or {}).get("fog_of_war", "none")
         idx = _FOG_OPTIONS.index(current) if current in _FOG_OPTIONS else 0
         self._dropdown = Dropdown(
-            title="Change Fog of War",
+            title=t("room_buttons.change_fog_title", self.app.state.locale),
             options=list(_FOG_OPTIONS),
             selected_idx=idx,
             on_confirm=lambda v: self._apply_config({"fog_of_war": v}),
@@ -1547,7 +1550,7 @@ class RoomScreen(Screen):
             else 0
         )
         self._dropdown = Dropdown(
-            title="Change Team Assignment",
+            title=t("room_buttons.change_teams_title", self.app.state.locale),
             options=list(_TEAM_MODE_OPTIONS),
             selected_idx=idx,
             on_confirm=lambda v: self._apply_config({"team_assignment": v}),
@@ -1562,7 +1565,7 @@ class RoomScreen(Screen):
             else 0
         )
         self._dropdown = Dropdown(
-            title="Change Host Team",
+            title=t("room_buttons.change_host_title", self.app.state.locale),
             options=list(_HOST_TEAM_OPTIONS),
             selected_idx=idx,
             on_confirm=lambda v: self._apply_config({"host_team": v}),
@@ -1584,7 +1587,7 @@ class RoomScreen(Screen):
             await self._apply_config({"turn_time_limit_s": int(v)})
 
         self._dropdown = Dropdown(
-            title="Per-turn time limit (seconds)",
+            title=t("room_buttons.turn_time_title", self.app.state.locale),
             options=list(_TURN_TIME_OPTIONS),
             selected_idx=idx,
             on_confirm=_on_confirm,

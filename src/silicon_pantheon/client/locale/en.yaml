@@ -153,3 +153,23 @@ post_match:
 
 # Lobby title
 lobby_title: "Lobby"
+
+# Room action buttons
+room_buttons:
+  toggle_ready: "Toggle Ready"
+  strategy: "Strategy"
+  lessons: "Lessons"
+  change_scenario: "Change Scenario"
+  change_fog: "Change Fog"
+  change_teams: "Change Team Mode"
+  change_host_team: "Change Host Team"
+  turn_time: "Turn Time Limit"
+  leave: "Leave Room"
+  quit_game: "Quit"
+  pick_strategy: "Pick Strategy (your side only)"
+  leave_confirm: "Leave this room and return to the lobby?"
+  quit_confirm: "Quit SiliconPantheon?"
+  change_fog_title: "Change Fog of War"
+  change_teams_title: "Change Team Assignment"
+  change_host_title: "Change Host Team"
+  turn_time_title: "Per-turn time limit (seconds)"

@@ -151,3 +151,23 @@ post_match:
 
 # 大厅标题
 lobby_title: "大厅"
+
+# 房间操作按钮
+room_buttons:
+  toggle_ready: "切换准备"
+  strategy: "策略"
+  lessons: "复盘"
+  change_scenario: "更换剧本"
+  change_fog: "更换迷雾"
+  change_teams: "更换队伍模式"
+  change_host_team: "更换主队"
+  turn_time: "回合时间限制"
+  leave: "离开房间"
+  quit_game: "退出"
+  pick_strategy: "选择策略（仅限你方）"
+  leave_confirm: "离开房间并返回大厅？"
+  quit_confirm: "退出SiliconPantheon？"
+  change_fog_title: "更换战争迷雾"
+  change_teams_title: "更换队伍分配"
+  change_host_title: "更换主队"
+  turn_time_title: "每回合时间限制（秒）"
