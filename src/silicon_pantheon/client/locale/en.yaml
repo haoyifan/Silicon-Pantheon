@@ -539,8 +539,8 @@ dropdown_desc:
 # Button value labels
 button_val:
   none: "(none)"
-  on: "on"
-  off: "off"
+  "on": "on"
+  "off": "off"
   any_unit: "any {team} unit"
 
 # Help overlay footer
