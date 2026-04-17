@@ -1,0 +1,293 @@
+schema_version: 1
+name: Loot Train Attack
+description: |
+  The Roseroad, 305 AC. Daenerys Targaryen has had enough of clever
+  plans. She mounts Drogon and leads her Dothraki horde against the
+  Lannister army as it escorts the spoils of Highgarden back to
+  King's Landing. The column stretches along the road, laden with
+  gold and grain — easy prey for dragonfire and screaming cavalry.
+  Jaime Lannister must hold the line or lose everything.
+
+board:
+  width: 14
+  height: 8
+  terrain:
+    # Road running east-west at y=3 and y=4
+    - {x: 0, y: 3, type: road}
+    - {x: 1, y: 3, type: road}
+    - {x: 2, y: 3, type: road}
+    - {x: 3, y: 3, type: road}
+    - {x: 4, y: 3, type: road}
+    - {x: 5, y: 3, type: road}
+    - {x: 6, y: 3, type: road}
+    - {x: 7, y: 3, type: road}
+    - {x: 8, y: 3, type: road}
+    - {x: 9, y: 3, type: road}
+    - {x: 10, y: 3, type: road}
+    - {x: 11, y: 3, type: road}
+    - {x: 12, y: 3, type: road}
+    - {x: 13, y: 3, type: road}
+    - {x: 0, y: 4, type: road}
+    - {x: 1, y: 4, type: road}
+    - {x: 2, y: 4, type: road}
+    - {x: 3, y: 4, type: road}
+    - {x: 4, y: 4, type: road}
+    - {x: 5, y: 4, type: road}
+    - {x: 6, y: 4, type: road}
+    - {x: 7, y: 4, type: road}
+    - {x: 8, y: 4, type: road}
+    - {x: 9, y: 4, type: road}
+    - {x: 10, y: 4, type: road}
+    - {x: 11, y: 4, type: road}
+    - {x: 12, y: 4, type: road}
+    - {x: 13, y: 4, type: road}
+  forts: []
+
+terrain_types:
+  road:
+    move_cost: 1
+    defense_bonus: 0
+    glyph: "-"
+    color: dim
+    description: |
+      The Roseroad — a wide dirt highway baked hard by summer sun.
+      Fast marching but no cover from dragonfire.
+
+unit_classes:
+  dragon_rider:
+    display_name: "Daenerys & Drogon"
+    description: |
+      The Mother of Dragons astride Drogon, the Black Dread reborn.
+      She swoops low over the column, bathing wagons and soldiers
+      in sheets of black fire. The sky itself has become the enemy.
+    hp_max: 40
+    atk: 14
+    defense: 4
+    res: 6
+    spd: 5
+    move: 4
+    rng_min: 2
+    rng_max: 4
+    is_magic: true
+    glyph: "D"
+    color: bright_yellow
+
+  dothraki:
+    display_name: Dothraki Screamer
+    description: |
+      Mounted warriors of the Great Grass Sea. They stand in the
+      saddle at full gallop, loosing arrows and swinging arakhs.
+      The Lannister soldiers have never seen anything like them.
+    hp_max: 16
+    atk: 8
+    defense: 3
+    res: 2
+    spd: 8
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "d"
+    color: yellow
+
+  bloodrider:
+    display_name: Dothraki Bloodrider
+    description: |
+      Sworn blood of the khal's blood — elite bodyguards who have
+      pledged their lives to their khaleesi. Bigger horses, better
+      blades, and no concept of retreat.
+    hp_max: 20
+    atk: 10
+    defense: 4
+    res: 2
+    spd: 7
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "B"
+    color: bright_yellow
+
+  jaime:
+    display_name: Jaime Lannister
+    description: |
+      The Kingslayer. Golden-haired, golden-handed, and stubborn
+      enough to charge a dragon with a lance. Commands the rear
+      guard and refuses to abandon his men.
+    hp_max: 30
+    atk: 11
+    defense: 8
+    res: 4
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "J"
+    color: red
+
+  bronn:
+    display_name: Bronn
+    description: |
+      Sellsword turned unlikely hero. Sprints through the chaos to
+      reach the Scorpion — a giant crossbow designed to kill
+      dragons. Practical, profane, and a very good shot.
+    hp_max: 22
+    atk: 10
+    defense: 5
+    res: 3
+    spd: 6
+    move: 4
+    rng_min: 2
+    rng_max: 3
+    glyph: "B"
+    color: bright_red
+
+  supply_wagon:
+    display_name: Supply Wagon
+    description: |
+      Ox-drawn wagons heavy with Highgarden gold and grain — the
+      entire point of the war. Stationary, flammable, and utterly
+      defenseless against dragonfire.
+    hp_max: 30
+    atk: 0
+    defense: 2
+    res: 1
+    spd: 1
+    move: 0
+    rng_min: 1
+    rng_max: 1
+    glyph: "W"
+    color: dim
+
+  lannister_infantry:
+    display_name: Lannister Infantry
+    description: |
+      Professional soldiers in crimson and gold. Well-drilled,
+      well-armored, trained to hold a shield wall — but nobody
+      trained them for this.
+    hp_max: 22
+    atk: 7
+    defense: 7
+    res: 3
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "i"
+    color: red
+
+  lannister_archer:
+    display_name: Lannister Archer
+    description: |
+      Crossbowmen of Casterly Rock. Accurate and disciplined,
+      but their bolts bounce off dragonscale like twigs off stone.
+    hp_max: 16
+    atk: 8
+    defense: 3
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    glyph: "a"
+    color: red
+
+armies:
+  blue:
+    # Daenerys flies in from the top of the map
+    - {class: dragon_rider, pos: {x: 2, y: 0}}
+    # Dothraki bloodrider — leading the charge
+    - {class: bloodrider, pos: {x: 1, y: 2}}
+    # Dothraki screamers — western edge, rows y=2-6
+    - {class: dothraki, pos: {x: 0, y: 2}}
+    - {class: dothraki, pos: {x: 0, y: 3}}
+    - {class: dothraki, pos: {x: 0, y: 4}}
+    - {class: dothraki, pos: {x: 0, y: 5}}
+    - {class: dothraki, pos: {x: 1, y: 3}}
+    - {class: dothraki, pos: {x: 1, y: 4}}
+    - {class: dothraki, pos: {x: 1, y: 5}}
+    - {class: dothraki, pos: {x: 2, y: 2}}
+    - {class: dothraki, pos: {x: 2, y: 5}}
+    - {class: dothraki, pos: {x: 3, y: 2}}
+    - {class: dothraki, pos: {x: 3, y: 5}}
+    - {class: dothraki, pos: {x: 3, y: 6}}
+
+  red:
+    # Jaime — commanding from the road
+    - {class: jaime, pos: {x: 10, y: 4}}
+    # Bronn — near the wagons
+    - {class: bronn, pos: {x: 11, y: 4}}
+    # Supply wagons — stationary on the road
+    - {class: supply_wagon, pos: {x: 12, y: 3}}
+    - {class: supply_wagon, pos: {x: 12, y: 5}}
+    # Lannister infantry — defending the road and wagons
+    - {class: lannister_infantry, pos: {x: 8, y: 3}}
+    - {class: lannister_infantry, pos: {x: 8, y: 4}}
+    - {class: lannister_infantry, pos: {x: 9, y: 3}}
+    - {class: lannister_infantry, pos: {x: 9, y: 4}}
+    - {class: lannister_infantry, pos: {x: 10, y: 3}}
+    - {class: lannister_infantry, pos: {x: 11, y: 3}}
+    - {class: lannister_infantry, pos: {x: 11, y: 5}}
+    - {class: lannister_infantry, pos: {x: 13, y: 4}}
+    # Lannister archers — behind the line
+    - {class: lannister_archer, pos: {x: 9, y: 2}}
+    - {class: lannister_archer, pos: {x: 10, y: 2}}
+    - {class: lannister_archer, pos: {x: 9, y: 5}}
+    - {class: lannister_archer, pos: {x: 10, y: 6}}
+
+rules:
+  max_turns: 14
+  first_player: blue
+
+win_conditions:
+  # Jaime dies -> red loses
+  - {type: protect_unit, unit_id: u_r_jaime_1, owning_team: red}
+  # Daenerys dies -> blue loses
+  - {type: protect_unit, unit_id: u_b_dragon_rider_1, owning_team: blue}
+  # Daenerys survives the turn cap -> blue wins (the column is broken)
+  - {type: protect_unit_survives, unit_id: u_b_dragon_rider_1, owning_team: blue}
+  # Either side wins by total elimination
+  - {type: eliminate_all_enemy_units}
+  # Backstop
+  - {type: max_turns_draw}
+
+narrative:
+  title: Loot Train Attack
+  description: |
+    The Roseroad, 305 AC. Daenerys Targaryen descends on the
+    Lannister supply train with fire and blood. The Dothraki
+    charge from the west. There is nowhere to run.
+  intro: |
+    A low rumble from the west. The Lannister soldiers peer at the
+    horizon — a dark line of riders, growing larger. Then a shadow
+    passes over the sun, and something screams in a voice that is
+    not human. Sergeant Dickon Tarly draws his sword with shaking
+    hands. The sky splits open with black fire.
+  events:
+    - trigger: on_turn_start
+      turn: 2
+      text: |
+        Drogon's first pass ignites the tall grass on both sides
+        of the road. Smoke pours across the battlefield. Through
+        the haze, the ululating war cries of the Dothraki grow
+        closer.
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        The Lannister shield wall buckles. Dothraki riders leap
+        the burning wreckage and crash into the infantry from
+        three directions at once.
+    - trigger: on_turn_start
+      turn: 8
+      text: |
+        Wagons burn along the entire length of the road. Black
+        smoke rises in a column visible from King's Landing. The
+        gold of Highgarden melts into the dirt.
+    - trigger: on_unit_killed
+      unit_id: u_r_jaime_1
+      text: |
+        The golden hand catches the light one last time as Jaime
+        falls. The Lannister army dies with its commander.
+    - trigger: on_unit_killed
+      unit_id: u_b_dragon_rider_1
+      text: |
+        Drogon screams and spirals. Daenerys slips from the
+        saddle. The Dothraki falter — their queen has fallen.

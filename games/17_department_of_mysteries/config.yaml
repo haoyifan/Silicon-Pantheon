@@ -1,0 +1,418 @@
+schema_version: 1
+name: Department of Mysteries
+description: |
+  Ministry of Magic, June 1996. Harry Potter and five members of
+  Dumbledore's Army have broken into the Department of Mysteries
+  to rescue Sirius Black — except it's a trap. Death Eaters led
+  by Lucius Malfoy emerge from the shadows, demanding the prophecy.
+  Six teenagers against ten dark wizards, in a labyrinth of stone
+  corridors and shelves of glowing orbs. All they need to do is
+  survive until the Order of the Phoenix arrives.
+
+board:
+  width: 12
+  height: 8
+  terrain:
+    # Stone walls — impassable, forming corridors and rooms
+    # Northern wall
+    - {x: 0, y: 0, type: stone_wall}
+    - {x: 1, y: 0, type: stone_wall}
+    - {x: 2, y: 0, type: stone_wall}
+    - {x: 3, y: 0, type: stone_wall}
+    - {x: 5, y: 0, type: stone_wall}
+    - {x: 6, y: 0, type: stone_wall}
+    - {x: 7, y: 0, type: stone_wall}
+    - {x: 8, y: 0, type: stone_wall}
+    - {x: 10, y: 0, type: stone_wall}
+    - {x: 11, y: 0, type: stone_wall}
+    # Interior walls forming rooms
+    - {x: 3, y: 2, type: stone_wall}
+    - {x: 8, y: 2, type: stone_wall}
+    - {x: 3, y: 5, type: stone_wall}
+    - {x: 8, y: 5, type: stone_wall}
+    # Southern wall
+    - {x: 0, y: 7, type: stone_wall}
+    - {x: 1, y: 7, type: stone_wall}
+    - {x: 2, y: 7, type: stone_wall}
+    - {x: 3, y: 7, type: stone_wall}
+    - {x: 5, y: 7, type: stone_wall}
+    - {x: 6, y: 7, type: stone_wall}
+    - {x: 7, y: 7, type: stone_wall}
+    - {x: 8, y: 7, type: stone_wall}
+    - {x: 10, y: 7, type: stone_wall}
+    - {x: 11, y: 7, type: stone_wall}
+    # Prophecy shelves — the Hall of Prophecy
+    - {x: 4, y: 2, type: prophecy_shelf}
+    - {x: 5, y: 2, type: prophecy_shelf}
+    - {x: 6, y: 2, type: prophecy_shelf}
+    - {x: 7, y: 2, type: prophecy_shelf}
+    - {x: 4, y: 5, type: prophecy_shelf}
+    - {x: 5, y: 5, type: prophecy_shelf}
+    - {x: 6, y: 5, type: prophecy_shelf}
+    - {x: 7, y: 5, type: prophecy_shelf}
+  forts: []
+
+terrain_types:
+  stone_wall:
+    move_cost: 99
+    defense_bonus: 0
+    passable: false
+    glyph: "#"
+    color: bright_black
+    description: |
+      Black stone walls of the Ministry's deepest level. Ancient,
+      cold, and impervious to most spells.
+
+  prophecy_shelf:
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "~"
+    color: blue
+    description: |
+      Towering shelves of glass orbs, each containing a recorded
+      prophecy. They glow with pale blue light and shatter
+      spectacularly when hit by stray curses.
+
+unit_classes:
+  harry:
+    display_name: Harry Potter
+    description: |
+      The Boy Who Lived. Fifteen years old, driven by a vision
+      that may be a lie, wielding a holly wand that has saved him
+      before. He fights with more courage than skill — Expelliarmus
+      against Avada Kedavra.
+    hp_max: 24
+    atk: 10
+    defense: 3
+    res: 7
+    spd: 6
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "H"
+    color: bright_yellow
+
+  hermione:
+    display_name: Hermione Granger
+    description: |
+      The brightest witch of her age. She knows spells most
+      adults haven't mastered — Silencio, Petrificus Totalus,
+      Protego. Her mind is her deadliest weapon.
+    hp_max: 20
+    atk: 9
+    defense: 3
+    res: 8
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "h"
+    color: yellow
+
+  ron:
+    display_name: Ron Weasley
+    description: |
+      Sixth son, eternal sidekick, braver than he believes. His
+      wand-work is unpolished but fierce. Weasley courage runs
+      deep — he walked into a nest of giant spiders for Harry.
+    hp_max: 20
+    atk: 8
+    defense: 4
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "R"
+    color: bright_red
+
+  neville:
+    display_name: Neville Longbottom
+    description: |
+      Clumsy, overlooked, and underestimated. But Neville was
+      almost the Chosen One, and tonight he fights with the
+      stubborn courage that will one day kill a Horcrux.
+    hp_max: 22
+    atk: 7
+    defense: 5
+    res: 4
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "N"
+    color: green
+
+  luna:
+    display_name: Luna Lovegood
+    description: |
+      Dreamy, strange, and utterly unafraid. Luna duels Death
+      Eaters with serene calm, as though cursing dark wizards
+      is no more alarming than spotting a Crumple-Horned Snorkack.
+    hp_max: 18
+    atk: 9
+    defense: 2
+    res: 6
+    spd: 5
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "L"
+    color: bright_blue
+
+  ginny:
+    display_name: Ginny Weasley
+    description: |
+      The youngest Weasley — and the most talented. Her Bat-Bogey
+      Hex is legendary. She fights with a ferocity that surprises
+      even the Death Eaters.
+    hp_max: 18
+    atk: 9
+    defense: 3
+    res: 6
+    spd: 6
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "G"
+    color: bright_red
+
+  lucius:
+    display_name: Lucius Malfoy
+    description: |
+      Silken-tongued aristocrat with a serpent-headed cane that
+      conceals his wand. He wants the prophecy intact — the Dark
+      Lord's orders are clear. Dangerous when cornered, cowardly
+      when outmatched.
+    hp_max: 24
+    atk: 10
+    defense: 3
+    res: 6
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "X"
+    color: bright_black
+
+  bellatrix:
+    display_name: Bellatrix Lestrange
+    description: |
+      The Dark Lord's most devoted servant. Mad, brilliant, and
+      cruel beyond measure. She duels to kill, and her Cruciatus
+      Curse has broken stronger minds than these children's.
+    hp_max: 22
+    atk: 12
+    defense: 2
+    res: 5
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "B"
+    color: magenta
+
+  dolohov:
+    display_name: Antonin Dolohov
+    description: |
+      A veteran of the first war — he killed the Prewett brothers.
+      Silent and methodical, his purple-flame curse nearly kills
+      Hermione. One of Voldemort's most dangerous soldiers.
+    hp_max: 22
+    atk: 11
+    defense: 3
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "D"
+    color: bright_black
+
+  death_eater:
+    display_name: Death Eater
+    description: |
+      Masked servants of Voldemort in black robes. Pureblood
+      fanatics who revel in cruelty. Individually capable, but
+      they're used to fighting people who are afraid of them —
+      these teenagers are not.
+    hp_max: 20
+    atk: 8
+    defense: 3
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "x"
+    color: bright_black
+
+  sirius:
+    display_name: Sirius Black
+    description: |
+      Harry's godfather, escaped Azkaban prisoner, and member
+      of the Order. He fights with reckless joy — the grin of
+      a man who has nothing left to lose.
+    hp_max: 26
+    atk: 11
+    defense: 4
+    res: 6
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "S"
+    color: white
+
+  lupin:
+    display_name: Remus Lupin
+    description: |
+      Werewolf, former professor, and the quiet backbone of the
+      Order. His dueling is textbook-precise — Defense Against
+      the Dark Arts was always his subject.
+    hp_max: 24
+    atk: 10
+    defense: 4
+    res: 6
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "r"
+    color: yellow
+
+  tonks:
+    display_name: Nymphadora Tonks
+    description: |
+      Metamorphmagus and Auror. Young, clumsy off the battlefield,
+      lethal on it. Her hair flashes pink as she hurls hexes with
+      both hands.
+    hp_max: 22
+    atk: 10
+    defense: 3
+    res: 5
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "T"
+    color: magenta
+
+  moody:
+    display_name: Alastor "Mad-Eye" Moody
+    description: |
+      Retired Auror, scarred veteran of the first war. His magical
+      eye sees through walls, disguises, and lies. The most
+      paranoid man alive — and the most dangerous.
+    hp_max: 28
+    atk: 11
+    defense: 5
+    res: 7
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 3
+    is_magic: true
+    glyph: "E"
+    color: bright_yellow
+
+armies:
+  blue:
+    # DA starts in the center room (prophecy hall)
+    - {class: harry, pos: {x: 5, y: 3}}
+    - {class: hermione, pos: {x: 6, y: 3}}
+    - {class: ron, pos: {x: 5, y: 4}}
+    - {class: neville, pos: {x: 6, y: 4}}
+    - {class: luna, pos: {x: 7, y: 3}}
+    - {class: ginny, pos: {x: 7, y: 4}}
+
+  red:
+    # Death Eaters approach from north corridor (x=4, y=0 gap)
+    - {class: lucius, pos: {x: 4, y: 1}}
+    - {class: dolohov, pos: {x: 4, y: 0}}
+    - {class: death_eater, pos: {x: 9, y: 0}}
+    - {class: death_eater, pos: {x: 9, y: 1}}
+    # Death Eaters from east corridor
+    - {class: bellatrix, pos: {x: 10, y: 3}}
+    - {class: death_eater, pos: {x: 11, y: 3}}
+    - {class: death_eater, pos: {x: 10, y: 4}}
+    - {class: death_eater, pos: {x: 11, y: 4}}
+    # Death Eaters from south
+    - {class: death_eater, pos: {x: 4, y: 7}}
+    - {class: death_eater, pos: {x: 9, y: 7}}
+
+rules:
+  max_turns: 16
+  first_player: blue
+
+win_conditions:
+  # Harry dies -> blue loses
+  - {type: protect_unit, unit_id: u_b_harry_1, owning_team: blue}
+  # Harry survives the turn cap -> the Order saved them, blue wins
+  - {type: protect_unit_survives, unit_id: u_b_harry_1, owning_team: blue}
+  # Either side wins by total elimination
+  - {type: eliminate_all_enemy_units}
+  # Backstop
+  - {type: max_turns_draw}
+
+plugin_hooks:
+  on_turn_start:
+    - order_reinforcements
+
+narrative:
+  title: Department of Mysteries
+  description: |
+    Ministry of Magic, June 1996. Six members of Dumbledore's
+    Army are trapped in the Department of Mysteries with ten
+    Death Eaters. The Order of the Phoenix is coming — but
+    will they arrive in time?
+  intro: |
+    The prophecy glows in Harry's hand. Lucius Malfoy's voice
+    echoes through the Hall of Prophecy: "Very good, Potter.
+    Now turn around, nice and slowly, and give that to me."
+    Shelves of glass orbs stretch into the darkness in every
+    direction. Somewhere behind the masks, wands are rising.
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        Prophecy orbs shatter in cascades of blue-white light
+        as curses fly wide. The whispering ghosts of a hundred
+        seers fill the air with fragments of foretelling.
+    - trigger: on_turn_start
+      turn: 6
+      text: |
+        The DA retreats through the Department, fighting room
+        to room. Hermione falls behind, dueling Dolohov alone
+        in the dark.
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        A door bursts open. Sirius Black, Remus Lupin,
+        Nymphadora Tonks, and Mad-Eye Moody charge into the
+        fray — the Order of the Phoenix has arrived! Four
+        reinforcements join the fight for blue.
+    - trigger: on_unit_killed
+      unit_id: u_b_harry_1
+      text: |
+        The prophecy shatters on the stone floor. Nobody will
+        ever hear its words. The Death Eaters have won — and
+        the Dark Lord's victory is assured.
+    - trigger: on_unit_killed
+      unit_id: u_r_bellatrix_1
+      text: |
+        Bellatrix's mad laughter is cut short. The most
+        dangerous Death Eater in the room falls silent.
