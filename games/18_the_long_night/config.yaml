@@ -1,0 +1,335 @@
+schema_version: 1
+name: The Long Night
+description: |
+  Winterfell, 305 AC. The Army of the Dead marches south. Jon Snow,
+  Daenerys Targaryen, and the combined forces of the living make their
+  stand at Winterfell. The Dothraki charge into darkness, the Unsullied
+  hold the trench line, and dragonfire lights up the night. But the
+  dead keep coming. The only way to end it: kill the Night King.
+
+board:
+  width: 16
+  height: 12
+  terrain:
+    # Fire trench at y=6 — the defensive line
+    - {x: 0, y: 6, type: trench}
+    - {x: 1, y: 6, type: trench}
+    - {x: 2, y: 6, type: trench}
+    - {x: 3, y: 6, type: trench}
+    - {x: 4, y: 6, type: trench}
+    - {x: 5, y: 6, type: trench}
+    - {x: 6, y: 6, type: trench}
+    - {x: 7, y: 6, type: trench}
+    - {x: 8, y: 6, type: trench}
+    - {x: 9, y: 6, type: trench}
+    - {x: 10, y: 6, type: trench}
+    - {x: 11, y: 6, type: trench}
+    - {x: 12, y: 6, type: trench}
+    - {x: 13, y: 6, type: trench}
+    - {x: 14, y: 6, type: trench}
+    - {x: 15, y: 6, type: trench}
+    # Winterfell walls at y=9 — impassable except the gate
+    - {x: 0, y: 9, type: stone_wall}
+    - {x: 1, y: 9, type: stone_wall}
+    - {x: 2, y: 9, type: stone_wall}
+    - {x: 3, y: 9, type: stone_wall}
+    - {x: 4, y: 9, type: stone_wall}
+    - {x: 5, y: 9, type: stone_wall}
+    - {x: 6, y: 9, type: stone_wall}
+    - {x: 7, y: 9, type: stone_wall}
+    # (8, 9) is the gate — plain tile, no wall
+    - {x: 9, y: 9, type: stone_wall}
+    - {x: 10, y: 9, type: stone_wall}
+    - {x: 11, y: 9, type: stone_wall}
+    - {x: 12, y: 9, type: stone_wall}
+    - {x: 13, y: 9, type: stone_wall}
+    - {x: 14, y: 9, type: stone_wall}
+    - {x: 15, y: 9, type: stone_wall}
+  forts: []
+
+terrain_types:
+  trench:
+    move_cost: 3
+    defense_bonus: 2
+    glyph: "="
+    color: yellow
+    description: |
+      A trench filled with pitch and dragonfire. Slows the dead
+      but won't stop them forever.
+  stone_wall:
+    move_cost: 1
+    defense_bonus: 0
+    passable: false
+    glyph: "#"
+    color: white
+    description: |
+      The ancient walls of Winterfell. Impassable — except through
+      the gate.
+
+unit_classes:
+  jon_snow:
+    display_name: Jon Snow
+    description: |
+      The White Wolf, King in the North. Wields Longclaw, Valyrian
+      steel that shatters White Walkers on contact.
+    hp_max: 35
+    atk: 12
+    defense: 8
+    res: 5
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "J"
+    color: white
+
+  daenerys:
+    display_name: Daenerys Targaryen
+    description: |
+      The Dragon Queen. Rides Drogon above the battlefield, raining
+      fire on the dead. Magic-class — damage mitigated by RES.
+    hp_max: 36
+    atk: 13
+    defense: 4
+    res: 6
+    spd: 5
+    move: 4
+    rng_min: 2
+    rng_max: 4
+    is_magic: true
+    glyph: "D"
+    color: bright_yellow
+
+  brienne:
+    display_name: Brienne of Tarth
+    description: |
+      Ser Brienne, newly knighted. The finest sword in Westeros,
+      armored head to toe. Holds the line against the tide of dead.
+    hp_max: 28
+    atk: 11
+    defense: 9
+    res: 3
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "B"
+    color: white
+
+  grey_worm:
+    display_name: Grey Worm
+    description: |
+      Commander of the Unsullied. Disciplined, fast, lethal with
+      a spear. Holds the trench line.
+    hp_max: 24
+    atk: 10
+    defense: 7
+    res: 3
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "G"
+    color: cyan
+
+  jorah:
+    display_name: Jorah Mormont
+    description: |
+      Ser Jorah the Andal. Fights with a Valyrian steel sword
+      gifted by Sam Tarly. Protects his queen to the last breath.
+    hp_max: 26
+    atk: 10
+    defense: 7
+    res: 4
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "I"
+    color: white
+
+  unsullied:
+    display_name: Unsullied
+    description: |
+      Elite infantry, trained from birth. Shield and spear, perfect
+      discipline. They do not break.
+    hp_max: 20
+    atk: 8
+    defense: 7
+    res: 3
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "u"
+    color: cyan
+
+  dothraki:
+    display_name: Dothraki Screamer
+    description: |
+      Horse lords of the Great Grass Sea. Fast, aggressive, lightly
+      armored. Their flaming arakhs are the first light in the dark.
+    hp_max: 16
+    atk: 8
+    defense: 3
+    res: 2
+    spd: 7
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "d"
+    color: yellow
+
+  night_king:
+    display_name: Night King
+    description: |
+      The first White Walker, created by the Children of the Forest.
+      Commands the dead with a gesture. Ice magic shatters steel
+      and raises the fallen. Kill him and every wight drops.
+    hp_max: 45
+    atk: 14
+    defense: 8
+    res: 8
+    spd: 4
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    is_magic: true
+    glyph: "N"
+    color: bright_blue
+
+  white_walker:
+    display_name: White Walker
+    description: |
+      Ancient ice creature, lieutenant of the Night King. Carries
+      an ice blade that shatters ordinary steel. Magic-class.
+    hp_max: 30
+    atk: 11
+    defense: 7
+    res: 7
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "W"
+    color: bright_blue
+
+  wight:
+    display_name: Wight
+    description: |
+      A reanimated corpse. Weak alone, terrifying in numbers. They
+      do not tire, do not fear, and do not stop.
+    hp_max: 10
+    atk: 5
+    defense: 2
+    res: 1
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "w"
+    color: blue
+
+armies:
+  blue:
+    # Jon Snow — behind the trench, commanding
+    - {class: jon_snow, pos: {x: 8, y: 7}}
+    # Daenerys — rear, dragonfire support
+    - {class: daenerys, pos: {x: 7, y: 8}}
+    # Brienne — trench line
+    - {class: brienne, pos: {x: 5, y: 7}}
+    # Grey Worm — trench line
+    - {class: grey_worm, pos: {x: 10, y: 7}}
+    # Jorah — near Daenerys
+    - {class: jorah, pos: {x: 6, y: 8}}
+    # Unsullied — holding the trench
+    - {class: unsullied, pos: {x: 3, y: 7}}
+    - {class: unsullied, pos: {x: 4, y: 7}}
+    - {class: unsullied, pos: {x: 6, y: 7}}
+    - {class: unsullied, pos: {x: 9, y: 7}}
+    - {class: unsullied, pos: {x: 11, y: 7}}
+    - {class: unsullied, pos: {x: 12, y: 7}}
+    # Dothraki — forward, aggressive
+    - {class: dothraki, pos: {x: 2, y: 8}}
+    - {class: dothraki, pos: {x: 4, y: 8}}
+    - {class: dothraki, pos: {x: 9, y: 8}}
+    - {class: dothraki, pos: {x: 11, y: 8}}
+    - {class: dothraki, pos: {x: 13, y: 8}}
+
+  red:
+    # Night King — far rear
+    - {class: night_king, pos: {x: 8, y: 0}}
+    # White Walkers — behind the wight horde
+    - {class: white_walker, pos: {x: 4, y: 1}}
+    - {class: white_walker, pos: {x: 8, y: 1}}
+    - {class: white_walker, pos: {x: 12, y: 1}}
+    # Wights — 18 in a massive wave
+    - {class: wight, pos: {x: 1, y: 2}}
+    - {class: wight, pos: {x: 3, y: 2}}
+    - {class: wight, pos: {x: 5, y: 2}}
+    - {class: wight, pos: {x: 7, y: 2}}
+    - {class: wight, pos: {x: 9, y: 2}}
+    - {class: wight, pos: {x: 11, y: 2}}
+    - {class: wight, pos: {x: 13, y: 2}}
+    - {class: wight, pos: {x: 0, y: 3}}
+    - {class: wight, pos: {x: 2, y: 3}}
+    - {class: wight, pos: {x: 4, y: 3}}
+    - {class: wight, pos: {x: 6, y: 3}}
+    - {class: wight, pos: {x: 8, y: 3}}
+    - {class: wight, pos: {x: 10, y: 3}}
+    - {class: wight, pos: {x: 12, y: 3}}
+    - {class: wight, pos: {x: 14, y: 3}}
+    - {class: wight, pos: {x: 1, y: 4}}
+    - {class: wight, pos: {x: 5, y: 4}}
+    - {class: wight, pos: {x: 10, y: 4}}
+
+rules:
+  max_turns: 20
+  fog_of_war: classic
+  first_player: red
+
+win_conditions:
+  # Night King dies → red loses instantly (blue wins).
+  - {type: protect_unit, unit_id: u_r_night_king_1, owning_team: red}
+  # Jon dies → blue loses.
+  - {type: protect_unit, unit_id: u_b_jon_snow_1, owning_team: blue}
+  # Jon survives the turn cap → dawn comes. Blue wins.
+  - {type: protect_unit_survives, unit_id: u_b_jon_snow_1, owning_team: blue}
+  # Either side wins by total elimination.
+  - {type: eliminate_all_enemy_units}
+  # Backstop.
+  - {type: max_turns_draw}
+
+narrative:
+  title: The Long Night
+  description: |
+    Winterfell, 305 AC. The living make their last stand against
+    the Army of the Dead. The Night King must be destroyed or dawn
+    will never come again.
+  intro: |
+    Darkness. The Dothraki arakhs ignite with fire and charge north
+    into the blackness. One by one, the flames go out. Then the
+    dead come.
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        The trench ignites. A wall of fire separates the living from
+        the dead — for now. The wights begin to pile onto the flames,
+        smothering them with their own bodies.
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        The Night King raises his arms. Every fallen soldier on the
+        battlefield opens blue eyes and stands.
+    - trigger: on_unit_killed
+      unit_id: u_r_night_king_1
+      text: |
+        The Night King shatters like ice. Every wight on the field
+        collapses. Dawn breaks over Winterfell.
+    - trigger: on_unit_killed
+      unit_id: u_b_jon_snow_1
+      text: |
+        Jon Snow falls for the last time. There is no Red Woman to
+        bring him back. The living lose their king.

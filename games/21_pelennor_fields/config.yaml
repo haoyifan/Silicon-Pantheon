@@ -1,0 +1,427 @@
+schema_version: 1
+name: Pelennor Fields
+description: |
+  Minas Tirith, March 15, T.A. 3019. The forces of Mordor besiege
+  the White City. The Witch-King of Angmar leads a vast army of orcs,
+  Haradrim, and trolls against the walls of Gondor. Gandalf holds the
+  gate. Aragorn rallies the defenders. If the orcs breach the city,
+  Middle-earth falls — unless the Rohirrim ride to the rescue.
+
+board:
+  width: 18
+  height: 12
+  terrain:
+    # Minas Tirith walls at x=0-1 — impassable stone
+    - {x: 0, y: 0, type: city_wall}
+    - {x: 1, y: 0, type: city_wall}
+    - {x: 0, y: 1, type: city_wall}
+    - {x: 1, y: 1, type: city_wall}
+    - {x: 0, y: 2, type: city_wall}
+    - {x: 1, y: 2, type: city_wall}
+    - {x: 0, y: 3, type: city_wall}
+    - {x: 1, y: 3, type: city_wall}
+    - {x: 0, y: 4, type: city_wall}
+    - {x: 1, y: 4, type: city_wall}
+    - {x: 0, y: 5, type: city_wall}
+    - {x: 1, y: 5, type: city_wall}
+    # (2, 6) is the gate — plain tile
+    - {x: 0, y: 6, type: city_wall}
+    - {x: 1, y: 6, type: city_wall}
+    - {x: 0, y: 7, type: city_wall}
+    - {x: 1, y: 7, type: city_wall}
+    - {x: 0, y: 8, type: city_wall}
+    - {x: 1, y: 8, type: city_wall}
+    - {x: 0, y: 9, type: city_wall}
+    - {x: 1, y: 9, type: city_wall}
+    - {x: 0, y: 10, type: city_wall}
+    - {x: 1, y: 10, type: city_wall}
+    - {x: 0, y: 11, type: city_wall}
+    - {x: 1, y: 11, type: city_wall}
+    # River Anduin at x=16-17 — impassable
+    - {x: 16, y: 0, type: river}
+    - {x: 17, y: 0, type: river}
+    - {x: 16, y: 1, type: river}
+    - {x: 17, y: 1, type: river}
+    - {x: 16, y: 2, type: river}
+    - {x: 17, y: 2, type: river}
+    - {x: 16, y: 3, type: river}
+    - {x: 17, y: 3, type: river}
+    - {x: 16, y: 4, type: river}
+    - {x: 17, y: 4, type: river}
+    - {x: 16, y: 5, type: river}
+    - {x: 17, y: 5, type: river}
+    - {x: 16, y: 6, type: river}
+    - {x: 17, y: 6, type: river}
+    - {x: 16, y: 7, type: river}
+    - {x: 17, y: 7, type: river}
+    - {x: 16, y: 8, type: river}
+    - {x: 17, y: 8, type: river}
+    - {x: 16, y: 9, type: river}
+    - {x: 17, y: 9, type: river}
+    - {x: 16, y: 10, type: river}
+    - {x: 17, y: 10, type: river}
+    - {x: 16, y: 11, type: river}
+    - {x: 17, y: 11, type: river}
+    # Ruins scattered on Pelennor
+    - {x: 7, y: 3, type: ruins}
+    - {x: 8, y: 3, type: ruins}
+    - {x: 9, y: 7, type: ruins}
+    - {x: 10, y: 8, type: ruins}
+    - {x: 6, y: 9, type: ruins}
+  forts:
+    # Minas Tirith gate — blue fort
+    - {x: 2, y: 6, owner: blue}
+
+terrain_types:
+  city_wall:
+    move_cost: 1
+    defense_bonus: 0
+    passable: false
+    glyph: "#"
+    color: white
+    description: |
+      The white walls of Minas Tirith. Seven tiers of stone, the
+      greatest fortress of Men. Impassable except through the gate.
+  river:
+    move_cost: 1
+    defense_bonus: 0
+    passable: false
+    glyph: "~"
+    color: blue
+    description: |
+      The Great River Anduin. Deep and swift, impassable.
+  ruins:
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "."
+    color: bright_black
+    description: |
+      Ruined farmsteads and watchtowers on the Pelennor. Crumbling
+      stone offers some cover.
+
+unit_classes:
+  gandalf:
+    display_name: Gandalf the White
+    description: |
+      The White Wizard. Returned from death, wielding Glamdring and
+      the light of Anor. His staff blazes at the gate of Minas
+      Tirith. Magic-class — damage mitigated by RES.
+    hp_max: 30
+    atk: 12
+    defense: 5
+    res: 9
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 3
+    is_magic: true
+    glyph: "G"
+    color: white
+
+  aragorn:
+    display_name: Aragorn
+    description: |
+      Heir of Isildur, wielding the reforged Anduril. The greatest
+      swordsman of the age, rallying the defenders of Gondor.
+    hp_max: 32
+    atk: 12
+    defense: 7
+    res: 5
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "A"
+    color: white
+
+  legolas:
+    display_name: Legolas
+    description: |
+      Prince of the Woodland Realm. His bow never misses. Counting
+      kills against Gimli while the world burns.
+    hp_max: 22
+    atk: 10
+    defense: 4
+    res: 4
+    spd: 8
+    move: 4
+    rng_min: 2
+    rng_max: 4
+    glyph: "L"
+    color: green
+
+  gimli:
+    display_name: Gimli
+    description: |
+      Son of Gloin, Lord of the Glittering Caves. His axe speaks
+      louder than his boasts. Heavily armored, devastating in melee.
+    hp_max: 28
+    atk: 11
+    defense: 9
+    res: 3
+    spd: 3
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "D"
+    color: yellow
+
+  gondor_soldier:
+    display_name: Gondor Soldier
+    description: |
+      Men of the White City. Tower Guard and garrison, fighting for
+      their homes and families behind the walls.
+    hp_max: 20
+    atk: 7
+    defense: 6
+    res: 3
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "g"
+    color: cyan
+
+  gondor_archer:
+    display_name: Gondor Archer
+    description: |
+      Archers of Gondor. Raining arrows from the walls and the
+      Pelennor onto the advancing orcs.
+    hp_max: 16
+    atk: 8
+    defense: 3
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    glyph: "a"
+    color: cyan
+
+  gondor_knight:
+    display_name: Gondor Knight
+    description: |
+      Swan Knights of Dol Amroth and knights of the Pelennor.
+      Heavy cavalry, loyal to the Steward.
+    hp_max: 24
+    atk: 9
+    defense: 7
+    res: 3
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "k"
+    color: cyan
+
+  rohirrim:
+    display_name: Rohirrim
+    description: |
+      Riders of Rohan, answering Gondor's call. Fast cavalry that
+      charges with devastating force. "Ride now! Ride for ruin,
+      and the world's ending!"
+    hp_max: 22
+    atk: 10
+    defense: 5
+    res: 3
+    spd: 7
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "R"
+    color: bright_cyan
+
+  witch_king:
+    display_name: Witch-King of Angmar
+    description: |
+      Lord of the Nazgul, greatest of Sauron's servants. Rides a
+      fell beast above the battlefield. His presence breaks men's
+      will. Magic-class — damage mitigated by RES.
+    hp_max: 38
+    atk: 13
+    defense: 7
+    res: 8
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "W"
+    color: bright_red
+
+  gothmog:
+    display_name: Gothmog
+    description: |
+      Orc commander on the Pelennor. Ugly, cunning, and ruthless.
+      Directs the siege with brutal efficiency.
+    hp_max: 26
+    atk: 10
+    defense: 6
+    res: 3
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "K"
+    color: red
+
+  orc:
+    display_name: Orc
+    description: |
+      Mordor orc. Countless, expendable, driven by fear of their
+      masters. What they lack in skill they make up in numbers.
+    hp_max: 16
+    atk: 6
+    defense: 4
+    res: 2
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "o"
+    color: red
+
+  haradrim:
+    display_name: Haradrim
+    description: |
+      Warriors of Harad, riding Mumakil — great oliphants that
+      trample all before them. Slow but devastatingly tanky.
+    hp_max: 28
+    atk: 9
+    defense: 5
+    res: 2
+    spd: 3
+    move: 2
+    rng_min: 1
+    rng_max: 2
+    glyph: "H"
+    color: red
+
+  siege_troll:
+    display_name: Siege Troll
+    description: |
+      Olog-hai, bred for war in Mordor's pits. Towers over the orcs,
+      swings a massive hammer. Used to batter down gates and crush
+      formations.
+    hp_max: 40
+    atk: 14
+    defense: 6
+    res: 1
+    spd: 2
+    move: 2
+    rng_min: 1
+    rng_max: 1
+    glyph: "T"
+    color: bright_red
+
+armies:
+  blue:
+    # Gandalf — at the gate, holding the line
+    - {class: gandalf, pos: {x: 3, y: 6}}
+    # Aragorn — forward on the Pelennor
+    - {class: aragorn, pos: {x: 4, y: 5}}
+    # Legolas — elevated position, raining arrows
+    - {class: legolas, pos: {x: 3, y: 4}}
+    # Gimli — beside Aragorn
+    - {class: gimli, pos: {x: 4, y: 7}}
+    # Gondor soldiers — defending near the walls
+    - {class: gondor_soldier, pos: {x: 3, y: 3}}
+    - {class: gondor_soldier, pos: {x: 3, y: 5}}
+    - {class: gondor_soldier, pos: {x: 3, y: 7}}
+    - {class: gondor_soldier, pos: {x: 3, y: 9}}
+    - {class: gondor_soldier, pos: {x: 4, y: 4}}
+    - {class: gondor_soldier, pos: {x: 4, y: 8}}
+    # Gondor archers — behind the soldiers
+    - {class: gondor_archer, pos: {x: 2, y: 3}}
+    - {class: gondor_archer, pos: {x: 2, y: 5}}
+    - {class: gondor_archer, pos: {x: 2, y: 7}}
+    - {class: gondor_archer, pos: {x: 2, y: 9}}
+    # Gondor knights — mobile reserve
+    - {class: gondor_knight, pos: {x: 5, y: 5}}
+    - {class: gondor_knight, pos: {x: 5, y: 7}}
+
+  red:
+    # Witch-King — airborne, behind the horde
+    - {class: witch_king, pos: {x: 12, y: 5}}
+    # Gothmog — commanding the orc advance
+    - {class: gothmog, pos: {x: 13, y: 6}}
+    # Orcs — massive advancing horde
+    - {class: orc, pos: {x: 10, y: 2}}
+    - {class: orc, pos: {x: 11, y: 2}}
+    - {class: orc, pos: {x: 10, y: 3}}
+    - {class: orc, pos: {x: 11, y: 3}}
+    - {class: orc, pos: {x: 12, y: 3}}
+    - {class: orc, pos: {x: 10, y: 4}}
+    - {class: orc, pos: {x: 11, y: 4}}
+    - {class: orc, pos: {x: 10, y: 5}}
+    - {class: orc, pos: {x: 11, y: 5}}
+    - {class: orc, pos: {x: 10, y: 6}}
+    - {class: orc, pos: {x: 11, y: 6}}
+    - {class: orc, pos: {x: 10, y: 7}}
+    - {class: orc, pos: {x: 11, y: 7}}
+    - {class: orc, pos: {x: 12, y: 6}}
+    # Haradrim — slow but tanky, flanks
+    - {class: haradrim, pos: {x: 13, y: 2}}
+    - {class: haradrim, pos: {x: 14, y: 3}}
+    - {class: haradrim, pos: {x: 13, y: 8}}
+    - {class: haradrim, pos: {x: 14, y: 9}}
+    # Siege trolls — heading for the gate
+    - {class: siege_troll, pos: {x: 12, y: 4}}
+    - {class: siege_troll, pos: {x: 12, y: 7}}
+
+rules:
+  max_turns: 20
+  fog_of_war: false
+  first_player: red
+
+win_conditions:
+  # Witch-King dies → red loses.
+  - {type: protect_unit, unit_id: u_r_witch_king_1, owning_team: red}
+  # Orcs reach the gate → red wins, Minas Tirith falls.
+  - {type: reach_tile, team: red, pos: {x: 2, y: 6}}
+  # Gandalf dies → blue loses (he's holding the gate).
+  - {type: protect_unit, unit_id: u_b_gandalf_1, owning_team: blue}
+  # Gandalf survives the turn cap → Rohan saved them. Blue wins.
+  - {type: protect_unit_survives, unit_id: u_b_gandalf_1, owning_team: blue}
+  # Either side wins by total elimination.
+  - {type: eliminate_all_enemy_units}
+  # Backstop.
+  - {type: max_turns_draw}
+
+plugin_hooks:
+  on_turn_start:
+    - rohan_reinforcements
+
+narrative:
+  title: Battle of the Pelennor Fields
+  description: |
+    Minas Tirith, T.A. 3019. The forces of Mordor lay siege to the
+    White City. Gandalf holds the gate. Aragorn fights on the
+    Pelennor. The Rohirrim ride south — but will they arrive in time?
+  intro: |
+    The sky darkens. Mordor's host stretches across the Pelennor
+    like a black tide. Grond hammers the gate. The Witch-King's
+    fell beast screams overhead.
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        "Grond! Grond! Grond!" The battering ram strikes the gate
+        of Minas Tirith. The stone cracks. Gandalf rides forward
+        on Shadowfax, staff blazing.
+    - trigger: on_turn_start
+      turn: 8
+      text: |
+        A horn sounds from the south — deep, resonant, echoing
+        across the Pelennor. "Rohan has come!" Six riders crest
+        the hill, lances lowered.
+    - trigger: on_unit_killed
+      unit_id: u_r_witch_king_1
+      text: |
+        "I am no man." The Witch-King's crown clatters empty to
+        the ground. The Lord of the Nazgul is no more.
+    - trigger: on_unit_killed
+      unit_id: u_b_gandalf_1
+      text: |
+        Gandalf's light goes out. The gate of Minas Tirith stands
+        undefended. Darkness sweeps into the city.

@@ -1,0 +1,354 @@
+schema_version: 1
+name: Battle of Hoth
+description: |
+  Hoth, 3 ABY. The Galactic Empire has found the Rebel Alliance's
+  hidden base on the ice planet Hoth. General Veers leads a ground
+  assault with AT-AT walkers — massive armored behemoths that shrug
+  off blaster fire. The Rebels must hold long enough to evacuate
+  their transports. Snowspeeders weave between walker legs while
+  turrets hammer the Imperial advance.
+
+board:
+  width: 16
+  height: 12
+  terrain:
+    # Snow covers most of the map
+    - {x: 0, y: 0, type: snow}
+    - {x: 1, y: 0, type: snow}
+    - {x: 2, y: 0, type: snow}
+    - {x: 3, y: 0, type: snow}
+    - {x: 4, y: 0, type: snow}
+    - {x: 5, y: 0, type: snow}
+    - {x: 6, y: 0, type: snow}
+    - {x: 7, y: 0, type: snow}
+    - {x: 8, y: 0, type: snow}
+    - {x: 9, y: 0, type: snow}
+    - {x: 10, y: 0, type: snow}
+    - {x: 11, y: 0, type: snow}
+    - {x: 12, y: 0, type: snow}
+    - {x: 13, y: 0, type: snow}
+    - {x: 14, y: 0, type: snow}
+    - {x: 15, y: 0, type: snow}
+    - {x: 0, y: 1, type: snow}
+    - {x: 1, y: 1, type: snow}
+    - {x: 2, y: 1, type: snow}
+    - {x: 3, y: 1, type: snow}
+    - {x: 4, y: 1, type: snow}
+    - {x: 5, y: 1, type: snow}
+    - {x: 6, y: 1, type: snow}
+    - {x: 7, y: 1, type: snow}
+    - {x: 8, y: 1, type: snow}
+    - {x: 9, y: 1, type: snow}
+    - {x: 10, y: 1, type: snow}
+    - {x: 11, y: 1, type: snow}
+    - {x: 12, y: 1, type: snow}
+    - {x: 13, y: 1, type: snow}
+    - {x: 14, y: 1, type: snow}
+    - {x: 15, y: 1, type: snow}
+    # Ice patches — slippery, negative defense
+    - {x: 3, y: 5, type: ice}
+    - {x: 4, y: 5, type: ice}
+    - {x: 5, y: 5, type: ice}
+    - {x: 10, y: 5, type: ice}
+    - {x: 11, y: 5, type: ice}
+    - {x: 12, y: 5, type: ice}
+    - {x: 6, y: 7, type: ice}
+    - {x: 7, y: 7, type: ice}
+    - {x: 8, y: 7, type: ice}
+    - {x: 9, y: 7, type: ice}
+  forts:
+    # Shield generator — blue's fort
+    - {x: 8, y: 10, owner: blue}
+
+terrain_types:
+  snow:
+    move_cost: 1
+    defense_bonus: 0
+    glyph: "*"
+    color: white
+    description: |
+      Endless white snowfields of Hoth. No cover, no warmth.
+  ice:
+    move_cost: 1
+    defense_bonus: -1
+    glyph: "="
+    color: bright_blue
+    description: |
+      Slippery ice patches. Hard to hold a position — negative
+      defense bonus.
+
+unit_classes:
+  luke:
+    display_name: Luke Skywalker
+    description: |
+      Rogue Leader. Pilot, Jedi-in-training, hero of Yavin. Flies
+      a snowspeeder and takes down an AT-AT with a lightsaber and
+      a thermal detonator.
+    hp_max: 24
+    atk: 10
+    defense: 5
+    res: 6
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    glyph: "L"
+    color: bright_yellow
+
+  han:
+    display_name: Han Solo
+    description: |
+      The scoundrel. Blaster at his hip, quip on his lips. Covering
+      the evacuation because he hasn't left yet — he's got a bad
+      feeling about this.
+    hp_max: 22
+    atk: 11
+    defense: 5
+    res: 3
+    spd: 6
+    move: 4
+    rng_min: 2
+    rng_max: 3
+    glyph: "H"
+    color: white
+
+  leia:
+    display_name: Princess Leia
+    description: |
+      Commander of the Rebel base. Coordinates the evacuation from
+      the command center. If she falls, the evacuation fails.
+    hp_max: 20
+    atk: 7
+    defense: 4
+    res: 6
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    glyph: "P"
+    color: white
+
+  snowspeeder:
+    display_name: Snowspeeder
+    description: |
+      T-47 airspeeder modified for cold. Fast and nimble, armed
+      with laser cannons and a tow cable. The Rebels' best hope
+      against the walkers.
+    hp_max: 18
+    atk: 9
+    defense: 3
+    res: 2
+    spd: 8
+    move: 6
+    rng_min: 2
+    rng_max: 3
+    glyph: "~"
+    color: bright_cyan
+
+  turret:
+    display_name: Rebel Turret
+    description: |
+      DF.9 anti-infantry battery. Stationary but powerful, designed
+      to hammer approaching ground forces at long range.
+    hp_max: 24
+    atk: 12
+    defense: 6
+    res: 2
+    spd: 0
+    move: 0
+    rng_min: 3
+    rng_max: 5
+    glyph: "^"
+    color: cyan
+
+  rebel_soldier:
+    display_name: Rebel Soldier
+    description: |
+      Alliance troopers in the snow trenches. Blaster rifles and
+      heavy coats against the cold and the Empire.
+    hp_max: 18
+    atk: 7
+    defense: 4
+    res: 3
+    spd: 5
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    glyph: "r"
+    color: white
+
+  rebel_trooper:
+    display_name: Rebel Trooper
+    description: |
+      Close-quarters defenders. Holding the trench line with
+      grenades and determination.
+    hp_max: 16
+    atk: 6
+    defense: 5
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "t"
+    color: white
+
+  veers:
+    display_name: General Veers
+    description: |
+      Imperial general commanding the ground assault from the lead
+      AT-AT. Methodical, ruthless, effective. His target: the shield
+      generator.
+    hp_max: 24
+    atk: 9
+    defense: 6
+    res: 4
+    spd: 4
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    glyph: "V"
+    color: red
+
+  at_at:
+    display_name: AT-AT Walker
+    description: |
+      All Terrain Armored Transport. Twenty meters tall, nearly
+      impervious to blaster fire. Its heavy laser cannons can level
+      a fortification in a single volley. Slow but devastating.
+    hp_max: 50
+    atk: 12
+    defense: 14
+    res: 2
+    spd: 1
+    move: 1
+    rng_min: 2
+    rng_max: 4
+    glyph: "A"
+    color: bright_red
+
+  at_st:
+    display_name: AT-ST Walker
+    description: |
+      All Terrain Scout Transport. Two-legged scout walker, faster
+      than an AT-AT but far less armored. Chin-mounted blasters.
+    hp_max: 28
+    atk: 9
+    defense: 8
+    res: 2
+    spd: 3
+    move: 2
+    rng_min: 2
+    rng_max: 3
+    glyph: "S"
+    color: red
+
+  snowtrooper:
+    display_name: Snowtrooper
+    description: |
+      Imperial cold assault stormtroopers. Better trained than
+      standard troopers, equipped for extreme cold operations.
+    hp_max: 18
+    atk: 7
+    defense: 5
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    glyph: "s"
+    color: red
+
+armies:
+  blue:
+    # Luke — forward, in a snowspeeder
+    - {class: luke, pos: {x: 7, y: 8}}
+    # Han — near the base
+    - {class: han, pos: {x: 9, y: 9}}
+    # Leia — at the command center, behind the shield generator
+    - {class: leia, pos: {x: 8, y: 11}}
+    # Snowspeeders — fast flankers
+    - {class: snowspeeder, pos: {x: 4, y: 8}}
+    - {class: snowspeeder, pos: {x: 12, y: 8}}
+    # Turrets — stationary defense
+    - {class: turret, pos: {x: 5, y: 9}}
+    - {class: turret, pos: {x: 11, y: 9}}
+    # Rebel soldiers — trench line
+    - {class: rebel_soldier, pos: {x: 6, y: 9}}
+    - {class: rebel_soldier, pos: {x: 7, y: 9}}
+    - {class: rebel_soldier, pos: {x: 9, y: 10}}
+    - {class: rebel_soldier, pos: {x: 10, y: 9}}
+    # Rebel troopers — close defense
+    - {class: rebel_trooper, pos: {x: 7, y: 10}}
+    - {class: rebel_trooper, pos: {x: 8, y: 9}}
+    - {class: rebel_trooper, pos: {x: 10, y: 10}}
+
+  red:
+    # Veers — in the lead AT-AT
+    - {class: veers, pos: {x: 8, y: 2}}
+    # AT-ATs — line abreast at y=1
+    - {class: at_at, pos: {x: 3, y: 1}}
+    - {class: at_at, pos: {x: 7, y: 1}}
+    - {class: at_at, pos: {x: 10, y: 1}}
+    - {class: at_at, pos: {x: 14, y: 1}}
+    # AT-STs — flanking
+    - {class: at_st, pos: {x: 1, y: 2}}
+    - {class: at_st, pos: {x: 15, y: 2}}
+    # Snowtroopers — following the walkers
+    - {class: snowtrooper, pos: {x: 2, y: 3}}
+    - {class: snowtrooper, pos: {x: 5, y: 3}}
+    - {class: snowtrooper, pos: {x: 8, y: 3}}
+    - {class: snowtrooper, pos: {x: 11, y: 3}}
+    - {class: snowtrooper, pos: {x: 13, y: 3}}
+    - {class: snowtrooper, pos: {x: 4, y: 2}}
+    - {class: snowtrooper, pos: {x: 12, y: 2}}
+
+rules:
+  max_turns: 15
+  fog_of_war: false
+  first_player: red
+
+win_conditions:
+  # AT-AT reaches shield generator → red wins.
+  - {type: reach_tile, team: red, pos: {x: 8, y: 10}}
+  # Leia dies → evacuation fails, blue loses.
+  - {type: protect_unit, unit_id: u_b_leia_1, owning_team: blue}
+  # Leia survives the turn cap → evacuation complete, blue wins.
+  - {type: protect_unit_survives, unit_id: u_b_leia_1, owning_team: blue}
+  # Either side wins by total elimination.
+  - {type: eliminate_all_enemy_units}
+  # Backstop.
+  - {type: max_turns_draw}
+
+narrative:
+  title: Battle of Hoth
+  description: |
+    Hoth, 3 ABY. The Empire strikes at the hidden Rebel base.
+    AT-AT walkers advance across the frozen plain toward the shield
+    generator. The Rebels must buy time for the evacuation.
+  intro: |
+    The ground shakes. Through the blowing snow, shapes emerge —
+    massive, four-legged silhouettes. Imperial walkers. The Rebels
+    scramble to their positions.
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        "Distance to power generators?" "One-seven, decimal two-eight."
+        The AT-ATs fire their first volley. A turret explodes.
+    - trigger: on_turn_start
+      turn: 7
+      text: |
+        Rogue Two wraps a tow cable around an AT-AT's legs. The
+        walker topples like a felled tree, crashing into the snow.
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        "Begin retreat!" The last transports are loading. The ion
+        cannon fires, clearing a path through the Star Destroyers
+        overhead. Just a little more time.
+    - trigger: on_unit_killed
+      unit_id: u_b_leia_1
+      text: |
+        The command center takes a direct hit. Princess Leia is
+        buried in the rubble. The evacuation collapses.

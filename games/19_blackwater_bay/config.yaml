@@ -1,0 +1,390 @@
+schema_version: 1
+name: Blackwater Bay
+description: |
+  King's Landing, 299 AC. Stannis Baratheon's fleet sails into
+  Blackwater Bay to seize the Iron Throne. Tyrion Lannister, acting
+  Hand of the King, has prepared a surprise — a ship full of wildfire
+  that turns the bay into green hell. But Stannis presses the beach
+  assault. Tyrion must hold the walls until Tywin's army arrives.
+
+board:
+  width: 16
+  height: 10
+  terrain:
+    # Water — impassable, left side of the bay
+    - {x: 0, y: 0, type: water}
+    - {x: 1, y: 0, type: water}
+    - {x: 2, y: 0, type: water}
+    - {x: 3, y: 0, type: water}
+    - {x: 0, y: 1, type: water}
+    - {x: 1, y: 1, type: water}
+    - {x: 2, y: 1, type: water}
+    - {x: 3, y: 1, type: water}
+    - {x: 0, y: 2, type: water}
+    - {x: 1, y: 2, type: water}
+    - {x: 2, y: 2, type: water}
+    - {x: 3, y: 2, type: water}
+    - {x: 0, y: 3, type: water}
+    - {x: 1, y: 3, type: water}
+    - {x: 2, y: 3, type: water}
+    - {x: 0, y: 4, type: water}
+    - {x: 1, y: 4, type: water}
+    - {x: 2, y: 4, type: water}
+    - {x: 0, y: 5, type: water}
+    - {x: 1, y: 5, type: water}
+    - {x: 2, y: 5, type: water}
+    - {x: 0, y: 6, type: water}
+    - {x: 1, y: 6, type: water}
+    - {x: 2, y: 6, type: water}
+    - {x: 3, y: 6, type: water}
+    - {x: 0, y: 7, type: water}
+    - {x: 1, y: 7, type: water}
+    - {x: 2, y: 7, type: water}
+    - {x: 3, y: 7, type: water}
+    - {x: 0, y: 8, type: water}
+    - {x: 1, y: 8, type: water}
+    - {x: 2, y: 8, type: water}
+    - {x: 3, y: 8, type: water}
+    - {x: 0, y: 9, type: water}
+    - {x: 1, y: 9, type: water}
+    - {x: 2, y: 9, type: water}
+    - {x: 3, y: 9, type: water}
+    # Wildfire tiles — the bay burns green
+    - {x: 4, y: 3, type: wildfire}
+    - {x: 5, y: 3, type: wildfire}
+    - {x: 6, y: 3, type: wildfire}
+    - {x: 4, y: 4, type: wildfire}
+    - {x: 5, y: 4, type: wildfire}
+    - {x: 6, y: 4, type: wildfire}
+    - {x: 4, y: 5, type: wildfire}
+    - {x: 5, y: 5, type: wildfire}
+    - {x: 6, y: 5, type: wildfire}
+    # City walls — impassable except the gate
+    - {x: 14, y: 0, type: city_wall}
+    - {x: 15, y: 0, type: city_wall}
+    - {x: 14, y: 1, type: city_wall}
+    - {x: 15, y: 1, type: city_wall}
+    - {x: 14, y: 2, type: city_wall}
+    - {x: 15, y: 2, type: city_wall}
+    - {x: 14, y: 3, type: city_wall}
+    - {x: 15, y: 3, type: city_wall}
+    - {x: 14, y: 4, type: city_wall}
+    - {x: 15, y: 4, type: city_wall}
+    # (14, 5) is the gate — plain tile
+    - {x: 15, y: 5, type: city_wall}
+    - {x: 14, y: 6, type: city_wall}
+    - {x: 15, y: 6, type: city_wall}
+    - {x: 14, y: 7, type: city_wall}
+    - {x: 15, y: 7, type: city_wall}
+    - {x: 14, y: 8, type: city_wall}
+    - {x: 15, y: 8, type: city_wall}
+    - {x: 14, y: 9, type: city_wall}
+    - {x: 15, y: 9, type: city_wall}
+  forts: []
+
+terrain_types:
+  water:
+    move_cost: 1
+    defense_bonus: 0
+    passable: false
+    glyph: "~"
+    color: blue
+    description: |
+      The waters of Blackwater Bay. Deep and impassable on foot.
+  wildfire:
+    move_cost: 1
+    defense_bonus: 0
+    heals: -8
+    glyph: "!"
+    color: bright_green
+    description: |
+      Wildfire — the Alchemists' Guild's most terrible weapon.
+      Burns green, burns hot, burns everything. Any unit standing
+      in it takes massive damage each turn.
+  city_wall:
+    move_cost: 1
+    defense_bonus: 0
+    passable: false
+    glyph: "#"
+    color: white
+    description: |
+      The walls of King's Landing. Centuries old, thick stone.
+
+unit_classes:
+  stannis:
+    display_name: Stannis Baratheon
+    description: |
+      The rightful king — by law if not by love. Rigid, relentless,
+      first man on the beach with a sword in his hand. Commands from
+      the front.
+    hp_max: 28
+    atk: 10
+    defense: 7
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "S"
+    color: cyan
+
+  davos:
+    display_name: Davos Seaworth
+    description: |
+      The Onion Knight. Smuggler turned Hand. Loyal to Stannis
+      beyond reason. Leads the fleet into the bay.
+    hp_max: 22
+    atk: 8
+    defense: 5
+    res: 4
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "D"
+    color: cyan
+
+  baratheon_infantry:
+    display_name: Baratheon Infantry
+    description: |
+      Stannis's foot soldiers. Drilled, determined, storming the
+      beach under a rain of arrows and wildfire.
+    hp_max: 22
+    atk: 8
+    defense: 6
+    res: 3
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "b"
+    color: cyan
+
+  baratheon_archer:
+    display_name: Baratheon Archer
+    description: |
+      Bowmen providing covering fire from the boats and the beach.
+    hp_max: 16
+    atk: 8
+    defense: 3
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    glyph: "a"
+    color: cyan
+
+  siege_tower:
+    display_name: Siege Tower
+    description: |
+      A massive wheeled tower for scaling the city walls. Slow as
+      death but armored like a fortress.
+    hp_max: 35
+    atk: 4
+    defense: 8
+    res: 2
+    spd: 1
+    move: 1
+    rng_min: 1
+    rng_max: 2
+    glyph: "T"
+    color: bright_cyan
+
+  tyrion:
+    display_name: Tyrion Lannister
+    description: |
+      The Imp. Half a man, twice the mind. Acting Hand of the King,
+      architect of the wildfire trap. Leads the sortie through the
+      tunnels when the Hound breaks.
+    hp_max: 18
+    atk: 6
+    defense: 4
+    res: 7
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "Y"
+    color: bright_red
+
+  clegane:
+    display_name: Sandor Clegane
+    description: |
+      The Hound. Terrified of fire, deadly with a sword. The most
+      dangerous man on the walls — until the wildfire breaks him.
+    hp_max: 34
+    atk: 13
+    defense: 8
+    res: 2
+    spd: 3
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "C"
+    color: red
+
+  bronn:
+    display_name: Bronn
+    description: |
+      Sellsword turned knight. The man who fires the arrow that
+      ignites the wildfire ship. Deadly at range and in close.
+    hp_max: 22
+    atk: 9
+    defense: 5
+    res: 3
+    spd: 6
+    move: 4
+    rng_min: 2
+    rng_max: 3
+    glyph: "B"
+    color: red
+
+  lannister_guard:
+    display_name: Lannister Guard
+    description: |
+      Men-at-arms of the Westerlands. Well-armored, well-paid,
+      holding the walls of the capital.
+    hp_max: 22
+    atk: 7
+    defense: 7
+    res: 3
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "g"
+    color: red
+
+  city_watch:
+    display_name: City Watch
+    description: |
+      Gold cloaks of King's Landing. Poorly trained, unreliable,
+      but they fill the gaps on the walls.
+    hp_max: 16
+    atk: 6
+    defense: 4
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "c"
+    color: dim
+
+  tyrell_knight:
+    display_name: Tyrell Knight
+    description: |
+      Heavy cavalry of Highgarden, arriving with Tywin Lannister.
+      Fresh, armored, and devastating. The battle turns.
+    hp_max: 26
+    atk: 10
+    defense: 7
+    res: 3
+    spd: 6
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "R"
+    color: bright_red
+
+armies:
+  blue:
+    # Stannis — leading from the front on the beach
+    - {class: stannis, pos: {x: 6, y: 4}}
+    # Davos — beside Stannis
+    - {class: davos, pos: {x: 5, y: 5}}
+    # Baratheon infantry — beach assault wave
+    - {class: baratheon_infantry, pos: {x: 7, y: 3}}
+    - {class: baratheon_infantry, pos: {x: 7, y: 4}}
+    - {class: baratheon_infantry, pos: {x: 7, y: 5}}
+    - {class: baratheon_infantry, pos: {x: 7, y: 6}}
+    - {class: baratheon_infantry, pos: {x: 8, y: 3}}
+    - {class: baratheon_infantry, pos: {x: 8, y: 5}}
+    - {class: baratheon_infantry, pos: {x: 8, y: 6}}
+    - {class: baratheon_infantry, pos: {x: 8, y: 7}}
+    # Baratheon archers — covering fire
+    - {class: baratheon_archer, pos: {x: 6, y: 6}}
+    - {class: baratheon_archer, pos: {x: 6, y: 7}}
+    - {class: baratheon_archer, pos: {x: 7, y: 7}}
+    - {class: baratheon_archer, pos: {x: 8, y: 4}}
+    # Siege towers — slow advance
+    - {class: siege_tower, pos: {x: 6, y: 3}}
+    - {class: siege_tower, pos: {x: 6, y: 5}}
+
+  red:
+    # Tyrion — behind the walls, commanding
+    - {class: tyrion, pos: {x: 13, y: 5}}
+    # Clegane — at the gate
+    - {class: clegane, pos: {x: 13, y: 4}}
+    # Bronn — on the walls, ready to shoot
+    - {class: bronn, pos: {x: 13, y: 6}}
+    # Lannister guards — defending the walls
+    - {class: lannister_guard, pos: {x: 12, y: 3}}
+    - {class: lannister_guard, pos: {x: 12, y: 4}}
+    - {class: lannister_guard, pos: {x: 12, y: 5}}
+    - {class: lannister_guard, pos: {x: 12, y: 6}}
+    - {class: lannister_guard, pos: {x: 12, y: 7}}
+    - {class: lannister_guard, pos: {x: 13, y: 3}}
+    # City watch — filling the gaps
+    - {class: city_watch, pos: {x: 11, y: 4}}
+    - {class: city_watch, pos: {x: 11, y: 5}}
+    - {class: city_watch, pos: {x: 11, y: 6}}
+    - {class: city_watch, pos: {x: 13, y: 7}}
+    - {class: city_watch, pos: {x: 11, y: 7}}
+
+rules:
+  max_turns: 16
+  fog_of_war: false
+  first_player: blue
+
+win_conditions:
+  # Stannis dies → blue loses.
+  - {type: protect_unit, unit_id: u_b_stannis_1, owning_team: blue}
+  # Tyrion dies → red loses.
+  - {type: protect_unit, unit_id: u_r_tyrion_1, owning_team: red}
+  # Blue reaches the gate → blue wins (city falls).
+  - {type: reach_tile, team: blue, pos: {x: 14, y: 5}}
+  # Tyrion survives the turn cap → Tywin arrives, red wins.
+  - {type: protect_unit_survives, unit_id: u_r_tyrion_1, owning_team: red}
+  # Either side wins by total elimination.
+  - {type: eliminate_all_enemy_units}
+  # Backstop.
+  - {type: max_turns_draw}
+
+plugin_hooks:
+  on_turn_start:
+    - tyrell_reinforcements
+
+narrative:
+  title: Battle of the Blackwater
+  description: |
+    King's Landing, 299 AC. Stannis Baratheon's fleet assaults the
+    capital. Tyrion Lannister has one chance to hold the city.
+  intro: |
+    Night. The Baratheon fleet sails into Blackwater Bay. A single
+    ship drifts toward them, leaking green liquid. Bronn nocks a
+    fire arrow.
+  events:
+    - trigger: on_turn_start
+      turn: 2
+      text: |
+        Wildfire. The bay erupts in green flame. Ships shatter.
+        Men burn. But Stannis presses on — the beach assault begins.
+    - trigger: on_turn_start
+      turn: 8
+      text: |
+        The Hound throws down his sword. "F*** the Kingsguard.
+        F*** the city. F*** the king." Tyrion must lead the sortie
+        himself.
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        A horn sounds from the Kingsroad. Tywin Lannister rides at
+        the head of the Tyrell vanguard. Four fresh knights crash
+        into Stannis's flank.
+    - trigger: on_unit_killed
+      unit_id: u_r_tyrion_1
+      text: |
+        Tyrion falls, slashed across the face. The walls of King's
+        Landing will not hold without him.
