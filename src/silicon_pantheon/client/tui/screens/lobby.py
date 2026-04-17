@@ -126,7 +126,22 @@ class LobbyScreen(Screen):
             self.app.state.error_message = f"list_rooms failed: {e}"
             return
         if not r.get("ok"):
-            self.app.state.error_message = r.get("error", {}).get("message", "list_rooms rejected")
+            err_msg = r.get("error", {}).get("message", "list_rooms rejected")
+            self.app.state.error_message = err_msg
+            # Diagnostic: if the server says "set_player_metadata first",
+            # the connection was dropped/re-established and lost its
+            # metadata. Log the connection_id so we can correlate with
+            # server logs.
+            if "set_player_metadata" in err_msg:
+                import logging as _logging
+                _logging.getLogger("silicon.tui.lobby").warning(
+                    "lobby rejected with 'set_player_metadata first' — "
+                    "connection likely dropped by server heartbeat "
+                    "sweeper while on post-match screen. cid=%s. "
+                    "User needs to restart the client or the lobby "
+                    "needs to re-call set_player_metadata.",
+                    self.app.client.connection_id if self.app.client else "?",
+                )
             return
         self.app.state.error_message = ""
         self.app.state.last_rooms = r.get("rooms", [])

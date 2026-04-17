@@ -703,7 +703,16 @@ class NetworkedAgent:
             return None
         if self.lessons_dir is not None:
             try:
-                LessonStore(self.lessons_dir).save(lesson)
+                saved_path = LessonStore(self.lessons_dir).save(lesson)
+                log.info(
+                    "lesson saved: scenario=%s slug=%s path=%s",
+                    lesson.scenario, lesson.slug, saved_path,
+                )
             except Exception:
-                pass
+                log.exception(
+                    "lesson save FAILED: scenario=%s slug=%s "
+                    "lessons_dir=%s — file NOT written despite TUI "
+                    "showing 'lesson saved'",
+                    lesson.scenario, lesson.slug, self.lessons_dir,
+                )
         return lesson

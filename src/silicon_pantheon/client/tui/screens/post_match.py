@@ -144,6 +144,20 @@ class PostMatchScreen(Screen):
 
     # ---- actions ----
 
+    async def _back_to_lobby_debug(self) -> None:
+        """Log the connection state just before leaving, so we can
+        see if the session was already dead when the user presses l."""
+        import logging as _logging
+
+        _dlog = _logging.getLogger("silicon.tui.post_match")
+        if self.app.client is not None:
+            _dlog.info(
+                "back_to_lobby: cid=%s — about to call leave_room",
+                self.app.client.connection_id,
+            )
+        else:
+            _dlog.warning("back_to_lobby: app.client is None")
+
     async def _download_replay(self) -> None:
         import logging as _logging
 
@@ -188,18 +202,38 @@ class PostMatchScreen(Screen):
         self._download_error = None
 
     async def _back_to_lobby(self) -> Screen | None:
+        import logging as _logging
+
+        _dlog = _logging.getLogger("silicon.tui.post_match")
         # Tell the server we're leaving — this flips our connection
         # back to IN_LOBBY and lets the server tear down the (now
         # FINISHED) room. Without this, creating a new room fails
         # with 'requires state=in_lobby' because the server still
         # thinks we're IN_GAME, and the zombie room stays listed.
         if self.app.client is not None:
+            _dlog.info(
+                "back_to_lobby: cid=%s calling leave_room",
+                self.app.client.connection_id,
+            )
             try:
-                await self.app.client.call("leave_room")
-            except Exception:
-                # Non-fatal — the heartbeat sweeper will eventually
-                # evict us anyway.
-                pass
+                r = await self.app.client.call("leave_room")
+                _dlog.info(
+                    "back_to_lobby: leave_room result ok=%s err=%s",
+                    r.get("ok"), r.get("error"),
+                )
+            except Exception as e:
+                # This is the likely failure point: if the server
+                # already evicted the connection (heartbeat timeout,
+                # hard disconnect), leave_room will fail. Log it so
+                # we can see the exact error.
+                _dlog.exception(
+                    "back_to_lobby: leave_room FAILED cid=%s — "
+                    "server may have already evicted this connection. "
+                    "The lobby screen will see 'set_player_metadata "
+                    "first' because the connection state is stale.",
+                )
+        else:
+            _dlog.warning("back_to_lobby: app.client is None")
         self.app.state.room_id = None
         self.app.state.slot = None
         self.app.state.last_game_state = None
