@@ -90,6 +90,7 @@ class CodexAdapter:
         # Persistent input array — Responses API equivalent of the
         # OpenAI Chat Completions `messages` list.
         self._input: list[dict] = []
+        self._system_prompt: str | None = None
         # Once-per-session marker so we don't re-emit the system prompt.
         self._initialized = False
         # Per-turn correction counter (mirrors openai.py).
@@ -299,7 +300,9 @@ class CodexAdapter:
     ) -> None:
         # Init: seed the persistent input with system + user.
         if not self._initialized:
-            self._input.append(system_to_input_item(system_prompt))
+            # System prompt goes in the top-level `instructions` field,
+            # NOT as an input item. The Codex Responses API requires it.
+            self._system_prompt = system_prompt
             self._initialized = True
             log.info(
                 "codex session init: system_prompt_bytes=%d (~%d est_tokens)",
@@ -469,23 +472,22 @@ class CodexAdapter:
                 )
 
     def _build_request_body(self, tools: list[dict]) -> dict:
-        return {
+        body: dict = {
             "model": self.model,
             "input": self._input,
             "tools": tools,
             "tool_choice": "auto",
-            # Allow parallel tool calls. Adapter's Layer 2 enforces
-            # "at most one mutating call per response" while allowing
-            # unlimited reads, so the batching benefits the common
-            # "observe many things, act once" pattern without letting
-            # weak models commit an entire turn blindly.
             "parallel_tool_calls": True,
             "store": False,
             "stream": False,
-            # Codex models support reasoning summaries; ask for them
-            # so we can surface chain-of-thought.
             "reasoning": {"summary": "auto"},
         }
+        # The Codex Responses API requires `instructions` (the system
+        # prompt) as a top-level field. Extract it from the first
+        # developer message in _input.
+        if self._system_prompt:
+            body["instructions"] = self._system_prompt
+        return body
 
     # ---- token accounting -----------------------------------------------
 

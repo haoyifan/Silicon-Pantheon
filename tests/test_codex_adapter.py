@@ -260,13 +260,12 @@ async def test_request_body_uses_responses_api_shape(stub_creds, monkeypatch):
     # Responses API uses `input`, not `messages`.
     assert "input" in body
     assert "messages" not in body
-    # Both system + user messages live in input as wrapped objects.
+    # System prompt is a top-level `instructions` field (required by
+    # the Codex Responses API), NOT an input item.
+    assert body["instructions"] == "Hello"
+    # User prompt is the first input item.
     inp = body["input"]
     assert inp[0] == {
-        "type": "message", "role": "developer",
-        "content": [{"type": "input_text", "text": "Hello"}],
-    }
-    assert inp[1] == {
         "type": "message", "role": "user",
         "content": [{"type": "input_text", "text": "World"}],
     }
