@@ -133,7 +133,7 @@ lobby_table:
   col_status: "状态"
   no_rooms: "（暂无房间——按 n 创建）"
   open: "开放中"
-  footer: "↓/j 下一个   ↑/k 上一个   Enter 加入   p 预览   n 新房间   r 刷新   q 退出"
+  footer: "↓/j 下一个   ↑/k 上一个   Enter 加入   p 预览   n 新房间   w 回放   r 刷新   q 退出"
 
 # 房间面板标题
 room_panel:
@@ -562,6 +562,28 @@ difficulty:
 team:
   blue: "蓝方"
   red: "红方"
+
+# 回放浏览器
+replay_picker:
+  title: "回放浏览"
+  scanning: "正在扫描回放文件..."
+  col_date: "日期"
+  col_scenario: "剧本"
+  col_file: "文件"
+  no_replays: "（未找到回放文件）"
+  footer: "↓/j 下一个   ↑/k 上一个   Enter 打开   r 刷新   Esc 返回"
+
+# 回放画面
+replay:
+  title: "回放"
+  step_info: "步骤"
+  step: "步骤"
+  key_hints: "→/l 下一步   ←/h 上一步   s 跳到行动   S 上个行动   g 开始   G 结尾"
+  nav_hints: "→/l 下一步   ←/h 上一步   s/S 跳行动   g/G 首/尾"
+  initial_state: "初始棋盘（行动前）"
+  thought: "思考"
+  press_next: "按 →/l 前进"
+  end_of_match: "比赛结束"
 
 # 错误消息
 errors:

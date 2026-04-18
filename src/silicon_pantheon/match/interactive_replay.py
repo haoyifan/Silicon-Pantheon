@@ -1,4 +1,11 @@
-"""Interactive step-by-step match replayer.
+"""Interactive step-by-step match replayer (DEPRECATED).
+
+.. deprecated::
+    Use ``silicon-join`` → lobby → ``w`` (replay) instead.
+    The TUI replay reuses the full GameScreen rendering (unit cards,
+    HP bars, combat highlights, scrollable reasoning) while this
+    tool uses a simpler Rich layout. ``silicon-play`` will be removed
+    in a future release.
 
 Usage:
     silicon-play runs/20260412T143022_01_tiny_skirmish
@@ -400,8 +407,22 @@ def _resolve_replay_path(user_path: Path) -> Path | None:
 
 
 def main() -> int:
+    import warnings
+    warnings.warn(
+        "silicon-play is deprecated. Use silicon-join → lobby → w (replay) "
+        "for the full-featured TUI replay with unit cards, combat highlights, "
+        "and scrollable reasoning.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    print(
+        "\033[33m⚠ silicon-play is deprecated. "
+        "Use silicon-join → lobby → w for the full TUI replay.\033[0m\n",
+        file=sys.stderr,
+    )
     p = argparse.ArgumentParser(
         description=(
+            "DEPRECATED: use silicon-join → lobby → w instead. "
             "Interactive step-through replayer. "
             "Keys: Enter/j=next, k=prev, s=skip to next action, q=quit."
         )

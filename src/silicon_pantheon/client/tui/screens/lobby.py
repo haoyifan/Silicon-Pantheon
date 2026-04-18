@@ -109,6 +109,11 @@ class LobbyScreen(Screen):
             return await self._join_selected()
         if key == "p":
             return await self._preview_selected()
+        if key == "w":
+            from silicon_pantheon.client.tui.screens.replay_picker import (
+                ReplayPickerScreen,
+            )
+            return ReplayPickerScreen(self.app)
         return None
 
     # ---- actions ----
