@@ -969,6 +969,29 @@ class GameScreen(Screen):
 
         from silicon_pantheon.client.agent_bridge import NetworkedAgent
 
+        # Serialized queue for record_thought calls. Reasoning models
+        # can emit 10+ thought pieces at once; firing them all as
+        # concurrent create_task calls overwhelms the MCP session's
+        # SSE demuxer and wedges the transport. A single drain task
+        # pulls from the deque and sends one at a time.
+        from collections import deque
+        _thought_q: deque[str] = deque()
+        _drain_box: list[asyncio.Task | None] = [None]
+
+        async def _drain_thoughts() -> None:
+            try:
+                while True:
+                    if _thought_q and app.client is not None:
+                        text = _thought_q.popleft()
+                        try:
+                            await app.client.call("record_thought", text=text)
+                        except Exception:
+                            pass  # replay-loss is non-fatal
+                    else:
+                        await asyncio.sleep(0.1)
+            except asyncio.CancelledError:
+                return
+
         async def on_thought(text: str) -> None:
             # Preserve newlines: reasoning models emit paragraphs, and
             # collapsing all whitespace to single spaces turned long
@@ -996,16 +1019,16 @@ class GameScreen(Screen):
             # transport hiccup must not block the agent loop. The
             # server pins this thought to the connection's team, so
             # we don't need to send team/turn explicitly.
+            #
+            # IMPORTANT: we must NOT use create_task here. When a
+            # reasoning model emits 10+ thought pieces at once, each
+            # create_task fires a concurrent call_tool on the same MCP
+            # session. The MCP SDK demuxes SSE responses by JSON-RPC
+            # ID — 15+ concurrent requests overwhelm the stream and
+            # cause responses to get lost, wedging the session forever.
+            # Instead, push to a queue that drains serially.
             if app.client is not None:
-                async def _push() -> None:
-                    try:
-                        await app.client.call("record_thought", text=stripped)
-                    except Exception:
-                        # Replay-loss is non-fatal; the panel + log
-                        # still have the text.
-                        pass
-                import asyncio as _asyncio
-                _asyncio.create_task(_push())
+                _thought_q.append(stripped)
 
         # lessons_dir controls saving post-match summaries. Selected
         # lessons for prompt injection are passed separately. Use the
@@ -1042,6 +1065,9 @@ class GameScreen(Screen):
             time_budget_s=time_budget_s,
             locale=app.state.locale,
         )
+        # Start the serialized thought-drain task.
+        if _drain_box[0] is None or _drain_box[0].done():
+            _drain_box[0] = asyncio.create_task(_drain_thoughts())
         log.info(
             "maybe_build_agent: CREATED agent scenario=%s locale=%s model=%s budget=%.0fs",
             scenario, app.state.locale, app.state.model, time_budget_s,
