@@ -163,10 +163,18 @@ class PostMatchScreen(Screen):
         rows: list[RenderableType] = []
 
         # ---- Team comparison table ----
+        gs = self.app.state.last_game_state or {}
+        winner = gs.get("winner")
+        blue_tag = f" ({t('post_match_summary.win', lc)})" if winner == "blue" else (
+            f" ({t('post_match_summary.lost', lc)})" if winner == "red" else ""
+        )
+        red_tag = f" ({t('post_match_summary.win', lc)})" if winner == "red" else (
+            f" ({t('post_match_summary.lost', lc)})" if winner == "blue" else ""
+        )
         tbl = Table(expand=False, show_lines=False, padding=(0, 2))
         tbl.add_column("", style="bold")
-        tbl.add_column(t("post_match_summary.blue", lc), style="cyan", justify="right")
-        tbl.add_column(t("post_match_summary.red", lc), style="red", justify="right")
+        tbl.add_column(t("post_match_summary.blue", lc) + blue_tag, style="cyan", justify="right")
+        tbl.add_column(t("post_match_summary.red", lc) + red_tag, style="red", justify="right")
 
         b, r = ms.blue, ms.red
         _s = t  # alias for readability

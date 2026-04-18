@@ -505,8 +505,10 @@ scenario_pick:
 # Post-match summary
 post_match_summary:
   turns: "Turns"
-  blue: "blue"
-  red: "red"
+  blue: "Blue"
+  red: "Red"
+  win: "WIN"
+  lost: "LOST"
   damage_dealt: "Damage dealt"
   healing_done: "Healing done"
   units_lost: "Units lost"

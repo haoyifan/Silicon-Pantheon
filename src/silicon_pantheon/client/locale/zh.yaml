@@ -494,6 +494,8 @@ post_match_summary:
   turns: "回合"
   blue: "蓝方"
   red: "红方"
+  win: "胜"
+  lost: "败"
   damage_dealt: "造成伤害"
   healing_done: "治疗量"
   units_lost: "损失单位"

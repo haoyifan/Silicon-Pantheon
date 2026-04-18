@@ -130,5 +130,5 @@ def test_post_match_screen_renders_winner() -> None:
     }
     out = _render(PostMatchScreen(app))
     assert "won" in out.lower()
-    assert "blue" in out
+    assert "Blue" in out
     assert "seize" in out
