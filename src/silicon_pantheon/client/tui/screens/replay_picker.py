@@ -64,37 +64,79 @@ def _scan_replays() -> list[dict[str, Any]]:
 
 
 def _extract_meta(path: Path) -> dict[str, Any]:
-    """Read the first few lines of a replay to get scenario + timestamp."""
+    """Read the replay header events to extract metadata.
+
+    Scans the first ~10 lines for match_start and match_players,
+    and the last ~5 lines for match_end. Gracefully handles old
+    replays that lack these events.
+    """
+    import datetime
+
     meta: dict[str, Any] = {
         "path": path,
         "mtime": path.stat().st_mtime if path.exists() else 0,
         "scenario": "?",
         "filename": path.name,
+        "blue_model": "?",
+        "red_model": "?",
+        "winner": "?",
+        "turns": "?",
+        "date": "?",
     }
     try:
+        lines: list[str] = []
         with path.open("r", encoding="utf-8") as f:
             for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    raw = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                if raw.get("kind") == "match_start":
-                    data = raw.get("payload") or raw.get("data") or {}
-                    meta["scenario"] = data.get("scenario") or "?"
+                lines.append(line.strip())
+        # Parse header events (first ~20 lines)
+        for raw_line in lines[:20]:
+            if not raw_line:
+                continue
+            try:
+                raw = json.loads(raw_line)
+            except json.JSONDecodeError:
+                continue
+            kind = raw.get("kind", "")
+            data = raw.get("payload") or raw.get("data") or {}
+            if kind == "match_start":
+                meta["scenario"] = data.get("scenario") or "?"
+                started_at = data.get("started_at")
+                if started_at:
+                    dt = datetime.datetime.fromtimestamp(started_at)
+                    meta["date"] = dt.strftime("%Y-%m-%d %H:%M")
+            elif kind == "match_players":
+                players = data.get("players") or {}
+                blue = players.get("blue") or {}
+                red = players.get("red") or {}
+                meta["blue_model"] = blue.get("model") or blue.get("display_name") or "?"
+                meta["red_model"] = red.get("model") or red.get("display_name") or "?"
+        # Parse tail events (last ~10 lines) for match_end
+        for raw_line in reversed(lines[-10:]):
+            if not raw_line:
+                continue
+            try:
+                raw = json.loads(raw_line)
+            except json.JSONDecodeError:
+                continue
+            kind = raw.get("kind", "")
+            data = raw.get("payload") or raw.get("data") or {}
+            if kind == "match_end":
+                meta["winner"] = data.get("winner") or "draw"
+                meta["turns"] = data.get("turns_played") or "?"
+                break
+            # Fallback: check last end_turn action for winner
+            if kind == "action":
+                w = data.get("winner")
+                if w is not None:
+                    meta["winner"] = w or "draw"
                     break
     except Exception:
         pass
 
-    # Format mtime
-    import datetime
-    if meta["mtime"]:
+    # Fallback date from mtime if not in replay
+    if meta["date"] == "?" and meta["mtime"]:
         dt = datetime.datetime.fromtimestamp(meta["mtime"])
         meta["date"] = dt.strftime("%Y-%m-%d %H:%M")
-    else:
-        meta["date"] = "?"
     return meta
 
 
@@ -122,18 +164,31 @@ class ReplayPickerScreen(Screen):
         table.add_column(" ", width=2)
         table.add_column(t("replay_picker.col_date", lc), width=18)
         table.add_column(t("replay_picker.col_scenario", lc))
-        table.add_column(t("replay_picker.col_file", lc), overflow="fold")
+        table.add_column(t("replay_picker.col_blue", lc))
+        table.add_column(t("replay_picker.col_red", lc))
+        table.add_column(t("replay_picker.col_winner", lc), width=6)
+        table.add_column(t("replay_picker.col_turns", lc), width=5)
 
         if not self._replays:
-            table.add_row("", t("replay_picker.no_replays", lc), "", "")
+            table.add_row("", t("replay_picker.no_replays", lc), "", "", "", "", "")
         else:
             for i, m in enumerate(self._replays):
                 marker = "➤" if i == self._selected else " "
+                winner = m.get("winner", "?")
+                winner_style = (
+                    "bold cyan" if winner == "blue"
+                    else "bold red" if winner == "red"
+                    else "dim" if winner == "draw"
+                    else ""
+                )
                 table.add_row(
                     marker,
                     m.get("date", "?"),
                     m.get("scenario", "?"),
-                    str(m["path"].name),
+                    m.get("blue_model", "?"),
+                    m.get("red_model", "?"),
+                    Text(str(winner), style=winner_style),
+                    str(m.get("turns", "?")),
                     style="bold" if i == self._selected else None,
                 )
 

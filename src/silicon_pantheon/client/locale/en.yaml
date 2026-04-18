@@ -582,7 +582,10 @@ replay_picker:
   scanning: "Scanning for replays..."
   col_date: "Date"
   col_scenario: "Scenario"
-  col_file: "File"
+  col_blue: "Blue"
+  col_red: "Red"
+  col_winner: "Winner"
+  col_turns: "Turns"
   no_replays: "(no replays found)"
   footer: "↓/j next   ↑/k prev   Enter open   r refresh   Esc back"
 

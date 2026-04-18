@@ -103,6 +103,30 @@ class Session:
         if self.replay is not None:
             self.replay.write({"kind": kind, "payload": payload, "turn": self.state.turn})
 
+    def log_match_players(self, players: dict[str, dict]) -> None:
+        """Write a match_players event with per-team player info.
+
+        Called by start_game_for_room once the slot→team mapping is
+        known. ``players`` maps team name → {display_name, kind,
+        provider, model}.
+        """
+        self.log("match_players", {"players": players})
+
+    def log_match_end(self) -> None:
+        """Write a match_end event with outcome stats."""
+        import time as _time
+        state = self.state
+        payload: dict = {
+            "winner": state.winner.value if state.winner else None,
+            "turns_played": state.turn,
+            "max_turns": state.max_turns,
+            "ended_at": _time.time(),
+        }
+        # Include last_action for reason
+        if state.last_action and isinstance(state.last_action, dict):
+            payload["reason"] = state.last_action.get("reason")
+        self.log("match_end", payload)
+
     def notify_action(self, result: dict) -> None:
         for hook in self.action_hooks:
             try:
@@ -162,12 +186,15 @@ def new_session(
     # tools (interactive replayer, analytics) can reconstruct the match
     # without any out-of-band knowledge (folder name, CLI flags, etc.).
     if writer is not None:
-        session.log(
-            "match_start",
-            {
-                "scenario": scenario,
-                "max_turns": state.max_turns,
-                "first_player": state.first_player.value,
-            },
-        )
+        import time as _time
+        payload: dict = {
+            "scenario": scenario,
+            "max_turns": state.max_turns,
+            "first_player": state.first_player.value,
+            "started_at": _time.time(),
+        }
+        # Player info is injected by start_game_for_room after
+        # new_session returns (it has access to the room's seats).
+        # The extra fields are written via session.log_match_players().
+        session.log("match_start", payload)
     return session

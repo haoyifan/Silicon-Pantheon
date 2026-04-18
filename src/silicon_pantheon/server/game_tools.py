@@ -158,6 +158,20 @@ def start_game_for_room(app: App, room_id: str) -> None:
         promoted,
         {s.value: t.value for s, t in app.slot_to_team.get(room_id, {}).items()},
     )
+    # Log player metadata to the replay so downstream tools (replay
+    # picker, analytics) know which models played which team.
+    slot_team = app.slot_to_team.get(room_id, {})
+    players: dict[str, dict] = {}
+    for slot, seat in room.seats.items():
+        team = slot_team.get(slot)
+        if team is not None and seat.player is not None:
+            players[team.value] = {
+                "display_name": seat.player.display_name,
+                "kind": seat.player.kind,
+                "provider": seat.player.provider,
+                "model": seat.player.model,
+            }
+    session.log_match_players(players)
 
 
 def _note_game_over_if_needed(app: App, room_id: str) -> None:
@@ -179,6 +193,7 @@ def _note_game_over_if_needed(app: App, room_id: str) -> None:
     if room.status == RoomStatus.FINISHED:
         return
     log.info("room %s transitioning IN_GAME -> FINISHED (game_over)", room_id)
+    session.log_match_end()
     room.status = RoomStatus.FINISHED
 
 

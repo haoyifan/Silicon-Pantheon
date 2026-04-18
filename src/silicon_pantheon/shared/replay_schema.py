@@ -8,7 +8,9 @@ replayer) can re-apply it to a fresh GameState.
 
 Event kinds currently written by the engine/harness:
 
-- `match_start`        {scenario, max_turns, first_player}
+- `match_start`        {scenario, max_turns, first_player, started_at}
+- `match_players`      {players: {blue: {...}, red: {...}}}
+- `match_end`          {winner, turns_played, max_turns, ended_at, reason}
 - `action`             result dict of apply() (type=move|attack|heal|wait|end_turn)
 - `agent_thought`      {team, text, turn}
 - `coach_message`      {to, text, turn}
@@ -45,6 +47,22 @@ class MatchStart:
     scenario: str | None
     max_turns: int
     first_player: str  # "blue" | "red"
+    started_at: float | None = None
+
+
+@dataclass(frozen=True)
+class MatchPlayers:
+    """Per-team player info: {team: {display_name, kind, provider, model}}."""
+    players: dict[str, dict[str, str]]
+
+
+@dataclass(frozen=True)
+class MatchEnd:
+    winner: str | None  # "blue" | "red" | None (draw)
+    turns_played: int
+    max_turns: int
+    ended_at: float | None = None
+    reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -100,6 +118,17 @@ def parse_event(raw: dict[str, Any]) -> ReplayEvent:
             scenario=payload.get("scenario"),
             max_turns=int(payload.get("max_turns", 0) or 0),
             first_player=str(payload.get("first_player", "blue")),
+            started_at=payload.get("started_at"),
+        )
+    elif kind == "match_players":
+        data = MatchPlayers(players=payload.get("players") or {})
+    elif kind == "match_end":
+        data = MatchEnd(
+            winner=payload.get("winner"),
+            turns_played=int(payload.get("turns_played", 0) or 0),
+            max_turns=int(payload.get("max_turns", 0) or 0),
+            ended_at=payload.get("ended_at"),
+            reason=payload.get("reason"),
         )
     elif kind == "agent_thought":
         data = AgentThought(

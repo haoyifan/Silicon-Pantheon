@@ -569,7 +569,10 @@ replay_picker:
   scanning: "正在扫描回放文件..."
   col_date: "日期"
   col_scenario: "剧本"
-  col_file: "文件"
+  col_blue: "蓝方"
+  col_red: "红方"
+  col_winner: "胜方"
+  col_turns: "回合"
   no_replays: "（未找到回放文件）"
   footer: "↓/j 下一个   ↑/k 上一个   Enter 打开   r 刷新   Esc 返回"
 

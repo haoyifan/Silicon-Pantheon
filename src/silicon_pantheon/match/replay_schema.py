@@ -9,6 +9,8 @@ from silicon_pantheon.shared.replay_schema import (  # noqa: F401
     CoachMessage,
     ErrorPayload,
     ForcedEndTurn,
+    MatchEnd,
+    MatchPlayers,
     MatchStart,
     ReplayEvent,
     UnreconstructibleAction,
