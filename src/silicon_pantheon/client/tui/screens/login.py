@@ -49,8 +49,11 @@ class LoginScreen(Screen):
         ]
         self._active = 0
         self._connecting = False
+        self._confirm = None
 
     def render(self) -> RenderableType:
+        if self._confirm is not None:
+            return self._confirm.render()
         lines: list[Text] = []
         title = Text(f"SiliconPantheon — {t('login_screen.title', self.app.state.locale)}", style="bold yellow")
         lines.append(title)
@@ -80,6 +83,11 @@ class LoginScreen(Screen):
         return Align.center(Panel(body, title=t("login_screen.title", lc), border_style="yellow"), vertical="middle")
 
     async def handle_key(self, key: str) -> Screen | None:
+        if self._confirm is not None:
+            close = await self._confirm.handle_key(key)
+            if close:
+                self._confirm = None
+            return None
         if self._connecting:
             return None
         f = self._fields[self._active]
@@ -87,7 +95,16 @@ class LoginScreen(Screen):
             from silicon_pantheon.client.tui.screens.language_picker import LanguagePickerScreen
             return LanguagePickerScreen(self.app)
         if key == "q":
-            self.app.exit()
+            from silicon_pantheon.client.tui.widgets import ConfirmModal
+            from silicon_pantheon.client.locale import t
+            async def _quit(yes: bool) -> None:
+                if yes:
+                    self.app.exit()
+            self._confirm = ConfirmModal(
+                prompt=t("lobby_quit.confirm", self.app.state.locale),
+                on_confirm=_quit,
+                locale=self.app.state.locale,
+            )
             return None
         if key == "enter":
             # Submit if required fields are populated.
@@ -145,14 +162,24 @@ class LoginScreen(Screen):
 async def _connect_and_declare(app: TUIApp) -> None:
     """Open the ServerClient context, call set_player_metadata, start
     heartbeat. The client is retained on the app for later screens."""
+    import asyncio as _aio
+
     from silicon_pantheon.client.transport import ServerClient
 
     # We need the ServerClient's context to stay open for the whole app
     # lifetime. The `ServerClient.connect` classmethod is an async ctx
     # manager that opens the SSE connection; we enter it manually and
     # rely on TUIApp.run to clean up on exit.
+    #
+    # Timeout the connection attempt — streamablehttp_client hangs
+    # forever if the URL is unreachable or not an MCP server.
     ctx = ServerClient.connect(app.state.server_url)
-    client = await ctx.__aenter__()
+    try:
+        client = await _aio.wait_for(ctx.__aenter__(), timeout=10.0)
+    except _aio.TimeoutError:
+        raise ConnectionError(
+            "connection timed out after 10s — check the server URL"
+        )
     app.client = client
 
     async def _cleanup() -> None:

@@ -118,6 +118,7 @@ class ProviderAuthScreen(Screen):
         self.app = app
         self._creds: Credentials = load()
         self._step: _Step = self._initial_step()
+        self._confirm = None
 
     def _initial_step(self) -> _Step:
         """Shortcut to 'resume' if credentials already have a default."""
@@ -133,6 +134,8 @@ class ProviderAuthScreen(Screen):
     # ---- render ----
 
     def render(self) -> RenderableType:
+        if self._confirm is not None:
+            return self._confirm.render()
         if self._step.kind == "resume":
             return self._render_resume()
         if self._step.kind == "pick_provider":
@@ -367,8 +370,22 @@ class ProviderAuthScreen(Screen):
         in_paste = (
             self._step.kind == "api_key" and self._step.focused == 1
         )
+        if self._confirm is not None:
+            close = await self._confirm.handle_key(key)
+            if close:
+                self._confirm = None
+            return None
         if key == "q" and not in_paste:
-            self.app.exit()
+            from silicon_pantheon.client.tui.widgets import ConfirmModal
+            from silicon_pantheon.client.locale import t
+            async def _quit(yes: bool) -> None:
+                if yes:
+                    self.app.exit()
+            self._confirm = ConfirmModal(
+                prompt=t("lobby_quit.confirm", self.app.state.locale),
+                on_confirm=_quit,
+                locale=self.app.state.locale,
+            )
             return None
         if self._step.kind == "resume":
             return await self._handle_resume_key(key)

@@ -217,8 +217,10 @@ def test_no_saved_key_still_goes_to_api_key_step(fresh_home) -> None:
     assert screen._step.kind == "api_key"
 
 
-def test_quit_exits(fresh_home) -> None:
+def test_quit_shows_confirm(fresh_home) -> None:
     app = _FakeApp()
     screen = ProviderAuthScreen(app)
     asyncio.run(screen.handle_key("q"))
-    assert app.exited is True
+    # q now shows a confirmation modal instead of exiting directly.
+    assert screen._confirm is not None
+    assert app.exited is False

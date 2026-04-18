@@ -98,7 +98,15 @@ class LobbyScreen(Screen):
         if self._confirm is not None:
             return self._confirm.render()
         if self._tutorial is not None and not self._tutorial.is_done:
-            return self._tutorial.render()
+            from rich.layout import Layout
+            root = Layout()
+            root.split_column(
+                Layout(name="bg", ratio=1),
+                Layout(name="tutorial", size=14),
+            )
+            root["bg"].update(base)
+            root["tutorial"].update(self._tutorial.render())
+            return root
         return base
 
     async def tick(self) -> None:

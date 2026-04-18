@@ -1087,8 +1087,6 @@ class GameScreen(Screen):
     # ---- render ----
 
     def render(self) -> RenderableType:
-        if self._tutorial is not None and not self._tutorial.is_done:
-            return self._tutorial.render()
         if self._confirm is not None:
             return self._confirm.render()
         if self._scenario_overlay is not None:
@@ -1138,14 +1136,24 @@ class GameScreen(Screen):
             footer_line = hints
 
         root = Layout()
-        root.split_column(
-            Layout(name="hdr", size=1),
-            Layout(name="body"),
-            Layout(name="ftr", size=1),
-        )
-        root["hdr"].update(header_line)
-        root["body"].update(self._build_body())
-        root["ftr"].update(footer_line)
+        if self._tutorial is not None and not self._tutorial.is_done:
+            root.split_column(
+                Layout(name="hdr", size=1),
+                Layout(name="body"),
+                Layout(name="tutorial", size=14),
+            )
+            root["hdr"].update(header_line)
+            root["body"].update(self._build_body())
+            root["tutorial"].update(self._tutorial.render())
+        else:
+            root.split_column(
+                Layout(name="hdr", size=1),
+                Layout(name="body"),
+                Layout(name="ftr", size=1),
+            )
+            root["hdr"].update(header_line)
+            root["body"].update(self._build_body())
+            root["ftr"].update(footer_line)
         return root
 
     def _build_body(self) -> Layout:

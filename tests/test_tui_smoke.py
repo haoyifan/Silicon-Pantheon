@@ -71,11 +71,13 @@ def test_login_screen_text_entry() -> None:
     assert screen._fields[1].value == "alic"
 
 
-def test_login_quit_calls_app_exit() -> None:
+def test_login_quit_shows_confirm() -> None:
     app = _FakeApp()
     screen = LoginScreen(app)
     asyncio.run(screen.handle_key("q"))
-    assert app.exited is True
+    # q now shows a confirmation modal instead of exiting directly.
+    assert screen._confirm is not None
+    assert app.exited is False
 
 
 def test_login_submit_without_name_sets_error() -> None:
