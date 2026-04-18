@@ -239,6 +239,9 @@ class LobbyScreen(Screen):
             TutorialOverlay,
         )
         ts = self.app.state.tutorial_state
+        # Reset ALL stages so room and game tutorials also replay
+        # when the user enters those screens next.
+        ts.reset_all()
 
         def _on_done():
             ts.mark_done("lobby")
