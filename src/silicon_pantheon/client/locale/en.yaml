@@ -504,6 +504,7 @@ scenario_pick:
 
 # Post-match summary
 post_match_summary:
+  scenario: "Scenario"
   turns: "Turns"
   blue: "Blue"
   red: "Red"

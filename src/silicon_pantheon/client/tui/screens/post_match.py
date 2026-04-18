@@ -110,8 +110,18 @@ class PostMatchScreen(Screen):
         if reason:
             banner.append(f"  ({reason})", style="dim")
 
-        summary = Text(
-            f"{t('post_match_summary.turns', lc)}: {gs.get('turn', '?')} / {gs.get('max_turns', '?')}\n"
+        # Scenario name from room state or scenario description.
+        scenario_name = (
+            (self.app.state.scenario_description or {}).get("name")
+            or (self.app.state.last_room_state or {}).get("scenario")
+            or "?"
+        )
+
+        summary = Text()
+        summary.append(f"{t('post_match_summary.scenario', lc)}: ", style="dim")
+        summary.append(scenario_name, style="yellow")
+        summary.append(
+            f"\n{t('post_match_summary.turns', lc)}: {gs.get('turn', '?')} / {gs.get('max_turns', '?')}\n"
             f"{t('post_match_summary.blue', lc)}: {sum(1 for u in gs.get('units', []) if u.get('owner') == 'blue')}  "
             f"{t('post_match_summary.red', lc)}: {sum(1 for u in gs.get('units', []) if u.get('owner') == 'red')}",
             style="dim",

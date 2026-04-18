@@ -491,6 +491,7 @@ scenario_pick:
 
 # 赛后摘要
 post_match_summary:
+  scenario: "剧本"
   turns: "回合"
   blue: "蓝方"
   red: "红方"
