@@ -422,17 +422,18 @@ class ReplayScreen(Screen):
     async def handle_key(self, key: str) -> Screen | None:
         # Unit card overlay — Esc/Enter/q close it.
         if self.unit_card is not None:
-            if key in ("escape", "enter", "q"):
+            if key in ("esc", "enter", "q"):
                 self.unit_card = None
             return None
 
         # Tab between panels — always available.
-        if key == "tab":
+        # The key reader returns "\t" for the Tab key.
+        if key == "\t":
             self._focus_idx = (self._focus_idx + 1) % len(self._panels)
             return None
 
         # Quit back to lobby.
-        if key == "q" or key == "escape":
+        if key == "q" or key == "esc":
             from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
             return LobbyScreen(self.app)
 
@@ -447,7 +448,7 @@ class ReplayScreen(Screen):
             self._step = min(next_step, total)
             self._apply_step()
             return None
-        if key == "S":
+        if key in ("S", "a"):
             prev_step = self._step - 1
             while prev_step > 0 and self._timeline[prev_step - 1].kind != "action":
                 prev_step -= 1
@@ -460,7 +461,7 @@ class ReplayScreen(Screen):
             self._step = 0
             self._apply_step()
             return None
-        if key == "G":
+        if key in ("G", "shift-g"):
             self._step = total
             self._apply_step()
             return None
