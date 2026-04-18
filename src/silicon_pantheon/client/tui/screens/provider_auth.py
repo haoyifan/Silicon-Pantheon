@@ -723,8 +723,21 @@ class ProviderAuthScreen(Screen):
         self.app.state.model = model_id
         self.app.state.error_message = ""
 
-        # Transition to the lobby (the login screen used to do this;
-        # now we're the waypoint between login and lobby).
+        # Update server-side metadata so other players can see our
+        # provider/model in the room player list.
+        if self.app.client is not None:
+            try:
+                await self.app.client.call(
+                    "set_player_metadata",
+                    display_name=self.app.state.display_name,
+                    kind=self.app.state.kind,
+                    provider=provider_id,
+                    model=model_id,
+                    client_protocol_version="1",
+                )
+            except Exception:
+                pass  # non-fatal; lobby still works
+
         from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
 
         return LobbyScreen(self.app)

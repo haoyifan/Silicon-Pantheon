@@ -105,8 +105,19 @@ class PlayerPanel(Panel):
             rows.append(
                 Text(f"{slot_id} [{ready}] {name}{tag}", style=style)
             )
-        rows.append(Text(""))
-        rows.append(Text(f"{t('room_player.model_label', lc)}: {s.model or t('room_player.random', lc)}", style="dim"))
+            # Show provider/model for each player — from server metadata
+            # for the opponent, from local state for ourselves.
+            if slot_id == my_slot:
+                p_model = s.model
+                p_provider = s.provider
+            else:
+                p_model = player.get("model")
+                p_provider = player.get("provider")
+            if p_model or p_provider:
+                label = p_model or ""
+                if p_provider and p_provider != label:
+                    label = f"{p_provider}/{label}" if label else p_provider
+                rows.append(Text(f"     {t('room_player.model_label', lc)}: {label}", style="dim"))
         return RichPanel(
             Group(*rows),
             title=self.title,

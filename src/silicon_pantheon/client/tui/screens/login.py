@@ -24,15 +24,11 @@ if TYPE_CHECKING:
     from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
 
 
-_KIND_OPTIONS = ("ai", "human", "hybrid")
-
-
 @dataclass
 class _Field:
     label: str
     value: str
     hint: str = ""
-    options: tuple[str, ...] | None = None  # if set, field cycles via left/right
 
 
 class LoginScreen(Screen):
@@ -42,14 +38,6 @@ class LoginScreen(Screen):
         self._fields: list[_Field] = [
             _Field(t("login_fields.server_url", lc), app.state.server_url, hint="http://host:port/mcp/"),
             _Field(t("login_fields.display_name", lc), app.state.display_name, hint=t("login_fields.required", lc)),
-            _Field(
-                t("login_fields.kind", lc),
-                app.state.kind or "ai",
-                hint=t("login_fields.cycle_hint", lc),
-                options=_KIND_OPTIONS,
-            ),
-            _Field(t("login_fields.provider", lc), app.state.provider or "", hint=t("login_fields.optional", lc)),
-            _Field(t("login_fields.model", lc), app.state.model or "", hint=t("login_fields.optional", lc)),
         ]
         self._active = 0
         self._connecting = False
@@ -105,11 +93,6 @@ class LoginScreen(Screen):
         if key == "up":
             self._active = (self._active - 1) % len(self._fields)
             return None
-        if key in ("left", "right") and f.options is not None:
-            idx = f.options.index(f.value) if f.value in f.options else 0
-            step = 1 if key == "right" else -1
-            f.value = f.options[(idx + step) % len(f.options)]
-            return None
         if key == "backspace":
             f.value = f.value[:-1]
             return None
@@ -130,9 +113,9 @@ class LoginScreen(Screen):
         # Copy field values into shared state.
         self.app.state.server_url = self._fields[0].value.strip()
         self.app.state.display_name = name
-        self.app.state.kind = self._fields[2].value.strip() or "ai"
-        self.app.state.provider = self._fields[3].value.strip() or None
-        self.app.state.model = self._fields[4].value.strip() or None
+        # kind defaults to "ai"; provider and model are set later by
+        # the ProviderAuthScreen (no longer collected on the login form).
+        self.app.state.kind = "ai"
 
         # Late-import to avoid circular imports.
         from silicon_pantheon.client.tui.screens.provider_auth import ProviderAuthScreen
