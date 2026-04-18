@@ -99,7 +99,7 @@ def _action_summary(payload: dict) -> str:
         dest = payload.get("dest") or payload.get("to") or {}
         return f"{payload.get('unit_id')} → ({dest.get('x')},{dest.get('y')})"
     if t == "attack":
-        dmg = payload.get("damage_to_defender", "?")
+        dmg = payload.get("damage_dealt") or payload.get("damage_to_defender") or "?"
         parts = [f"{payload.get('unit_id')} attacks {payload.get('target_id')}", f"dmg={dmg}"]
         if payload.get("defender_dies"):
             parts.append("KILL")
@@ -330,7 +330,7 @@ class ReplayScreen(Screen):
                     dest = payload.get("dest") or payload.get("to") or {}
                     self.unit_last_actions[uid] = f"moved → ({dest.get('x')},{dest.get('y')})"
                 elif atype == "attack":
-                    dmg = payload.get("damage_to_defender", "?")
+                    dmg = payload.get("damage_dealt") or payload.get("damage_to_defender") or "?"
                     self.unit_last_actions[uid] = f"attacked {payload.get('target_id')} dmg={dmg}"
                 elif atype == "heal":
                     self.unit_last_actions[uid] = f"healed {payload.get('target_id')}"
@@ -444,7 +444,7 @@ class ReplayScreen(Screen):
         # Check backward FIRST — "S" and "a" go backward, "s" goes
         # forward. Checking "s" first would never catch "S" (case-
         # sensitive), but being explicit about order is clearer.
-        if key in ("S", "a"):
+        if key == "a":
             prev_step = self._step - 1
             while prev_step > 0 and self._timeline[prev_step - 1].kind != "action":
                 prev_step -= 1

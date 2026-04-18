@@ -125,7 +125,7 @@ def _action_detail(payload: dict) -> str:
         dest = payload.get("dest") or payload.get("to") or {}
         return f"{u} moves to ({dest.get('x')},{dest.get('y')})"
     if t == "attack":
-        dmg = payload.get("damage_to_defender")
+        dmg = payload.get("damage_dealt") or payload.get("damage_to_defender")
         counter = payload.get("counter_damage")
         kills = "killed target" if payload.get("defender_dies") else ""
         parts = [
