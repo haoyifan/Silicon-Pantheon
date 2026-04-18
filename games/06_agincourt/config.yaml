@@ -4,13 +4,12 @@ difficulty: 5
 description: |
   October 25, 1415. St. Crispin's Day. Henry V's small, exhausted,
   dysentery-ridden English army is cornered by a French force three
-  times its size in a narrow muddy field between two thick forests.
-  Henry plants sharpened stakes in front of his line, places his
-  longbowmen on the flanks, and waits for the French to charge.
-  The flower of French chivalry — knights in full plate — wades
-  through churned bog under a sky black with arrows. Most never
-  reach the English line; many drown in mud under the weight of
-  their own armor.
+  times its size on a narrow field dotted with trees. Henry plants
+  sharpened stakes in front of his line, places his longbowmen on
+  the flanks, and waits for the French to charge. The flower of
+  French chivalry — knights in full plate — advances under a sky
+  black with arrows, picking their way through scattered woodland
+  that breaks up the charge. Most never reach the English line.
   Inspired by the Battle of Agincourt (1415), Hundred Years' War, England vs France.
 
 board:
@@ -28,9 +27,7 @@ board:
     - {x: 9, y: 10, type: forest}
     # Sparse forest in the central corridor — slows the French
     # advance and gives cover, but leaves enough gaps to maneuver.
-    # Historically the field was churned mud, but dense mud tiles
-    # (cost 3-4) made the map unplayable; sparse forest (cost 2,
-    # +2 DEF) is a better gameplay compromise.
+    # Slows the French advance and provides cover.
     - {x: 3, y: 5, type: forest}
     - {x: 5, y: 5, type: forest}
     - {x: 7, y: 5, type: forest}
@@ -97,9 +94,8 @@ unit_classes:
   english_man_at_arms:
     display_name: English Man-at-Arms
     description: |
-      Henry's foot men-at-arms — chainmail, pollaxe, dismounted
-      because horses can't operate in this mud either. Anchor of
-      the line.
+      Henry's foot men-at-arms — chainmail, pollaxe, dismounted.
+      Anchor of the English line.
     hp_max: 24
     atk: 8
     defense: 6
@@ -153,8 +149,8 @@ unit_classes:
   french_man_at_arms:
     display_name: French Man-at-Arms
     description: |
-      Lower-tier French foot — chainmail, sword, no horse. Forced
-      to slog through the same mud as the knights.
+      Lower-tier French foot — chainmail, sword, no horse. Slower
+      than the knights but steadier on rough ground.
     hp_max: 22
     atk: 8
     defense: 5
@@ -188,8 +184,7 @@ armies:
     - {class: longbowman, pos: {x: 8, y: 11}}
     - {class: longbowman, pos: {x: 8, y: 12}}
   red:
-    # French column at the north, knights leading. Mud is between
-    # them and the English line.
+    # French column at the north, knights leading.
     - {class: french_knight, pos: {x: 3, y: 1}}
     - {class: french_knight, pos: {x: 4, y: 1}}
     - {class: french_knight, pos: {x: 5, y: 1}}
@@ -234,22 +229,22 @@ win_conditions:
 narrative:
   title: Agincourt
   description: |
-    St. Crispin's Day. English longbows in the mud against the
-    flower of French chivalry.
+    St. Crispin's Day. English longbows on a wooded field against
+    the flower of French chivalry.
   intro: |
-    A cold dawn. The fields between the woods are saturated from
-    a week of rain. Henry kneels with his archers; the French
-    column forms up across the bog, lances bright.
+    A cold dawn. The field between scattered trees narrows ahead.
+    Henry kneels with his archers; the French column forms up,
+    lances bright, ready to charge.
   events:
     - trigger: on_turn_start
       turn: 2
-      text: "The first French line steps into the mud. Lances dip; horses sink to the fetlock."
+      text: "The first French line advances through the trees. Arrows begin to fall."
     - trigger: on_turn_start
       turn: 4
       text: "English archers loose. Sky-darkening volleys begin."
     - trigger: on_turn_start
       turn: 8
-      text: "The mud is full of fallen knights. The second French line picks its way over them."
+      text: "Fallen knights litter the field. The second French line pushes forward over them."
     - trigger: on_unit_killed
       unit_id: u_b_henry_v_1
       text: "Henry has fallen. The English line shudders."
