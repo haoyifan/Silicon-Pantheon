@@ -339,12 +339,16 @@ class PlayerPanel(Panel):
             rows = rows[self.scroll :]
         tut = getattr(self.screen, '_tutorial', None)
         if tut and tut.targets_panel("player"):
-            rows.append(Text(""))
-            rows.append(tut.render_inline())
+            return RichPanel(
+                tut.render_inline(),
+                title=self.title,
+                border_style="bright_yellow",
+                padding=(0, 1),
+            )
         return RichPanel(
             Group(*rows),
             title=self.title,
-            border_style="bright_yellow" if (tut and tut.targets_panel("player")) else border_style(focused),
+            border_style=border_style(focused),
             padding=(0, 1),
         )
 
@@ -449,21 +453,24 @@ class GameMapPanel(Panel):
                     text.append(f" {g} ", style=st)
             text.append("\n")
         footer_body = self._cursor_tooltip(w, h, tile_by_pos, unit_at)
-        parts: list[RenderableType] = [text, Text(""), footer_body]
-        # Inline tutorial: embed inside this panel when it's the target,
-        # OR when the step has no target panel (welcome/flow → default
-        # to the map panel as it's the largest).
+        # Inline tutorial: replace content when this panel is targeted
+        # (or for untargeted steps like welcome/flow). Replacing instead
+        # of appending guarantees the tutorial fits on small screens.
         tut = getattr(self.screen, '_tutorial', None)
         tut_here = tut and not tut.is_done and (
             tut.targets_panel("map") or tut.highlight_panel is None
         )
         if tut_here:
-            parts.append(Text(""))
-            parts.append(tut.render_inline())
+            return RichPanel(
+                Group(text, Text(""), tut.render_inline()),
+                title=self.title,
+                border_style="bright_yellow",
+                padding=(0, 1),
+            )
         return RichPanel(
-            Group(*parts),
+            Group(text, Text(""), footer_body),
             title=self.title,
-            border_style="bright_yellow" if tut_here else border_style(focused),
+            border_style=border_style(focused),
             padding=(0, 1),
         )
 

@@ -409,11 +409,16 @@ class ActionsPanel(Panel):
             tut.targets_panel("actions") or tut.highlight_panel is None
         )
         if tut_here:
-            body = Group(body, Text(""), tut.render_inline())
+            return RichPanel(
+                Group(body, Text(""), tut.render_inline()),
+                title=self.title,
+                border_style="bright_yellow",
+                padding=(0, 1),
+            )
         return RichPanel(
             body,
             title=self.title,
-            border_style="bright_yellow" if tut_here else border_style(focused),
+            border_style=border_style(focused),
             padding=(0, 1),
         )
 
