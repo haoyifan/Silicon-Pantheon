@@ -429,7 +429,7 @@ class ActionsPanel(Panel):
         )
         if tut_here:
             return RichPanel(
-                Group(body, Text(""), tut.render_inline()),
+                tut.render_inline(),
                 title=self.title,
                 border_style="bright_yellow",
                 padding=(0, 1),
