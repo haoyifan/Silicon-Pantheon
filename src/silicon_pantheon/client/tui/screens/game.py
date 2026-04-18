@@ -1440,15 +1440,6 @@ class GameScreen(Screen):
         if self.app.state.agent is None:
             await self._maybe_build_agent(self.app)
 
-        # Auto-dismiss tutorial once the game is progressing — the
-        # player needs to see the action, not read tutorial text.
-        # Dismiss when: any action has happened, or it's not turn 1.
-        if self._tutorial is not None and not self._tutorial.is_done:
-            turn = self.state.get("turn", 1)
-            has_action = self.state.get("last_action") is not None
-            if turn > 1 or has_action:
-                self._tutorial._finish()
-
         # Update per-unit last-action annotation incrementally from
         # the polled state's last_action field. No get_history call
         # needed — we just track each new action as it appears on
