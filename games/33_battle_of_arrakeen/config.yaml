@@ -108,7 +108,7 @@ terrain_types:
     display_name: Arrakeen Palace
     move_cost: 1
     defense_bonus: 3
-    glyph: "P"
+    glyph: "+"
     color: bright_red
     description: |
       The seat of power on Arrakis. Once House Atreides' home,

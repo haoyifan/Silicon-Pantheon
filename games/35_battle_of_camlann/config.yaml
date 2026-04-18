@@ -103,7 +103,7 @@ terrain_types:
     display_name: Camelot Gate
     move_cost: 1
     defense_bonus: 3
-    glyph: "G"
+    glyph: "@"
     color: bright_cyan
     description: |
       The last gate of Camelot. Arthur's knights rally here,
@@ -112,7 +112,7 @@ terrain_types:
     display_name: "Mordred's Camp"
     move_cost: 1
     defense_bonus: 3
-    glyph: "M"
+    glyph: "!"
     color: bright_red
     description: |
       Mordred's war camp, flying the black banner of rebellion.
