@@ -82,7 +82,7 @@ def _extract_meta(path: Path) -> dict[str, Any]:
                 except json.JSONDecodeError:
                     continue
                 if raw.get("kind") == "match_start":
-                    data = raw.get("data") or {}
+                    data = raw.get("payload") or raw.get("data") or {}
                     meta["scenario"] = data.get("scenario") or "?"
                     break
     except Exception:
