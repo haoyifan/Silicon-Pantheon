@@ -90,15 +90,29 @@ PROVIDERS: list[ProviderSpec] = [
         keyring_service="silicon-pantheon-openai-codex",
         models=[
             ModelSpec(
-                "gpt-5-codex",
-                "GPT-5 Codex",
+                "o4-mini",
+                "o4-mini (reasoning)",
                 context_window=200_000,
                 cost_per_mtok_in=None,
                 cost_per_mtok_out=None,
             ),
             ModelSpec(
-                "gpt-5-codex-mini",
-                "GPT-5 Codex mini",
+                "gpt-4.1",
+                "GPT-4.1",
+                context_window=200_000,
+                cost_per_mtok_in=None,
+                cost_per_mtok_out=None,
+            ),
+            ModelSpec(
+                "gpt-4.1-mini",
+                "GPT-4.1 mini",
+                context_window=200_000,
+                cost_per_mtok_in=None,
+                cost_per_mtok_out=None,
+            ),
+            ModelSpec(
+                "gpt-4.1-nano",
+                "GPT-4.1 nano",
                 context_window=200_000,
                 cost_per_mtok_in=None,
                 cost_per_mtok_out=None,
