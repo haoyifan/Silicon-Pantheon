@@ -388,8 +388,8 @@ game_reasoning:
 
 # 游戏界面 — 教练面板
 game_coach:
-  key_hints_focused: "Enter 发送  Esc 清除  Tab 离开面板"
-  key_hints_unfocused: "输入消息   Enter 发送   Esc 清除   Tab 离开（清空时）"
+  key_hints_focused: "Enter 发送   Esc 清除"
+  key_hints_unfocused: "输入消息   Enter 发送   Esc 清除"
   tab_prompt: "（Tab 此处输入教练消息）"
   recent: "最近："
 

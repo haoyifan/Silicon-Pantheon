@@ -401,8 +401,8 @@ game_reasoning:
 
 # Game screen — coach panel
 game_coach:
-  key_hints_focused: "Enter send  Esc clear  Tab leave panel"
-  key_hints_unfocused: "type a message   Enter send   Esc clear   Tab leave (empty)"
+  key_hints_focused: "Enter send   Esc clear"
+  key_hints_unfocused: "type a message   Enter send   Esc clear"
   tab_prompt: "(Tab here to type a coach message)"
   recent: "recent:"
 
