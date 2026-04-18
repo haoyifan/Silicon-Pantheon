@@ -147,24 +147,24 @@ class PlayerPanel(Panel):
         max_turns = gs.get("max_turns") or (gs.get("rules") or {}).get("max_turns", "?")
         status = gs.get("status", "?")
         winner = gs.get("winner")
-        _lc = self.screen.app.state.locale
+        lc = self.screen.app.state.locale
 
         rows: list[RenderableType] = []
         rows.append(
             Text(
-                f"{t('status.you', _lc)}: {my_team}   {t('status.turn', _lc)} {turn}/{max_turns}",
+                f"{t('status.you', lc)}: {my_team}   {t('status.turn', lc)} {turn}/{max_turns}",
                 style="bold cyan" if my_team == "blue" else "bold red",
             )
         )
         my_turn = active == my_team
         rows.append(
             Text(
-                t("status.your_turn", _lc) if my_turn else t("status.opponent_turn", _lc),
+                t("status.your_turn", lc) if my_turn else t("status.opponent_turn", lc),
                 style="bold green" if my_turn else "dim",
             )
         )
         if status == "game_over":
-            line = Text(t("status.game_over", _lc), style="bold yellow")
+            line = Text(t("status.game_over", lc), style="bold yellow")
             if winner:
                 line.append(
                     f" — {winner}",
@@ -178,7 +178,7 @@ class PlayerPanel(Panel):
             )
             rows.append(
                 Text(
-                    t("status.agent_thinking", _lc) if busy else t("status.agent_idle", _lc),
+                    t("status.agent_thinking", lc) if busy else t("status.agent_idle", lc),
                     style="yellow" if busy else "dim",
                 )
             )
@@ -218,7 +218,7 @@ class PlayerPanel(Panel):
             rows.append(Text(f"{team}:", style=header_style))
             rows.append(
                 Text(
-                    f"  {t('game_player.unit_header', _lc):<14}  {t('game_player.hp_header', _lc):>7}  {t('game_player.status_header', _lc)}",
+                    f"  {t('game_player.unit_header', lc):<14}  {t('game_player.hp_header', lc):>7}  {t('game_player.status_header', lc)}",
                     style="bold dim",
                 )
             )
@@ -275,7 +275,7 @@ class PlayerPanel(Panel):
                         ("  ", None),
                         (f"{hp_str:>7}", "dim"),
                         ("  ", None),
-                        (t("unit_status.dead", _lc), "bold red"),
+                        (t("unit_status.dead", lc), "bold red"),
                     )
                     rows.append(row)
                 roster_idx += 1
@@ -592,10 +592,10 @@ class ReasoningPanel(Panel):
         if new_lines > 0 and self.line_offset > 0:
             self.line_offset += new_lines
         self._last_total_lines = total
-        _lc = self.screen.app.state.locale
+        lc = self.screen.app.state.locale
         if total == 0:
             return RichPanel(
-                Text(t("game_reasoning.no_reasoning", _lc), style="dim italic"),
+                Text(t("game_reasoning.no_reasoning", lc), style="dim italic"),
                 title=self.title,
                 border_style=border_style(focused),
                 padding=(0, 1),
@@ -631,12 +631,12 @@ class ReasoningPanel(Panel):
                 body.append("\n")
 
         if self.line_offset == 0:
-            title = f"{self.title} — {t('game_reasoning.live', _lc)} ({end}/{total})"
+            title = f"{self.title} — {t('game_reasoning.live', lc)} ({end}/{total})"
         else:
             hidden_below = total - end
             title = (
-                f"{self.title} — {t('game_reasoning.paused', _lc)}  ({t('game_reasoning.showing', _lc)} {end}/{total}"
-                + (f", {hidden_below} {t('game_reasoning.new_below', _lc)}"
+                f"{self.title} — {t('game_reasoning.paused', lc)}  ({t('game_reasoning.showing', lc)} {end}/{total}"
+                + (f", {hidden_below} {t('game_reasoning.new_below', lc)}"
                    if hidden_below > 0 else "")
                 + ")"
             )
@@ -722,7 +722,7 @@ class CoachPanel(Panel):
         return t("game_coach.key_hints_unfocused", self.screen.app.state.locale)
 
     def render(self, focused: bool) -> RenderableType:
-        _lc = self.screen.app.state.locale
+        lc = self.screen.app.state.locale
         rows: list[RenderableType] = []
         if focused:
             prompt = Text(no_wrap=False, overflow="fold")
@@ -731,18 +731,18 @@ class CoachPanel(Panel):
             prompt.append("▌", style="yellow")
             rows.append(prompt)
             rows.append(
-                Text(t("game_coach.key_hints_focused", _lc), style="dim")
+                Text(t("game_coach.key_hints_focused", lc), style="dim")
             )
         else:
             rows.append(
                 Text(
-                    t("game_coach.tab_prompt", _lc),
+                    t("game_coach.tab_prompt", lc),
                     style="dim italic",
                 )
             )
         if self.history:
             rows.append(Text(""))
-            rows.append(Text(t("game_coach.recent", _lc), style="dim"))
+            rows.append(Text(t("game_coach.recent", lc), style="dim"))
             for m in list(self.history)[-3:]:
                 rows.append(Text(f"  • {m}", style="dim"))
         return RichPanel(

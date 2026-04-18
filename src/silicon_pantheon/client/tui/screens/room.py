@@ -50,8 +50,8 @@ from silicon_pantheon.client.tui.scenario_display import (
 # Re-export for backward compatibility (external tools may import from here)
 __all__ = [
     "ART_FRAME_SECONDS", "ConfirmModal", "Dropdown", "UnitCard",
-    "describe_win_condition", "terrain_effect_summary", "unit_cell_style",
-    "unit_display_name", "strip_frontmatter",
+    "describe_win_condition", "other_team", "terrain_effect_summary",
+    "unit_cell_style", "unit_display_name", "strip_frontmatter",
 ]
 
 log = logging.getLogger("silicon.tui.room")
