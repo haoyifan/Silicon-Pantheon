@@ -121,7 +121,12 @@ class CodexAdapter:
         return self._client
 
     async def _post_responses(self, body: dict) -> dict:
-        """POST to the Responses endpoint with auto-refresh on 401."""
+        """POST to the Responses endpoint (streaming) with auto-refresh on 401.
+
+        The Codex API requires stream=true. We collect SSE events and
+        return the final 'response.completed' event's data, which has
+        the same shape as the old non-streaming JSON response.
+        """
         client = await self._ensure_client()
 
         for attempt in range(2):
@@ -129,11 +134,8 @@ class CodexAdapter:
             headers = {
                 "Authorization": f"Bearer {token}",
                 "Content-Type": "application/json",
-                "Accept": "application/json",
+                "Accept": "text/event-stream",
                 "User-Agent": USER_AGENT,
-                # The codex CLI sends these — see codex-rs/core/src/
-                # client.rs. The originator distinguishes us from
-                # browser sessions; the version is informational.
                 "Originator": "codex_cli_rs",
                 "Version": "0.0.0",
             }
@@ -149,13 +151,10 @@ class CodexAdapter:
                 raise classify(e) from e
 
             if resp.status_code == 401 and attempt == 0:
-                # Token might have rotated mid-flight, or the cached
-                # one was already past expiry. Force-refresh and retry.
                 log.info("Codex 401; forcing token refresh and retrying")
-                self._credentials = None  # drop cached creds → reload from disk
+                self._credentials = None
                 continue
             if resp.status_code != 200:
-                # Surface the body on errors so 4xx/5xx are diagnosable.
                 body_text = resp.text[:1000]
                 log.warning(
                     "Codex POST non-200: status=%d body=%s",
@@ -167,6 +166,12 @@ class CodexAdapter:
                 )
                 raise classify(err) from err
 
+            # Parse response. With stream=true the body is SSE events;
+            # collect the 'response.completed' event for the output.
+            content_type = resp.headers.get("content-type", "")
+            if "event-stream" in content_type or "text/" in content_type:
+                return self._parse_sse_body(resp.text)
+            # Non-streaming fallback (tests / future API changes).
             return resp.json()
 
         raise classify(RuntimeError("Codex POST failed after 401-retry"))
@@ -471,6 +476,32 @@ class CodexAdapter:
                     )
                 )
 
+    @staticmethod
+    def _parse_sse_body(text: str) -> dict:
+        """Extract the response from an SSE-formatted body."""
+        result: dict = {}
+        for line in text.split("\n"):
+            if not line.startswith("data: "):
+                continue
+            payload = line[6:].strip()
+            if payload == "[DONE]":
+                break
+            try:
+                event = json.loads(payload)
+            except json.JSONDecodeError:
+                continue
+            etype = event.get("type", "")
+            if etype == "response.completed":
+                result = event.get("response", event)
+            elif etype == "response.failed":
+                err_detail = (event.get("response", {})
+                              .get("error", {}).get("message", "unknown"))
+                raise RuntimeError(f"Codex response failed: {err_detail}")
+        if not result:
+            log.warning("Codex stream ended without response.completed")
+            result = {"output": []}
+        return result
+
     def _build_request_body(self, tools: list[dict]) -> dict:
         body: dict = {
             "model": self.model,
@@ -479,7 +510,7 @@ class CodexAdapter:
             "tool_choice": "auto",
             "parallel_tool_calls": True,
             "store": False,
-            "stream": False,
+            "stream": True,
             "reasoning": {"summary": "auto"},
         }
         # The Codex Responses API requires `instructions` (the system
@@ -549,7 +580,7 @@ class CodexAdapter:
                 user_to_input_item(prompt),
             ],
             "store": False,
-            "stream": False,
+            "stream": True,
         }
         try:
             data = await self._post_responses(body)

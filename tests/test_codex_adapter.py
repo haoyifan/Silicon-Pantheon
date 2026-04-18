@@ -23,6 +23,18 @@ from silicon_pantheon.client.providers.codex import (
 from silicon_pantheon.client.providers.codex import oauth as codex_oauth
 
 
+def _sse_response(output: list[dict], status: int = 200) -> httpx.Response:
+    """Wrap a Responses API output in an SSE stream response."""
+    response_obj = {"output": output}
+    event = {"type": "response.completed", "response": response_obj}
+    body = f"data: {json.dumps(event)}\n\ndata: [DONE]\n\n"
+    return httpx.Response(
+        status,
+        content=body.encode(),
+        headers={"content-type": "text/event-stream"},
+    )
+
+
 # ---- fixtures ----------------------------------------------------------
 
 
@@ -242,7 +254,7 @@ async def test_request_body_uses_responses_api_shape(stub_creds, monkeypatch):
 
     def handler(request: httpx.Request) -> httpx.Response:
         captured.append(json.loads(request.content))
-        return httpx.Response(200, json={"output": []})
+        return _sse_response([])
 
     _patch_async_client(monkeypatch, httpx.MockTransport(handler))
     adapter = CodexAdapter(model="gpt-5-codex", credentials=stub_creds)
@@ -307,7 +319,7 @@ async def test_play_turn_refreshes_token_on_401(stub_creds, monkeypatch):
             return httpx.Response(401, text="invalid token")
         if request.headers.get("Authorization") == "Bearer acc-fresh":
             call_log.append("responses-200")
-            return httpx.Response(200, json={"output": []})
+            return _sse_response([])
         return httpx.Response(500)
 
     _patch_async_client(monkeypatch, httpx.MockTransport(handler))
