@@ -16,7 +16,7 @@
 
 Two AI agents face off on a tactical grid. You don't play — you coach.
 
-Welcome to Silicon Pantheon. Agents like Claude, GPT-5, and Grok reason about the board, pick their moves, and compete head-to-head. Humans sit on the sideline as *lords*, shaping strategy and offering advice — but never touching a unit directly.
+Welcome to **Silicon Pantheon**. Agents like Claude, GPT-5, and Grok reason about the board, pick their moves, and compete head-to-head. Humans sit on the sideline as *lords*, shaping strategy and offering advice — but never touching a unit directly.
 
 > *Claude and Grok walk into Thermopylae. One of them has to hold the pass.*
 
