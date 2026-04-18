@@ -202,6 +202,7 @@ class TUIApp:
                             pass
         finally:
             _disable_bracketed_paste()
+            _restore_terminal()
         # Shut down the persistent agent session if one is still alive
         # (user quit mid-match, or skipped post-match).
         if self.state.agent is not None:
@@ -471,6 +472,30 @@ def _disable_bracketed_paste() -> None:
         pass
 
 
+def _restore_terminal() -> None:
+    """Restore terminal to cooked mode on exit.
+
+    We set cbreak once in _read_key_blocking and never restore it
+    during the app's lifetime. This function restores the saved
+    settings so the shell works normally after the TUI exits.
+    """
+    saved = getattr(_read_key_blocking, "_original_termios", None)
+    if saved is not None:
+        try:
+            import termios
+            fd = sys.stdin.fileno()
+            termios.tcsetattr(fd, termios.TCSADRAIN, saved)
+        except Exception:
+            pass
+    # Also re-show cursor and reset terminal.
+    try:
+        if sys.stdout.isatty():
+            sys.stdout.write("\033[?25h")  # show cursor
+            sys.stdout.flush()
+    except Exception:
+        pass
+
+
 def _read_key_blocking() -> str:
     """Blocking one-key read. Returns a normalized key token.
 
@@ -545,9 +570,11 @@ def _read_key_blocking() -> str:
     # Set cbreak once, not every call. tty.setcbreak uses TCSAFLUSH
     # by default which flushes the input buffer — if the IME sent
     # multiple characters and we only read the first, the second
-    # would be flushed on the next call.
+    # would be flushed on the next call. Save the original settings
+    # so we can restore on exit.
     if not getattr(_read_key_blocking, "_cbreak_set", False):
         try:
+            _read_key_blocking._original_termios = old  # type: ignore[attr-defined]
             tty.setcbreak(fd, termios.TCSANOW)  # TCSANOW = no flush
         except termios.error:
             return "q"
