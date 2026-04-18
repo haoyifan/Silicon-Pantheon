@@ -295,7 +295,7 @@ class PlayerPanel(Panel):
                             Text(f"    └ {action_desc}", style="dim italic")
                         )
                 else:
-                    marker = f"✗ {name[:12]}"
+                    marker = f"✗ {name}"
                     hp_str = f"0/{hp_max}"
                     prefix = "► " if (is_cursor or is_highlight) else "  "
                     prefix_style = "bold yellow" if is_cursor else (
@@ -303,7 +303,7 @@ class PlayerPanel(Panel):
                     )
                     row = Text.assemble(
                         (prefix, prefix_style),
-                        (f"{marker:<14}", "dim"),
+                        (_pad_right(_trunc(marker, 14), 14), "dim"),
                         ("  ", None),
                         (f"{hp_str:>7}", "dim"),
                         ("  ", None),
