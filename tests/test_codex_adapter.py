@@ -320,8 +320,11 @@ async def test_request_body_uses_responses_api_shape(stub_creds, monkeypatch):
         "parameters": {"type": "object",
                        "properties": {"x": {"type": "integer"}}},
     }]
-    # Reasoning summary is requested.
-    assert body["reasoning"] == {"summary": "auto"}
+    # Reasoning with high effort is requested.
+    assert body["reasoning"] == {"effort": "high", "summary": "auto"}
+    # Encrypted reasoning content must be included so the model
+    # can reference its own chain-of-thought across iterations.
+    assert body["include"] == ["reasoning.encrypted_content"]
     # parallel_tool_calls is True — selective Layer 2 is what enforces
     # the one-mutation rule while allowing batched reads. Pinning
     # explicitly so a future accidental flip to False doesn't silently

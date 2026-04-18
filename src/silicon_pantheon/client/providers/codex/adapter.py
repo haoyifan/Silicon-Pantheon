@@ -570,7 +570,15 @@ class CodexAdapter:
             "parallel_tool_calls": True,
             "store": False,
             "stream": True,
-            "reasoning": {"summary": "auto"},
+            # "effort": "high" allocates extended reasoning tokens.
+            # "summary": "auto" gives us a readable digest for the TUI.
+            # Without effort=high the model skips multi-step planning
+            # and defaults to single-unit-then-end-turn patterns.
+            "reasoning": {"effort": "high", "summary": "auto"},
+            # Required for the model to actually produce reasoning
+            # content (encrypted) that it can reference across turns.
+            # Without this, reasoning tokens aren't allocated.
+            "include": ["reasoning.encrypted_content"],
         }
         # The Codex Responses API requires `instructions` (the system
         # prompt) as a top-level field. Extract it from the first
