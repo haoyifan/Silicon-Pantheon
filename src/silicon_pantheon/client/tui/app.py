@@ -177,12 +177,7 @@ class TUIApp:
                 screen=True,
                 auto_refresh=False,
             ) as live:
-                # Pin the cursor off. Live hides it on start but some
-                # terminals briefly re-show between screen clears.
-                # Belt-and-suspenders: both Rich API and raw escape.
                 self.console.show_cursor(False)
-                sys.stdout.write("\033[?25l")
-                sys.stdout.flush()
                 self._live = live
                 tasks = [
                     asyncio.create_task(self._key_reader()),
@@ -272,10 +267,6 @@ class TUIApp:
         if self._live is not None and self._screen is not None:
             try:
                 self._live.update(self._render_with_overlay(), refresh=True)
-                # Re-hide cursor after every repaint. Some terminals
-                # briefly flash it between screen clears.
-                sys.stdout.write("\033[?25l")
-                sys.stdout.flush()
             except Exception as e:
                 _log.exception("render raised")
                 self.state.error_message = f"render error: {e}"
