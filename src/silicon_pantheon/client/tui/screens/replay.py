@@ -420,10 +420,18 @@ class ReplayScreen(Screen):
         return body
 
     async def handle_key(self, key: str) -> Screen | None:
-        # Unit card overlay — Esc/Enter/q close it.
+        # Unit card overlay — Esc/Enter/q close it. Left/right
+        # cycles between units (same as GameScreen).
         if self.unit_card is not None:
             if key in ("esc", "enter", "q"):
+                pos = self.unit_card.unit.get("pos") or {}
+                self.map_panel.cx = int(pos.get("x", self.map_panel.cx))
+                self.map_panel.cy = int(pos.get("y", self.map_panel.cy))
                 self.unit_card = None
+            elif key in ("left", "h"):
+                self.unit_card.navigate(-1)
+            elif key in ("right", "l"):
+                self.unit_card.navigate(1)
             return None
 
         # Tab between panels — always available.
