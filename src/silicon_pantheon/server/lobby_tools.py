@@ -533,6 +533,10 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         room, slot = app.rooms.create(config=config, host=conn.player)
         app.conn_to_room[connection_id] = (room.id, slot)
         conn.state = ConnectionState.IN_ROOM
+        # Track when this player joined for unready timeout.
+        import time as _time
+        from silicon_pantheon.server.heartbeat import HeartbeatState
+        app.heartbeat_state[connection_id] = HeartbeatState(joined_room_at=_time.time())
         return _ok({"room_id": room.id, "slot": slot.value})
 
     @mcp.tool()
@@ -555,7 +559,56 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         _, slot = result
         app.conn_to_room[connection_id] = (room_id, slot)
         conn.state = ConnectionState.IN_ROOM
+        import time as _time
+        from silicon_pantheon.server.heartbeat import HeartbeatState
+        app.heartbeat_state[connection_id] = HeartbeatState(joined_room_at=_time.time())
         return _ok({"room_id": room_id, "slot": slot.value})
+
+    @mcp.tool()
+    def kick_player(connection_id: str) -> dict:
+        """Host-only: kick the joiner (slot B) from the room.
+
+        Only works pre-game (WAITING_FOR_PLAYERS, WAITING_READY).
+        The kicked player's connection returns to IN_LOBBY.
+        Cannot be used during gameplay.
+        """
+        conn = app.get_connection(connection_id)
+        if conn is None or conn.state != ConnectionState.IN_ROOM:
+            return _error(
+                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                "kick_player requires state=in_room",
+            )
+        info = app.conn_to_room.get(connection_id)
+        if info is None:
+            return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
+        room_id, slot = info
+        if slot != Slot.A:
+            return _error(ErrorCode.BAD_INPUT, "only the host (slot A) can kick")
+        room = app.rooms.get(room_id)
+        if room is None:
+            return _error(ErrorCode.ROOM_NOT_FOUND, f"room {room_id} vanished")
+        from silicon_pantheon.server.rooms import RoomStatus
+        if room.status in (RoomStatus.IN_GAME, RoomStatus.FINISHED):
+            return _error(ErrorCode.BAD_INPUT, "cannot kick during gameplay")
+        # Find the joiner's connection.
+        joiner_cid = None
+        for cid, (rid, s) in app.conn_to_room.items():
+            if rid == room_id and s == Slot.B:
+                joiner_cid = cid
+                break
+        if joiner_cid is None:
+            return _error(ErrorCode.BAD_INPUT, "no player to kick (seat B is empty)")
+        # Remove joiner from room, cancel countdown, revert state.
+        _cancel_countdown(app, room_id)
+        app.rooms.leave(room_id, Slot.B)
+        app.conn_to_room.pop(joiner_cid, None)
+        joiner_conn = app.get_connection(joiner_cid)
+        if joiner_conn is not None:
+            joiner_conn.state = ConnectionState.IN_LOBBY
+        app.heartbeat_state.pop(joiner_cid, None)
+        room.recompute_status()
+        log.info("kick_player: host=%s kicked=%s room=%s", connection_id[:8], joiner_cid[:8] if joiner_cid else "?", room_id)
+        return _ok({"kicked": joiner_cid[:8] if joiner_cid else None})
 
     @mcp.tool()
     async def leave_room(connection_id: str) -> dict:

@@ -1,22 +1,22 @@
-"""Server-side heartbeat sweeper + disconnect state machine.
+"""Server-side heartbeat sweeper.
 
-Clients are expected to call the `heartbeat` tool every ~10s. This
-module runs a single asyncio task per App that checks every
-connection's last_heartbeat_at once a second and applies the
-disconnect rules from the Phase 1 design doc:
+Simple liveness model:
 
-  - 30s silent: connection → soft_disconnect
-  - in_room 30s soft: seat vacated; room reverts to waiting
-  - in_game 60s soft: opponent notified (log entry; no tool event yet)
-  - in_game 120s soft: disconnected player auto-concedes
+  1. **Heartbeat = alive.** As long as the client sends heartbeats
+     (every ~10s), the server treats it as alive regardless of state.
+     A human on PostMatchScreen for an hour? Fine. AFK during their
+     turn? The turn timer handles gameplay; the connection stays.
 
-Design priorities:
+  2. **No heartbeat = dead.** If heartbeats stop for HEARTBEAT_DEAD_S
+     (45s = ~4 missed beats), the client is presumed crashed / network
+     down. The server evicts: vacates room seat, concedes game.
 
-  - The sweeper is the *only* place these timers fire, so the logic
-    is auditable in one spot.
-  - State transitions are idempotent; running the sweeper twice in a
-    row on the same connection is a no-op.
-  - Cancelling the sweeper cleanly stops the task.
+  3. **Unready timeout.** If a player sits in a room without readying
+     for UNREADY_TIMEOUT_S (600s = 10 min), they're evicted back to
+     the lobby. Prevents a stale joiner from blocking the host.
+
+No soft-disconnect tiers, no game-activity tracking, no multi-stage
+state machine. One timer, two rules.
 """
 
 from __future__ import annotations
@@ -24,148 +24,95 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from silicon_pantheon.server.app import App
 from silicon_pantheon.shared.protocol import ConnectionState
 
 log = logging.getLogger(__name__)
 
-# Timer thresholds (seconds). Kept at module scope so tests can
-# monkeypatch smaller values.
-HEARTBEAT_GRACE_S = 30.0
-IN_ROOM_EVICT_S = 30.0
-IN_GAME_SOFT_NOTICE_S = 60.0
-IN_GAME_HARD_CONCEDE_S = 120.0
+# A client that misses ~4 heartbeats (10s interval) is dead.
+HEARTBEAT_DEAD_S = 45.0
+# A player in a room who hasn't readied up in 10 minutes gets evicted.
+UNREADY_TIMEOUT_S = 600.0
 
 SWEEP_INTERVAL_S = 1.0
 
 
 @dataclass
 class HeartbeatState:
-    """Per-connection bookkeeping for the sweeper."""
-
-    soft_disconnected_at: float | None = None
-    notified_opponent: bool = False
+    """Per-connection bookkeeping."""
+    joined_room_at: float = 0.0
 
 
 def _since_heartbeat(conn, now: float) -> float:  # noqa: ANN001
     return now - conn.last_heartbeat_at
 
 
-def _since_game_activity(conn, now: float) -> float:  # noqa: ANN001
-    return now - conn.last_game_activity_at
-
-
 def run_sweep_once(app: App, now: float | None = None) -> None:
-    """Single sweep pass — public entry point so tests can run it
-    deterministically without waiting on the asyncio loop."""
+    """Single sweep pass. Called once per second by the loop."""
     now = now if now is not None else time.time()
-    # Collect in a local list so we don't mutate connections while
-    # holding the app's connection lock.
     conn_ids = list(app._connections.keys())  # noqa: SLF001
     for cid in conn_ids:
         conn = app.get_connection(cid)
         if conn is None:
             continue
-        idle_heartbeat = _since_heartbeat(conn, now)
-        # For IN_GAME connections we prefer game-activity silence as
-        # the liveness signal (catches a crashed tick loop whose
-        # heartbeat task is still alive). BUT once the game is over
-        # (FINISHED), there won't be any more game activity — the
-        # client sits on PostMatchScreen reading the replay / waiting
-        # for lesson summary. In that case, fall back to heartbeat
-        # so the connection isn't evicted while the user is still
-        # connected.
-        if conn.state == ConnectionState.IN_GAME:
-            game_idle = _since_game_activity(conn, now)
-            # Check if the game is actually finished — if so, the
-            # heartbeat is the only liveness signal we have.
-            info = app.conn_to_room.get(cid)
-            room = app.rooms.get(info[0]) if info else None
-            from silicon_pantheon.server.rooms import RoomStatus
-            game_finished = (
-                room is not None and room.status == RoomStatus.FINISHED
-            )
-            idle = idle_heartbeat if game_finished else game_idle
-        else:
-            idle = idle_heartbeat
-        hb = app.heartbeat_state.setdefault(cid, HeartbeatState())
+        idle = _since_heartbeat(conn, now)
 
-        # Still alive: reset soft-disconnect bookkeeping.
-        if idle < HEARTBEAT_GRACE_S:
-            if hb.soft_disconnected_at is not None:
-                hb.soft_disconnected_at = None
-                hb.notified_opponent = False
+        # ---- Rule 1: no heartbeat = dead ----
+        if idle >= HEARTBEAT_DEAD_S:
+            log.info(
+                "heartbeat_dead: cid=%s state=%s idle=%.1fs — evicting",
+                cid, conn.state.value, idle,
+            )
+            if conn.state == ConnectionState.IN_GAME:
+                _auto_concede(app, cid)
+            elif conn.state == ConnectionState.IN_ROOM:
+                _vacate_room(app, cid)
+                app.drop_connection(cid)
+            else:
+                app.drop_connection(cid)
+            app.heartbeat_state.pop(cid, None)
             continue
 
-        # Entered soft-disconnect.
-        if hb.soft_disconnected_at is None:
-            hb.soft_disconnected_at = now
-            log.info(
-                "soft_disconnect: cid=%s state=%s "
-                "idle_heartbeat=%.1fs idle_game_activity=%.1fs",
-                cid, conn.state.value, idle_heartbeat,
-                _since_game_activity(conn, now),
-            )
-
-        soft_age = now - hb.soft_disconnected_at
-
-        if conn.state == ConnectionState.IN_LOBBY:
-            if soft_age >= HEARTBEAT_GRACE_S:
-                log.info("evicting anonymous/lobby conn cid=%s", cid)
-                app.drop_connection(cid)
-                app.heartbeat_state.pop(cid, None)
-
-        elif conn.state == ConnectionState.IN_ROOM:
-            if soft_age >= IN_ROOM_EVICT_S:
-                log.info("evicting in_room conn cid=%s", cid)
-                info = app.conn_to_room.pop(cid, None)
-                if info is not None:
-                    room_id, slot = info
-                    # Break any pending countdown, vacate the seat, keep
-                    # the room alive if the other seat is still occupied.
-                    from silicon_pantheon.server.lobby_tools import _cancel_countdown
-
-                    _cancel_countdown(app, room_id)
-                    app.rooms.leave(room_id, slot)
-                app.drop_connection(cid)
-                app.heartbeat_state.pop(cid, None)
-
-        elif conn.state == ConnectionState.IN_GAME:
-            if soft_age >= IN_GAME_HARD_CONCEDE_S:
-                log.warning(
-                    "hard_disconnect: auto-concede cid=%s "
-                    "soft_age=%.1fs idle_heartbeat=%.1fs "
-                    "idle_game_activity=%.1fs",
-                    cid, soft_age, idle_heartbeat,
-                    _since_game_activity(conn, now),
-                )
-                _auto_concede(app, cid)
-                app.heartbeat_state.pop(cid, None)
-            elif soft_age >= IN_GAME_SOFT_NOTICE_S and not hb.notified_opponent:
-                hb.notified_opponent = True
-                log.info(
-                    "in-game soft notice: cid=%s soft_age=%.1fs",
-                    cid, soft_age,
-                )
-                _notify_opponent_of_disconnect(app, cid)
+        # ---- Rule 2: unready timeout ----
+        if conn.state == ConnectionState.IN_ROOM:
+            info = app.conn_to_room.get(cid)
+            if info is not None:
+                room_id, slot = info
+                room = app.rooms.get(room_id)
+                if room is not None:
+                    seat = room.seats.get(slot)
+                    if seat is not None and not seat.ready:
+                        hb = app.heartbeat_state.get(cid)
+                        if hb and hb.joined_room_at > 0:
+                            waited = now - hb.joined_room_at
+                            if waited >= UNREADY_TIMEOUT_S:
+                                log.info(
+                                    "unready_timeout: cid=%s room=%s "
+                                    "waited=%.0fs — evicting",
+                                    cid, room_id, waited,
+                                )
+                                _vacate_room(app, cid)
+                                # Don't drop connection — send them
+                                # back to lobby state.
+                                conn.state = ConnectionState.IN_LOBBY
+                                app.heartbeat_state.pop(cid, None)
 
 
-def _notify_opponent_of_disconnect(app: App, cid: str) -> None:
-    """Log an opponent-disconnect event in the session's replay."""
-    info = app.conn_to_room.get(cid)
+def _vacate_room(app: App, cid: str) -> None:
+    """Remove a connection from its room seat."""
+    info = app.conn_to_room.pop(cid, None)
     if info is None:
         return
-    room_id, _slot = info
-    session = app.sessions.get(room_id)
-    if session is None:
-        return
-    session.log("disconnect_notice", {"connection_id": cid})
+    room_id, slot = info
+    from silicon_pantheon.server.lobby_tools import _cancel_countdown
+    _cancel_countdown(app, room_id)
+    app.rooms.leave(room_id, slot)
 
 
 def _auto_concede(app: App, cid: str) -> None:
-    """Mark the disconnecting player as losing the match."""
+    """Concede the game for a dead connection and drop it."""
     info = app.conn_to_room.get(cid)
     if info is None:
         app.drop_connection(cid)
@@ -178,18 +125,16 @@ def _auto_concede(app: App, cid: str) -> None:
         opponent = my_team.other() if my_team else None
         from silicon_pantheon.server.engine.state import GameStatus
 
-        session.state.status = GameStatus.GAME_OVER
-        session.state.winner = opponent
-        session.log(
-            "disconnect_forfeit",
-            {"by": my_team.value if my_team else None,
-             "winner": opponent.value if opponent else None},
-        )
-        # Reflect the game_over on the Room object so list_rooms hides
-        # the finished match and leave_room accepts.
-        from silicon_pantheon.server.game_tools import _note_game_over_if_needed
-
-        _note_game_over_if_needed(app, room_id)
+        if session.state.status != GameStatus.GAME_OVER:
+            session.state.status = GameStatus.GAME_OVER
+            session.state.winner = opponent
+            session.log(
+                "disconnect_forfeit",
+                {"by": my_team.value if my_team else None,
+                 "winner": opponent.value if opponent else None},
+            )
+            from silicon_pantheon.server.game_tools import _note_game_over_if_needed
+            _note_game_over_if_needed(app, room_id)
     app.drop_connection(cid)
 
 

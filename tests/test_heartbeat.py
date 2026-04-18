@@ -1,7 +1,8 @@
-"""Tests for the heartbeat sweeper + disconnect state machine.
+"""Tests for the simplified heartbeat sweeper.
 
-Calls `run_sweep_once(app, now=...)` directly so transitions are
-deterministic and don't require sleeping through real grace windows.
+The new model has two rules:
+  1. No heartbeat for HEARTBEAT_DEAD_S → evict (vacate room, concede game).
+  2. In room but not ready for UNREADY_TIMEOUT_S → evict to lobby.
 """
 
 from __future__ import annotations
@@ -12,10 +13,9 @@ from silicon_pantheon.server.app import App, Connection
 from silicon_pantheon.server.engine.scenarios import load_scenario
 from silicon_pantheon.server.engine.state import GameStatus, Team
 from silicon_pantheon.server.heartbeat import (
-    HEARTBEAT_GRACE_S,
-    IN_GAME_HARD_CONCEDE_S,
-    IN_GAME_SOFT_NOTICE_S,
-    IN_ROOM_EVICT_S,
+    HEARTBEAT_DEAD_S,
+    UNREADY_TIMEOUT_S,
+    HeartbeatState,
     run_sweep_once,
 )
 from silicon_pantheon.server.rooms import RoomConfig, Slot
@@ -24,34 +24,32 @@ from silicon_pantheon.shared.player_metadata import PlayerMetadata
 from silicon_pantheon.shared.protocol import ConnectionState
 
 
-def _seat(app: App, cid: str, team: str, state: ConnectionState) -> Connection:
+def _seat(app: App, cid: str, state: ConnectionState) -> Connection:
     conn = app.ensure_connection(cid)
     conn.player = PlayerMetadata(display_name=cid, kind="ai")
     conn.state = state
     return conn
 
 
-def test_fresh_connection_not_disconnected() -> None:
+def test_fresh_connection_not_evicted():
     app = App()
-    conn = _seat(app, "c1", "a", ConnectionState.IN_LOBBY)
+    conn = _seat(app, "c1", ConnectionState.IN_LOBBY)
     conn.last_heartbeat_at = time.time()
     run_sweep_once(app, now=time.time())
     assert app.get_connection("c1") is not None
 
 
-def test_in_lobby_evicted_after_grace() -> None:
-    """Two sweeps: first marks soft-disconnect, second evicts."""
+def test_dead_heartbeat_lobby_evicted():
+    """No heartbeat for HEARTBEAT_DEAD_S → connection dropped."""
     app = App()
     t0 = 1_000_000.0
-    conn = _seat(app, "c1", "a", ConnectionState.IN_LOBBY)
-    conn.last_heartbeat_at = t0 - (HEARTBEAT_GRACE_S + 1)
-    run_sweep_once(app, now=t0)  # → soft
-    assert app.get_connection("c1") is not None
-    run_sweep_once(app, now=t0 + HEARTBEAT_GRACE_S + 1)  # → evicted
+    conn = _seat(app, "c1", ConnectionState.IN_LOBBY)
+    conn.last_heartbeat_at = t0 - HEARTBEAT_DEAD_S - 1
+    run_sweep_once(app, now=t0)
     assert app.get_connection("c1") is None
 
 
-def test_in_room_soft_then_evict_vacates_seat() -> None:
+def test_dead_heartbeat_room_vacates_seat():
     app = App()
     t0 = 1_000_000.0
     host = PlayerMetadata(display_name="alice", kind="ai")
@@ -59,133 +57,109 @@ def test_in_room_soft_then_evict_vacates_seat() -> None:
         config=RoomConfig(scenario="01_tiny_skirmish"), host=host
     )
     cid = "c1"
-    conn = _seat(app, cid, "a", ConnectionState.IN_ROOM)
+    conn = _seat(app, cid, ConnectionState.IN_ROOM)
     app.conn_to_room[cid] = (room.id, slot)
-    conn.last_heartbeat_at = t0 - (HEARTBEAT_GRACE_S + 1)
-    run_sweep_once(app, now=t0)  # mark soft
-    assert app.get_connection(cid) is not None
-    run_sweep_once(app, now=t0 + IN_ROOM_EVICT_S + 1)  # evict
+    conn.last_heartbeat_at = t0 - HEARTBEAT_DEAD_S - 1
+    run_sweep_once(app, now=t0)
     assert app.get_connection(cid) is None
     assert cid not in app.conn_to_room
 
 
-def test_in_game_soft_notice_logs_then_hard_forfeit() -> None:
+def test_dead_heartbeat_game_concedes():
     app = App()
-    now = 1_000_000.0
+    t0 = 1_000_000.0
     host = PlayerMetadata(display_name="alice", kind="ai")
     room, slot_a = app.rooms.create(
         config=RoomConfig(scenario="01_tiny_skirmish"), host=host
     )
-    room2 = app.rooms.join(room.id, PlayerMetadata(display_name="bob", kind="ai"))
-    assert room2 is not None
+    app.rooms.join(room.id, PlayerMetadata(display_name="bob", kind="ai"))
 
-    # Spin up a session + slot→team mapping mimicking start_game_for_room.
     state = load_scenario("01_tiny_skirmish")
     session = new_session(state, scenario="01_tiny_skirmish")
     app.sessions[room.id] = session
     app.slot_to_team[room.id] = {Slot.A: Team.BLUE, Slot.B: Team.RED}
 
-    # Seat two connections.
-    blue_conn = _seat(app, "blue", "a", ConnectionState.IN_GAME)
+    blue_conn = _seat(app, "blue", ConnectionState.IN_GAME)
     app.conn_to_room["blue"] = (room.id, Slot.A)
-    red_conn = _seat(app, "red", "b", ConnectionState.IN_GAME)
+    red_conn = _seat(app, "red", ConnectionState.IN_GAME)
     app.conn_to_room["red"] = (room.id, Slot.B)
 
-    # T0: red goes silent just past grace. Sweep marks soft_disconnected_at.
-    # IN_GAME sweep uses last_game_activity_at (more informative than the
-    # bare heartbeat — see docstring on the field), so age both timers.
-    t0 = 1_000_000.0
-    red_conn.last_heartbeat_at = t0 - (HEARTBEAT_GRACE_S + 1)
-    red_conn.last_game_activity_at = t0 - (HEARTBEAT_GRACE_S + 1)
+    # Blue is alive, red is dead.
     blue_conn.last_heartbeat_at = t0
-    blue_conn.last_game_activity_at = t0
+    red_conn.last_heartbeat_at = t0 - HEARTBEAT_DEAD_S - 1
+
     run_sweep_once(app, now=t0)
-    assert app.get_connection("red") is not None
 
-    # T0 + soft-notice: sweep emits notice but does not yet forfeit.
-    t1 = t0 + IN_GAME_SOFT_NOTICE_S + 1
-    blue_conn.last_heartbeat_at = t1
-    blue_conn.last_game_activity_at = t1
-    run_sweep_once(app, now=t1)
-    assert session.state.status != GameStatus.GAME_OVER
-    assert app.get_connection("red") is not None
-
-    # T0 + hard-concede: sweep forfeits.
-    t2 = t0 + IN_GAME_HARD_CONCEDE_S + 1
-    blue_conn.last_heartbeat_at = t2
-    blue_conn.last_game_activity_at = t2
-    run_sweep_once(app, now=t2)
     assert session.state.status == GameStatus.GAME_OVER
     assert session.state.winner == Team.BLUE
     assert app.get_connection("red") is None
+    assert app.get_connection("blue") is not None
 
 
-def test_sweeper_idempotent_for_live_connection() -> None:
+def test_alive_heartbeat_in_game_not_evicted():
+    """Heartbeat is fresh → never evicted, even if game activity is stale."""
     app = App()
-    now = 1_000_000.0
-    conn = _seat(app, "c1", "a", ConnectionState.IN_LOBBY)
-    conn.last_heartbeat_at = now
-    run_sweep_once(app, now=now)
-    run_sweep_once(app, now=now + 0.5)
-    assert app.get_connection("c1") is not None
-
-
-def test_in_game_silent_with_alive_heartbeat_still_concedes() -> None:
-    """Regression for the production stuck-game case: a client whose
-    transport + heartbeat task are still alive but whose TUI tick
-    loop has died. The bare heartbeat lies about liveness; the IN_GAME
-    sweeper must use last_game_activity_at instead so the opponent
-    isn't left waiting forever on a wedged client."""
-    from silicon_pantheon.server.rooms import RoomStatus
-
-    app = App()
-    cfg = RoomConfig(scenario="01_tiny_skirmish")
+    t0 = 1_000_000.0
     host = PlayerMetadata(display_name="h", kind="human")
-    room, _slot = app.rooms.create(config=cfg, host=host)
+    room, _ = app.rooms.create(
+        config=RoomConfig(scenario="01_tiny_skirmish"), host=host
+    )
+    from silicon_pantheon.server.rooms import RoomStatus
     room.status = RoomStatus.IN_GAME
-    state = load_scenario(cfg.scenario)
+    state = load_scenario("01_tiny_skirmish")
     session = new_session(state)
     app.sessions[room.id] = session
     app.slot_to_team[room.id] = {Slot.A: Team.BLUE, Slot.B: Team.RED}
 
-    blue_conn = _seat(app, "blue", "a", ConnectionState.IN_GAME)
+    blue_conn = _seat(app, "blue", ConnectionState.IN_GAME)
     app.conn_to_room["blue"] = (room.id, Slot.A)
-    red_conn = _seat(app, "red", "b", ConnectionState.IN_GAME)
-    app.conn_to_room["red"] = (room.id, Slot.B)
 
-    # Red's HEARTBEAT keeps coming through (its background task is still
-    # alive), but the GAME LOOP is dead — last_game_activity_at hasn't
-    # advanced. Simulate by pinning game_activity to t0 while
-    # last_heartbeat_at stays current.
+    # Heartbeat keeps coming (client is alive), but no game activity
+    # for 5 minutes. The sweeper should NOT evict.
+    blue_conn.last_heartbeat_at = t0 + 300
+    run_sweep_once(app, now=t0 + 300)
+    assert app.get_connection("blue") is not None
+    assert session.state.status != GameStatus.GAME_OVER
+
+
+def test_unready_timeout_evicts_to_lobby():
+    """Player in room who doesn't ready up within timeout gets evicted."""
+    app = App()
     t0 = 1_000_000.0
-    red_conn.last_heartbeat_at = t0  # fresh — heartbeat task alive
-    red_conn.last_game_activity_at = t0  # baseline
-    blue_conn.last_heartbeat_at = t0
-    blue_conn.last_game_activity_at = t0
+    host = PlayerMetadata(display_name="alice", kind="ai")
+    room, slot = app.rooms.create(
+        config=RoomConfig(scenario="01_tiny_skirmish"), host=host
+    )
+    joiner = PlayerMetadata(display_name="bob", kind="ai")
+    app.rooms.join(room.id, joiner)
 
-    # Step 1: time advances past the heartbeat grace; red's game
-    # activity is stale, but its heartbeat task is still pinging.
-    # First sweep should mark soft_disconnect on red.
-    t1 = t0 + 60  # well past HEARTBEAT_GRACE_S (30)
-    red_conn.last_heartbeat_at = t1   # heartbeat ALIVE
-    # red_conn.last_game_activity_at intentionally NOT updated.
-    blue_conn.last_heartbeat_at = t1
-    blue_conn.last_game_activity_at = t1
+    cid = "joiner"
+    conn = _seat(app, cid, ConnectionState.IN_ROOM)
+    app.conn_to_room[cid] = (room.id, Slot.B)
+    conn.last_heartbeat_at = t0
+    app.heartbeat_state[cid] = HeartbeatState(joined_room_at=t0)
+    room.seats[Slot.B].ready = False
+
+    # Before timeout: heartbeat is fresh, still there.
+    t1 = t0 + UNREADY_TIMEOUT_S - 1
+    conn.last_heartbeat_at = t1
     run_sweep_once(app, now=t1)
-    assert session.state.status != GameStatus.GAME_OVER, \
-        "shouldn't forfeit yet — only just hit soft_disconnect"
-    # If the IN_GAME sweep were still using last_heartbeat_at, no
-    # soft_disconnect would have fired. Verify it did.
-    hb_state = app.heartbeat_state.get("red")
-    assert hb_state is not None and hb_state.soft_disconnected_at is not None, \
-        "IN_GAME sweep didn't notice red's silent game loop — heartbeat lied"
+    assert app.get_connection(cid) is not None
 
-    # Step 2: advance to past hard-concede.
-    t2 = t1 + IN_GAME_HARD_CONCEDE_S + 1
-    red_conn.last_heartbeat_at = t2  # heartbeat STILL alive
-    blue_conn.last_heartbeat_at = t2
-    blue_conn.last_game_activity_at = t2
+    # After timeout: heartbeat fresh but unready too long → evicted to lobby.
+    t2 = t0 + UNREADY_TIMEOUT_S + 1
+    conn.last_heartbeat_at = t2
     run_sweep_once(app, now=t2)
+    assert app.get_connection(cid) is not None  # still alive
+    assert conn.state == ConnectionState.IN_LOBBY  # back to lobby
+    assert cid not in app.conn_to_room
 
-    assert session.state.status == GameStatus.GAME_OVER
-    assert session.state.winner == Team.BLUE
+
+def test_sweeper_idempotent_for_live_connection():
+    app = App()
+    now = 1_000_000.0
+    conn = _seat(app, "c1", ConnectionState.IN_LOBBY)
+    conn.last_heartbeat_at = now
+    run_sweep_once(app, now=now)
+    run_sweep_once(app, now=now + 0.5)
+    assert app.get_connection("c1") is not None

@@ -479,6 +479,16 @@ class ActionsPanel(Panel):
                     ),
                 ]
             )
+            # Kick button: host can kick the joiner pre-game.
+            seats = rs.get("seats", {})
+            joiner_occupied = seats.get("b", {}).get("occupied", False)
+            buttons.append(
+                Button(
+                    label=t("room_buttons.kick", lc),
+                    action="kick_player",
+                    enabled=editable and joiner_occupied,
+                ),
+            )
         buttons.extend(
             [
                 Button(label=t("room_buttons.leave", lc), action="leave"),
@@ -960,6 +970,9 @@ class RoomScreen(Screen):
         if action == "change_lessons":
             self._open_lessons_modal()
             return None
+        if action == "kick_player":
+            await self._kick_player()
+            return None
         return None
 
     # ---- modal openers ----
@@ -1085,6 +1098,22 @@ class RoomScreen(Screen):
             option_descriptions=descriptions,
             locale=self.app.state.locale,
         )
+
+    async def _kick_player(self) -> None:
+        if self.app.client is None:
+            return
+        try:
+            r = await self.app.client.call("kick_player")
+        except Exception as e:
+            self.app.state.error_message = f"kick failed: {e}"
+            return
+        if not r.get("ok"):
+            self.app.state.error_message = (r.get("error") or {}).get(
+                "message", "kick rejected"
+            )
+            return
+        self.app.state.error_message = ""
+        await self._refresh_state()
 
     def _open_leave_confirm(self) -> None:
         async def _on_confirm(yes: bool) -> None:
@@ -1289,6 +1318,13 @@ class RoomScreen(Screen):
                 "refresh_state: get_room_state rejected cid=%s err=%s",
                 cid, err_msg,
             )
+            # If we got kicked or the room vanished, go back to lobby.
+            if "not_in_room" in err_msg or "not seated" in err_msg or "in_lobby" in err_msg:
+                log.info("refresh_state: kicked or room gone — returning to lobby")
+                self.app.state.room_id = None
+                self.app.state.slot = None
+                from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
+                return LobbyScreen(self.app)
             self.app.state.error_message = err_msg
             return None
         self.app.state.error_message = ""

@@ -162,6 +162,7 @@ room_buttons:
   change_teams: "更换队伍模式"
   change_host_team: "更换主队"
   turn_time: "回合时间限制"
+  kick: "踢出玩家"
   leave: "离开房间"
   quit_game: "退出"
   pick_strategy: "选择策略（仅限你方）"

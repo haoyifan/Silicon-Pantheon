@@ -164,6 +164,7 @@ room_buttons:
   change_teams: "Change Team Mode"
   change_host_team: "Change Host Team"
   turn_time: "Turn Time Limit"
+  kick: "Kick Player"
   leave: "Leave Room"
   quit_game: "Quit"
   pick_strategy: "Pick Strategy (your side only)"
