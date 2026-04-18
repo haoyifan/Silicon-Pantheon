@@ -127,20 +127,40 @@ class LobbyScreen(Screen):
         if not r.get("ok"):
             err_msg = (r.get("error") or {}).get("message", "list_rooms rejected")
             self.app.state.error_message = err_msg
-            # Diagnostic: if the server says "set_player_metadata first",
-            # the connection was dropped/re-established and lost its
-            # metadata. Log the connection_id so we can correlate with
-            # server logs.
+            # If the server says "set_player_metadata first", the
+            # connection's metadata was lost (heartbeat sweeper evicted
+            # the session while the client sat on post-match). Auto-
+            # recover by re-sending metadata and retrying.
             if "set_player_metadata" in err_msg:
                 import logging as _logging
-                _logging.getLogger("silicon.tui.lobby").warning(
+                _log = _logging.getLogger("silicon.tui.lobby")
+                _log.warning(
                     "lobby rejected with 'set_player_metadata first' — "
-                    "connection likely dropped by server heartbeat "
-                    "sweeper while on post-match screen. cid=%s. "
-                    "User needs to restart the client or the lobby "
-                    "needs to re-call set_player_metadata.",
+                    "re-sending metadata to recover. cid=%s",
                     self.app.client.connection_id if self.app.client else "?",
                 )
+                try:
+                    from silicon_pantheon.shared.protocol import PROTOCOL_VERSION
+                    rr = await self.app.client.call(
+                        "set_player_metadata",
+                        display_name=self.app.state.display_name,
+                        kind=self.app.state.kind,
+                        provider=self.app.state.provider,
+                        model=self.app.state.model,
+                        client_protocol_version=PROTOCOL_VERSION,
+                    )
+                    if rr.get("ok"):
+                        _log.info("metadata re-sent successfully — retrying list_rooms")
+                        self.app.state.error_message = ""
+                        # Retry the original call.
+                        r2 = await self.app.client.call("list_rooms")
+                        if r2.get("ok"):
+                            self.app.state.last_rooms = r2.get("rooms", [])
+                            if self._selected >= len(self.app.state.last_rooms):
+                                self._selected = max(0, len(self.app.state.last_rooms) - 1)
+                            return
+                except Exception as e2:
+                    _log.exception("metadata re-send failed: %s", e2)
             return
         self.app.state.error_message = ""
         self.app.state.last_rooms = r.get("rooms", [])
