@@ -28,7 +28,7 @@ import json
 import sys
 from pathlib import Path
 
-from rich.console import Console, Group
+from rich.console import Console, Group, RenderableType
 from rich.panel import Panel
 from rich.text import Text
 
@@ -149,10 +149,12 @@ def _action_detail(payload: dict) -> str:
 # ---- rendering ----
 
 
-def _frame(state: GameState, ev: ReplayEvent | None, step: int, total: int) -> Group:
+def _frame(state: GameState, ev: ReplayEvent | None, step: int, total: int) -> RenderableType:
+    from rich.layout import Layout
+
     header = render_header(state)
     board = Panel(render_board(state), title="Board", border_style="dim")
-    units = render_units_table(state)
+    units = Panel(render_units_table(state), title="Units", border_style="dim")
     if ev is None:
         step_panel = Panel(
             Text("(press Enter to begin)", style="dim italic"),
@@ -165,7 +167,25 @@ def _frame(state: GameState, ev: ReplayEvent | None, step: int, total: int) -> G
             title=f"Step {step}/{total}",
             border_style="bright_black",
         )
-    return Group(header, board, units, step_panel)
+    # Fixed layout: header (1 line), body (map left + units right),
+    # step panel at the bottom. Nothing gets pushed off screen.
+    root = Layout()
+    root.split_column(
+        Layout(name="hdr", size=1),
+        Layout(name="body"),
+        Layout(name="step", size=6),
+    )
+    root["hdr"].update(header)
+    body = Layout()
+    body.split_row(
+        Layout(name="map", ratio=2),
+        Layout(name="units", ratio=1),
+    )
+    body["map"].update(board)
+    body["units"].update(units)
+    root["body"].update(body)
+    root["step"].update(step_panel)
+    return root
 
 
 # ---- main loop ----
