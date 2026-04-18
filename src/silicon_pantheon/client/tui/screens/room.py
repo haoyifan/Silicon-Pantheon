@@ -1044,7 +1044,8 @@ class RoomScreen(Screen):
         from silicon_pantheon.lessons import LessonStore
 
         scenario = (self.app.state.last_room_state or {}).get("scenario") or ""
-        store = LessonStore(_Path("lessons"))
+        _project_root = _Path(__file__).resolve().parents[4]
+        store = LessonStore(_project_root / "lessons")
         all_lessons = store.list_for_scenario(scenario) if scenario else []
 
         options = [t("button_val.none", self.app.state.locale)]

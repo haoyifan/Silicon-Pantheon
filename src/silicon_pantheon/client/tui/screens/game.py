@@ -954,10 +954,13 @@ class GameScreen(Screen):
                 _asyncio.create_task(_push())
 
         # lessons_dir controls saving post-match summaries. Selected
-        # lessons for prompt injection are passed separately.
+        # lessons for prompt injection are passed separately. Use the
+        # project-root-relative path so lessons land in the right place
+        # regardless of CWD.
         from pathlib import Path as _Path
 
-        lessons_dir = _Path("lessons") if app.state.save_lessons else None
+        _project_root = _Path(__file__).resolve().parents[4]
+        lessons_dir = (_project_root / "lessons") if app.state.save_lessons else None
         # Per-turn agent time budget = room's turn_time_limit_s when
         # the host set it, otherwise the adapter's default (180s). The
         # host configures this in the room-setup Actions panel.

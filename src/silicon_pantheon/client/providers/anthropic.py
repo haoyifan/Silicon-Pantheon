@@ -82,6 +82,10 @@ class AnthropicAdapter:
         self._sdk_client: ClaudeSDKClient | None = None
         self._system_prompt: str | None = None
         self._turn_count = 0
+        # Telemetry for post-game stats.
+        self.total_tokens: int = 0
+        self.total_tool_calls: int = 0
+        self.total_errors: int = 0
 
     async def _ensure_session(
         self,
@@ -117,11 +121,15 @@ class AnthropicAdapter:
     def _wrap_tool(self, spec: ToolSpec, dispatcher: ToolDispatcher):
         """Build one Claude-SDK-decorated tool that calls our dispatcher."""
 
+        adapter = self
+
         @tool(spec.name, spec.description, spec.input_schema)
         async def _handler(args: dict) -> dict:
+            adapter.total_tool_calls += 1
             try:
                 result = await dispatcher(spec.name, args or {})
             except Exception as e:
+                adapter.total_errors += 1
                 return {
                     "content": [
                         {"type": "text", "text": json.dumps({"error": str(e)})}
@@ -166,6 +174,12 @@ class AnthropicAdapter:
                                 await on_thought(block.text)
                             except Exception:
                                 pass
+                # Try to extract token usage from the message.
+                usage = getattr(msg, "usage", None)
+                if usage is not None:
+                    self.total_tokens += getattr(usage, "total_tokens", 0) or (
+                        getattr(usage, "input_tokens", 0) + getattr(usage, "output_tokens", 0)
+                    )
                 if isinstance(msg, ResultMessage):
                     break
         except Exception as e:

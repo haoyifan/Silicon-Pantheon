@@ -407,7 +407,7 @@ class NetworkedAgent:
         model: str,
         scenario: str,
         strategy: str | None = None,
-        lessons_dir: Path | None = Path("lessons"),
+        lessons_dir: Path | None = None,
         selected_lessons: list[Path] | None = None,
         thoughts_callback: ThoughtCallback | None = None,
         time_budget_s: float = 1800.0,
@@ -511,7 +511,8 @@ class NetworkedAgent:
             # User explicitly selected specific lessons from the picker.
             if not self._selected_lessons:
                 return []
-            store = LessonStore(self.lessons_dir or Path("lessons"))
+            _fallback = Path(__file__).resolve().parents[3] / "lessons"
+            store = LessonStore(self.lessons_dir or _fallback)
             lessons = []
             for p in self._selected_lessons:
                 try:
