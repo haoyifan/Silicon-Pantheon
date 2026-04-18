@@ -441,18 +441,21 @@ class ReplayScreen(Screen):
         total = len(self._timeline)
 
         # Skip to next/prev action (always global).
-        if key == "s":
-            next_step = self._step + 1
-            while next_step <= total and self._timeline[next_step - 1].kind != "action":
-                next_step += 1
-            self._step = min(next_step, total)
-            self._apply_step()
-            return None
+        # Check backward FIRST — "S" and "a" go backward, "s" goes
+        # forward. Checking "s" first would never catch "S" (case-
+        # sensitive), but being explicit about order is clearer.
         if key in ("S", "a"):
             prev_step = self._step - 1
             while prev_step > 0 and self._timeline[prev_step - 1].kind != "action":
                 prev_step -= 1
             self._step = max(prev_step, 0)
+            self._apply_step()
+            return None
+        if key == "s":
+            next_step = self._step + 1
+            while next_step <= total and self._timeline[next_step - 1].kind != "action":
+                next_step += 1
+            self._step = min(next_step, total)
             self._apply_step()
             return None
 

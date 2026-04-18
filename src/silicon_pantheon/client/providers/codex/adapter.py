@@ -110,6 +110,10 @@ class CodexAdapter:
         # prompt again. We snapshot len(_input) before appending so
         # a retry can roll back.
         self._pre_turn_input_len: int = 0
+        # Tracks whether end_turn was called in the current play_turn
+        # loop. Used by the text-only-response nudge to decide whether
+        # to exit or re-prompt.
+        self._end_turn_called: bool = False
 
     # ---- transport ------------------------------------------------------
 
@@ -358,6 +362,7 @@ class CodexAdapter:
         self._pre_turn_input_len = len(self._input)
         self._input.append(user_to_input_item(user_prompt))
         self._corrections_this_turn = 0
+        self._end_turn_called = False
 
         responses_tools = [to_responses_tool(s) for s in tools]
         start = time.time()
@@ -420,13 +425,51 @@ class CodexAdapter:
                         except Exception:
                             pass
 
-            # No tool calls → loop ends.
+            # No tool calls → the model emitted text/reasoning only.
             if not parsed["tool_calls"]:
+                # If end_turn was already called, exit cleanly.
+                if self._end_turn_called:
+                    log.info(
+                        "loop exit: no tool_calls, end_turn done (iter=%d)",
+                        _iter,
+                    )
+                    break
+                # Only nudge if the model has already called at least
+                # one tool this turn (it's mid-game and forgot to keep
+                # going). If iter==0 and no tool_calls, the model chose
+                # to produce text only — don't fight that (could be a
+                # summarize_match or a response to a no-tools call).
+                has_end_turn_tool = any(s.name == "end_turn" for s in tools)
+                if not has_end_turn_tool or _iter == 0:
+                    log.info(
+                        "loop exit: no tool_calls (iter=%d, has_end_turn=%s)",
+                        _iter, has_end_turn_tool,
+                    )
+                    break
+                # Nudge: tell the model to keep issuing tool calls.
+                # gpt-5.4 with reasoning-high tends to emit one action
+                # + a planning text and then stop, expecting re-prompting.
+                self._corrections_this_turn += 1
+                if self._corrections_this_turn > 8:
+                    log.warning(
+                        "loop exit: %d text-only responses without "
+                        "end_turn (iter=%d) — giving up",
+                        self._corrections_this_turn, _iter,
+                    )
+                    break
                 log.info(
-                    "loop exit: no tool_calls (iter=%d, content_len=%d)",
-                    _iter, sum(len(t) for t in parsed["text"]),
+                    "codex nudge: text-only response without end_turn "
+                    "(iter=%d, corrections=%d) — re-prompting",
+                    _iter, self._corrections_this_turn,
                 )
-                break
+                self._input.append(user_to_input_item(
+                    "You produced text but did NOT call any tool. "
+                    "You MUST continue issuing tool calls (move, attack, "
+                    "heal, wait, get_state, get_legal_actions, etc.) "
+                    "until ALL your units have acted, then call end_turn. "
+                    "Do NOT output text — call a tool now."
+                ))
+                continue
 
             # Selective Layer 2: one MUTATION per response, unlimited
             # READS. Walk function_calls in order — reads always run,
@@ -459,6 +502,8 @@ class CodexAdapter:
                     args = json.loads(tc.get("arguments") or "{}")
                 except json.JSONDecodeError:
                     args = {}
+                if tc["name"] == "end_turn":
+                    self._end_turn_called = True
                 try:
                     result = await tool_dispatcher(tc["name"], args)
                     result_text = json.dumps(result, default=str)

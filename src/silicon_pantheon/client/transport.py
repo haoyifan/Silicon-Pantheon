@@ -44,6 +44,12 @@ class ServerClient:
         self._session = session
         self.connection_id = connection_id
         self._heartbeat_task: asyncio.Task | None = None
+        # Serialize all call_tool requests on this session. The MCP
+        # SDK demuxes SSE responses by JSON-RPC ID — concurrent
+        # requests cause responses to get lost/misrouted and one or
+        # more call_tool futures hang forever. Even 2 concurrent
+        # calls (TUI poll + agent tool) can trigger this.
+        self._call_lock = asyncio.Lock()
 
     @classmethod
     @asynccontextmanager
@@ -91,44 +97,29 @@ class ServerClient:
             tool_name, self.connection_id, sess_id, ws_id, ws_closed, rs_id,
             {k: v for k, v in kwargs.items()},
         )
-        import asyncio as _aio
         import time as _time
         _t0 = _time.monotonic()
 
-        # Watchdog: log a warning if call_tool is still pending after
-        # 15s. Doesn't cancel anything — just makes stalls visible in
-        # the log so we can diagnose SSE transport hangs.
-        async def _watchdog() -> None:
-            await _aio.sleep(15.0)
-            elapsed = _time.monotonic() - _t0
-            log.warning(
-                "call HUNG %s cid=%s pending=%.0fs — "
-                "session.call_tool has not returned. SSE stream may "
-                "have stalled. sess=%s ws_closed=%s",
-                tool_name, self.connection_id, elapsed,
-                id(self._session),
-                getattr(getattr(self._session, "_write_stream", None), "_closed", "?"),
-            )
-        _wd = _aio.create_task(_watchdog())
-
-        try:
-            result = await self._session.call_tool(tool_name, args)
-        except Exception as e:
-            ws2 = getattr(self._session, "_write_stream", None)
-            rs2 = getattr(self._session, "_read_stream", None)
-            log.error(
-                "call !! %s cid=%s exc_type=%s exc=%r dt=%.1fs "
-                "sess_now=%s ws_now=%s ws_closed_now=%s rs_now=%s",
-                tool_name, self.connection_id, type(e).__name__, e,
-                _time.monotonic() - _t0,
-                id(self._session),
-                id(ws2) if ws2 is not None else None,
-                getattr(ws2, "_closed", "?") if ws2 is not None else "?",
-                id(rs2) if rs2 is not None else None,
-            )
-            raise
-        finally:
-            _wd.cancel()
+        # Acquire the call lock to ensure only one call_tool is in
+        # flight at a time. The MCP SDK's SSE response demuxer loses
+        # responses under concurrent requests, causing permanent hangs.
+        async with self._call_lock:
+            try:
+                result = await self._session.call_tool(tool_name, args)
+            except Exception as e:
+                ws2 = getattr(self._session, "_write_stream", None)
+                rs2 = getattr(self._session, "_read_stream", None)
+                log.error(
+                    "call !! %s cid=%s exc_type=%s exc=%r dt=%.1fs "
+                    "sess_now=%s ws_now=%s ws_closed_now=%s rs_now=%s",
+                    tool_name, self.connection_id, type(e).__name__, e,
+                    _time.monotonic() - _t0,
+                    id(self._session),
+                    id(ws2) if ws2 is not None else None,
+                    getattr(ws2, "_closed", "?") if ws2 is not None else "?",
+                    id(rs2) if rs2 is not None else None,
+                )
+                raise
         _dt = _time.monotonic() - _t0
         if _dt > 5.0:
             log.warning(
