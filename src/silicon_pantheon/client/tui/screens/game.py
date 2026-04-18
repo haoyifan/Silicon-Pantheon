@@ -1299,16 +1299,27 @@ class GameScreen(Screen):
         # every 1s poll. Only meaningful actions (move / attack /
         # heal) are cached; "wait" and "end_turn" are not informational.
         #
-        # Clear the cache when a new turn starts (active_player
-        # flipped). Units are back to READY — showing stale actions
-        # from the previous turn is confusing ("it says moved but
-        # the unit is in ready state").
+        # On end_turn, only clear annotations for the team whose turn
+        # is STARTING (their units are back to READY). Keep the other
+        # team's annotations — the player wants to see what the
+        # opponent did while deciding their own moves.
         la = self.state.get("last_action")
         if la is not None and la.get("type") == "end_turn":
-            # end_turn = turn boundary. Clear all annotations so the
-            # new turn starts clean.
             if la is not self._last_action_seen:
-                self.unit_last_actions.clear()
+                # The NEW active team's units are back to READY, so
+                # clear their stale annotations. Keep the other team's
+                # annotations so the player can review what happened.
+                new_active = self.state.get("active_player")
+                if new_active:
+                    # Build a set of unit IDs owned by the new active
+                    # team from the current state (authoritative).
+                    active_uids = {
+                        u.get("id") for u in (self.state.get("units") or [])
+                        if u.get("owner") == new_active
+                    }
+                    for uid in list(self.unit_last_actions):
+                        if uid in active_uids:
+                            del self.unit_last_actions[uid]
         if la is not None and la is not self._last_action_seen:
             self._last_action_seen = la
             uid = la.get("unit_id") or la.get("healer_id")
