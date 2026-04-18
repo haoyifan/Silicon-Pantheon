@@ -256,7 +256,7 @@ unit_classes:
     move: 4
     rng_min: 2
     rng_max: 3
-    glyph: "U"
+    glyph: "Z"
     color: bright_red
 
   uruk_hai:
