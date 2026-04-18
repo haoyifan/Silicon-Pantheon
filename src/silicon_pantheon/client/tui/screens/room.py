@@ -217,7 +217,8 @@ class DescriptionPanel(Panel):
                     f"{n}×{_label(c)}" if n > 1 else _label(c)
                     for c, n in cls_counts.items()
                 )
-                rows.append(Text(f"  {owner}: {summary}", style=team_color))
+                from silicon_pantheon.client.tui.scenario_display import localized_team
+                rows.append(Text(f"  {localized_team(owner, self.app.state.locale)}: {summary}", style=team_color))
         # Per-class details: display name + one-line description from
         # the scenario bundle. Only include classes that are actually
         # in play (cuts noise for scenarios that ship a big roster

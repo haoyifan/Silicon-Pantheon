@@ -555,6 +555,11 @@ difficulty:
   "4": "Hard"
   "5": "Expert"
 
+# Team display names
+team:
+  blue: "Blue"
+  red: "Red"
+
 # Error messages
 errors:
   not_connected: "not connected"

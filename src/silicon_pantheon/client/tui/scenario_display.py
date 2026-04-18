@@ -14,6 +14,11 @@ from typing import Any
 from silicon_pantheon.client.locale import t
 
 
+def localized_team(team: str, locale: str = "en") -> str:
+    """Translate raw team name ('blue'/'red') to display name."""
+    return t(f"team.{team}", locale)
+
+
 def unit_cell_style(u: dict[str, Any]) -> tuple[str, str]:
     """Pick the (glyph, Rich style) for a unit cell on any map view.
 
@@ -176,22 +181,22 @@ def describe_win_condition(
         loser = wc.get("owning_team", "?")
         winner = other_team(loser)
         return (t("win.protect_unit", locale)
-                .replace("{winner}", winner.capitalize())
+                .replace("{winner}", localized_team(winner, locale))
                 .replace("{name}", name)
-                .replace("{loser}", loser))
+                .replace("{loser}", localized_team(loser, locale)))
     if wc_type == "protect_unit_survives":
         name = humanize_unit_id(wc.get("unit_id", ""), scenario_description)
         protector = wc.get("owning_team", "?")
         return (t("win.protect_unit_survives", locale)
-                .replace("{protector}", protector.capitalize())
+                .replace("{protector}", localized_team(protector, locale))
                 .replace("{name}", name))
     if wc_type == "reach_tile":
         pos = wc.get("pos") or {}
         team = wc.get("team", "?")
         u = wc.get("unit_id")
-        who = humanize_unit_id(u, scenario_description) if u else t("button_val.any_unit", locale).replace("{team}", team)
+        who = humanize_unit_id(u, scenario_description) if u else t("button_val.any_unit", locale).replace("{team}", localized_team(team, locale))
         return (t("win.reach_tile", locale)
-                .replace("{team}", team.capitalize())
+                .replace("{team}", localized_team(team, locale))
                 .replace("{who}", who)
                 .replace("{x}", str(pos.get("x", "?")))
                 .replace("{y}", str(pos.get("y", "?"))))
@@ -200,14 +205,14 @@ def describe_win_condition(
         n = wc.get("consecutive_turns", "?")
         team = wc.get("team", "?")
         return (t("win.hold_tile", locale)
-                .replace("{team}", team.capitalize())
+                .replace("{team}", localized_team(team, locale))
                 .replace("{x}", str(pos.get("x", "?")))
                 .replace("{y}", str(pos.get("y", "?")))
                 .replace("{n}", str(n)))
     if wc_type == "reach_goal_line":
         team = wc.get("team", "?")
         return (t("win.reach_goal_line", locale)
-                .replace("{team}", team.capitalize())
+                .replace("{team}", localized_team(team, locale))
                 .replace("{axis}", str(wc.get("axis", "?")))
                 .replace("{value}", str(wc.get("value", "?"))))
     if wc_type == "plugin":

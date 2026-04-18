@@ -351,7 +351,8 @@ class ScenarioPicker:
                 for c, n in cls_counts.items()
             )
             color = "cyan" if owner == "blue" else "red"
-            rows.append(Text(f"  {owner}: {summary}", style=color))
+            from silicon_pantheon.client.tui.scenario_display import localized_team
+            rows.append(Text(f"  {localized_team(owner, self.locale)}: {summary}", style=color))
         # Per-class descriptions for classes that are actually fielded.
         # Color each name by the team(s) that field it so the preview
         # reads like a team roster, not a neutral yellow dump.
