@@ -94,7 +94,21 @@ class Dropdown:
             )
         body_parts.append(Text(""))
         body_parts.append(footer)
-        return Align.center(
+        # The dropdown renders as a full-screen Layout so the panel
+        # never grows past the terminal height. Rich clips overflow
+        # inside the layout slot, and the description scroll handles
+        # content that doesn't fit.
+        from rich.layout import Layout
+
+        root = Layout()
+        root.split_column(
+            Layout(name="pad_top", size=2),
+            Layout(name="content"),
+            Layout(name="pad_bot", size=1),
+        )
+        root["pad_top"].update(Text(""))
+        root["pad_bot"].update(Text(""))
+        inner = Align.center(
             RichPanel(
                 Group(*body_parts),
                 title=self.title,
@@ -102,8 +116,9 @@ class Dropdown:
                 padding=(1, 3),
                 width=60,
             ),
-            vertical="middle",
         )
+        root["content"].update(inner)
+        return root
 
     async def handle_key(self, key: str) -> bool:
         if key in ("esc", "q"):
