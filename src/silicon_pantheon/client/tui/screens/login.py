@@ -24,6 +24,15 @@ if TYPE_CHECKING:
     from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
 
 
+import unicodedata
+
+
+def _pad_label(s: str, width: int) -> str:
+    """Pad to visual width, accounting for CJK double-width chars."""
+    vw = sum(2 if unicodedata.east_asian_width(c) in ("W", "F") else 1 for c in s)
+    return s + " " * max(0, width - vw)
+
+
 @dataclass
 class _Field:
     label: str
@@ -49,7 +58,7 @@ class LoginScreen(Screen):
         for i, f in enumerate(self._fields):
             is_active = i == self._active
             marker = "➤" if is_active else " "
-            label = Text(f"{marker} {f.label:14}", style="bold" if is_active else "dim")
+            label = Text(f"{marker} {_pad_label(f.label, 14)}", style="bold" if is_active else "dim")
             value_text = Text(f.value or t("login_empty", self.app.state.locale), style="white" if f.value else "dim italic")
             line = Text.assemble(label, Text("  "), value_text)
             lines.append(line)

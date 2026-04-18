@@ -94,16 +94,6 @@ unit_classes:
       能看穿墙壁、伪装和谎言。活着的人中最偏执的——
       也是最危险的。
 
-terrain_types:
-  stone_wall:
-    description: |
-      魔法部最深层的黑色石墙。古老、寒冷，对大多数
-      咒语免疫。
-  prophecy_shelf:
-    description: |
-      高耸的玻璃球架，每个球中记录着一则预言。它们
-      散发着淡蓝色的光芒，被流弹咒语击中时碎裂壮观。
-
 narrative:
   title: 神秘事务司
   description: |

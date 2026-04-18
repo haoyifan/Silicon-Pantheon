@@ -245,7 +245,8 @@ class PlayerPanel(Panel):
                 continue
             rows.append(Text(""))
             header_style = "bold cyan" if team == "blue" else "bold red"
-            rows.append(Text(f"{team}:", style=header_style))
+            from silicon_pantheon.client.tui.scenario_display import localized_team
+            rows.append(Text(f"{localized_team(team, lc)}:", style=header_style))
             rows.append(
                 Text(
                     f"  {_pad_right(t('game_player.unit_header', lc), 14)}  {t('game_player.hp_header', lc):>7}  {t('game_player.status_header', lc)}",
