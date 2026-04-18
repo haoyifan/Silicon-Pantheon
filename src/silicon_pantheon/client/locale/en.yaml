@@ -482,6 +482,18 @@ post_match_summary:
   turns: "Turns"
   blue: "blue"
   red: "red"
+  damage_dealt: "Damage dealt"
+  healing_done: "Healing done"
+  units_lost: "Units lost"
+  avg_think: "Avg think/turn"
+  tokens_used: "Tokens used"
+  tool_calls: "Tool calls"
+  errors: "Errors"
+  mvp: "MVP"
+  kills: "kills"
+  damage: "damage"
+  dmg: "dmg"
+  first_kill: "First kill: turn {n}"
 
 # Login screen
 login_empty: "(empty)"

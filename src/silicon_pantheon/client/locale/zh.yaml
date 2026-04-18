@@ -469,6 +469,18 @@ post_match_summary:
   turns: "回合"
   blue: "蓝方"
   red: "红方"
+  damage_dealt: "造成伤害"
+  healing_done: "治疗量"
+  units_lost: "损失单位"
+  avg_think: "平均思考/回合"
+  tokens_used: "Token消耗"
+  tool_calls: "工具调用"
+  errors: "错误"
+  mvp: "MVP"
+  kills: "击杀"
+  damage: "伤害"
+  dmg: "伤害"
+  first_kill: "首杀：第{n}回合"
 
 # 登录界面
 login_empty: "（空）"

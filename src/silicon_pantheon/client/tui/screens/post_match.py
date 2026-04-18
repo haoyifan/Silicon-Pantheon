@@ -101,9 +101,9 @@ class PostMatchScreen(Screen):
         if winner is None:
             banner = Text(t("post_match.draw", lc), style="bold yellow")
         elif my_team and winner == my_team:
-            banner = Text(f"{t('post_match.you_won', lc)} (team {winner})", style="bold green")
+            banner = Text(t("post_match.you_won", lc), style="bold green")
         else:
-            banner = Text(f"{t('post_match.you_lost', lc)} — {winner}", style="bold red")
+            banner = Text(t("post_match.you_lost", lc), style="bold red")
         if reason:
             banner.append(f"  ({reason})", style="dim")
 
@@ -166,10 +166,11 @@ class PostMatchScreen(Screen):
         tbl.add_column(t("post_match_summary.red", lc), style="red", justify="right")
 
         b, r = ms.blue, ms.red
-        tbl.add_row("Damage dealt", str(b.total_damage_dealt), str(r.total_damage_dealt))
-        tbl.add_row("Healing done", str(b.total_healing), str(r.total_healing))
+        _s = t  # alias for readability
+        tbl.add_row(_s("post_match_summary.damage_dealt", lc), str(b.total_damage_dealt), str(r.total_damage_dealt))
+        tbl.add_row(_s("post_match_summary.healing_done", lc), str(b.total_healing), str(r.total_healing))
         tbl.add_row(
-            "Units lost",
+            _s("post_match_summary.units_lost", lc),
             f"{b.units_lost}/{b.units_fielded}",
             f"{r.units_lost}/{r.units_fielded}",
         )
@@ -189,28 +190,30 @@ class PostMatchScreen(Screen):
                 v = d.get(key, 0)
                 return str(v) if v else "—"
 
-            tbl.add_row("Avg think/turn", _fmt_time(blue_t), _fmt_time(red_t))
-            tbl.add_row("Tokens used", _fmt_tokens(blue_t), _fmt_tokens(red_t))
-            tbl.add_row("Tool calls", _fmt_int(blue_t, "total_tool_calls"), _fmt_int(red_t, "total_tool_calls"))
+            tbl.add_row(_s("post_match_summary.avg_think", lc), _fmt_time(blue_t), _fmt_time(red_t))
+            tbl.add_row(_s("post_match_summary.tokens_used", lc), _fmt_tokens(blue_t), _fmt_tokens(red_t))
+            tbl.add_row(_s("post_match_summary.tool_calls", lc), _fmt_int(blue_t, "total_tool_calls"), _fmt_int(red_t, "total_tool_calls"))
             b_err = blue_t.get("total_errors", 0)
             r_err = red_t.get("total_errors", 0)
             if b_err or r_err:
-                tbl.add_row("Errors", str(b_err) if b_err else "—", str(r_err) if r_err else "—")
+                tbl.add_row(_s("post_match_summary.errors", lc), str(b_err) if b_err else "—", str(r_err) if r_err else "—")
 
         rows.append(tbl)
 
         # ---- MVP + top killers ----
+        _kills = _s("post_match_summary.kills", lc)
+        _dmg = _s("post_match_summary.dmg", lc)
+        _damage = _s("post_match_summary.damage", lc)
         mvp = ms.mvp()
         if mvp:
             rows.append(Text(""))
             color = "cyan" if mvp.owner == "blue" else "red"
             rows.append(Text.assemble(
-                ("MVP: ", "bold"),
+                (f"{_s('post_match_summary.mvp', lc)}: ", "bold"),
                 (f"{mvp.display_name}", f"bold {color}"),
-                (f" — {mvp.kills} kills, {mvp.damage_dealt} damage", "dim"),
+                (f" — {mvp.kills} {_kills}, {mvp.damage_dealt} {_damage}", "dim"),
             ))
 
-        # Top killers (units with kills > 0, sorted by kills).
         killers = sorted(
             [u for u in ms.units.values() if u.kills > 0],
             key=lambda u: (-u.kills, -u.damage_dealt),
@@ -220,13 +223,16 @@ class PostMatchScreen(Screen):
             for u in killers[:6]:
                 color = "cyan" if u.owner == "blue" else "red"
                 rows.append(Text(
-                    f"  {u.display_name}: {u.kills} kills, {u.damage_dealt} dmg",
+                    f"  {u.display_name}: {u.kills} {_kills}, {u.damage_dealt} {_dmg}",
                     style=color,
                 ))
 
         if ms.first_kill_turn is not None:
             rows.append(Text(""))
-            rows.append(Text(f"First kill: turn {ms.first_kill_turn}", style="dim"))
+            rows.append(Text(
+                _s("post_match_summary.first_kill", lc).replace("{n}", str(ms.first_kill_turn)),
+                style="dim",
+            ))
 
         return Group(*rows)
 
