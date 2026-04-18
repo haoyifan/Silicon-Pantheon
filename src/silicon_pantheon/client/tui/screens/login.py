@@ -90,6 +90,9 @@ class LoginScreen(Screen):
         if self._connecting:
             return None
         f = self._fields[self._active]
+        if key == "esc":
+            from silicon_pantheon.client.tui.screens.language_picker import LanguagePickerScreen
+            return LanguagePickerScreen(self.app)
         if key == "q":
             self.app.exit()
             return None

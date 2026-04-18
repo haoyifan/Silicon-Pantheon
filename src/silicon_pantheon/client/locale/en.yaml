@@ -121,7 +121,7 @@ provider:
 # Login screen
 login_screen:
   title: "login"
-  submit: "Enter submit   q quit"
+  submit: "Enter submit   Esc language   q quit"
   connecting: "connecting…"
 
 # Lobby table headers

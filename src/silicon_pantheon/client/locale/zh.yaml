@@ -119,7 +119,7 @@ provider:
 # 登录界面
 login_screen:
   title: "登录"
-  submit: "Enter 提交   q 退出"
+  submit: "Enter 提交   Esc 语言   q 退出"
   connecting: "连接中…"
 
 # 大厅表格标题
