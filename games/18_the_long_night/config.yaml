@@ -49,6 +49,7 @@ board:
 
 terrain_types:
   trench:
+    display_name: Trench
     move_cost: 3
     defense_bonus: 2
     glyph: "="
@@ -57,6 +58,7 @@ terrain_types:
       A trench filled with pitch and dragonfire. Slows the dead
       but won't stop them forever.
   stone_wall:
+    display_name: Stone Wall
     move_cost: 1
     defense_bonus: 0
     passable: false

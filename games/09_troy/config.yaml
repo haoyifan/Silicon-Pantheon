@@ -60,21 +60,29 @@ board:
 
 terrain_types:
   troy_wall:
+    display_name: Troy Wall
+    description: Impassable wall of Troy. +5 DEF.
     move_cost: 99
     passable: false
     defense_bonus: 5
     glyph: "#"
     color: yellow
   xanthus:
+    display_name: Xanthus River
+    description: Impassable river.
     move_cost: 99
     passable: false
     glyph: "~"
     color: blue
   ford:
+    display_name: Ford
+    description: Shallow river crossing. Costs 2 movement.
     move_cost: 2
     glyph: "="
     color: yellow
   greek_ship:
+    display_name: Greek Ship
+    description: Beached warship. +2 DEF.
     move_cost: 1
     defense_bonus: 2
     glyph: "M"

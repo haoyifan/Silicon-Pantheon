@@ -71,6 +71,7 @@ board:
 
 terrain_types:
   forest:
+    display_name: Forest
     move_cost: 1
     defense_bonus: 2
     glyph: "f"
@@ -80,6 +81,7 @@ terrain_types:
       blocks the winter sun. Good cover for ambush — or escape.
 
   ruins:
+    display_name: Ruins
     move_cost: 2
     defense_bonus: 3
     glyph: "%"
@@ -90,6 +92,7 @@ terrain_types:
       of Gondor, now broken and overgrown.
 
   river:
+    display_name: River
     move_cost: 99
     defense_bonus: 0
     passable: false

@@ -536,18 +536,17 @@ def _read_key_blocking() -> str:
         r, _, _ = select.select([fd], [], [], timeout)
         return _read_char() if r else ""
 
-    try:
-        tty.setcbreak(fd)
-        ch = _read_char()
-    except termios.error:
-        return "q"
-    # NOTE: we intentionally do NOT restore terminal settings between
-    # reads.  Toggling cbreak → canonical → cbreak on every keystroke
-    # caused IME-committed multi-character input (Chinese, Japanese) to
-    # be lost: the terminal briefly entered canonical mode and buffered
-    # the remaining characters until Enter.  The terminal stays in
-    # cbreak for the app's lifetime; Rich's Live context and the
-    # atexit/signal cleanup restore on exit.
+    # Set cbreak once, not every call. tty.setcbreak uses TCSAFLUSH
+    # by default which flushes the input buffer — if the IME sent
+    # multiple characters and we only read the first, the second
+    # would be flushed on the next call.
+    if not getattr(_read_key_blocking, "_cbreak_set", False):
+        try:
+            tty.setcbreak(fd, termios.TCSANOW)  # TCSANOW = no flush
+        except termios.error:
+            return "q"
+        _read_key_blocking._cbreak_set = True  # type: ignore[attr-defined]
+    ch = _read_char()
     if not ch:
         return "q"
     if ch == "\x1b":

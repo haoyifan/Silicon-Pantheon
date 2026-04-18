@@ -110,11 +110,15 @@ board:
 
 terrain_types:
   island:
+    display_name: Island
+    description: Impassable island.
     move_cost: 99
     passable: false
     glyph: "^"
     color: bright_black
   beach:
+    display_name: Beach
+    description: Coastal shore. Costs 2 movement. +1 DEF.
     move_cost: 2
     defense_bonus: 1
     glyph: "~"
@@ -124,11 +128,15 @@ terrain_types:
     glyph: "."
     color: yellow
   mountain:
+    display_name: Mountain
+    description: Impassable mountain.
     move_cost: 99
     passable: false
     glyph: "M"
     color: bright_black
   uranium_bunker:
+    display_name: Uranium Bunker
+    description: Hardened bunker. Costs 2 movement. +5 DEF.
     # Fortified bunker — hard to root defenders out, but the prize
     # tile for blue. Not impassable: blue needs to step on it.
     move_cost: 2
@@ -136,6 +144,8 @@ terrain_types:
     glyph: "U"
     color: bright_magenta
   sea_mine:
+    display_name: Sea Mine
+    description: Contact mine. Damages any unit entering the tile.
     move_cost: 1
     glyph: "*"
     color: bright_red

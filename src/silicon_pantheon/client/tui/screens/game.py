@@ -1362,7 +1362,13 @@ class GameScreen(Screen):
             uid = la.get("unit_id") or la.get("healer_id")
             if uid:
                 lc = self.app.state.locale
+                scen = self.app.state.scenario_description
                 la_type = la.get("type")
+
+                def _name(unit_id: str) -> str:
+                    from silicon_pantheon.client.tui.scenario_display import humanize_unit_id
+                    return humanize_unit_id(unit_id, scen)
+
                 if la_type == "move":
                     dest = la.get("dest") or {}
                     self.unit_last_actions[uid] = (
@@ -1376,7 +1382,7 @@ class GameScreen(Screen):
                     killed = f" {t('action.killed', lc)}" if la.get("target_killed") else ""
                     self.unit_last_actions[uid] = (
                         t("action.atk", lc)
-                        .replace("{tid}", str(tid))
+                        .replace("{tid}", _name(tid))
                         .replace("{dmg}", str(dmg))
                         + killed
                     )
@@ -1385,7 +1391,7 @@ class GameScreen(Screen):
                     amt = la.get("heal_amount", la.get("healed", "?"))
                     self.unit_last_actions[uid] = (
                         t("action.healed", lc)
-                        .replace("{tid}", str(tid))
+                        .replace("{tid}", _name(tid))
                         .replace("{amt}", str(amt))
                     )
                 # "wait" and "end_turn" are intentionally skipped.

@@ -108,6 +108,7 @@ board:
 
 terrain_types:
   building:
+    display_name: Building
     move_cost: 2
     defense_bonus: 3
     glyph: "#"
@@ -116,6 +117,7 @@ terrain_types:
       Marineford plaza structures. Provide solid cover during
       the chaotic battle.
   ice:
+    display_name: Ice
     move_cost: 1
     defense_bonus: -1
     glyph: "="
@@ -124,6 +126,7 @@ terrain_types:
       Frozen bay created by Admiral Aokiji. Slippery surface
       offers no cover — but the pirates can cross it.
   platform:
+    display_name: Platform
     move_cost: 1
     defense_bonus: 2
     glyph: "^"

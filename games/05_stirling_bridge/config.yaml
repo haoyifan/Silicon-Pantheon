@@ -46,6 +46,8 @@ board:
 
 terrain_types:
   river:
+    display_name: River
+    description: Impassable river.
     move_cost: 99
     passable: false
     glyph: "~"
@@ -56,11 +58,15 @@ terrain_types:
     glyph: "="
     color: yellow
   high_ground:
+    display_name: High Ground
+    description: Elevated position. Costs 2 movement. +3 DEF.
     move_cost: 2
     defense_bonus: 3
     glyph: "^"
     color: green
   marsh:
+    display_name: Marsh
+    description: Difficult terrain. Costs 3 movement.
     move_cost: 3
     defense_bonus: 0
     glyph: ","

@@ -46,6 +46,7 @@ board:
 
 terrain_types:
   machine_wall:
+    display_name: Machine Wall
     move_cost: 99
     passable: false
     defense_bonus: 0
@@ -56,6 +57,7 @@ terrain_types:
       Impassable even to sentinels.
 
   catwalk:
+    display_name: Catwalk
     move_cost: 1
     defense_bonus: 1
     glyph: "="

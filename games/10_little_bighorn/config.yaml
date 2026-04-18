@@ -44,20 +44,28 @@ board:
 
 terrain_types:
   river:
+    display_name: River
+    description: Impassable river.
     move_cost: 99
     passable: false
     glyph: "~"
     color: blue
   ford:
+    display_name: Ford
+    description: Shallow river crossing. Costs 2 movement.
     move_cost: 2
     glyph: "="
     color: yellow
   hill:
+    display_name: Hill
+    description: Elevated ground. Costs 2 movement. +2 DEF.
     move_cost: 2
     defense_bonus: 2
     glyph: "^"
     color: green
   ridge:
+    display_name: Ridge
+    description: Last Stand Hill. Costs 2 movement. +4 DEF.
     # Last Stand Hill — fort-like high defense terrain.
     move_cost: 2
     defense_bonus: 4

@@ -47,17 +47,23 @@ board:
 
 terrain_types:
   deeping_wall:
+    display_name: Deeping Wall
+    description: Impassable fortress wall. +5 DEF.
     move_cost: 99
     passable: false
     defense_bonus: 5
     glyph: "#"
     color: yellow
   deeping_gate:
+    display_name: Deeping Gate
+    description: Fortified gate. +4 DEF.
     move_cost: 1
     defense_bonus: 4
     glyph: "="
     color: yellow
   cliff:
+    display_name: Cliff
+    description: Impassable cliff face.
     move_cost: 99
     passable: false
     glyph: "^"

@@ -65,6 +65,7 @@ board:
 
 terrain_types:
   building:
+    display_name: Building
     move_cost: 2
     defense_bonus: 3
     glyph: "#"
@@ -73,6 +74,7 @@ terrain_types:
       Konoha village buildings. Provide excellent cover but slow
       movement through the rubble.
   village_wall:
+    display_name: Village Wall
     move_cost: 1
     defense_bonus: 0
     passable: false

@@ -71,6 +71,7 @@ terrain_types:
     description: |
       Endless white snowfields of Hoth. No cover, no warmth.
   ice:
+    display_name: Ice
     move_cost: 1
     defense_bonus: -1
     glyph: "="

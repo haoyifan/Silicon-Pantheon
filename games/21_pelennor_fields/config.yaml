@@ -76,6 +76,7 @@ board:
 
 terrain_types:
   city_wall:
+    display_name: City Wall
     move_cost: 1
     defense_bonus: 0
     passable: false
@@ -85,6 +86,7 @@ terrain_types:
       The white walls of Minas Tirith. Seven tiers of stone, the
       greatest fortress of Men. Impassable except through the gate.
   river:
+    display_name: River
     move_cost: 1
     defense_bonus: 0
     passable: false
@@ -93,6 +95,7 @@ terrain_types:
     description: |
       The Great River Anduin. Deep and swift, impassable.
   ruins:
+    display_name: Ruins
     move_cost: 2
     defense_bonus: 1
     glyph: "."

@@ -46,6 +46,8 @@ board:
 
 terrain_types:
   stakes:
+    display_name: Stakes
+    description: Impassable sharpened stakes.
     move_cost: 99
     passable: false
     glyph: "#"

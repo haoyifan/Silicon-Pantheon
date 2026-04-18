@@ -60,6 +60,7 @@ board:
 
 terrain_types:
   castle_wall:
+    display_name: Castle Wall
     move_cost: 99
     passable: false
     defense_bonus: 0
@@ -70,6 +71,7 @@ terrain_types:
       at Muzan's will, creating an ever-changing labyrinth.
 
   wisteria:
+    display_name: Wisteria
     move_cost: 1
     defense_bonus: 1
     heals: 2

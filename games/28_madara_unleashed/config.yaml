@@ -32,6 +32,7 @@ board:
 
 terrain_types:
   rock:
+    display_name: Rock
     move_cost: 2
     defense_bonus: 3
     glyph: "^"

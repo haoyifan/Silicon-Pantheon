@@ -35,6 +35,7 @@ board:
 
 terrain_types:
   corpse_pile:
+    display_name: Corpse Pile
     move_cost: 2
     defense_bonus: 2
     glyph: "+"

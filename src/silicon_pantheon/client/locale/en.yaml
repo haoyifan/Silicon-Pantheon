@@ -503,7 +503,7 @@ stat:
   type: "type"
   magic: "magic"
   can_heal: "can_heal"
-  yes: "yes"
+  "yes": "yes"
 
 # Terrain effect summary (fallback when no description field)
 terrain_fx:

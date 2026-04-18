@@ -46,6 +46,8 @@ board:
 
 terrain_types:
   river:
+    display_name: River
+    description: Impassable river.
     move_cost: 99
     passable: false
     blocks_sight: false
@@ -57,12 +59,16 @@ terrain_types:
     glyph: "="
     color: yellow
   swamp:
+    display_name: Swamp
+    description: Poisonous swamp. Costs 2 movement. Deals 2 damage per turn.
     move_cost: 2
     heals: -2           # -2 HP at end_turn for the outgoing player
     blocks_sight: false
     glyph: ","
     color: magenta
   temple:
+    display_name: Temple
+    description: Sacred ground. +2 DEF. Heals 3 HP per turn.
     move_cost: 1
     defense_bonus: 2
     heals: 3

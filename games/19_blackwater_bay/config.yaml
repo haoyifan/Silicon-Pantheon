@@ -86,6 +86,7 @@ board:
 
 terrain_types:
   water:
+    display_name: Water
     move_cost: 1
     defense_bonus: 0
     passable: false
@@ -94,6 +95,7 @@ terrain_types:
     description: |
       The waters of Blackwater Bay. Deep and impassable on foot.
   wildfire:
+    display_name: Wildfire
     move_cost: 1
     defense_bonus: 0
     heals: -8
@@ -104,6 +106,7 @@ terrain_types:
       Burns green, burns hot, burns everything. Any unit standing
       in it takes massive damage each turn.
   city_wall:
+    display_name: City Wall
     move_cost: 1
     defense_bonus: 0
     passable: false

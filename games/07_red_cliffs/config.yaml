@@ -74,6 +74,8 @@ board:
 
 terrain_types:
   river:
+    display_name: River
+    description: Impassable river.
     move_cost: 99
     passable: false
     glyph: "~"

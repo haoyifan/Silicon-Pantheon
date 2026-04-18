@@ -88,6 +88,7 @@ board:
 
 terrain_types:
   forest:
+    display_name: Forest
     move_cost: 1
     defense_bonus: 2
     glyph: "f"
@@ -96,6 +97,7 @@ terrain_types:
       The Forbidden Forest. Dense trees provide cover but harbour
       dark creatures loyal to Voldemort.
   stone_wall:
+    display_name: Stone Wall
     move_cost: 1
     defense_bonus: 0
     passable: false

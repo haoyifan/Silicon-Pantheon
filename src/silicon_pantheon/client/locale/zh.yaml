@@ -490,7 +490,7 @@ stat:
   type: "类型"
   magic: "魔法"
   can_heal: "可治疗"
-  yes: "是"
+  "yes": "是"
 
 # 地形效果摘要
 terrain_fx:

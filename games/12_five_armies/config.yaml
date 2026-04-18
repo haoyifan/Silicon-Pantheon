@@ -84,6 +84,8 @@ board:
 
 terrain_types:
   mountain:
+    display_name: Mountain
+    description: Impassable mountain. +3 DEF.
     move_cost: 99
     passable: false
     defense_bonus: 3
@@ -95,11 +97,15 @@ terrain_types:
         passable: true
         move_cost: 1
   ruins:
+    display_name: Ruins
+    description: Crumbling ruins. Costs 2 movement. +2 DEF.
     move_cost: 2
     defense_bonus: 2
     glyph: "%"
     color: yellow
   river:
+    display_name: River
+    description: Impassable river.
     move_cost: 99
     passable: false
     glyph: "~"

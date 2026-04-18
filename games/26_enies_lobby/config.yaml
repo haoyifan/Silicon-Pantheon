@@ -84,6 +84,7 @@ terrain_types:
       The Bridge of Hesitation. A narrow crossing over the
       bottomless waterfall leading to the Gates of Justice.
   water:
+    display_name: Water
     move_cost: 1
     defense_bonus: 0
     passable: false
@@ -93,6 +94,7 @@ terrain_types:
       The bottomless waterfall beneath the Bridge of Hesitation.
       Falling in means certain death.
   tower_wall:
+    display_name: Tower Wall
     move_cost: 1
     defense_bonus: 0
     passable: false
