@@ -539,9 +539,18 @@ def _read_key_blocking() -> str:
     try:
         tty.setcbreak(fd)
         ch = _read_char()
-        if not ch:
-            return "q"
-        if ch == "\x1b":
+    except termios.error:
+        return "q"
+    # NOTE: we intentionally do NOT restore terminal settings between
+    # reads.  Toggling cbreak → canonical → cbreak on every keystroke
+    # caused IME-committed multi-character input (Chinese, Japanese) to
+    # be lost: the terminal briefly entered canonical mode and buffered
+    # the remaining characters until Enter.  The terminal stays in
+    # cbreak for the app's lifetime; Rich's Live context and the
+    # atexit/signal cleanup restore on exit.
+    if not ch:
+        return "q"
+    if ch == "\x1b":
             # Escape sequence: drain follow-up bytes with a short
             # per-byte timeout so unmodified ESC reads still work.
             c1 = _peek(0.05)
@@ -663,8 +672,6 @@ def _read_key_blocking() -> str:
                     if params in ("4", "8"):
                         return "end"
             return "esc"
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, old)
 
     if ch in ("\r", "\n"):
         return "enter"

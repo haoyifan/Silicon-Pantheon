@@ -26,45 +26,20 @@ board:
     - {x: 9, y: 4, type: forest}
     - {x: 9, y: 7, type: forest}
     - {x: 9, y: 10, type: forest}
-    # The mud corridor — the central column from y=3 to y=10. Three
-    # MP to enter for everyone; class_overrides bog the French
-    # knights down further (cost 4).
-    - {x: 2, y: 4, type: mud}
-    - {x: 3, y: 4, type: mud}
-    - {x: 4, y: 4, type: mud}
-    - {x: 5, y: 4, type: mud}
-    - {x: 6, y: 4, type: mud}
-    - {x: 7, y: 4, type: mud}
-    - {x: 2, y: 5, type: mud}
-    - {x: 3, y: 5, type: mud}
-    - {x: 4, y: 5, type: mud}
-    - {x: 5, y: 5, type: mud}
-    - {x: 6, y: 5, type: mud}
-    - {x: 7, y: 5, type: mud}
-    - {x: 2, y: 6, type: mud}
-    - {x: 3, y: 6, type: mud}
-    - {x: 4, y: 6, type: mud}
-    - {x: 5, y: 6, type: mud}
-    - {x: 6, y: 6, type: mud}
-    - {x: 7, y: 6, type: mud}
-    - {x: 2, y: 7, type: mud}
-    - {x: 3, y: 7, type: mud}
-    - {x: 4, y: 7, type: mud}
-    - {x: 5, y: 7, type: mud}
-    - {x: 6, y: 7, type: mud}
-    - {x: 7, y: 7, type: mud}
-    - {x: 2, y: 8, type: mud}
-    - {x: 3, y: 8, type: mud}
-    - {x: 4, y: 8, type: mud}
-    - {x: 5, y: 8, type: mud}
-    - {x: 6, y: 8, type: mud}
-    - {x: 7, y: 8, type: mud}
-    - {x: 2, y: 9, type: mud}
-    - {x: 3, y: 9, type: mud}
-    - {x: 4, y: 9, type: mud}
-    - {x: 5, y: 9, type: mud}
-    - {x: 6, y: 9, type: mud}
-    - {x: 7, y: 9, type: mud}
+    # Sparse forest in the central corridor — slows the French
+    # advance and gives cover, but leaves enough gaps to maneuver.
+    # Historically the field was churned mud, but dense mud tiles
+    # (cost 3-4) made the map unplayable; sparse forest (cost 2,
+    # +2 DEF) is a better gameplay compromise.
+    - {x: 3, y: 5, type: forest}
+    - {x: 5, y: 5, type: forest}
+    - {x: 7, y: 5, type: forest}
+    - {x: 2, y: 7, type: forest}
+    - {x: 4, y: 7, type: forest}
+    - {x: 6, y: 7, type: forest}
+    - {x: 3, y: 9, type: forest}
+    - {x: 5, y: 9, type: forest}
+    - {x: 7, y: 9, type: forest}
     # Sharpened stakes in front of the English line — impassable.
     - {x: 3, y: 11, type: stakes}
     - {x: 4, y: 11, type: stakes}
@@ -73,26 +48,11 @@ board:
   forts: []
 
 terrain_types:
-  mud:
-    move_cost: 3
-    defense_bonus: 0
-    glyph: ","
-    color: yellow
-    # Knights bog down doubly; per-class override doubles their
-    # mud cost. Demonstrates the class_overrides mechanic.
-    class_overrides:
-      french_knight:
-        move_cost: 4
   stakes:
     move_cost: 99
     passable: false
     glyph: "#"
     color: yellow
-  forest:
-    # Knights in full plate can't fit through the trees.
-    class_overrides:
-      french_knight:
-        passable: false
 
 unit_classes:
   henry_v:
