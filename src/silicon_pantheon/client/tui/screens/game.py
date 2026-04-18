@@ -423,7 +423,7 @@ class GameMapPanel(Panel):
         line.append(f"({self.cx}, {self.cy}) ", style="dim")
         line.append(f"{t('game_map.terrain_label', lc)}: {terrain}", style="yellow")
         summary = terrain_effect_summary(
-            self.screen.app.state.scenario_description, terrain, _lc2
+            self.screen.app.state.scenario_description, terrain, lc
         )
         if summary:
             line.append(f" — {summary}", style="dim")
