@@ -346,6 +346,12 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
             "narrative": cfg.get("narrative") or {},
         })
 
+    # Server-side scenario bundle cache. Built once on first call,
+    # held in memory for the process lifetime. Scenarios don't change
+    # at runtime (they're config files on disk), so recomputing on
+    # every request is wasteful. Restart the server to pick up changes.
+    _bundle_cache: dict[str, Any] = {}
+
     @mcp.tool()
     def get_scenario_bundle(
         connection_id: str,
@@ -369,6 +375,19 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                 ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
                 "set_player_metadata first",
             )
+
+        # Return from server-side cache if available. The bundle is
+        # built once and held in memory — scenarios are static config
+        # files that don't change at runtime.
+        if _bundle_cache:
+            if cached_hash and cached_hash == _bundle_cache.get("hash"):
+                return _ok({"match": True, "hash": _bundle_cache["hash"]})
+            return _ok({
+                "match": False,
+                "hash": _bundle_cache["hash"],
+                "scenarios": _bundle_cache["scenarios"],
+            })
+
         import hashlib
         import json as _json
 
@@ -445,9 +464,15 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                 "scenario_slug": name,
             }
 
-        # Compute content hash from sorted JSON.
+        # Compute content hash from sorted JSON and cache for future calls.
         content = _json.dumps(scenarios, sort_keys=True, default=str)
         bundle_hash = hashlib.sha256(content.encode()).hexdigest()[:16]
+        _bundle_cache["hash"] = bundle_hash
+        _bundle_cache["scenarios"] = scenarios
+        log.info(
+            "scenario bundle built: %d scenarios, hash=%s, size=%dKB",
+            len(scenarios), bundle_hash, len(content) // 1024,
+        )
 
         if cached_hash and cached_hash == bundle_hash:
             return _ok({"match": True, "hash": bundle_hash})
