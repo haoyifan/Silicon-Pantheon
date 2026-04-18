@@ -952,13 +952,11 @@ class GameScreen(Screen):
                 import asyncio as _asyncio
                 _asyncio.create_task(_push())
 
-        # `lessons_dir=None` disables both lesson injection into the
-        # system prompt AND saving the post-match summary. Toggled via
-        # the room-screen Actions panel ("Lessons: on/off"); default
-        # on preserves prior behavior.
+        # lessons_dir controls saving post-match summaries. Selected
+        # lessons for prompt injection are passed separately.
         from pathlib import Path as _Path
 
-        lessons_dir = _Path("lessons") if app.state.use_lessons else None
+        lessons_dir = _Path("lessons") if app.state.save_lessons else None
         # Per-turn agent time budget = room's turn_time_limit_s when
         # the host set it, otherwise the adapter's default (180s). The
         # host configures this in the room-setup Actions panel.
@@ -976,6 +974,7 @@ class GameScreen(Screen):
             scenario=scenario,
             strategy=app.state.strategy_text,
             lessons_dir=lessons_dir,
+            selected_lessons=app.state.selected_lessons or None,
             thoughts_callback=on_thought,
             # Hand over the scenario bundle the room screen already
             # fetched, localized for the user's language. The locale

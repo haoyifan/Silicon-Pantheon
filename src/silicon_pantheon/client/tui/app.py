@@ -101,13 +101,12 @@ class SharedState:
     # Optional path to a pre-written STRATEGY.md; read at game start.
     strategy_path: Path | None = None
     strategy_text: str | None = None
-    # Per-player toggle: inject prior lessons (from lessons/) into the
-    # agent's system prompt and save new ones after the match. Off
-    # means the agent starts cold and nothing is persisted — useful
-    # for A/B'ing whether the lesson corpus is actually helping, or
-    # for clean reproducible matches. Default on so existing behavior
-    # is unchanged; toggled from the RoomScreen Actions panel.
-    use_lessons: bool = True
+    # Selected lesson files to inject into the agent's system prompt.
+    # Empty list = no lessons (agent starts cold). None = auto (last 5).
+    # Set from the RoomScreen Actions panel lesson picker.
+    selected_lessons: list[Path] = field(default_factory=list)
+    # Whether to save new lessons after the match.
+    save_lessons: bool = True
     # Agent bridge for in-game play — populated when GameScreen enters
     # and the player declared themselves as ai/hybrid with a provider+model.
     agent: "NetworkedAgent | None" = None

@@ -408,6 +408,7 @@ class NetworkedAgent:
         scenario: str,
         strategy: str | None = None,
         lessons_dir: Path | None = Path("lessons"),
+        selected_lessons: list[Path] | None = None,
         thoughts_callback: ThoughtCallback | None = None,
         time_budget_s: float = 1800.0,
         adapter: ProviderAdapter | None = None,
@@ -419,6 +420,7 @@ class NetworkedAgent:
         self.scenario = scenario
         self.strategy = strategy
         self.lessons_dir = lessons_dir
+        self._selected_lessons = selected_lessons
         self.thoughts_callback = thoughts_callback
         self.time_budget_s = time_budget_s
         self.locale = locale
@@ -502,6 +504,19 @@ class NetworkedAgent:
         return r.get("result", {})
 
     def _load_lessons(self) -> list:
+        if self._selected_lessons is not None:
+            # User explicitly selected specific lessons from the picker.
+            if not self._selected_lessons:
+                return []
+            store = LessonStore(self.lessons_dir or Path("lessons"))
+            lessons = []
+            for p in self._selected_lessons:
+                try:
+                    lessons.append(store.load(p))
+                except Exception:
+                    continue
+            return lessons
+        # Fallback: auto-load last 5 for the scenario (legacy behavior).
         if self.lessons_dir is None:
             return []
         try:

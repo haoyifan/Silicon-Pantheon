@@ -412,7 +412,11 @@ class ActionsPanel(Panel):
         sp = self.screen.app.state.strategy_path
         if sp is not None:
             strat_label = sp.stem
-        lessons_label = t("button_val.on", lc) if self.screen.app.state.use_lessons else t("button_val.off", lc)
+        sel = self.screen.app.state.selected_lessons
+        if sel:
+            lessons_label = f"{len(sel)} selected"
+        else:
+            lessons_label = t("button_val.none", lc)
         buttons: list[Button] = [
             Button(label=t("room_buttons.toggle_ready", lc), action="toggle_ready", enabled=editable),
             Button(
@@ -423,7 +427,7 @@ class ActionsPanel(Panel):
             ),
             Button(
                 label=t("room_buttons.lessons", lc),
-                action="toggle_lessons",
+                action="change_lessons",
                 value=lessons_label,
                 enabled=editable,
             ),
@@ -942,8 +946,8 @@ class RoomScreen(Screen):
         if action == "change_strategy":
             self._open_strategy_modal()
             return None
-        if action == "toggle_lessons":
-            self.app.state.use_lessons = not self.app.state.use_lessons
+        if action == "change_lessons":
+            self._open_lessons_modal()
             return None
         return None
 
@@ -1003,6 +1007,67 @@ class RoomScreen(Screen):
 
         self._dropdown = Dropdown(
             title=t("room_buttons.pick_strategy", self.app.state.locale),
+            options=options,
+            selected_idx=idx,
+            on_confirm=_on_pick,
+            option_descriptions=descriptions,
+            locale=self.app.state.locale,
+        )
+
+    def _open_lessons_modal(self) -> None:
+        from pathlib import Path as _Path
+
+        from silicon_pantheon.lessons import LessonStore
+
+        scenario = (self.app.state.last_room_state or {}).get("scenario") or ""
+        store = LessonStore(_Path("lessons"))
+        all_lessons = store.list_for_scenario(scenario) if scenario else []
+
+        options = [t("button_val.none", self.app.state.locale)]
+        # Map option label → lesson path for the callback.
+        label_to_path: dict[str, _Path] = {}
+        descriptions: dict[str, str] = {
+            options[0]: t("room_strategy.no_playbook", self.app.state.locale),
+        }
+        for lesson in all_lessons:
+            path = store.root / lesson.scenario / f"{lesson.slug}.md"
+            label = lesson.title or lesson.slug
+            # Disambiguate duplicate titles with a suffix.
+            base = label
+            n = 2
+            while label in label_to_path:
+                label = f"{base} ({n})"
+                n += 1
+            options.append(label)
+            label_to_path[label] = path
+            # Description: outcome + body preview.
+            header = f"[{lesson.outcome}] {lesson.model} — {lesson.created_at}"
+            descriptions[label] = f"{header}\n\n{lesson.body[:500]}"
+
+        cur = options[0]
+        if self.app.state.selected_lessons:
+            # Try to highlight the first currently-selected lesson.
+            for lbl, p in label_to_path.items():
+                if p in self.app.state.selected_lessons:
+                    cur = lbl
+                    break
+        idx = options.index(cur) if cur in options else 0
+
+        async def _on_pick(chosen: str) -> None:
+            if chosen == options[0]:  # "(none)"
+                self.app.state.selected_lessons = []
+                return
+            p = label_to_path.get(chosen)
+            if p is None:
+                return
+            # Toggle: if already selected, deselect; otherwise add.
+            if p in self.app.state.selected_lessons:
+                self.app.state.selected_lessons.remove(p)
+            else:
+                self.app.state.selected_lessons.append(p)
+
+        self._dropdown = Dropdown(
+            title=t("room_buttons.lessons", self.app.state.locale),
             options=options,
             selected_idx=idx,
             on_confirm=_on_pick,
