@@ -1,0 +1,122 @@
+# 阿拉基恩之战 — 中文本地化
+name: 阿拉基恩之战
+description: |
+  阿拉基斯，10191 AG。厄崔迪家族被皇帝和哈克南家族背叛。
+  保罗·厄崔迪——如今的穆阿迪布——率领弗里曼战士对抗
+  哈克南男爵对阿拉基恩的占领。杰西卡女士运用"声音"，
+  邓肯·爱达荷以一当十，沙漠本身是弗里曼最强大的盟友。
+  夺取宫殿或消灭男爵。香料必须流动。
+
+unit_classes:
+  paul:
+    display_name: 保罗·穆阿迪布
+    description: |
+      保罗·厄崔迪，奎萨茨·哈德拉赫。预知视觉引导
+      他的刀刃和他的话语。他同时以钩刀和"声音"战斗。
+  jessica:
+    display_name: 杰西卡女士
+    description: |
+      贝尼·杰瑟里特修女和弗里曼的圣母。"声音"能
+      扭曲意志，她的治疗术修复伤者。
+  duncan:
+    display_name: 邓肯·爱达荷
+    description: |
+      厄崔迪家族的剑术大师。帝国最强之刃。他曾独自
+      守住走廊对抗萨多卡。
+  gurney:
+    display_name: 格尼·哈勒克
+    description: |
+      厄崔迪家族的战争大师，战士兼吟游诗人。墨藤疤痕
+      是苦难的地图；他的刀刃唱着战争之歌。
+  stilgar:
+    display_name: 史迪加
+    description: |
+      塔布穴地的纳伊布。传奇弗里曼领袖，
+      向穆阿迪布宣誓效忠。沙漠战争大师。
+  chani:
+    display_name: 查妮
+    description: |
+      保罗的爱人，列特-凯因斯之女。致命的弗里曼战士，
+      拥有猎人之眼和狙击手的耐心。
+  fremen_warrior:
+    display_name: 弗里曼战士
+    description: |
+      手持钩刀的沙漠之子。一生在深沙漠中度过，
+      使他们无畏无倦。
+  baron:
+    display_name: 哈克南男爵
+    description: |
+      肥胖的弗拉基米尔·哈克南男爵。残忍、狡诈，
+      靠反重力腰带悬浮。他从后方指挥。
+  rabban:
+    display_name: 野兽拉班
+    description: |
+      格罗苏·拉班，男爵残暴的侄子。缺乏智谋
+      但以原始的恐怖暴力弥补。
+  piter:
+    display_name: 彼特·德弗里斯
+    description: |
+      为哈克南效力的扭曲门塔特刺客。他的头脑
+      以数学般的精度计算死亡；毒刃完成收割。
+  sardaukar:
+    display_name: 萨多卡
+    description: |
+      皇帝的精锐恐怖部队，伪装成哈克南军服。
+      每一名都抵得上十名普通士兵。
+  harkonnen_soldier:
+    display_name: 哈克南士兵
+    description: |
+      哈克南普通部队。残暴而可消耗，野兽拉班
+      将残忍训练进他们的骨子里。
+
+terrain_types:
+  desert:
+    display_name: 沙漠
+    description: |
+      阿拉基斯的开阔沙丘。没有掩护，但弗里曼
+      穿越它们如风中幽灵。
+  rock:
+    display_name: 岩石地形
+    description: |
+      从沙漠地面升起的风化岩石露头。
+      坚固的掩护和可防守的高地。
+  spice_field:
+    display_name: 香料田
+    description: |
+      暴露的美琅脂矿藏。香料的治愈特性
+      恢复驻留者的活力。
+  palace:
+    display_name: 阿拉基恩宫殿
+    description: |
+      阿拉基斯的权力中心。曾是厄崔迪家族的家园，
+      如今被哈克南占据。坚固的堡垒。
+
+narrative:
+  title: 阿拉基恩之战
+  description: |
+    阿拉基斯，10191 AG。保罗·穆阿迪布率领弗里曼对抗
+    哈克南对阿拉基恩的占领。沙漠崛起。沉睡者已经觉醒。
+  intro: |
+    一道沙墙滚过屏蔽墙缺口。从中涌出弗里曼——
+    蓝中之蓝的眼睛燃烧着使命感。保罗·厄崔迪举起
+    钩刀。今天，厄崔迪家族夺回被窃取之物。
+    今天，预言将被实现。
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        沙漠震动。远处的轰鸣声越来越大，沙虫响应
+        节拍器的召唤。弗里曼骑着阿拉基斯的造物者
+        冲入战场。
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        宫殿大门即将崩溃。里面，男爵对守卫尖叫着
+        下达命令。香料染色的大厅回荡着钩刀与钢铁
+        碰撞的声音。
+    - trigger: on_unit_killed
+      unit_id: u_r_baron_1
+      text: |
+        男爵的悬浮腰带火花四溅并失效。弗拉基米尔·
+        哈克南坠落，他的阴谋终于结束。阿拉基恩
+        属于弗里曼了。

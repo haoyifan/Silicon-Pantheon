@@ -1,0 +1,375 @@
+schema_version: 1
+name: Battle of Arrakeen
+difficulty: 4
+description: |
+  Arrakis, 10191 AG. House Atreides has been betrayed by the Emperor
+  and House Harkonnen. Paul Atreides, now Muad'Dib, leads his Fremen
+  warriors against Baron Harkonnen's occupation of Arrakeen. Lady
+  Jessica wields the Voice, Duncan Idaho fights like ten men, and the
+  desert itself is the Fremen's greatest ally. Seize the palace or
+  slay the Baron. The spice must flow.
+  Inspired by Dune by Frank Herbert.
+
+board:
+  width: 14
+  height: 10
+  terrain:
+    # Desert covers much of the map
+    - {x: 0, y: 0, type: desert}
+    - {x: 1, y: 0, type: desert}
+    - {x: 2, y: 0, type: desert}
+    - {x: 3, y: 0, type: desert}
+    - {x: 4, y: 0, type: desert}
+    - {x: 9, y: 0, type: desert}
+    - {x: 10, y: 0, type: desert}
+    - {x: 11, y: 0, type: desert}
+    - {x: 12, y: 0, type: desert}
+    - {x: 13, y: 0, type: desert}
+    - {x: 0, y: 1, type: desert}
+    - {x: 1, y: 1, type: desert}
+    - {x: 2, y: 1, type: desert}
+    - {x: 11, y: 1, type: desert}
+    - {x: 12, y: 1, type: desert}
+    - {x: 13, y: 1, type: desert}
+    - {x: 0, y: 2, type: desert}
+    - {x: 1, y: 2, type: desert}
+    - {x: 12, y: 2, type: desert}
+    - {x: 13, y: 2, type: desert}
+    - {x: 0, y: 8, type: desert}
+    - {x: 1, y: 8, type: desert}
+    - {x: 12, y: 8, type: desert}
+    - {x: 13, y: 8, type: desert}
+    - {x: 0, y: 9, type: desert}
+    - {x: 1, y: 9, type: desert}
+    - {x: 2, y: 9, type: desert}
+    - {x: 11, y: 9, type: desert}
+    - {x: 12, y: 9, type: desert}
+    - {x: 13, y: 9, type: desert}
+    # Rock formations
+    - {x: 3, y: 2, type: rock}
+    - {x: 4, y: 2, type: rock}
+    - {x: 9, y: 2, type: rock}
+    - {x: 10, y: 2, type: rock}
+    - {x: 2, y: 5, type: rock}
+    - {x: 3, y: 5, type: rock}
+    - {x: 10, y: 5, type: rock}
+    - {x: 11, y: 5, type: rock}
+    - {x: 4, y: 7, type: rock}
+    - {x: 9, y: 7, type: rock}
+    # Spice fields
+    - {x: 5, y: 1, type: spice_field}
+    - {x: 6, y: 1, type: spice_field}
+    - {x: 7, y: 1, type: spice_field}
+    - {x: 8, y: 1, type: spice_field}
+    - {x: 1, y: 5, type: spice_field}
+    - {x: 12, y: 5, type: spice_field}
+    - {x: 5, y: 8, type: spice_field}
+    - {x: 8, y: 8, type: spice_field}
+    # Arrakeen Palace
+    - {x: 6, y: 8, type: palace}
+    - {x: 7, y: 8, type: palace}
+    - {x: 6, y: 9, type: palace}
+    - {x: 7, y: 9, type: palace}
+  forts:
+    - {x: 6, y: 8, team: red}
+    - {x: 7, y: 8, team: red}
+    - {x: 6, y: 9, team: red}
+    - {x: 7, y: 9, team: red}
+
+terrain_types:
+  desert:
+    display_name: Desert
+    move_cost: 1
+    defense_bonus: 0
+    glyph: "."
+    color: yellow
+    description: |
+      Open sand dunes of Arrakis. No cover, but the Fremen move
+      across them like ghosts in the wind.
+  rock:
+    display_name: Rock Formation
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "^"
+    color: white
+    description: |
+      Weathered rock outcroppings rising from the desert floor.
+      Solid cover and defensible high ground.
+  spice_field:
+    display_name: Spice Field
+    move_cost: 1
+    defense_bonus: 1
+    glyph: "*"
+    color: bright_yellow
+    description: |
+      Exposed melange deposits. The spice's healing properties
+      restore vitality to those who linger here.
+  palace:
+    display_name: Arrakeen Palace
+    move_cost: 1
+    defense_bonus: 3
+    glyph: "P"
+    color: bright_red
+    description: |
+      The seat of power on Arrakis. Once House Atreides' home,
+      now occupied by the Harkonnens. A fortified stronghold.
+
+unit_classes:
+  paul:
+    display_name: Paul Muad'Dib
+    description: |
+      Paul Atreides, the Kwisatz Haderach. Prescient vision guides
+      his blade and his words. He fights with crysknife and Voice alike.
+    hp_max: 24
+    atk: 11
+    defense: 5
+    res: 7
+    spd: 8
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    glyph: "P"
+    color: bright_cyan
+
+  jessica:
+    display_name: Lady Jessica
+    description: |
+      Bene Gesserit adept and Reverend Mother of the Fremen. The Voice
+      bends wills, and her healing arts mend the wounded.
+    hp_max: 20
+    atk: 8
+    defense: 3
+    res: 9
+    spd: 6
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    can_heal: true
+    heal_amount: 6
+    glyph: "J"
+    color: bright_cyan
+
+  duncan:
+    display_name: Duncan Idaho
+    description: |
+      Swordmaster of House Atreides. The finest blade in the Imperium.
+      He held an entire corridor alone against Sardaukar.
+    hp_max: 28
+    atk: 13
+    defense: 7
+    res: 4
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "D"
+    color: bright_cyan
+
+  gurney:
+    display_name: Gurney Halleck
+    description: |
+      Warmaster of House Atreides, warrior-troubadour. His inkvine
+      scar is a map of suffering; his blade sings a song of war.
+    hp_max: 26
+    atk: 10
+    defense: 6
+    res: 4
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "G"
+    color: bright_cyan
+
+  stilgar:
+    display_name: Stilgar
+    description: |
+      Naib of Sietch Tabr. Legendary Fremen leader who swore
+      allegiance to Muad'Dib. Master of desert warfare.
+    hp_max: 22
+    atk: 9
+    defense: 5
+    res: 5
+    spd: 6
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "S"
+    color: cyan
+
+  chani:
+    display_name: Chani
+    description: |
+      Paul's beloved, daughter of Liet-Kynes. A deadly Fremen warrior
+      with a hunter's eye and a sniper's patience.
+    hp_max: 18
+    atk: 9
+    defense: 3
+    res: 4
+    spd: 7
+    move: 5
+    rng_min: 2
+    rng_max: 3
+    glyph: "C"
+    color: cyan
+
+  fremen_warrior:
+    display_name: Fremen Warrior
+    description: |
+      Desert-born fighters wielding crysknives. A lifetime in the
+      deep desert has made them fearless and tireless.
+    hp_max: 20
+    atk: 8
+    defense: 4
+    res: 3
+    spd: 6
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "F"
+    color: cyan
+
+  baron:
+    display_name: Baron Harkonnen
+    description: |
+      The corpulent Baron Vladimir Harkonnen. Cruel, cunning, and
+      suspended by antigravity belt. He commands from the rear.
+    hp_max: 22
+    atk: 7
+    defense: 3
+    res: 5
+    spd: 3
+    move: 2
+    rng_min: 1
+    rng_max: 2
+    glyph: "B"
+    color: bright_red
+
+  rabban:
+    display_name: Beast Rabban
+    description: |
+      Glossu Rabban, the Baron's brutal nephew. What he lacks in
+      cunning he compensates with raw, terrifying violence.
+    hp_max: 30
+    atk: 12
+    defense: 7
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "R"
+    color: bright_red
+
+  piter:
+    display_name: Piter De Vries
+    description: |
+      Twisted Mentat assassin in Harkonnen service. His mind computes
+      death with mathematical precision; his poisoned blades finish it.
+    hp_max: 16
+    atk: 9
+    defense: 2
+    res: 7
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 3
+    is_magic: true
+    glyph: "V"
+    color: bright_red
+
+  sardaukar:
+    display_name: Sardaukar
+    description: |
+      The Emperor's elite terror troops, disguised in Harkonnen
+      uniforms. Each one is worth ten ordinary soldiers.
+    hp_max: 24
+    atk: 10
+    defense: 6
+    res: 5
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "K"
+    color: red
+
+  harkonnen_soldier:
+    display_name: Harkonnen Soldier
+    description: |
+      Rank-and-file Harkonnen troops. Brutal and expendable, they
+      fight with cruelty drilled into them by Beast Rabban.
+    hp_max: 20
+    atk: 7
+    defense: 5
+    res: 3
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "H"
+    color: red
+
+armies:
+  blue:
+    - {class: paul, pos: {x: 6, y: 0}}
+    - {class: jessica, pos: {x: 7, y: 0}}
+    - {class: duncan, pos: {x: 5, y: 1}}
+    - {class: gurney, pos: {x: 8, y: 1}}
+    - {class: stilgar, pos: {x: 4, y: 0}}
+    - {class: chani, pos: {x: 9, y: 0}}
+    - {class: fremen_warrior, pos: {x: 3, y: 1}}
+    - {class: fremen_warrior, pos: {x: 10, y: 1}}
+
+  red:
+    - {class: baron, pos: {x: 7, y: 9}}
+    - {class: rabban, pos: {x: 5, y: 7}}
+    - {class: piter, pos: {x: 9, y: 8}}
+    - {class: sardaukar, pos: {x: 4, y: 8}}
+    - {class: sardaukar, pos: {x: 8, y: 7}}
+    - {class: sardaukar, pos: {x: 10, y: 8}}
+    - {class: harkonnen_soldier, pos: {x: 3, y: 9}}
+    - {class: harkonnen_soldier, pos: {x: 11, y: 9}}
+
+rules:
+  max_turns: 20
+  first_player: blue
+
+win_conditions:
+  - {type: protect_unit, unit_id: u_b_paul_1, owning_team: blue}
+  - {type: protect_unit, unit_id: u_r_baron_1, owning_team: red}
+  - {type: eliminate_all_enemy_units}
+  - {type: seize_enemy_fort}
+  - {type: max_turns_draw}
+
+narrative:
+  title: Battle of Arrakeen
+  description: |
+    Arrakis, 10191 AG. Paul Muad'Dib leads his Fremen against the
+    Harkonnen occupation of Arrakeen. The desert rises. The sleeper
+    has awakened.
+  intro: |
+    A wall of sand rolls across the Shield Wall gap. From within it
+    emerge the Fremen — blue-within-blue eyes burning with purpose.
+    Paul Atreides raises his crysknife. Today, House Atreides takes
+    back what was stolen. Today, the prophecy is fulfilled.
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        The desert shakes. A distant rumbling grows into a roar as
+        sandworms answer the thumpers. The Fremen ride the makers
+        of Arrakis into battle.
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        The palace gates buckle. Inside, the Baron screams orders
+        at his guards. The spice-stained halls echo with the clash
+        of crysknives against steel.
+    - trigger: on_unit_killed
+      unit_id: u_r_baron_1
+      text: |
+        The Baron's suspensor belt sparks and fails. Vladimir
+        Harkonnen falls, his schemes ended at last. Arrakeen
+        belongs to the Fremen.

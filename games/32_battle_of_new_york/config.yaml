@@ -1,0 +1,322 @@
+schema_version: 1
+name: Battle of New York
+difficulty: 4
+description: |
+  New York City, 2012. Loki has opened a portal above Stark Tower,
+  unleashing the Chitauri army upon Manhattan. The Avengers assemble
+  for the first time — Iron Man, Thor, Captain America, Hulk, Black
+  Widow, and Hawkeye — to close the portal and defeat the invasion.
+  Nick Fury coordinates from the ground. Defeat Loki to end the invasion.
+  Inspired by The Avengers (2012) by Marvel Studios.
+
+board:
+  width: 12
+  height: 10
+  terrain:
+    # Buildings scattered across the city grid
+    - {x: 1, y: 1, type: building}
+    - {x: 2, y: 1, type: building}
+    - {x: 5, y: 1, type: building}
+    - {x: 6, y: 1, type: building}
+    - {x: 9, y: 1, type: building}
+    - {x: 10, y: 1, type: building}
+    - {x: 0, y: 3, type: building}
+    - {x: 1, y: 3, type: building}
+    - {x: 4, y: 3, type: building}
+    - {x: 7, y: 3, type: building}
+    - {x: 8, y: 3, type: building}
+    - {x: 11, y: 3, type: building}
+    - {x: 0, y: 5, type: building}
+    - {x: 3, y: 5, type: building}
+    - {x: 4, y: 5, type: building}
+    - {x: 8, y: 5, type: building}
+    - {x: 11, y: 5, type: building}
+    - {x: 1, y: 7, type: building}
+    - {x: 2, y: 7, type: building}
+    - {x: 5, y: 7, type: building}
+    - {x: 9, y: 7, type: building}
+    - {x: 10, y: 7, type: building}
+    # Rubble from the invasion
+    - {x: 3, y: 2, type: rubble}
+    - {x: 7, y: 2, type: rubble}
+    - {x: 2, y: 4, type: rubble}
+    - {x: 9, y: 4, type: rubble}
+    - {x: 6, y: 6, type: rubble}
+    - {x: 3, y: 8, type: rubble}
+    - {x: 8, y: 8, type: rubble}
+    # Stark Tower at the top center
+    - {x: 5, y: 0, type: stark_tower}
+    - {x: 6, y: 0, type: stark_tower}
+  forts:
+    - {x: 5, y: 0, team: blue}
+    - {x: 6, y: 0, team: blue}
+
+terrain_types:
+  building:
+    display_name: Building
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "B"
+    color: white
+    description: |
+      Manhattan skyscrapers and office buildings. Provide solid cover
+      but slow movement through rubble-strewn corridors.
+  rubble:
+    display_name: Rubble
+    move_cost: 1
+    defense_bonus: 1
+    glyph: "~"
+    color: dim
+    description: |
+      Shattered concrete and twisted steel from the Chitauri assault.
+      Offers minor cover amid the devastation.
+  stark_tower:
+    display_name: Stark Tower
+    move_cost: 1
+    defense_bonus: 3
+    glyph: "S"
+    color: bright_cyan
+    description: |
+      The gleaming headquarters of Tony Stark, now ground zero for
+      the Chitauri portal. A fortified position for the Avengers.
+
+unit_classes:
+  iron_man:
+    display_name: Iron Man
+    description: |
+      Tony Stark in his Mark VII armor. Repulsor blasts, unibeam,
+      and flight give him unmatched versatility on the battlefield.
+    hp_max: 26
+    atk: 12
+    defense: 4
+    res: 6
+    spd: 7
+    move: 5
+    rng_min: 2
+    rng_max: 4
+    is_magic: true
+    glyph: "I"
+    color: bright_cyan
+
+  thor:
+    display_name: Thor
+    description: |
+      God of Thunder, wielding Mjolnir. His devastating lightning
+      strikes and godly endurance make him the team's powerhouse.
+    hp_max: 35
+    atk: 13
+    defense: 7
+    res: 8
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "T"
+    color: bright_cyan
+
+  captain_america:
+    display_name: Captain America
+    description: |
+      Steve Rogers, the Super Soldier. His vibranium shield and
+      tactical genius make him the natural leader of the Avengers.
+    hp_max: 28
+    atk: 9
+    defense: 9
+    res: 6
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "C"
+    color: bright_cyan
+
+  hulk:
+    display_name: Hulk
+    description: |
+      Bruce Banner's alter ego. The angrier he gets, the stronger
+      he gets. A green wrecking ball that smashes everything in sight.
+    hp_max: 40
+    atk: 15
+    defense: 6
+    res: 3
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "H"
+    color: bright_cyan
+
+  black_widow:
+    display_name: Black Widow
+    description: |
+      Natasha Romanoff, master spy and elite combatant. Lightning-fast
+      and lethal at close range, she compensates for fragility with speed.
+    hp_max: 18
+    atk: 8
+    defense: 3
+    res: 3
+    spd: 8
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "W"
+    color: bright_cyan
+
+  hawkeye:
+    display_name: Hawkeye
+    description: |
+      Clint Barton, the world's greatest marksman. His trick arrows
+      turn him into a one-man artillery battery from the rooftops.
+    hp_max: 16
+    atk: 10
+    defense: 2
+    res: 2
+    spd: 7
+    move: 4
+    rng_min: 2
+    rng_max: 4
+    glyph: "E"
+    color: bright_cyan
+
+  nick_fury:
+    display_name: Nick Fury
+    description: |
+      Director of S.H.I.E.L.D. A veteran spy and soldier who rallies
+      the team and provides tactical support from behind the lines.
+    hp_max: 20
+    atk: 7
+    defense: 4
+    res: 4
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    can_heal: true
+    heal_amount: 5
+    glyph: "N"
+    color: bright_cyan
+
+  loki:
+    display_name: Loki
+    description: |
+      God of Mischief, wielding the Chitauri Scepter. His illusions
+      and energy blasts make him a dangerous commander. If he falls,
+      the Chitauri lose their link to the portal.
+    hp_max: 24
+    atk: 11
+    defense: 4
+    res: 9
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 3
+    is_magic: true
+    glyph: "L"
+    color: bright_red
+
+  chitauri_commander:
+    display_name: Chitauri Commander
+    description: |
+      Elite officers of the Chitauri invasion force. Armored and
+      aggressive, they lead assault squads through the streets.
+    hp_max: 25
+    atk: 10
+    defense: 6
+    res: 4
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "X"
+    color: red
+
+  chitauri_warrior:
+    display_name: Chitauri Warrior
+    description: |
+      Rank-and-file alien soldiers pouring through the portal.
+      Individually weak but relentless in their advance.
+    hp_max: 18
+    atk: 8
+    defense: 4
+    res: 3
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "c"
+    color: red
+
+  chitauri_chariot:
+    display_name: Chitauri Chariot
+    description: |
+      Hovering attack sleds that strafe through the urban canyons.
+      Fast and deadly but fragile if caught on the ground.
+    hp_max: 14
+    atk: 9
+    defense: 3
+    res: 2
+    spd: 6
+    move: 5
+    rng_min: 2
+    rng_max: 3
+    glyph: "V"
+    color: red
+
+armies:
+  blue:
+    - {class: iron_man, pos: {x: 5, y: 1}}
+    - {class: thor, pos: {x: 6, y: 2}}
+    - {class: captain_america, pos: {x: 5, y: 4}}
+    - {class: hulk, pos: {x: 6, y: 4}}
+    - {class: black_widow, pos: {x: 4, y: 3}}
+    - {class: hawkeye, pos: {x: 6, y: 1}}
+    - {class: nick_fury, pos: {x: 5, y: 6}}
+
+  red:
+    - {class: loki, pos: {x: 5, y: 0}}
+    - {class: chitauri_commander, pos: {x: 3, y: 7}}
+    - {class: chitauri_commander, pos: {x: 8, y: 7}}
+    - {class: chitauri_warrior, pos: {x: 4, y: 8}}
+    - {class: chitauri_warrior, pos: {x: 6, y: 8}}
+    - {class: chitauri_warrior, pos: {x: 7, y: 8}}
+    - {class: chitauri_chariot, pos: {x: 2, y: 9}}
+    - {class: chitauri_chariot, pos: {x: 10, y: 9}}
+
+rules:
+  max_turns: 18
+  first_player: blue
+
+win_conditions:
+  - {type: protect_unit, unit_id: u_r_loki_1, owning_team: red}
+  - {type: eliminate_all_enemy_units}
+  - {type: protect_unit_survives, unit_id: u_r_loki_1, owning_team: red}
+  - {type: max_turns_draw}
+
+narrative:
+  title: Battle of New York
+  description: |
+    Manhattan, 2012. A portal tears open above Stark Tower, and the
+    Chitauri swarm through. The Avengers must hold the line and
+    defeat Loki to close the portal before the city is overrun.
+  intro: |
+    The sky splits open with alien light. Chitauri chariots streak
+    between skyscrapers as warriors pour onto the streets. Six heroes
+    and one spy-master are all that stand between Earth and conquest.
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        Buildings crumble as Chitauri chariots crash through glass
+        and steel. Iron Man weaves between them, repulsors blazing.
+        Thor summons a bolt of lightning that arcs across the sky.
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        The World Security Council has launched a nuclear missile at
+        Manhattan. Iron Man intercepts: "I know just where to put it."
+    - trigger: on_unit_killed
+      unit_id: u_r_loki_1
+      text: |
+        Loki falls. The Chitauri Scepter clatters to the ground. One
+        by one, the alien soldiers collapse as the hivemind link
+        severs. The portal begins to close. The Avengers have won.

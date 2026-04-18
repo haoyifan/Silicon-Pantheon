@@ -1,0 +1,110 @@
+# 纽约之战 — 中文本地化
+name: 纽约之战
+description: |
+  纽约市，2012年。洛基在斯塔克大厦上空打开了传送门，
+  释放齐塔瑞大军入侵曼哈顿。复仇者联盟首次集结——
+  钢铁侠、雷神、美国队长、浩克、黑寡妇和鹰眼——
+  誓要关闭传送门、击败入侵者。击败洛基即可终结入侵。
+
+unit_classes:
+  iron_man:
+    display_name: 钢铁侠
+    description: |
+      托尼·斯塔克身穿Mark VII战甲。斥力光束、集束炮
+      和飞行能力赋予他无与伦比的战场机动性。
+  thor:
+    display_name: 雷神
+    description: |
+      雷霆之神，手持雷神之锤。毁灭性的闪电打击和神级
+      耐力使他成为团队的核心战力。
+  captain_america:
+    display_name: 美国队长
+    description: |
+      史蒂夫·罗杰斯，超级战士。振金盾牌和战术天赋使他
+      成为复仇者联盟的天然领袖。
+  hulk:
+    display_name: 浩克
+    description: |
+      布鲁斯·班纳的另一个自我。越愤怒越强大。
+      一个绿色的破坏球，碾碎一切。
+  black_widow:
+    display_name: 黑寡妇
+    description: |
+      娜塔莎·罗曼诺夫，顶级间谍和精英格斗家。
+      速度极快，近距离致命，以速度弥补脆弱。
+  hawkeye:
+    display_name: 鹰眼
+    description: |
+      克林特·巴顿，世界最强弓箭手。各种特殊箭矢让他
+      成为屋顶上的单人炮台。
+  nick_fury:
+    display_name: 尼克·弗瑞
+    description: |
+      神盾局局长。资深间谍和战士，集结团队并从后方
+      提供战术支援。
+  loki:
+    display_name: 洛基
+    description: |
+      诡计之神，手持齐塔瑞权杖。幻术和能量冲击波
+      使他成为危险的指挥官。他若倒下，传送门将关闭。
+  chitauri_commander:
+    display_name: 齐塔瑞指挥官
+    description: |
+      齐塔瑞入侵部队的精锐军官。装甲厚重、攻势凶猛，
+      率领突击小队穿越街道。
+  chitauri_warrior:
+    display_name: 齐塔瑞战士
+    description: |
+      从传送门涌出的普通外星士兵。单独力量薄弱
+      但攻势不绝。
+  chitauri_chariot:
+    display_name: 齐塔瑞战车
+    description: |
+      在城市峡谷中穿梭扫射的悬浮攻击载具。
+      速度快、火力猛但被困地面时十分脆弱。
+
+terrain_types:
+  building:
+    display_name: 建筑物
+    description: |
+      曼哈顿的摩天大楼和办公楼。提供坚实掩护
+      但瓦砾遍布的走廊减缓移动。
+  rubble:
+    display_name: 废墟
+    description: |
+      齐塔瑞攻击留下的碎混凝土和扭曲钢筋。
+      在废墟中提供少许掩护。
+  stark_tower:
+    display_name: 斯塔克大厦
+    description: |
+      托尼·斯塔克闪亮的总部，现为齐塔瑞传送门的
+      中心。复仇者联盟的坚固阵地。
+
+narrative:
+  title: 纽约之战
+  description: |
+    曼哈顿，2012年。传送门在斯塔克大厦上方撕裂天空，
+    齐塔瑞蜂拥而出。复仇者联盟必须守住防线、击败洛基，
+    在城市沦陷前关闭传送门。
+  intro: |
+    天空被异界光芒撕裂。齐塔瑞战车在摩天大楼间飞驰，
+    战士涌上街头。六位英雄和一位间谍大师是地球与征服者
+    之间唯一的屏障。
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        建筑在齐塔瑞战车撞穿玻璃和钢铁时倒塌。
+        钢铁侠在它们之间穿梭，斥力光束闪耀。
+        雷神召唤闪电划过天际。
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        世界安理会已向曼哈顿发射核弹。钢铁侠拦截：
+        "我知道该把它送到哪里。"
+    - trigger: on_unit_killed
+      unit_id: u_r_loki_1
+      text: |
+        洛基倒下了。齐塔瑞权杖当啷落地。外星士兵
+        一个接一个瘫倒，蜂巢意识断裂。传送门开始
+        关闭。复仇者联盟胜利了。

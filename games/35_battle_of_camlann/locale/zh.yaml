@@ -1,0 +1,136 @@
+# 卡姆兰之战 — 中文本地化
+name: 卡姆兰之战
+description: |
+  卡姆兰，卡美洛的黄昏。亚瑟王率领剩余的圆桌骑士
+  对抗叛逆的莫德雷德及其叛变骑士和撒克逊战士联盟。
+  梅林的魔法与摩根勒菲的巫术交锋。附魔之湖在近处
+  闪烁，曾经伟大的城堡废墟俯瞰战场。
+  亚瑟与莫德雷德必须对决——只能有一个国王屹立。
+
+unit_classes:
+  arthur:
+    display_name: 亚瑟王
+    description: |
+      永恒之王。石中剑在他手中燃烧，他的勇气
+      激励所有追随者。他必须面对莫德雷德，否则不列颠沦陷。
+  lancelot:
+    display_name: 兰斯洛特爵士
+    description: |
+      史上最伟大的骑士。剑术无双，速度传奇。
+      即使此刻，他对亚瑟的忠诚也是绝对的。
+  gawain:
+    display_name: 高文爵士
+    description: |
+      亚瑟的侄子，太阳骑士。他的力量随日光增长。
+      勇猛、光荣、战斗中不屈不挠。
+  percival:
+    display_name: 珀西瓦尔爵士
+    description: |
+      圣杯骑士。内心纯洁、臂力稳健，珀西瓦尔的
+      信仰使他免受黑暗魔法侵害。
+  galahad:
+    display_name: 加拉哈德爵士
+    description: |
+      完美骑士，兰斯洛特之子。他的纯洁赋予他
+      对魔法和腐蚀的非凡抵抗力。
+  merlin:
+    display_name: 梅林
+    description: |
+      时代最伟大的巫师。远距离施法打击，治愈伤者，
+      他的智慧指引国王。
+  round_table_knight:
+    display_name: 圆桌骑士
+    description: |
+      卡美洛的效忠骑士。每一位都已证明配坐
+      圆桌——勇敢、技艺精湛、忠贞不渝。
+  mordred:
+    display_name: 莫德雷德
+    description: |
+      亚瑟的私生子和背叛者。被野心和怨恨吞噬，
+      他已集结大军夺取王位。他的剑注定要
+      打出致命一击。
+  morgan:
+    display_name: 摩根勒菲
+    description: |
+      亚瑟的同父异母姐妹，可怕力量的女巫。
+      她的魔法削弱和腐蚀敌人，治愈之术维持
+      莫德雷德的军队。
+  agravaine:
+    display_name: 阿格拉文爵士
+    description: |
+      高文之弟，叛变的骑士。剑术依旧锋利，
+      但荣誉早已消逝。
+  saxon_warrior:
+    display_name: 撒克逊战士
+    description: |
+      来自海外的异教战士，为掠夺而与莫德雷德结盟。
+      凶猛的斧手，几乎不畏死亡。
+  dark_knight:
+    display_name: 黑暗骑士
+    description: |
+      背弃誓言加入莫德雷德阵营的骑士。厚重的盔甲
+      和冷酷的决心使他们难以对付。
+
+terrain_types:
+  castle_ruins:
+    display_name: 城堡废墟
+    description: |
+      崩塌的石墙和倒塌的塔楼。曾经骄傲的防御工事
+      仍为废墟中战斗的人提供庇护。
+  enchanted_lake:
+    display_name: 附魔之湖
+    description: |
+      闪烁着超凡力量的湖泊。不可通行，但湖水
+      治愈站在岸边的人。湖中女士在水下注视着。
+  stone_wall:
+    display_name: 石墙
+    description: |
+      古老的石质防御工事。不可逾越的屏障
+      引导战斗在战场上的走向。
+  camelot_gate:
+    display_name: 卡美洛之门
+    description: |
+      卡美洛的最后一道门。亚瑟的骑士在此集结，
+      守卫他们曾经伟大王国的残余。
+  mordred_camp:
+    display_name: 莫德雷德营地
+    description: |
+      莫德雷德的战争营地，飘扬着叛乱的黑旗。
+      篡位者军队的堡垒指挥所。
+
+narrative:
+  title: 卡姆兰之战
+  description: |
+    卡姆兰，最终之战。亚瑟王率领忠诚的骑士对抗
+    莫德雷德的叛军。卡美洛和整个不列颠的命运
+    悬于一线。
+  intro: |
+    迷雾笼罩卡姆兰战场。两支军队在灰色黎明中
+    对峙——父对子，骑士对骑士。石中剑闪耀。
+    莫德雷德的黑旗在风中猎猎作响。没有谈判的
+    余地。唯有钢铁。
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        梅林的法杖燃起白色火焰。摩根勒菲以暗影之墙
+        回应。两股魔力在两军之间碰撞，爆裂出力量
+        的火花。
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        战场上遍布倒下的战士。亚瑟高举石中剑向前
+        推进。在杀戮的彼端，莫德雷德等待着。预言
+        将他们如磁石般吸引到一起。
+    - trigger: on_unit_killed
+      unit_id: u_r_mordred_1
+      text: |
+        亚瑟将石中剑刺穿莫德雷德的胸膛。但莫德雷德
+        用最后的力气回击了一刀。卡美洛的时代在这片
+        血腥的战场上终结。
+    - trigger: on_unit_killed
+      unit_id: u_b_arthur_1
+      text: |
+        国王倒下了。贝迪维尔爵士将他抬到附魔之湖。
+        一艘银色小舟出现在迷雾中。亚瑟被带往阿瓦隆，
+        沉睡直到不列颠再次需要他。

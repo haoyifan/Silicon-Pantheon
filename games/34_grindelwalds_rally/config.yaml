@@ -1,0 +1,323 @@
+schema_version: 1
+name: "Grindelwald's Rally"
+difficulty: 3
+description: |
+  Paris, 1927. Gellert Grindelwald holds a rally in the Pere Lachaise
+  amphitheatre, summoning followers to his cause with visions of
+  wizarding supremacy. Newt Scamander and Dumbledore's allies must
+  infiltrate the rally and stop Grindelwald before his dark flames
+  consume Paris. Credence, the Obscurus, is a wild card of terrible
+  power. Defeat Grindelwald to end the rally.
+  Inspired by Fantastic Beasts: The Crimes of Grindelwald by J.K. Rowling.
+
+board:
+  width: 10
+  height: 10
+  terrain:
+    # Amphitheatre seating — outer ring
+    - {x: 0, y: 0, type: amphitheatre_seat}
+    - {x: 1, y: 0, type: amphitheatre_seat}
+    - {x: 2, y: 0, type: amphitheatre_seat}
+    - {x: 7, y: 0, type: amphitheatre_seat}
+    - {x: 8, y: 0, type: amphitheatre_seat}
+    - {x: 9, y: 0, type: amphitheatre_seat}
+    - {x: 0, y: 1, type: amphitheatre_seat}
+    - {x: 9, y: 1, type: amphitheatre_seat}
+    - {x: 0, y: 2, type: amphitheatre_seat}
+    - {x: 9, y: 2, type: amphitheatre_seat}
+    - {x: 0, y: 7, type: amphitheatre_seat}
+    - {x: 9, y: 7, type: amphitheatre_seat}
+    - {x: 0, y: 8, type: amphitheatre_seat}
+    - {x: 9, y: 8, type: amphitheatre_seat}
+    - {x: 0, y: 9, type: amphitheatre_seat}
+    - {x: 1, y: 9, type: amphitheatre_seat}
+    - {x: 2, y: 9, type: amphitheatre_seat}
+    - {x: 7, y: 9, type: amphitheatre_seat}
+    - {x: 8, y: 9, type: amphitheatre_seat}
+    - {x: 9, y: 9, type: amphitheatre_seat}
+    # Magical barriers — channeling movement
+    - {x: 3, y: 0, type: magical_barrier}
+    - {x: 6, y: 0, type: magical_barrier}
+    - {x: 3, y: 9, type: magical_barrier}
+    - {x: 6, y: 9, type: magical_barrier}
+    - {x: 0, y: 4, type: magical_barrier}
+    - {x: 0, y: 5, type: magical_barrier}
+    - {x: 9, y: 4, type: magical_barrier}
+    - {x: 9, y: 5, type: magical_barrier}
+    # Inner seating
+    - {x: 2, y: 2, type: amphitheatre_seat}
+    - {x: 7, y: 2, type: amphitheatre_seat}
+    - {x: 2, y: 7, type: amphitheatre_seat}
+    - {x: 7, y: 7, type: amphitheatre_seat}
+  forts: []
+
+terrain_types:
+  amphitheatre_seat:
+    display_name: Amphitheatre Seat
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "="
+    color: dim
+    description: |
+      Stone seating tiers of the underground amphitheatre. Provides
+      minor cover but slows movement over the stepped rows.
+  magical_barrier:
+    display_name: Magical Barrier
+    move_cost: 1
+    defense_bonus: 0
+    passable: false
+    glyph: "#"
+    color: bright_magenta
+    description: |
+      Shimmering walls of protective enchantment. Impassable barriers
+      of blue-white flame that channel the flow of battle.
+
+unit_classes:
+  newt:
+    display_name: Newt Scamander
+    description: |
+      Magizoologist and reluctant hero. His creatures are his weapons,
+      his empathy is his shield, and his healing touch mends allies.
+    hp_max: 20
+    atk: 8
+    defense: 3
+    res: 7
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    can_heal: true
+    heal_amount: 5
+    glyph: "N"
+    color: bright_cyan
+
+  tina:
+    display_name: Tina Goldstein
+    description: |
+      MACUSA Auror, fierce and determined. Her wand work is sharp
+      and her protective instincts even sharper.
+    hp_max: 22
+    atk: 9
+    defense: 4
+    res: 6
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "T"
+    color: bright_cyan
+
+  theseus:
+    display_name: Theseus Scamander
+    description: |
+      Head of the British Auror Office and war hero. A disciplined
+      duelist who leads from the front with shield and spell.
+    hp_max: 26
+    atk: 10
+    defense: 7
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "S"
+    color: bright_cyan
+
+  jacob:
+    display_name: Jacob Kowalski
+    description: |
+      No-Maj baker with a heart of gold and fists of iron. He cannot
+      cast spells, but his courage and loyalty are unmatched.
+    hp_max: 16
+    atk: 6
+    defense: 5
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "K"
+    color: cyan
+
+  yusuf:
+    display_name: Yusuf Kama
+    description: |
+      Pure-blood wizard driven by a blood oath of vengeance. His
+      dueling skills are honed by years of single-minded pursuit.
+    hp_max: 22
+    atk: 9
+    defense: 5
+    res: 4
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "Y"
+    color: cyan
+
+  auror:
+    display_name: Auror
+    description: |
+      Trained dark-wizard catchers from the international magical
+      law enforcement. Professional, disciplined, and deadly.
+    hp_max: 20
+    atk: 8
+    defense: 4
+    res: 5
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "A"
+    color: cyan
+
+  grindelwald:
+    display_name: Grindelwald
+    description: |
+      Gellert Grindelwald, the most dangerous dark wizard before
+      Voldemort. Wielder of the Elder Wand, master of the Protego
+      Diabolica — blue flames that consume all who oppose him.
+    hp_max: 26
+    atk: 13
+    defense: 4
+    res: 10
+    spd: 6
+    move: 4
+    rng_min: 2
+    rng_max: 4
+    is_magic: true
+    glyph: "G"
+    color: bright_red
+
+  credence:
+    display_name: Credence
+    description: |
+      Aurelius Dumbledore — or so Grindelwald claims. The Obscurus
+      within him is a force of raw, uncontrolled devastation. Fragile
+      in body but catastrophic in power.
+    hp_max: 16
+    atk: 14
+    defense: 2
+    res: 3
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "Z"
+    color: bright_red
+
+  queenie:
+    display_name: Queenie Goldstein
+    description: |
+      Tina's sister, a natural Legilimens who joined Grindelwald
+      for love. Her mind-reading powers and healing magic serve
+      the dark cause now.
+    hp_max: 18
+    atk: 7
+    defense: 2
+    res: 8
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    can_heal: true
+    heal_amount: 5
+    glyph: "Q"
+    color: bright_red
+
+  vinda:
+    display_name: Vinda Rosier
+    description: |
+      Grindelwald's most loyal lieutenant. A cold, precise duelist
+      whose curses strike with surgical accuracy.
+    hp_max: 20
+    atk: 10
+    defense: 3
+    res: 7
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 3
+    is_magic: true
+    glyph: "V"
+    color: red
+
+  acolyte:
+    display_name: Acolyte
+    description: |
+      Grindelwald's followers, drawn to his rally by promises of
+      wizarding dominance. Zealous but poorly trained.
+    hp_max: 18
+    atk: 7
+    defense: 4
+    res: 4
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "a"
+    color: red
+
+armies:
+  blue:
+    - {class: newt, pos: {x: 4, y: 1}}
+    - {class: tina, pos: {x: 5, y: 1}}
+    - {class: theseus, pos: {x: 3, y: 2}}
+    - {class: jacob, pos: {x: 6, y: 2}}
+    - {class: yusuf, pos: {x: 1, y: 1}}
+    - {class: auror, pos: {x: 8, y: 1}}
+    - {class: auror, pos: {x: 1, y: 2}}
+
+  red:
+    - {class: grindelwald, pos: {x: 5, y: 8}}
+    - {class: credence, pos: {x: 4, y: 7}}
+    - {class: queenie, pos: {x: 6, y: 7}}
+    - {class: vinda, pos: {x: 3, y: 8}}
+    - {class: acolyte, pos: {x: 4, y: 9}}
+    - {class: acolyte, pos: {x: 5, y: 9}}
+    - {class: acolyte, pos: {x: 7, y: 8}}
+
+rules:
+  max_turns: 16
+  first_player: red
+
+win_conditions:
+  - {type: protect_unit, unit_id: u_r_grindelwald_1, owning_team: red}
+  - {type: eliminate_all_enemy_units}
+  - {type: protect_unit_survives, unit_id: u_r_grindelwald_1, owning_team: red}
+  - {type: max_turns_draw}
+
+narrative:
+  title: "Grindelwald's Rally"
+  description: |
+    Paris, 1927. Grindelwald holds court in the Pere Lachaise
+    amphitheatre. Newt Scamander and allies must stop him before
+    his dark flames spread across Europe.
+  intro: |
+    Blue-white flames rise in a circle around the amphitheatre.
+    Grindelwald stands at the center, arms raised, his silver tongue
+    weaving visions of a world where wizards rule. In the shadows,
+    Newt Scamander grips his wand. It is time to act.
+  events:
+    - trigger: on_turn_start
+      turn: 4
+      text: |
+        Grindelwald's Protego Diabolica surges outward. The blue
+        flames test the hearts of all present — those who harbour
+        hatred burn, those loyal to him pass through unharmed.
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        Credence unleashes the Obscurus. Dark tendrils of destruction
+        lash out in all directions, cracking the stone tiers of the
+        amphitheatre.
+    - trigger: on_unit_killed
+      unit_id: u_r_grindelwald_1
+      text: |
+        Grindelwald staggers. The Elder Wand slips from his grasp.
+        The blue flames gutter and die. His followers scatter into
+        the Parisian night. The rally is broken.

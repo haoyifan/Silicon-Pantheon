@@ -1,0 +1,390 @@
+schema_version: 1
+name: Battle of Camlann
+difficulty: 5
+description: |
+  Camlann, the twilight of Camelot. King Arthur leads his remaining
+  Knights of the Round Table against the treacherous Mordred and his
+  alliance of renegade knights and Saxon warriors. Merlin's magic
+  clashes with Morgan le Fay's sorcery. An enchanted lake shimmers
+  nearby, and the ruins of a once-great castle loom over the field.
+  Arthur and Mordred must face each other — only one king can stand.
+  Inspired by Arthurian legend, primarily Le Morte d'Arthur by Thomas Malory.
+
+board:
+  width: 12
+  height: 12
+  terrain:
+    # Castle ruins — upper left
+    - {x: 0, y: 0, type: castle_ruins}
+    - {x: 1, y: 0, type: castle_ruins}
+    - {x: 2, y: 0, type: castle_ruins}
+    - {x: 0, y: 1, type: castle_ruins}
+    - {x: 1, y: 1, type: castle_ruins}
+    - {x: 2, y: 1, type: castle_ruins}
+    - {x: 0, y: 2, type: castle_ruins}
+    - {x: 1, y: 2, type: castle_ruins}
+    # Stone walls — old fortifications
+    - {x: 3, y: 0, type: stone_wall}
+    - {x: 3, y: 1, type: stone_wall}
+    - {x: 4, y: 4, type: stone_wall}
+    - {x: 5, y: 4, type: stone_wall}
+    - {x: 6, y: 4, type: stone_wall}
+    - {x: 7, y: 4, type: stone_wall}
+    - {x: 4, y: 7, type: stone_wall}
+    - {x: 5, y: 7, type: stone_wall}
+    - {x: 6, y: 7, type: stone_wall}
+    - {x: 7, y: 7, type: stone_wall}
+    # Enchanted lake — center-right
+    - {x: 8, y: 4, type: enchanted_lake}
+    - {x: 9, y: 4, type: enchanted_lake}
+    - {x: 8, y: 5, type: enchanted_lake}
+    - {x: 9, y: 5, type: enchanted_lake}
+    - {x: 8, y: 6, type: enchanted_lake}
+    - {x: 9, y: 6, type: enchanted_lake}
+    # Camelot gate — blue fort, bottom-left
+    - {x: 0, y: 10, type: camelot_gate}
+    - {x: 1, y: 10, type: camelot_gate}
+    - {x: 0, y: 11, type: camelot_gate}
+    - {x: 1, y: 11, type: camelot_gate}
+    # Mordred's camp — red fort, top-right
+    - {x: 10, y: 0, type: mordred_camp}
+    - {x: 11, y: 0, type: mordred_camp}
+    - {x: 10, y: 1, type: mordred_camp}
+    - {x: 11, y: 1, type: mordred_camp}
+    # More castle ruins scattered
+    - {x: 9, y: 9, type: castle_ruins}
+    - {x: 10, y: 9, type: castle_ruins}
+    - {x: 11, y: 9, type: castle_ruins}
+    - {x: 10, y: 10, type: castle_ruins}
+    - {x: 11, y: 10, type: castle_ruins}
+  forts:
+    - {x: 0, y: 10, team: blue}
+    - {x: 1, y: 10, team: blue}
+    - {x: 0, y: 11, team: blue}
+    - {x: 1, y: 11, team: blue}
+    - {x: 10, y: 0, team: red}
+    - {x: 11, y: 0, team: red}
+    - {x: 10, y: 1, team: red}
+    - {x: 11, y: 1, team: red}
+
+terrain_types:
+  castle_ruins:
+    display_name: Castle Ruins
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "%"
+    color: dim
+    description: |
+      Crumbling stone walls and fallen towers. Once-proud
+      fortifications that still offer shelter to those who fight
+      among the rubble.
+  enchanted_lake:
+    display_name: Enchanted Lake
+    move_cost: 1
+    defense_bonus: 0
+    passable: false
+    glyph: "~"
+    color: bright_cyan
+    description: |
+      A shimmering lake of otherworldly power. Impassable, but its
+      waters heal those who stand at its shores. The Lady of the
+      Lake watches from below.
+  stone_wall:
+    display_name: Stone Wall
+    move_cost: 1
+    defense_bonus: 0
+    passable: false
+    glyph: "#"
+    color: white
+    description: |
+      Ancient stone fortifications. Impassable barriers that channel
+      the flow of battle across the field.
+  camelot_gate:
+    display_name: Camelot Gate
+    move_cost: 1
+    defense_bonus: 3
+    glyph: "G"
+    color: bright_cyan
+    description: |
+      The last gate of Camelot. Arthur's knights rally here,
+      defending the remnants of their once-great kingdom.
+  mordred_camp:
+    display_name: "Mordred's Camp"
+    move_cost: 1
+    defense_bonus: 3
+    glyph: "M"
+    color: bright_red
+    description: |
+      Mordred's war camp, flying the black banner of rebellion.
+      A fortified command post for the usurper's forces.
+
+unit_classes:
+  arthur:
+    display_name: King Arthur
+    description: |
+      The Once and Future King. Excalibur blazes in his hand, and
+      his courage inspires all who follow him. He must face Mordred
+      or Britain falls.
+    hp_max: 32
+    atk: 13
+    defense: 8
+    res: 6
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "A"
+    color: bright_cyan
+
+  lancelot:
+    display_name: Sir Lancelot
+    description: |
+      The greatest knight who ever lived. His sword arm is peerless,
+      his speed legendary. Even now, his loyalty to Arthur is absolute.
+    hp_max: 28
+    atk: 14
+    defense: 6
+    res: 4
+    spd: 7
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "L"
+    color: bright_cyan
+
+  gawain:
+    display_name: Sir Gawain
+    description: |
+      Arthur's nephew, the Knight of the Sun. His strength waxes
+      with daylight. Fierce, honourable, and relentless in battle.
+    hp_max: 26
+    atk: 11
+    defense: 5
+    res: 3
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "G"
+    color: bright_cyan
+
+  percival:
+    display_name: Sir Percival
+    description: |
+      The Grail Knight. Pure of heart and steady of arm, Percival's
+      faith shields him from dark sorcery.
+    hp_max: 24
+    atk: 9
+    defense: 6
+    res: 5
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "P"
+    color: cyan
+
+  galahad:
+    display_name: Sir Galahad
+    description: |
+      The Perfect Knight, son of Lancelot. His purity grants him
+      extraordinary resistance to magic and corruption.
+    hp_max: 22
+    atk: 8
+    defense: 5
+    res: 8
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "H"
+    color: cyan
+
+  merlin:
+    display_name: Merlin
+    description: |
+      The greatest wizard of the age. His spells strike from afar,
+      his healing arts mend the wounded, and his counsel guides kings.
+    hp_max: 20
+    atk: 12
+    defense: 2
+    res: 10
+    spd: 5
+    move: 3
+    rng_min: 2
+    rng_max: 4
+    is_magic: true
+    can_heal: true
+    heal_amount: 7
+    glyph: "M"
+    color: bright_cyan
+
+  round_table_knight:
+    display_name: Knight of the Round Table
+    description: |
+      Sworn knights of Camelot. Each has proven worthy to sit at
+      the Round Table — brave, skilled, and true.
+    hp_max: 24
+    atk: 9
+    defense: 6
+    res: 4
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "K"
+    color: cyan
+
+  mordred:
+    display_name: Mordred
+    description: |
+      Arthur's illegitimate son and betrayer. Consumed by ambition
+      and spite, he has raised an army to seize the throne. His blade
+      is destined to strike the fatal blow.
+    hp_max: 30
+    atk: 12
+    defense: 7
+    res: 5
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "X"
+    color: bright_red
+
+  morgan:
+    display_name: Morgan le Fay
+    description: |
+      Arthur's half-sister and sorceress of terrible power. Her
+      enchantments weaken and corrupt, and her healing arts sustain
+      Mordred's forces.
+    hp_max: 18
+    atk: 11
+    defense: 2
+    res: 9
+    spd: 5
+    move: 3
+    rng_min: 2
+    rng_max: 4
+    is_magic: true
+    can_heal: true
+    heal_amount: 6
+    glyph: "F"
+    color: bright_red
+
+  agravaine:
+    display_name: Sir Agravaine
+    description: |
+      Gawain's brother, a knight turned traitor. His sword skill
+      remains sharp, but his honour is long spent.
+    hp_max: 24
+    atk: 10
+    defense: 6
+    res: 3
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "V"
+    color: bright_red
+
+  saxon_warrior:
+    display_name: Saxon Warrior
+    description: |
+      Pagan warriors from across the sea, allied with Mordred for
+      plunder. Fierce axemen with little fear of death.
+    hp_max: 22
+    atk: 9
+    defense: 5
+    res: 2
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "S"
+    color: red
+
+  dark_knight:
+    display_name: Dark Knight
+    description: |
+      Knights who have forsaken their oaths and joined Mordred's
+      cause. Heavy armor and grim determination make them formidable.
+    hp_max: 22
+    atk: 8
+    defense: 6
+    res: 4
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "D"
+    color: red
+
+armies:
+  blue:
+    - {class: arthur, pos: {x: 1, y: 10}}
+    - {class: lancelot, pos: {x: 2, y: 10}}
+    - {class: gawain, pos: {x: 3, y: 10}}
+    - {class: percival, pos: {x: 0, y: 9}}
+    - {class: galahad, pos: {x: 1, y: 9}}
+    - {class: merlin, pos: {x: 0, y: 11}}
+    - {class: round_table_knight, pos: {x: 3, y: 11}}
+    - {class: round_table_knight, pos: {x: 4, y: 10}}
+
+  red:
+    - {class: mordred, pos: {x: 10, y: 1}}
+    - {class: morgan, pos: {x: 11, y: 0}}
+    - {class: agravaine, pos: {x: 9, y: 1}}
+    - {class: saxon_warrior, pos: {x: 8, y: 0}}
+    - {class: saxon_warrior, pos: {x: 11, y: 2}}
+    - {class: dark_knight, pos: {x: 8, y: 1}}
+    - {class: dark_knight, pos: {x: 9, y: 2}}
+    - {class: dark_knight, pos: {x: 10, y: 2}}
+
+rules:
+  max_turns: 20
+  first_player: blue
+
+win_conditions:
+  - {type: protect_unit, unit_id: u_b_arthur_1, owning_team: blue}
+  - {type: protect_unit, unit_id: u_r_mordred_1, owning_team: red}
+  - {type: eliminate_all_enemy_units}
+  - {type: seize_enemy_fort}
+  - {type: max_turns_draw}
+
+narrative:
+  title: Battle of Camlann
+  description: |
+    Camlann, the final battle. King Arthur leads his loyal knights
+    against Mordred's rebel army. The fate of Camelot and all of
+    Britain hangs in the balance.
+  intro: |
+    Mist rolls across the field of Camlann. Two armies face each
+    other in the grey dawn — father against son, knight against
+    knight. Excalibur gleams. Mordred's black banner snaps in the
+    wind. There will be no parley. Only steel.
+  events:
+    - trigger: on_turn_start
+      turn: 5
+      text: |
+        Merlin's staff blazes with white fire. Morgan le Fay answers
+        with a wall of shadow. The two sorceries collide in the air
+        between the armies, crackling with power.
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        The field is strewn with the fallen. Arthur pushes forward,
+        Excalibur raised. Across the carnage, Mordred waits. The
+        prophecy draws them together like lodestone and iron.
+    - trigger: on_unit_killed
+      unit_id: u_r_mordred_1
+      text: |
+        Arthur drives Excalibur through Mordred's chest. But with
+        his dying strength, Mordred strikes one last blow. The age
+        of Camelot ends on this bloody field.
+    - trigger: on_unit_killed
+      unit_id: u_b_arthur_1
+      text: |
+        The King falls. Sir Bedivere carries him to the enchanted
+        lake. A barge of silver appears in the mist. Arthur is borne
+        away to Avalon, to sleep until Britain needs him again.

@@ -1,0 +1,108 @@
+# 格林德沃的集会 — 中文本地化
+name: 格林德沃的集会
+description: |
+  巴黎，1927年。盖勒特·格林德沃在拉雪兹神父公墓的
+  圆形剧场举行集会，以巫师至上的愿景召唤追随者。
+  纽特·斯卡曼德和邓布利多的盟友必须渗透集会，
+  在格林德沃的黑暗火焰吞噬巴黎之前阻止他。
+  默默然——克雷登斯是一张可怕力量的未知牌。
+
+unit_classes:
+  newt:
+    display_name: 纽特·斯卡曼德
+    description: |
+      神奇动物学家和不情愿的英雄。他的生物是他的武器，
+      他的同理心是他的盾牌，他的治愈之触修复盟友。
+  tina:
+    display_name: 蒂娜·戈德斯坦
+    description: |
+      美国魔法国会傲罗，坚毅果断。魔杖技术锋利，
+      保护本能更加敏锐。
+  theseus:
+    display_name: 忒修斯·斯卡曼德
+    description: |
+      英国傲罗办公室主管兼战争英雄。纪律严明的
+      决斗家，以盾咒和攻击咒从前线领导。
+  jacob:
+    display_name: 雅各布·科瓦尔斯基
+    description: |
+      拥有金子般心灵和铁拳的麻瓜面包师。他不能
+      施法，但他的勇气和忠诚无人能及。
+  yusuf:
+    display_name: 尤素福·卡马
+    description: |
+      被血誓驱动复仇的纯血巫师。多年执着追寻
+      磨练了他的决斗技巧。
+  auror:
+    display_name: 傲罗
+    description: |
+      来自国际魔法执法部门的黑巫师捕手。
+      专业、纪律严明、致命。
+  grindelwald:
+    display_name: 格林德沃
+    description: |
+      盖勒特·格林德沃，伏地魔之前最危险的黑巫师。
+      老魔杖的持有者，守护恶魔之主——蓝色火焰
+      吞噬所有反对者。
+  credence:
+    display_name: 克雷登斯
+    description: |
+      奥勒留斯·邓布利多——至少格林德沃如此声称。
+      他体内的默默然是一股原始、不可控的毁灭力量。
+      身体脆弱但力量灾难性。
+  queenie:
+    display_name: 奎妮·戈德斯坦
+    description: |
+      蒂娜的妹妹，天生的摄神取念者，因爱加入格林德沃。
+      她的读心能力和治愈魔法现在服务于黑暗事业。
+  vinda:
+    display_name: 文达·罗齐尔
+    description: |
+      格林德沃最忠诚的副官。冷静精准的决斗家，
+      诅咒以外科手术般的准确度命中。
+  acolyte:
+    display_name: 信徒
+    description: |
+      被巫师统治承诺吸引到集会的格林德沃追随者。
+      狂热但训练不足。
+
+terrain_types:
+  amphitheatre_seat:
+    display_name: 剧场座位
+    description: |
+      地下圆形剧场的石质阶梯座位。提供少许掩护
+      但阶梯减缓移动。
+  magical_barrier:
+    display_name: 魔法屏障
+    description: |
+      闪烁的保护结界之墙。不可逾越的蓝白火焰
+      屏障引导战斗走向。
+
+narrative:
+  title: 格林德沃的集会
+  description: |
+    巴黎，1927年。格林德沃在拉雪兹神父公墓圆形剧场
+    主持集会。纽特·斯卡曼德和盟友必须在黑暗火焰
+    蔓延欧洲之前阻止他。
+  intro: |
+    蓝白火焰在圆形剧场周围升起。格林德沃站在中央，
+    双臂高举，银舌编织巫师统治世界的愿景。暗影中，
+    纽特·斯卡曼德紧握魔杖。是时候行动了。
+  events:
+    - trigger: on_turn_start
+      turn: 4
+      text: |
+        格林德沃的守护恶魔向外涌动。蓝色火焰测试
+        所有在场者的内心——怀有仇恨者燃烧，
+        忠于他者安然通过。
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        克雷登斯释放了默默然。黑暗的毁灭触须向
+        四面八方鞭打，击碎圆形剧场的石阶。
+    - trigger: on_unit_killed
+      unit_id: u_r_grindelwald_1
+      text: |
+        格林德沃踉跄后退。老魔杖从他手中滑落。
+        蓝色火焰闪烁熄灭。追随者们消散在
+        巴黎的夜色中。集会被瓦解了。
