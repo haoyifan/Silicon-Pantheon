@@ -152,6 +152,19 @@ post_match:
 # 大厅标题
 lobby_title: "大厅"
 
+# 大厅房间列表值
+lobby_val:
+  team_fixed: "固定"
+  team_random: "随机"
+  fog_none: "关闭"
+  fog_classic: "经典"
+  fog_permanent: "永久"
+  status_waiting_for_players: "等待中"
+  status_counting_down: "倒计时"
+  status_in_game: "进行中"
+  status_finished: "已结束"
+  status_unknown: "—"
+
 # 房间操作按钮
 room_buttons:
   toggle_ready: "切换准备"
@@ -582,7 +595,8 @@ replay:
   step_info: "步骤"
   step: "步骤"
   key_hints: "→/l 下一步   ←/h 上一步   s 跳到行动   S 上个行动   g 开始   G 结尾"
-  nav_hints: "→/l 下一步   ←/h 上一步   s/S 跳行动   g/G 首/尾"
+  nav_hints: "s/S 跳行动   g/G 首/尾"
+  unit_card: "单位详情"
   initial_state: "初始棋盘（行动前）"
   thought: "思考"
   press_next: "按 →/l 前进"

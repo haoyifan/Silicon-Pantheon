@@ -28,7 +28,11 @@ class Dropdown:
     When the caller supplies `option_descriptions`, the currently-
     highlighted option's description is rendered beneath the list so
     the player can read what 'classic' fog actually means before
-    committing."""
+    committing.
+
+    If a description is longer than the visible area, PageUp/PageDown
+    (or u/d) scrolls the description panel.
+    """
 
     title: str
     options: list[str]
@@ -39,6 +43,8 @@ class Dropdown:
     # self-describing options (e.g. team colors).
     option_descriptions: dict[str, str] | None = None
     locale: str = "en"
+    # Description scroll offset (lines from top).
+    _desc_scroll: int = 0
 
     def render(self) -> RenderableType:
         lines: list[Text] = []
@@ -57,15 +63,21 @@ class Dropdown:
             self.options[self.selected_idx] if self.options else ""
         )
         if desc:
-            # overflow="fold" + no_wrap=False makes Rich wrap the
-            # description across multiple lines inside the panel's
-            # fixed width — otherwise a long explanation blew the
-            # whole dropdown sideways and the shape changed per
-            # option, which read as a shifting modal.
+            # Show a scrollable window of the description. Split by
+            # lines and apply the scroll offset.
+            desc_lines = desc.split("\n")
+            total_lines = len(desc_lines)
+            max_visible = 12
+            start = min(self._desc_scroll, max(0, total_lines - max_visible))
+            end = min(start + max_visible, total_lines)
+            visible = "\n".join(desc_lines[start:end])
+            scroll_hint = ""
+            if total_lines > max_visible:
+                scroll_hint = f" [{start + 1}-{end}/{total_lines}  u/d scroll]"
             body_parts.append(
                 RichPanel(
-                    Text(desc, style="white", no_wrap=False, overflow="fold"),
-                    title=self.options[self.selected_idx],
+                    Text(visible, style="white", no_wrap=False, overflow="fold"),
+                    title=self.options[self.selected_idx] + scroll_hint,
                     border_style="yellow",
                     padding=(0, 1),
                 )
@@ -96,9 +108,18 @@ class Dropdown:
             return True
         if key in ("up", "k"):
             self.selected_idx = (self.selected_idx - 1) % len(self.options)
+            self._desc_scroll = 0  # reset scroll on option change
             return False
         if key in ("down", "j"):
             self.selected_idx = (self.selected_idx + 1) % len(self.options)
+            self._desc_scroll = 0  # reset scroll on option change
+            return False
+        # Description scroll (u/d or PageUp/PageDown).
+        if key in ("d", "pagedown"):
+            self._desc_scroll += 6
+            return False
+        if key in ("u", "pageup"):
+            self._desc_scroll = max(0, self._desc_scroll - 6)
             return False
         if key == "enter":
             chosen = self.options[self.selected_idx]

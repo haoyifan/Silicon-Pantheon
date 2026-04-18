@@ -154,6 +154,19 @@ post_match:
 # Lobby title
 lobby_title: "Lobby"
 
+# Lobby room list values
+lobby_val:
+  team_fixed: "fixed"
+  team_random: "random"
+  fog_none: "off"
+  fog_classic: "classic"
+  fog_permanent: "permanent"
+  status_waiting_for_players: "waiting"
+  status_counting_down: "starting"
+  status_in_game: "in game"
+  status_finished: "finished"
+  status_unknown: "—"
+
 # Room action buttons
 room_buttons:
   toggle_ready: "Toggle Ready"
@@ -595,7 +608,8 @@ replay:
   step_info: "Step"
   step: "Step"
   key_hints: "→/l next   ←/h prev   s skip to action   S prev action   g start   G end"
-  nav_hints: "→/l next   ←/h prev   s/S skip action   g/G start/end"
+  nav_hints: "s/S skip action   g/G start/end"
+  unit_card: "unit card"
   initial_state: "Initial board (before any moves)"
   thought: "thought"
   press_next: "Press →/l to advance"

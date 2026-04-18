@@ -35,8 +35,8 @@ class LobbyScreen(Screen):
         lc = self.app.state.locale
         rooms = self.app.state.last_rooms
 
-        header = Text(f"{t('lobby_title', lc)} — {self.app.state.display_name} ({self.app.state.kind})", style="bold yellow")
-        subtitle = Text(f"{len(rooms)} {t('lobby_table.room', lc)}(s) {t('lobby_table.open', lc)}", style="dim")
+        header = Text(f"{t('lobby_title', lc)} — {self.app.state.display_name}", style="bold yellow")
+        subtitle = Text(f"{len(rooms)} {t('lobby_table.room', lc)} {t('lobby_table.open', lc)}", style="dim")
 
         table = Table(expand=True, show_lines=False, header_style="bold")
         table.add_column(" ", width=2)
@@ -55,15 +55,18 @@ class LobbyScreen(Screen):
                 marker = "➤" if i == self._selected else " "
                 seats = r.get("seats", {})
                 occ = sum(1 for s in seats.values() if s.get("occupied"))
+                # Scenario: show human-readable name from config
+                scenario_raw = r.get("scenario", "")
+                scenario_display = r.get("scenario_display_name") or scenario_raw.replace("_", " ").lstrip("0123456789_")
                 table.add_row(
                     marker,
                     r.get("room_id", "")[:10],
                     r.get("host_name", ""),
-                    r.get("scenario", ""),
-                    r.get("team_assignment", ""),
-                    r.get("fog_of_war", ""),
+                    scenario_display,
+                    t(f"lobby_val.team_{r.get('team_assignment', 'fixed')}", lc),
+                    t(f"lobby_val.fog_{r.get('fog_of_war', 'none')}", lc),
                     f"{occ}/2",
-                    r.get("status", ""),
+                    t(f"lobby_val.status_{r.get('status', 'unknown')}", lc),
                     style="bold" if i == self._selected else None,
                 )
 

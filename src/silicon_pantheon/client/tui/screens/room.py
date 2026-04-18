@@ -1074,7 +1074,7 @@ class RoomScreen(Screen):
             label_to_path[label] = path
             # Description: outcome + body preview.
             header = f"[{lesson.outcome}] {lesson.model} — {lesson.created_at}"
-            descriptions[label] = f"{header}\n\n{lesson.body[:500]}"
+            descriptions[label] = f"{header}\n\n{lesson.body}"
 
         cur = options[0]
         if self.app.state.selected_lessons:

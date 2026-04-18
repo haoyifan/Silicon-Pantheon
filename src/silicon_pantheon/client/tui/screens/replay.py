@@ -371,15 +371,10 @@ class ReplayScreen(Screen):
         header_line.append(f"▶ {t('replay.title', lc)}", style="bold magenta")
         header_line.append(f"  {self._scenario_name}", style="yellow bold")
 
-        focused = self._panels[self._focus_idx]
         hints = Text()
-        panel_hints = focused.key_hints()
-        if panel_hints:
-            hints.append(f"[{focused.title}] ", style="bold yellow")
-            hints.append(panel_hints, style="white")
-            hints.append("   ", style="dim")
         hints.append(
             f"{t('replay.nav_hints', lc)}   "
+            f"Enter {t('replay.unit_card', lc)}   "
             f"{t('keys.tab_next', lc)}   "
             f"{t('keys.quit', lc)}",
             style="dim",
@@ -425,28 +420,26 @@ class ReplayScreen(Screen):
         return body
 
     async def handle_key(self, key: str) -> Screen | None:
-        # Unit card overlay
+        # Unit card overlay — Esc/Enter/q close it.
         if self.unit_card is not None:
             if key in ("escape", "enter", "q"):
                 self.unit_card = None
             return None
 
-        # Navigation
-        total = len(self._timeline)
-        if key in ("right", "l", "enter", "j") and self._focus_idx not in (0, 1):
-            # j/k in map/player panels are cursor movement, not step nav.
-            # Step nav only when step panel or reasoning panel is focused.
-            if self._step < total:
-                self._step += 1
-                self._apply_step()
-            return None
-        if key in ("left", "h", "k") and self._focus_idx not in (0, 1):
-            if self._step > 0:
-                self._step -= 1
-                self._apply_step()
+        # Tab between panels — always available.
+        if key == "tab":
+            self._focus_idx = (self._focus_idx + 1) % len(self._panels)
             return None
 
-        # Skip to next/prev action
+        # Quit back to lobby.
+        if key == "q" or key == "escape":
+            from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
+            return LobbyScreen(self.app)
+
+        # Global step navigation — works regardless of focused panel.
+        total = len(self._timeline)
+
+        # Skip to next/prev action (always global).
         if key == "s":
             next_step = self._step + 1
             while next_step <= total and self._timeline[next_step - 1].kind != "action":
@@ -462,27 +455,33 @@ class ReplayScreen(Screen):
             self._apply_step()
             return None
 
-        # Home / End
-        if key == "home" or key == "g":
+        # Home / End (always global).
+        if key == "g" and self._focus_idx not in (0, 1):
             self._step = 0
             self._apply_step()
             return None
-        if key == "end" or key == "G":
+        if key == "G":
             self._step = total
             self._apply_step()
             return None
 
-        # Tab between panels
-        if key == "tab":
-            self._focus_idx = (self._focus_idx + 1) % len(self._panels)
-            return None
+        # Arrow right/left for step nav — only when step or reasoning
+        # panel is focused. When map/player panel is focused, these
+        # keys are cursor movement and go to the panel handler below.
+        if self._focus_idx not in (0, 1):
+            if key in ("right", "l"):
+                if self._step < total:
+                    self._step += 1
+                    self._apply_step()
+                return None
+            if key in ("left", "h"):
+                if self._step > 0:
+                    self._step -= 1
+                    self._apply_step()
+                return None
 
-        # Quit back to lobby
-        if key == "q" or key == "escape":
-            from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
-            return LobbyScreen(self.app)
-
-        # Delegate to focused panel (cursor movement, scroll, etc.)
+        # Delegate to focused panel (cursor movement, Enter for unit
+        # card, scroll, range overlay, etc.).
         result = await self._panels[self._focus_idx].handle_key(key)
         return result
 
