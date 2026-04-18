@@ -309,9 +309,16 @@ def end_turn(session: Session, viewer: Team) -> dict:
             f"have not acted -- [{pending_str}]. Call "
             f"attack/heal/wait on each before retrying end_turn."
         )
+    # Record turn duration for telemetry.
+    import time as _time
+    if session.turn_start_time > 0:
+        dt = _time.monotonic() - session.turn_start_time
+        session.turn_times_by_team[viewer].append(dt)
     try:
         result = apply(session.state, EndTurnAction())
     except IllegalAction as e:
         raise ToolError(str(e)) from e
     _record_action(session, result)
+    # Mark the start of the next team's turn.
+    session.turn_start_time = _time.monotonic()
     return result

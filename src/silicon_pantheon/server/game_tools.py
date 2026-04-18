@@ -130,6 +130,8 @@ def start_game_for_room(app: App, room_id: str) -> None:
         scenario=room.config.scenario,
         fog_of_war=room.config.fog_of_war,
     )
+    import time as _time
+    session.turn_start_time = _time.monotonic()
     app.sessions[room_id] = session
     if room.config.team_assignment == "fixed":
         host_team = Team.BLUE if room.config.host_team == "blue" else Team.RED
@@ -196,6 +198,24 @@ def _viewer_for(conn: Connection, app: App) -> tuple[Any, Team] | None:
     if session is None:
         return None
     # Slot → Team mapping is pinned at game-start time on the App.
+    mapping = app.slot_to_team.get(room_id)
+    if mapping is None:
+        return None
+    return session, mapping[slot]
+
+
+def _viewer_for_any_state(app: App, connection_id: str) -> tuple[Any, Team] | None:
+    """Like _viewer_for but works even after the game has finished."""
+    conn = app.get_connection(connection_id)
+    if conn is None:
+        return None
+    info = app.conn_to_room.get(connection_id)
+    if info is None:
+        return None
+    room_id, slot = info
+    session = app.sessions.get(room_id)
+    if session is None:
+        return None
     mapping = app.slot_to_team.get(room_id)
     if mapping is None:
         return None
@@ -478,6 +498,21 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
             log.exception("record_thought add_thought raised")
             return _error(ErrorCode.INTERNAL, str(e))
         return _ok({})
+
+    @mcp.tool()
+    def report_tokens(connection_id: str, tokens: int) -> dict:
+        """Report token usage so the server can show both sides' stats."""
+        return _dispatch(app, connection_id, "report_tokens", {"tokens": tokens})
+
+    @mcp.tool()
+    def get_match_telemetry(connection_id: str) -> dict:
+        """Get server-tracked telemetry for both teams."""
+        resolved = _viewer_for_any_state(app, connection_id)
+        if resolved is None:
+            return _error(ErrorCode.GAME_NOT_STARTED, "no game session")
+        session, _viewer = resolved
+        from silicon_pantheon.server.tools import get_match_telemetry as _get_telemetry
+        return _ok({"result": _get_telemetry(session, _viewer)})
 
     @mcp.tool()
     def download_replay(connection_id: str) -> dict:

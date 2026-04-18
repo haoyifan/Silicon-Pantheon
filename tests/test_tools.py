@@ -350,6 +350,8 @@ def test_registry_has_all_tools():
         "wait",
         "end_turn",
         "send_to_agent",
+        "report_tokens",
+        "get_match_telemetry",
     }
     assert expected == set(TOOL_REGISTRY.keys())
 

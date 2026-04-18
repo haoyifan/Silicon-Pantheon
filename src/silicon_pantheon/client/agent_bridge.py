@@ -587,6 +587,14 @@ class NetworkedAgent:
         if turn_ended:
             self._turns_played += 1
             self._no_progress_retries = 0
+            # Report token usage to the server so both sides' stats
+            # are available in post-game telemetry.
+            tokens = getattr(self.adapter, "total_tokens", 0)
+            if tokens > 0:
+                try:
+                    await self.client.call("report_tokens", tokens=tokens)
+                except Exception:
+                    pass  # non-fatal
             try:
                 r = await self.client.call("get_history", last_n=0)
                 self._history_cursor = len(

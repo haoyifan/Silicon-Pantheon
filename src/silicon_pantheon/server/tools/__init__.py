@@ -38,7 +38,7 @@ from .mutations import (
     wait_unit,
     end_turn,
 )
-from .coach import send_to_agent
+from .coach import get_match_telemetry, report_tokens, send_to_agent
 
 # ---- registry ----
 
@@ -192,6 +192,25 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
             "required": ["team", "text"],
         },
     },
+    "report_tokens": {
+        "fn": report_tokens,
+        "description": "Report token usage to the server for post-game telemetry.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "tokens": {"type": "integer"},
+            },
+            "required": ["tokens"],
+        },
+    },
+    "get_match_telemetry": {
+        "fn": get_match_telemetry,
+        "description": "Get server-tracked telemetry for both teams (turn times, tool calls, tokens).",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+        },
+    },
 }
 
 
@@ -200,8 +219,13 @@ def call_tool(session: Session, viewer: Team, name: str, args: dict) -> dict:
     spec = TOOL_REGISTRY.get(name)
     if spec is None:
         raise ToolError(f"unknown tool: {name}")
+    session.tool_calls_by_team[viewer] += 1
     fn: Tool = spec["fn"]
     try:
         return fn(session, viewer, **args)
     except TypeError as e:
+        session.tool_errors_by_team[viewer] += 1
         raise ToolError(f"bad arguments for {name}: {e}") from e
+    except ToolError:
+        session.tool_errors_by_team[viewer] += 1
+        raise

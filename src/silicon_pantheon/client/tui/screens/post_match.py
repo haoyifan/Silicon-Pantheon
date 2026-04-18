@@ -162,29 +162,28 @@ class PostMatchScreen(Screen):
             f"{r.units_lost}/{r.units_fielded}",
         )
 
-        # Agent telemetry (only if we have stats from the local agent).
-        agent_stats = self._agent_stats
-        if agent_stats and agent_stats.get("turns_played", 0) > 0:
-            avg_t = agent_stats.get("avg_thinking_time_s", 0)
-            tokens = agent_stats.get("total_tokens", 0)
-            tools = agent_stats.get("total_tool_calls", 0)
-            errors = agent_stats.get("total_errors", 0)
-            my = self.app.state.last_game_state.get("you", "blue") if self.app.state.last_game_state else "blue"
-            my_col = 1 if my == "blue" else 2
-            opp_col = 2 if my == "blue" else 1
-            vals = ["—", "—"]
-            vals[my_col - 1] = f"{avg_t:.1f}s"
-            tbl.add_row("Avg think/turn", vals[0], vals[1])
-            vals = ["—", "—"]
-            vals[my_col - 1] = f"{tokens:,}" if tokens else "—"
-            tbl.add_row("Tokens used", vals[0], vals[1])
-            vals = ["—", "—"]
-            vals[my_col - 1] = str(tools)
-            tbl.add_row("Tool calls", vals[0], vals[1])
-            if errors:
-                vals = ["—", "—"]
-                vals[my_col - 1] = str(errors)
-                tbl.add_row("Errors", vals[0], vals[1])
+        # Server-side telemetry for both teams.
+        telemetry = self._agent_stats or {}
+        blue_t = telemetry.get("blue", {})
+        red_t = telemetry.get("red", {})
+        if blue_t.get("turns_played", 0) > 0 or red_t.get("turns_played", 0) > 0:
+            def _fmt_time(d: dict) -> str:
+                v = d.get("avg_thinking_time_s", 0)
+                return f"{v:.1f}s" if v else "—"
+            def _fmt_tokens(d: dict) -> str:
+                v = d.get("total_tokens", 0)
+                return f"{v:,}" if v else "—"
+            def _fmt_int(d: dict, key: str) -> str:
+                v = d.get(key, 0)
+                return str(v) if v else "—"
+
+            tbl.add_row("Avg think/turn", _fmt_time(blue_t), _fmt_time(red_t))
+            tbl.add_row("Tokens used", _fmt_tokens(blue_t), _fmt_tokens(red_t))
+            tbl.add_row("Tool calls", _fmt_int(blue_t, "total_tool_calls"), _fmt_int(red_t, "total_tool_calls"))
+            b_err = blue_t.get("total_errors", 0)
+            r_err = red_t.get("total_errors", 0)
+            if b_err or r_err:
+                tbl.add_row("Errors", str(b_err) if b_err else "—", str(r_err) if r_err else "—")
 
         rows.append(tbl)
 
@@ -220,12 +219,8 @@ class PostMatchScreen(Screen):
         return Group(*rows)
 
     async def _compute_stats(self, app: TUIApp) -> None:
-        """Fetch history from server and compute match stats."""
-        from silicon_pantheon.match_stats import MatchStats, compute_match_stats
-
-        # Capture agent telemetry before it's closed.
-        if app.state.agent is not None:
-            self._agent_stats = app.state.agent.get_agent_stats()
+        """Fetch history + server telemetry and compute match stats."""
+        from silicon_pantheon.match_stats import compute_match_stats
 
         gs = app.state.last_game_state or {}
         units = gs.get("units") or []
@@ -234,6 +229,14 @@ class PostMatchScreen(Screen):
             try:
                 r = await app.client.call("get_history", last_n=0)
                 history = (r.get("result") or {}).get("history") or []
+            except Exception:
+                pass
+            # Fetch server-side telemetry (turn times, tool calls,
+            # tokens for BOTH players).
+            try:
+                r = await app.client.call("get_match_telemetry")
+                if r.get("ok"):
+                    self._agent_stats = (r.get("result") or {})
             except Exception:
                 pass
         self._match_stats = compute_match_stats(

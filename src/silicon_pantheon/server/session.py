@@ -77,6 +77,20 @@ class Session:
     )
     # Optional live plain-text log of thoughts (tailable with `less +F`).
     thoughts_log: ThoughtsLogWriter | None = None
+    # Per-team telemetry for post-game stats.
+    tool_calls_by_team: dict[Team, int] = field(
+        default_factory=lambda: {Team.BLUE: 0, Team.RED: 0}
+    )
+    tool_errors_by_team: dict[Team, int] = field(
+        default_factory=lambda: {Team.BLUE: 0, Team.RED: 0}
+    )
+    turn_start_time: float = 0.0  # monotonic timestamp of current turn start
+    turn_times_by_team: dict[Team, list[float]] = field(
+        default_factory=lambda: {Team.BLUE: [], Team.RED: []}
+    )
+    tokens_by_team: dict[Team, int] = field(
+        default_factory=lambda: {Team.BLUE: 0, Team.RED: 0}
+    )
     # Fog-of-war mode for this session. "none" = no filtering.
     fog_of_war: str = "none"
     # Per-team memory of tiles ever seen (classic mode). Kept frozen
