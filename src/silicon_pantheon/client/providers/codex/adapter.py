@@ -504,8 +504,19 @@ class CodexAdapter:
 
     @staticmethod
     def _parse_sse_body(text: str) -> dict:
-        """Extract the response from an SSE-formatted body."""
+        """Extract the response from an SSE-formatted body.
+
+        The Codex streaming API delivers output items incrementally:
+        each item arrives via ``response.output_item.done`` events.
+        The final ``response.completed`` event carries the full
+        response *but* its ``output`` array can be empty in some API
+        versions. We therefore accumulate items from the stream and
+        merge them into the completed response if its output is empty.
+        """
         result: dict = {}
+        # Accumulate completed output items from the stream — the
+        # response.completed event's output may be empty.
+        streamed_items: list[dict] = []
         event_types: list[str] = []
         for line in text.split("\n"):
             if not line.startswith("data: "):
@@ -519,24 +530,34 @@ class CodexAdapter:
                 continue
             etype = event.get("type", "")
             event_types.append(etype)
-            if etype == "response.completed":
+            if etype == "response.output_item.done":
+                item = event.get("item")
+                if isinstance(item, dict):
+                    streamed_items.append(item)
+            elif etype == "response.completed":
                 result = event.get("response", event)
             elif etype == "response.failed":
                 err_detail = (event.get("response", {})
                               .get("error", {}).get("message", "unknown"))
                 raise RuntimeError(f"Codex response failed: {err_detail}")
+
         if not result:
             log.warning(
                 "Codex stream ended without response.completed; "
                 "event_types=%s body_head=%s",
                 event_types, text[:500],
             )
-            result = {"output": []}
+            result = {"output": streamed_items}
         else:
-            output = result.get("output") or []
+            # Prefer the completed event's output, but if it's empty
+            # (common in current API) use the items we accumulated.
+            if not result.get("output") and streamed_items:
+                result["output"] = streamed_items
             log.info(
-                "Codex SSE parsed: event_types=%s output_items=%d",
-                event_types, len(output),
+                "Codex SSE parsed: event_types=%s output_items=%d "
+                "(from_stream=%d)",
+                event_types, len(result.get("output", [])),
+                len(streamed_items),
             )
         return result
 

@@ -35,6 +35,39 @@ def _sse_response(output: list[dict], status: int = 200) -> httpx.Response:
     )
 
 
+def _sse_streaming_response(
+    output_items: list[dict], status: int = 200,
+) -> httpx.Response:
+    """Build a realistic SSE stream where output items arrive via
+    response.output_item.done events and response.completed has an
+    empty output array (matching observed Codex API behaviour)."""
+    lines: list[str] = []
+    lines.append(f"data: {json.dumps({'type': 'response.created'})}\n")
+    lines.append(f"data: {json.dumps({'type': 'response.in_progress'})}\n")
+    for item in output_items:
+        lines.append(
+            f"data: {json.dumps({'type': 'response.output_item.added', 'item': item})}\n"
+        )
+        if item.get("type") == "function_call":
+            lines.append(
+                f"data: {json.dumps({'type': 'response.function_call_arguments.done', 'arguments': item.get('arguments', '{}')})}\n"
+            )
+        lines.append(
+            f"data: {json.dumps({'type': 'response.output_item.done', 'item': item})}\n"
+        )
+    # response.completed has empty output — the real API does this.
+    lines.append(
+        f"data: {json.dumps({'type': 'response.completed', 'response': {'output': []}})}\n"
+    )
+    lines.append("data: [DONE]\n")
+    body = "\n".join(lines)
+    return httpx.Response(
+        status,
+        content=body.encode(),
+        headers={"content-type": "text/event-stream"},
+    )
+
+
 # ---- fixtures ----------------------------------------------------------
 
 
@@ -487,6 +520,48 @@ async def test_compaction_shrinks_prior_turn_items(stub_creds, monkeypatch):
     assert "bootstrap snapshot truncated" in text
 
     await adapter.close()
+
+
+# ---- SSE streaming: output via output_item.done -----------------------
+
+
+@pytest.mark.asyncio
+async def test_sse_output_items_from_stream_events(stub_creds, monkeypatch):
+    """The Codex API delivers output items via response.output_item.done
+    events. The response.completed event's output array can be empty.
+    The adapter must accumulate items from the stream."""
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return _sse_streaming_response([
+                {"type": "function_call", "call_id": "c1",
+                 "name": "get_state", "arguments": "{}"},
+            ])
+        return _sse_streaming_response([
+            {"type": "message", "role": "assistant",
+             "content": [{"type": "output_text", "text": "Done."}]},
+        ])
+
+    _patch_async_client(monkeypatch, httpx.MockTransport(handler))
+    adapter = CodexAdapter(credentials=stub_creds)
+    dispatched: list[str] = []
+
+    async def dispatch(name, args):
+        dispatched.append(name)
+        return {"ok": True}
+
+    await adapter.play_turn(
+        system_prompt="sys", user_prompt="go",
+        tools=[ToolSpec("get_state", "gs",
+                        {"type": "object", "properties": {}})],
+        tool_dispatcher=dispatch, on_thought=None,
+    )
+    await adapter.close()
+
+    assert dispatched == ["get_state"]
 
 
 # ---- close is idempotent ----------------------------------------------
