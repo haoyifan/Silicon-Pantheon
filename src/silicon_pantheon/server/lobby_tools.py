@@ -401,6 +401,8 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         except FileNotFoundError:
             return _ok({"scenarios": {}, "hash": ""})
 
+        import yaml
+
         scenarios: dict[str, dict] = {}
         for sub in sorted(games_root.iterdir()):
             if not sub.is_dir() or not (sub / "config.yaml").is_file():
