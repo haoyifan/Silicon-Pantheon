@@ -17,36 +17,15 @@ board:
   width: 10
   height: 14
   terrain:
-    # Dense forest belts on the west and east — shelter for the
-    # English flanks; impassable to French knights.
-    - {x: 0, y: 2, type: forest}
-    - {x: 0, y: 3, type: forest}
+    # Sparse forest patches on flanks — historically the battle was
+    # between two forests, but the tree line is thin enough that
+    # French knights can push through the gaps to flank.
     - {x: 0, y: 4, type: forest}
-    - {x: 0, y: 5, type: forest}
-    - {x: 0, y: 6, type: forest}
     - {x: 0, y: 7, type: forest}
-    - {x: 0, y: 8, type: forest}
-    - {x: 0, y: 9, type: forest}
     - {x: 0, y: 10, type: forest}
-    - {x: 0, y: 11, type: forest}
-    - {x: 1, y: 3, type: forest}
-    - {x: 1, y: 5, type: forest}
-    - {x: 1, y: 7, type: forest}
-    - {x: 1, y: 9, type: forest}
-    - {x: 9, y: 2, type: forest}
-    - {x: 9, y: 3, type: forest}
     - {x: 9, y: 4, type: forest}
-    - {x: 9, y: 5, type: forest}
-    - {x: 9, y: 6, type: forest}
     - {x: 9, y: 7, type: forest}
-    - {x: 9, y: 8, type: forest}
-    - {x: 9, y: 9, type: forest}
     - {x: 9, y: 10, type: forest}
-    - {x: 9, y: 11, type: forest}
-    - {x: 8, y: 3, type: forest}
-    - {x: 8, y: 5, type: forest}
-    - {x: 8, y: 7, type: forest}
-    - {x: 8, y: 9, type: forest}
     # The mud corridor — the central column from y=3 to y=10. Three
     # MP to enter for everyone; class_overrides bog the French
     # knights down further (cost 4).
