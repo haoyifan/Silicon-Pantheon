@@ -1,352 +1,607 @@
 schema_version: 1
 license: fan_work
-fan_work_source: "Age of Empires / Portuguese colonial history"
-name: "Strait of Hormuz — 1507, Portuguese Conquest"
-difficulty: 3
+fan_work_source: "Fictional speculative scenario inspired by 2020s Iran / US / Israel tensions. Not endorsed by or affiliated with any named figure, government, or military service."
+name: "Strait of Hormuz — Operation Epic Fury 2026 — Modern Fiction"
+difficulty: 5
 description: |
-  1507 — Afonso de Albuquerque leads a Portuguese armada into the
-  Persian Gulf to seize the island fortress of Hormuz, gateway to
-  the spice trade. The Sultan of Hormuz, backed by Ottoman naval
-  support, defends the harbor with war galleys, shore batteries,
-  and palace guards. Albuquerque must break the chain, silence the
-  guns, and storm the citadel before reinforcements arrive.
-  Inspired by the Portuguese conquest of Hormuz (1507).
+  February 2026. In a speculative escalation of the long-running
+  Iran / Israel / US crisis, a combined American-Israeli strike
+  package has kicked off "Operation Epic Fury" — nearly nine
+  hundred coordinated strikes against Iranian leadership, missile
+  infrastructure, and the underground uranium enrichment complex.
+  The IRGC retaliates by mining the Strait of Hormuz, surging its
+  speedboat swarms, launching Shahed drones, and lighting up its
+  coastal anti-ship batteries.
 
-# ───────────────────────────────────────────────────────
-#  MAP LAYOUT  (20 wide x 14 tall)
+  This scenario compresses the opening twelve hours into a sixteen-
+  turn race: the US/Israeli strike force must push across the
+  strait, finish the decapitation begun on day one, and plant a
+  demolition charge inside the hardened uranium bunker on Larak
+  Island before the Revolutionary Guard grinds them down.
+
+  Fictional. Any resemblance to specific real-world operations is
+  speculative — treat as near-future alternate history in the vein
+  of a Tom Clancy technothriller.
+
+# ───────────────────────────────────────────────────────────────────
+#  MAP LAYOUT  (22 wide x 16 tall)
 #
-#  The western third (x=0-5) is open sea — Portuguese approach.
-#  Reefs line the north and south edges of the channel.
-#  Harbor chain at x=8 blocks the narrows.
-#  The citadel island occupies x=12-19, with fortress walls
-#  forming rooms and corridors. Multiple entry points:
-#  - Main harbor gate (damaged wall) at y=6
-#  - Northern breach at y=3
-#  - Southern sea wall gap at y=10
-# ───────────────────────────────────────────────────────
+#  Western 7 columns (x=0-6)  — open sea: the strait approach.
+#                               Naval mines scattered as hazards.
+#  Middle strip  (x=7-14)     — Larak-inspired island: beaches on
+#                               the west side, desert interior,
+#                               mountain spine (impassable), and
+#                               the hardened URANIUM BUNKER
+#                               complex at the eastern edge.
+#  Eastern 7 columns (x=15-21)— Iranian mainland coast: beach,
+#                               coastal missile emplacements,
+#                               desert inland, mountain backstop.
+#
+#  Objectives:
+#    • BLUE wins by reaching any uranium_bunker tile (demolition).
+#    • BLUE also wins by eliminating all red.
+#    • RED wins by holding until turn 16 (bunker survives),
+#      by killing Trump (political collapse), or by wiping blue.
+# ───────────────────────────────────────────────────────────────────
 
 board:
-  width: 20
-  height: 14
+  width: 22
+  height: 16
   terrain:
-    # ── Reefs: northern shallows (y=0) ──
-    - {x: 3, y: 0, type: reef}
-    - {x: 4, y: 0, type: reef}
+    # ── Scattered sea mines in the western strait ──
+    - {x: 3, y: 2, type: sea_mine}
+    - {x: 4, y: 5, type: sea_mine}
+    - {x: 5, y: 9, type: sea_mine}
+    - {x: 3, y: 12, type: sea_mine}
+    - {x: 4, y: 14, type: sea_mine}
+    - {x: 6, y: 3, type: sea_mine}
+    - {x: 6, y: 11, type: sea_mine}
+
+    # ── Small outlying islets (impassable reef/rock) ──
+    - {x: 2, y: 7, type: reef}
+    - {x: 2, y: 8, type: reef}
     - {x: 5, y: 0, type: reef}
-    - {x: 6, y: 0, type: reef}
+    - {x: 5, y: 15, type: reef}
+
+    # ── Larak Island: west beach (x=7, y=3..12) ──
+    - {x: 7, y: 3, type: beach}
+    - {x: 7, y: 4, type: beach}
+    - {x: 7, y: 5, type: beach}
+    - {x: 7, y: 6, type: beach}
+    - {x: 7, y: 7, type: beach}
+    - {x: 7, y: 8, type: beach}
+    - {x: 7, y: 9, type: beach}
+    - {x: 7, y: 10, type: beach}
+    - {x: 7, y: 11, type: beach}
+    - {x: 7, y: 12, type: beach}
+
+    # ── Larak Island: coastal surf / shallow water rim ──
     - {x: 7, y: 0, type: reef}
-    - {x: 8, y: 0, type: reef}
-    - {x: 9, y: 0, type: reef}
-    - {x: 10, y: 0, type: reef}
-
-    # ── Reefs: southern shallows (y=13) ──
-    - {x: 3, y: 13, type: reef}
-    - {x: 4, y: 13, type: reef}
-    - {x: 5, y: 13, type: reef}
-    - {x: 6, y: 13, type: reef}
-    - {x: 7, y: 13, type: reef}
-    - {x: 8, y: 13, type: reef}
-    - {x: 9, y: 13, type: reef}
-    - {x: 10, y: 13, type: reef}
-
-    # ── Scattered reefs in the channel ──
-    - {x: 5, y: 3, type: reef}
-    - {x: 5, y: 10, type: reef}
     - {x: 7, y: 1, type: reef}
-    - {x: 7, y: 12, type: reef}
+    - {x: 7, y: 2, type: reef}
+    - {x: 7, y: 13, type: reef}
+    - {x: 7, y: 14, type: reef}
+    - {x: 7, y: 15, type: reef}
 
-    # ── Harbor chain (x=8, y=4-9 — gaps at y=6 and y=7) ──
-    - {x: 8, y: 4, type: harbor_chain}
-    - {x: 8, y: 5, type: harbor_chain}
-    # gap at y=6,7 — the chain opening
-    - {x: 8, y: 8, type: harbor_chain}
-    - {x: 8, y: 9, type: harbor_chain}
+    # ── Larak Island: interior desert (x=8..10) ──
+    - {x: 8, y: 3, type: desert}
+    - {x: 8, y: 4, type: desert}
+    - {x: 8, y: 5, type: desert}
+    - {x: 8, y: 6, type: desert}
+    - {x: 8, y: 9, type: desert}
+    - {x: 8, y: 10, type: desert}
+    - {x: 8, y: 11, type: desert}
+    - {x: 8, y: 12, type: desert}
+    - {x: 9, y: 3, type: desert}
+    - {x: 9, y: 4, type: desert}
+    - {x: 9, y: 11, type: desert}
+    - {x: 9, y: 12, type: desert}
+    - {x: 10, y: 3, type: desert}
+    - {x: 10, y: 4, type: desert}
+    - {x: 10, y: 11, type: desert}
+    - {x: 10, y: 12, type: desert}
 
-    # ── Citadel outer walls (x=12, full height with breaches) ──
-    - {x: 12, y: 0, type: fort_wall}
-    - {x: 12, y: 1, type: fort_wall}
-    - {x: 12, y: 2, type: fort_wall}
-    - {x: 12, y: 3, type: damaged_wall}   # Northern breach
-    - {x: 12, y: 4, type: fort_wall}
-    - {x: 12, y: 5, type: fort_wall}
-    - {x: 12, y: 6, type: damaged_wall}   # Main harbor gate (breach)
-    - {x: 12, y: 7, type: fort_wall}
-    - {x: 12, y: 8, type: fort_wall}
-    - {x: 12, y: 9, type: fort_wall}
-    - {x: 12, y: 10, type: damaged_wall}  # Southern breach
-    - {x: 12, y: 11, type: fort_wall}
-    - {x: 12, y: 12, type: fort_wall}
-    - {x: 12, y: 13, type: fort_wall}
+    # ── Larak Island: mountain spine splits the island ──
+    - {x: 9, y: 0, type: mountain}
+    - {x: 9, y: 1, type: mountain}
+    - {x: 9, y: 2, type: mountain}
+    - {x: 9, y: 13, type: mountain}
+    - {x: 9, y: 14, type: mountain}
+    - {x: 9, y: 15, type: mountain}
+    - {x: 10, y: 0, type: mountain}
+    - {x: 10, y: 1, type: mountain}
+    - {x: 10, y: 15, type: mountain}
+    - {x: 8, y: 7, type: mountain}
+    - {x: 8, y: 8, type: mountain}
 
-    # ── Citadel inner walls — north wing (y=2, x=13-16) ──
-    - {x: 13, y: 2, type: fort_wall}
-    - {x: 14, y: 2, type: fort_wall}
-    - {x: 15, y: 2, type: fort_wall}
-    - {x: 16, y: 2, type: fort_wall}
+    # ── Larak Island: middle desert corridor (x=9..11, y=5..10) ──
+    - {x: 9, y: 5, type: desert}
+    - {x: 9, y: 6, type: desert}
+    - {x: 9, y: 7, type: desert}
+    - {x: 9, y: 8, type: desert}
+    - {x: 9, y: 9, type: desert}
+    - {x: 9, y: 10, type: desert}
+    - {x: 10, y: 5, type: desert}
+    - {x: 10, y: 6, type: desert}
+    - {x: 10, y: 7, type: desert}
+    - {x: 10, y: 8, type: desert}
+    - {x: 10, y: 9, type: desert}
+    - {x: 10, y: 10, type: desert}
 
-    # ── Citadel inner walls — south wing (y=11, x=13-16) ──
-    - {x: 13, y: 11, type: fort_wall}
-    - {x: 14, y: 11, type: fort_wall}
-    - {x: 15, y: 11, type: fort_wall}
-    - {x: 16, y: 11, type: fort_wall}
+    # ── Bunker perimeter walls (damaged / undamaged) ──
+    - {x: 11, y: 5, type: damaged_wall}
+    - {x: 11, y: 6, type: fort_wall}
+    - {x: 11, y: 7, type: fort_wall}
+    - {x: 11, y: 8, type: fort_wall}
+    - {x: 11, y: 9, type: fort_wall}
+    - {x: 11, y: 10, type: damaged_wall}
 
-    # ── Citadel inner partition — throne room walls ──
-    - {x: 16, y: 4, type: fort_wall}
-    - {x: 16, y: 5, type: fort_wall}
-    # gap at y=6,7 — throne room entrance
-    - {x: 16, y: 8, type: fort_wall}
-    - {x: 16, y: 9, type: fort_wall}
+    # ── Uranium bunker tiles (x=12..14, y=6..9) ──
+    - {x: 12, y: 6, type: uranium_bunker}
+    - {x: 12, y: 7, type: uranium_bunker}
+    - {x: 12, y: 8, type: uranium_bunker}
+    - {x: 12, y: 9, type: uranium_bunker}
+    - {x: 13, y: 6, type: uranium_bunker}
+    - {x: 13, y: 7, type: uranium_bunker}
+    - {x: 13, y: 8, type: uranium_bunker}
+    - {x: 13, y: 9, type: uranium_bunker}
+    - {x: 14, y: 6, type: uranium_bunker}
+    - {x: 14, y: 7, type: uranium_bunker}
+    - {x: 14, y: 8, type: uranium_bunker}
+    - {x: 14, y: 9, type: uranium_bunker}
 
-    # ── Eastern citadel wall (x=19) ──
-    - {x: 19, y: 0, type: fort_wall}
-    - {x: 19, y: 1, type: fort_wall}
-    - {x: 19, y: 2, type: fort_wall}
-    - {x: 19, y: 3, type: fort_wall}
-    - {x: 19, y: 4, type: fort_wall}
-    - {x: 19, y: 5, type: fort_wall}
-    - {x: 19, y: 6, type: fort_wall}
-    - {x: 19, y: 7, type: fort_wall}
-    - {x: 19, y: 8, type: fort_wall}
-    - {x: 19, y: 9, type: fort_wall}
-    - {x: 19, y: 10, type: fort_wall}
-    - {x: 19, y: 11, type: fort_wall}
-    - {x: 19, y: 12, type: fort_wall}
-    - {x: 19, y: 13, type: fort_wall}
+    # ── Larak Island: eastern island desert around bunker ──
+    - {x: 12, y: 5, type: desert}
+    - {x: 13, y: 5, type: desert}
+    - {x: 14, y: 5, type: desert}
+    - {x: 12, y: 10, type: desert}
+    - {x: 13, y: 10, type: desert}
+    - {x: 14, y: 10, type: desert}
+    - {x: 11, y: 3, type: desert}
+    - {x: 11, y: 4, type: desert}
+    - {x: 11, y: 11, type: desert}
+    - {x: 11, y: 12, type: desert}
+    - {x: 12, y: 3, type: desert}
+    - {x: 12, y: 4, type: desert}
+    - {x: 12, y: 11, type: desert}
+    - {x: 12, y: 12, type: desert}
+    - {x: 13, y: 3, type: desert}
+    - {x: 13, y: 4, type: desert}
+    - {x: 13, y: 11, type: desert}
+    - {x: 13, y: 12, type: desert}
+    - {x: 14, y: 3, type: desert}
+    - {x: 14, y: 4, type: desert}
+    - {x: 14, y: 11, type: desert}
+    - {x: 14, y: 12, type: desert}
 
-    # ── Citadel interior — throne room (x=17-18, y=5-8) ──
-    - {x: 17, y: 5, type: citadel}
-    - {x: 17, y: 6, type: citadel}
-    - {x: 17, y: 7, type: citadel}
-    - {x: 17, y: 8, type: citadel}
-    - {x: 18, y: 5, type: citadel}
-    - {x: 18, y: 6, type: citadel}
-    - {x: 18, y: 7, type: citadel}
-    - {x: 18, y: 8, type: citadel}
+    # ── Larak Island: northern mountain cap ──
+    - {x: 11, y: 0, type: mountain}
+    - {x: 11, y: 1, type: mountain}
+    - {x: 12, y: 0, type: mountain}
+    - {x: 13, y: 0, type: mountain}
+    - {x: 14, y: 0, type: mountain}
+    - {x: 11, y: 2, type: desert}
+    - {x: 12, y: 1, type: desert}
+    - {x: 12, y: 2, type: desert}
+    - {x: 13, y: 1, type: desert}
+    - {x: 13, y: 2, type: desert}
+    - {x: 14, y: 1, type: desert}
+    - {x: 14, y: 2, type: desert}
 
-    # ── Citadel interior — outer courtyard (x=13-15, y=3-10) ──
-    - {x: 13, y: 4, type: citadel}
-    - {x: 13, y: 5, type: citadel}
-    - {x: 13, y: 6, type: citadel}
-    - {x: 13, y: 7, type: citadel}
-    - {x: 13, y: 8, type: citadel}
-    - {x: 13, y: 9, type: citadel}
-    - {x: 14, y: 4, type: citadel}
-    - {x: 14, y: 5, type: citadel}
-    - {x: 14, y: 6, type: citadel}
-    - {x: 14, y: 7, type: citadel}
-    - {x: 14, y: 8, type: citadel}
-    - {x: 14, y: 9, type: citadel}
-    - {x: 15, y: 4, type: citadel}
-    - {x: 15, y: 5, type: citadel}
-    - {x: 15, y: 6, type: citadel}
-    - {x: 15, y: 7, type: citadel}
-    - {x: 15, y: 8, type: citadel}
-    - {x: 15, y: 9, type: citadel}
+    # ── Larak Island: southern mountain cap ──
+    - {x: 11, y: 15, type: mountain}
+    - {x: 12, y: 15, type: mountain}
+    - {x: 13, y: 15, type: mountain}
+    - {x: 14, y: 15, type: mountain}
+    - {x: 11, y: 13, type: desert}
+    - {x: 11, y: 14, type: desert}
+    - {x: 12, y: 13, type: desert}
+    - {x: 12, y: 14, type: desert}
+    - {x: 13, y: 13, type: desert}
+    - {x: 13, y: 14, type: desert}
+    - {x: 14, y: 13, type: desert}
+    - {x: 14, y: 14, type: desert}
 
-  forts:
-    - {x: 18, y: 7, owner: red}
+    # ── Strait between island and mainland (x=15) ──
+    # (Default plain = sea — left open for naval movement)
+
+    # ── Iranian mainland: beach strip (x=16) ──
+    - {x: 16, y: 0, type: beach}
+    - {x: 16, y: 1, type: beach}
+    - {x: 16, y: 2, type: beach}
+    - {x: 16, y: 3, type: beach}
+    - {x: 16, y: 4, type: beach}
+    - {x: 16, y: 5, type: beach}
+    - {x: 16, y: 6, type: beach}
+    - {x: 16, y: 7, type: beach}
+    - {x: 16, y: 8, type: beach}
+    - {x: 16, y: 9, type: beach}
+    - {x: 16, y: 10, type: beach}
+    - {x: 16, y: 11, type: beach}
+    - {x: 16, y: 12, type: beach}
+    - {x: 16, y: 13, type: beach}
+    - {x: 16, y: 14, type: beach}
+    - {x: 16, y: 15, type: beach}
+
+    # ── Iranian mainland: inland desert (x=17..19) ──
+    - {x: 17, y: 0, type: desert}
+    - {x: 17, y: 1, type: desert}
+    - {x: 17, y: 2, type: desert}
+    - {x: 17, y: 3, type: desert}
+    - {x: 17, y: 4, type: desert}
+    - {x: 17, y: 5, type: desert}
+    - {x: 17, y: 6, type: desert}
+    - {x: 17, y: 7, type: desert}
+    - {x: 17, y: 8, type: desert}
+    - {x: 17, y: 9, type: desert}
+    - {x: 17, y: 10, type: desert}
+    - {x: 17, y: 11, type: desert}
+    - {x: 17, y: 12, type: desert}
+    - {x: 17, y: 13, type: desert}
+    - {x: 17, y: 14, type: desert}
+    - {x: 17, y: 15, type: desert}
+    - {x: 18, y: 0, type: desert}
+    - {x: 18, y: 1, type: desert}
+    - {x: 18, y: 2, type: desert}
+    - {x: 18, y: 3, type: desert}
+    - {x: 18, y: 5, type: desert}
+    - {x: 18, y: 6, type: desert}
+    - {x: 18, y: 7, type: desert}
+    - {x: 18, y: 8, type: desert}
+    - {x: 18, y: 9, type: desert}
+    - {x: 18, y: 10, type: desert}
+    - {x: 18, y: 11, type: desert}
+    - {x: 18, y: 12, type: desert}
+    - {x: 18, y: 14, type: desert}
+    - {x: 18, y: 15, type: desert}
+    - {x: 19, y: 0, type: desert}
+    - {x: 19, y: 1, type: desert}
+    - {x: 19, y: 2, type: desert}
+    - {x: 19, y: 5, type: desert}
+    - {x: 19, y: 6, type: desert}
+    - {x: 19, y: 7, type: desert}
+    - {x: 19, y: 8, type: desert}
+    - {x: 19, y: 9, type: desert}
+    - {x: 19, y: 10, type: desert}
+    - {x: 19, y: 14, type: desert}
+    - {x: 19, y: 15, type: desert}
+
+    # ── Iranian mainland: mountain backstop (x=20..21) ──
+    - {x: 20, y: 0, type: mountain}
+    - {x: 20, y: 1, type: mountain}
+    - {x: 20, y: 2, type: mountain}
+    - {x: 20, y: 3, type: desert}
+    - {x: 20, y: 4, type: desert}
+    - {x: 20, y: 5, type: mountain}
+    - {x: 20, y: 6, type: mountain}
+    - {x: 20, y: 7, type: mountain}
+    - {x: 20, y: 8, type: mountain}
+    - {x: 20, y: 9, type: mountain}
+    - {x: 20, y: 10, type: mountain}
+    - {x: 20, y: 11, type: desert}
+    - {x: 20, y: 12, type: desert}
+    - {x: 20, y: 13, type: mountain}
+    - {x: 20, y: 14, type: mountain}
+    - {x: 20, y: 15, type: mountain}
+    - {x: 21, y: 0, type: mountain}
+    - {x: 21, y: 1, type: mountain}
+    - {x: 21, y: 2, type: mountain}
+    - {x: 21, y: 3, type: mountain}
+    - {x: 21, y: 4, type: mountain}
+    - {x: 21, y: 5, type: mountain}
+    - {x: 21, y: 6, type: mountain}
+    - {x: 21, y: 7, type: mountain}
+    - {x: 21, y: 8, type: mountain}
+    - {x: 21, y: 9, type: mountain}
+    - {x: 21, y: 10, type: mountain}
+    - {x: 21, y: 11, type: mountain}
+    - {x: 21, y: 12, type: mountain}
+    - {x: 21, y: 13, type: mountain}
+    - {x: 21, y: 14, type: mountain}
+    - {x: 21, y: 15, type: mountain}
+
+    # ── Shore SAM / battery hardpoints (damaged walls as emplacements) ──
+    - {x: 18, y: 4, type: damaged_wall}
+    - {x: 18, y: 13, type: damaged_wall}
+    - {x: 19, y: 3, type: damaged_wall}
+    - {x: 19, y: 4, type: damaged_wall}
+    - {x: 19, y: 11, type: damaged_wall}
+    - {x: 19, y: 12, type: damaged_wall}
+    - {x: 19, y: 13, type: damaged_wall}
 
 terrain_types:
   reef:
     display_name: Reef
-    description: Shallow coral reef. Impassable.
+    description: |
+      Shallow coral and rock — too dangerous for any hull and
+      impassable to infantry. Blocks movement entirely.
     move_cost: 99
     passable: false
     glyph: "~"
     color: bright_black
+
+  sea_mine:
+    display_name: Naval Mine
+    description: |
+      IRGC-laid contact mine drifting in the strait. Traversable
+      but extremely costly — any unit crossing a mined tile takes
+      a beating from the blast. Passable but slow.
+    move_cost: 4
+    defense_bonus: -2
+    passable: true
+    glyph: "*"
+    color: bright_red
+
+  beach:
+    display_name: Beach
+    description: |
+      Sandy landing zone. Slight cover from dunes and debris.
+      Amphibious forces must cross here to reach inland terrain.
+    move_cost: 1
+    defense_bonus: 1
+    glyph: "."
+    color: yellow
+
+  desert:
+    display_name: Desert
+    description: |
+      Sun-baked open ground, a mix of hardpan and rocky flats.
+      No cover but no penalty either. The strategic connective
+      tissue of the island and mainland.
+    move_cost: 1
+    defense_bonus: 0
+    glyph: ","
+    color: yellow
+
+  mountain:
+    display_name: Mountain
+    description: |
+      Sheer volcanic rock. Impassable to ground units and too
+      rough for helicopters to set down in. Blocks movement and
+      line-of-sight around the map's north/south caps.
+    move_cost: 99
+    passable: false
+    glyph: "^"
+    color: bright_black
+
   fort_wall:
-    display_name: Fort Wall
-    description: Stone fortification wall. Impassable.
+    display_name: Bunker Wall
+    description: |
+      Reinforced concrete and rebar around the enrichment
+      complex. Impassable — the assault team must breach
+      through a damaged section.
     move_cost: 99
     passable: false
     glyph: "#"
     color: bright_black
-  citadel:
-    display_name: Citadel
-    description: Interior of the Hormuz citadel. +2 DEF.
-    move_cost: 1
-    defense_bonus: 2
-    glyph: "C"
-    color: yellow
+
   damaged_wall:
-    display_name: Damaged Wall
+    display_name: Damaged Emplacement
     description: |
-      A section of the citadel wall weakened by age and prior bombardment.
-      Passable but slow to climb through — an alternative breach point
-      for a determined assault.
+      A section of bunker wall or shore battery shattered by
+      earlier B-2 strikes on day one of Epic Fury. Passable
+      but slow — climbing rubble under fire.
     move_cost: 3
-    defense_bonus: 0
+    defense_bonus: 1
     passable: true
     glyph: "%"
     color: yellow
-  harbor_chain:
-    display_name: Harbor Chain
-    description: Iron chain across the harbor mouth. Costs 3 movement.
-    move_cost: 3
-    defense_bonus: 0
-    glyph: "="
-    color: bright_black
+
+  uranium_bunker:
+    display_name: Uranium Enrichment Bunker
+    description: |
+      The heart of the Iranian enrichment program: hardened
+      underground halls full of centrifuges. Huge defensive
+      bonus. A SEAL or Shayetet 13 operator reaching any
+      bunker tile can plant the demolition charge and end
+      the mission.
+    move_cost: 2
+    defense_bonus: 4
+    glyph: "U"
+    color: bright_yellow
 
 unit_classes:
-  albuquerque:
-    display_name: Afonso de Albuquerque
+  # ─────────── BLUE: US / Israel strike force ───────────
+  trump:
+    display_name: President Trump
     description: |
-      The Portuguese Lion of the Sea. Brilliant admiral and ruthless
-      conqueror. Commands from his flagship with sword and cannon.
-      VIP — if he falls, the expedition is over.
-    hp_max: 28
-    atk: 10
-    defense: 5
-    res: 5
-    spd: 5
-    move: 3
-    rng_min: 1
-    rng_max: 2
-    tags: [vip, leader]
-    glyph: "A"
-    color: bright_cyan
-
-  joao_de_nova:
-    display_name: "Joao de Nova"
-    description: |
-      Veteran captain of the carrack Flor de la Mar. Experienced
-      naval gunner — his broadsides are devastating at range.
+      Commander-in-Chief directing the operation from the
+      carrier strike group via CENTCOM datalink. Barely
+      combat-capable in person but bolsters the team with
+      real-time coordination (heals). If he falls, political
+      backing collapses and the operation aborts.
     hp_max: 22
-    atk: 11
-    defense: 4
-    res: 3
-    spd: 5
-    move: 3
-    rng_min: 2
-    rng_max: 4
-    glyph: "J"
-    color: cyan
-
-  duarte_pacheco:
-    display_name: Duarte Pacheco
-    description: |
-      The Achilles of the Indies. Legendary soldier-captain who
-      fights in the vanguard with pike and buckler.
-    hp_max: 26
-    atk: 12
-    defense: 6
-    res: 3
-    spd: 6
-    move: 4
-    rng_min: 1
-    rng_max: 1
-    glyph: "D"
-    color: cyan
-
-  padre_miguel:
-    display_name: Padre Miguel
-    description: |
-      Jesuit chaplain accompanying the fleet. His prayers bolster
-      the wounded. Channels divine healing magic.
-    hp_max: 18
-    atk: 7
+    atk: 5
     defense: 3
-    res: 7
+    res: 4
     spd: 4
     move: 3
     rng_min: 1
     rng_max: 2
-    is_magic: true
     can_heal: true
-    heal_amount: 5
+    heal_amount: 6
+    tags: [vip, leader]
     glyph: "P"
     color: bright_cyan
 
-  gaspar_almada:
-    display_name: Gaspar de Almada
+  netanyahu:
+    display_name: Prime Minister Netanyahu
     description: |
-      Portuguese bombardier. Specialist in Greek fire and incendiary
-      weapons — his fire pots deal magic damage that ignores armor.
+      Israeli prime minister coordinating the strike package
+      through the war cabinet. As fragile as the US president
+      and equally political — useful as an offboard handler
+      in class definitions, not deployed on this sortie.
     hp_max: 20
-    atk: 10
+    atk: 5
     defense: 3
     res: 4
-    spd: 5
-    move: 3
-    rng_min: 2
-    rng_max: 3
-    is_magic: true
-    glyph: "G"
-    color: cyan
-
-  # --- RED: Hormuz + Ottoman ---
-
-  sultan_sayf:
-    display_name: Sultan Sayf ad-Din
-    description: |
-      Sultan of Hormuz. Fights from the citadel with his personal
-      guard. Cunning diplomat turned desperate defender.
-    hp_max: 24
-    atk: 9
-    defense: 5
-    res: 5
     spd: 4
     move: 3
     rng_min: 1
-    rng_max: 2
-    glyph: "S"
-    color: bright_red
+    rng_max: 1
+    tags: [vip, leader]
+    glyph: "N"
+    color: bright_cyan
 
-  ottoman_admiral:
-    display_name: Reis Amir
+  b2:
+    display_name: B-2 Spirit Bomber
     description: |
-      Ottoman naval commander sent to reinforce Hormuz. Commands a
-      war galley with skilled archers and rams.
-    hp_max: 26
-    atk: 11
-    defense: 5
+      Flying wing stealth bomber. The only blue platform with
+      enough throw weight to crack hardened shore emplacements
+      at standoff range. Devastating ATK, long range, but
+      paper-thin armor — keep it behind the F-35 screen.
+    hp_max: 22
+    atk: 13
+    defense: 2
     res: 3
     spd: 5
     move: 4
-    rng_min: 1
-    rng_max: 2
-    glyph: "R"
-    color: red
+    rng_min: 3
+    rng_max: 5
+    tags: [flying, aircraft]
+    glyph: "B"
+    color: bright_cyan
 
-  hormuz_sorcerer:
-    display_name: Vizier Rashid
+  f35:
+    display_name: F-35 Stealth Fighter
     description: |
-      Court sorcerer and vizier. Wields alchemical fire and wind
-      magic to shatter sails and burn hulls. Bypasses armor entirely.
-    hp_max: 18
+      Fifth-generation multirole fighter. Fast, mid-range,
+      serious damage — the workhorse against mines, drones,
+      and speedboats. Can project deep behind the line in a
+      single turn.
+    hp_max: 22
     atk: 10
-    defense: 2
-    res: 8
+    defense: 3
+    res: 5
+    spd: 8
+    move: 6
+    rng_min: 2
+    rng_max: 3
+    tags: [flying, aircraft]
+    glyph: "F"
+    color: bright_cyan
+
+  destroyer:
+    display_name: Arleigh Burke Destroyer
+    description: |
+      Aegis destroyer with Tomahawk cruise missiles. A
+      heavily armored ranged platform but slow through the
+      strait — mines and coastal missiles are its worst
+      enemies.
+    hp_max: 38
+    atk: 10
+    defense: 8
+    res: 5
     spd: 4
     move: 3
     rng_min: 2
-    rng_max: 3
-    is_magic: true
-    glyph: "V"
-    color: bright_red
+    rng_max: 4
+    tags: [naval, ship]
+    glyph: "D"
+    color: cyan
 
-  hormuz_corsair:
-    display_name: Corsair Tariq
+  tomahawk_sub:
+    display_name: Tomahawk Submarine
     description: |
-      Fast corsair captain. His dhow darts between larger ships,
-      boarding and setting fires. Melee assassin on the waves.
+      Submerged cruise-missile launch platform. Paper-thin
+      armor but the longest reach in the fleet. Picks off
+      hardened emplacements from deep water.
     hp_max: 20
-    atk: 10
+    atk: 11
     defense: 3
-    res: 3
+    res: 4
+    spd: 4
+    move: 2
+    rng_min: 4
+    rng_max: 6
+    tags: [naval, submarine]
+    glyph: "S"
+    color: cyan
+
+  navy_seal:
+    display_name: Navy SEAL Team Leader
+    description: |
+      The only unit that can actually step inside the uranium
+      bunker and plant the demolition charge. Melee, fast,
+      and fragile if basij or IRGC commandos get hands on
+      them — use air cover to keep the lane clear.
+    hp_max: 26
+    atk: 11
+    defense: 5
+    res: 4
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    tags: [infantry, special_forces]
+    glyph: "E"
+    color: bright_cyan
+
+  shayetet:
+    display_name: Shayetet 13 Commando
+    description: |
+      Israeli naval special forces. Pairs with the SEAL team
+      — one to distract, one to breach. Fast, lethal in
+      close, but will fold under sustained fire.
+    hp_max: 24
+    atk: 11
+    defense: 4
+    res: 4
     spd: 8
     move: 5
     rng_min: 1
-    rng_max: 1
-    glyph: "T"
-    color: red
+    rng_max: 2
+    tags: [infantry, special_forces]
+    glyph: "H"
+    color: bright_cyan
 
-  shore_gunner:
-    display_name: Gunner Hassan
+  # ─────────── RED: Iranian defense ───────────
+  khamenei:
+    display_name: Supreme Leader Khamenei
     description: |
-      Commander of the shore battery. His fixed cannons hammer
-      ships in the harbor channel with devastating long-range fire.
-    hp_max: 22
+      Caught aboard an IRGC patrol boat at the western mouth
+      of the strait with only 1 HP — an echo of the day-one
+      decapitation strike that left his fate uncertain. Blue
+      can finish him turn 1 if they push hard.
+    hp_max: 1
+    atk: 4
+    defense: 1
+    res: 1
+    spd: 3
+    move: 2
+    rng_min: 1
+    rng_max: 1
+    tags: [vip, leader]
+    glyph: "K"
+    color: bright_red
+
+  irgc_commando:
+    display_name: IRGC Saberin Commando
+    description: |
+      Iran's Revolutionary Guard professional ground force.
+      Heavily armored bunker defender roughly matched with
+      blue special forces — the last wall between a SEAL
+      team and the centrifuges.
+    hp_max: 30
+    atk: 10
+    defense: 7
+    res: 4
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    tags: [infantry, special_forces]
+    glyph: "C"
+    color: bright_red
+
+  coastal_missile:
+    display_name: Coastal Anti-Ship Battery
+    description: |
+      Fixed Noor/Qader coastal anti-ship and SAM launcher on
+      the Iranian coast. Zero movement — never redeploys.
+      Long range, heavy magic-type damage (missiles pierce
+      conventional armor).
+    hp_max: 24
     atk: 12
     defense: 4
     res: 3
@@ -354,98 +609,170 @@ unit_classes:
     move: 0
     rng_min: 3
     rng_max: 5
-    glyph: "H"
+    is_magic: true
+    tags: [emplacement, missile]
+    glyph: "M"
     color: red
 
-  palace_guard:
-    display_name: Captain Farid
+  irgc_speedboat:
+    display_name: IRGC Speedboat
     description: |
-      Elite palace guard captain. Heavily armored melee defender
-      of the citadel gates. Wields a two-handed scimitar.
-    hp_max: 26
+      Cheap swarm unit. Low HP, very fast, close-range only.
+      Dangerous in groups to isolated blue ships; disposable
+      on its own.
+    hp_max: 16
     atk: 9
-    defense: 7
-    res: 3
+    defense: 2
+    res: 2
+    spd: 8
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    tags: [naval, boat]
+    glyph: "s"
+    color: red
+
+  shahed_drone:
+    display_name: Shahed-136 Drone
+    description: |
+      One-way attack drone. Fragile but with enough reach to
+      harass the back of blue's column. Plunging warhead
+      deals magic-type damage.
+    hp_max: 14
+    atk: 8
+    defense: 1
+    res: 2
+    spd: 6
+    move: 4
+    rng_min: 2
+    rng_max: 4
+    is_magic: true
+    tags: [flying, drone]
+    glyph: "d"
+    color: red
+
+  basij:
+    display_name: Basij Militia
+    description: |
+      Paramilitary volunteers. Mediocre stats but cheap and
+      numerous — the tripwire defense around the bunker and
+      coastal positions.
+    hp_max: 20
+    atk: 7
+    defense: 4
+    res: 2
     spd: 4
     move: 3
     rng_min: 1
     rng_max: 1
-    glyph: "F"
-    color: red
-
-  ottoman_janissary:
-    display_name: Janissary Kemal
-    description: |
-      Ottoman elite infantry musketeer. His matchlock musket deals
-      magic-type damage at range, piercing Portuguese plate armor.
-    hp_max: 20
-    atk: 9
-    defense: 4
-    res: 4
-    spd: 5
-    move: 3
-    rng_min: 2
-    rng_max: 3
-    is_magic: true
-    glyph: "K"
+    tags: [infantry, militia]
+    glyph: "b"
     color: red
 
 armies:
   blue:
-    # Portuguese fleet approaches from the west, spread across the channel
-    - {class: albuquerque,    pos: {x: 1, y: 6}}
-    - {class: joao_de_nova,   pos: {x: 0, y: 3}}
-    - {class: duarte_pacheco, pos: {x: 2, y: 9}}
-    - {class: padre_miguel,   pos: {x: 0, y: 7}}
-    - {class: gaspar_almada,  pos: {x: 1, y: 11}}
+    # Trump on the carrier strike group, way in the rear
+    - {class: trump,        pos: {x: 0, y: 7}}
+    # B-2 standoff — far back, pushes forward behind the F-35 screen
+    - {class: b2,           pos: {x: 1, y: 4}}
+    # F-35 forward air patrol — fast enough to reach Khamenei's boat on turn 1
+    - {class: f35,          pos: {x: 2, y: 6}}
+    # Destroyer in the deep strait
+    - {class: destroyer,    pos: {x: 0, y: 10}}
+    # Tomahawk sub — lurking south
+    - {class: tomahawk_sub, pos: {x: 1, y: 12}}
+    # SEAL team staging for amphibious landing (center)
+    - {class: navy_seal,    pos: {x: 3, y: 6}}
+    # Shayetet 13 — southern insertion
+    - {class: shayetet,     pos: {x: 3, y: 9}}
 
   red:
-    # Sultan in the throne room
-    - {class: sultan_sayf,       pos: {x: 18, y: 7}}
-    # Ottoman admiral patrolling the harbor
-    - {class: ottoman_admiral,   pos: {x: 10, y: 4}}
-    # Vizier in the outer courtyard
-    - {class: hormuz_sorcerer,   pos: {x: 14, y: 6}}
-    # Corsair in the open water south of the chain
-    - {class: hormuz_corsair,    pos: {x: 9, y: 10}}
-    # Shore gunner on the citadel wall, northern position
-    - {class: shore_gunner,      pos: {x: 13, y: 3}}
-    # Palace guard at the main gate breach
-    - {class: palace_guard,      pos: {x: 15, y: 6}}
-    # Janissary covering the southern approach
-    - {class: ottoman_janissary, pos: {x: 14, y: 9}}
+    # Khamenei on a patrol boat at the western strait mouth — 1 HP.
+    # Distance to nearest blue (f35 at x=2 y=7) = |6-2| + |7-7| = 4 (the minimum).
+    - {class: khamenei,       pos: {x: 6, y: 7}}
+    # IRGC Saberin commando in the bunker courtyard
+    - {class: irgc_commando,  pos: {x: 13, y: 7}}
+    # Two coastal anti-ship batteries along the Iranian mainland
+    - {class: coastal_missile, pos: {x: 19, y: 4}}
+    - {class: coastal_missile, pos: {x: 19, y: 12}}
+    # Speedboat patrolling the strait between island and mainland
+    - {class: irgc_speedboat, pos: {x: 15, y: 8}}
+    # Shahed drone loitering inland
+    - {class: shahed_drone,   pos: {x: 18, y: 8}}
+    # Basij militia dug in on the bunker's outer wall
+    - {class: basij,          pos: {x: 12, y: 9}}
 
 rules:
-  max_turns: 14
+  max_turns: 16
+  fog_of_war: false
   first_player: blue
 
 win_conditions:
-  - {type: seize_enemy_fort}
-  - {type: protect_unit, unit_id: u_b_albuquerque_1, owning_team: blue}
+  # Demolition charge: any blue unit standing on a bunker tile wins.
+  - {type: reach_tile, team: blue, pos: {x: 12, y: 6}}
+  - {type: reach_tile, team: blue, pos: {x: 12, y: 7}}
+  - {type: reach_tile, team: blue, pos: {x: 12, y: 8}}
+  - {type: reach_tile, team: blue, pos: {x: 12, y: 9}}
+  - {type: reach_tile, team: blue, pos: {x: 13, y: 6}}
+  - {type: reach_tile, team: blue, pos: {x: 13, y: 7}}
+  - {type: reach_tile, team: blue, pos: {x: 13, y: 8}}
+  - {type: reach_tile, team: blue, pos: {x: 13, y: 9}}
+  - {type: reach_tile, team: blue, pos: {x: 14, y: 6}}
+  - {type: reach_tile, team: blue, pos: {x: 14, y: 7}}
+  - {type: reach_tile, team: blue, pos: {x: 14, y: 8}}
+  - {type: reach_tile, team: blue, pos: {x: 14, y: 9}}
+  # Trump dies -> political collapse, blue loses
+  - {type: protect_unit, unit_id: u_b_trump_1, owning_team: blue}
+  # Total elimination either way
   - {type: eliminate_all_enemy_units}
+  # Turn cap -> bunker survives, red wins by default (draw-to-red)
   - {type: max_turns_draw}
 
 narrative:
-  title: "Strait of Hormuz (1507)"
+  title: "Strait of Hormuz (Operation Epic Fury, 2026)"
   description: |
-    Afonso de Albuquerque leads the Portuguese armada to seize the
-    island fortress of Hormuz, key to the spice trade. The Sultan
-    and his Ottoman allies defend the citadel.
+    A compressed, sixteen-turn version of the opening hours of
+    Operation Epic Fury: force the strait, finish the
+    decapitation begun on day one, and seize the uranium
+    enrichment bunker before IRGC defenses regroup.
   intro: |
-    The Portuguese fleet rounds the headland into the harbor of
-    Hormuz. Iron chains stretch across the channel. Shore batteries
-    open fire. Albuquerque raises his sword: "For God, King, and
-    the spice trade — break the chain!"
+    28 February 2026. Khamenei has been struck in Tehran but not
+    yet confirmed killed; his escort boat is still at the mouth
+    of the strait. A B-2 has already crossed the Gulf of Oman.
+    The IRGC has mined the strait and lit up coastal anti-ship
+    batteries along the Iranian shoreline. Sixteen turns to the
+    bunker.
   events:
     - trigger: on_turn_start
-      turn: 5
+      turn: 4
       text: |
-        Smoke chokes the harbor. Ottoman galleys maneuver behind
-        the chain while Portuguese broadsides hammer the shore
-        batteries. The citadel still stands.
+        Smoke rolls off Larak. F-35s push through the first
+        mine belt while the destroyer hammers the northern
+        shore battery. The bunker still stands, its defenders
+        dug in around the damaged wall.
     - trigger: on_turn_start
-      turn: 10
+      turn: 8
       text: |
-        The harbor chain is breached! Portuguese carracks push
-        through the narrows under withering fire. The citadel
-        gates loom ahead.
+        Shahed drones corkscrew over the strait. IRGC
+        speedboats fan out from the mainland. The SEAL team
+        is halfway across the island's western desert, ducking
+        between dunes as coastal missiles reach for the
+        destroyer behind them.
+    - trigger: on_turn_start
+      turn: 13
+      text: |
+        Last light over the strait. The bunker's outer wall is
+        cracked wide by standoff fire. If the breach team is
+        going in, it has to go in now — Tehran's reinforcements
+        are hours away.
+    - trigger: on_unit_killed
+      unit_id: u_r_khamenei_1
+      text: |
+        Supreme Leader KIA confirmed. Half the strike plan is
+        done. Now the bunker.
+    - trigger: on_unit_killed
+      unit_id: u_b_trump_1
+      text: |
+        The White House has just gone dark on the datalink.
+        Without political cover the operation cannot continue.
+        Epic Fury is over.

@@ -1,10 +1,13 @@
-"""Smoke tests for the Strait of Hormuz scenario.
+"""Smoke tests for the Strait of Hormuz scenario (modern redesign).
 
-Pins the win-condition branches:
+The scenario was rewritten as a speculative modern fiction
+("Operation Epic Fury 2026"): US/Israel strike force vs Iranian
+coastal defense. Blue VIP is Trump; red VIP is Khamenei.
+
+Pins the core win-condition branches:
   1. scenario loads with expected unit counts
-  2. blue VIP (Albuquerque) killed → red wins
-  3. fort seizure → blue wins
-  4. eliminate all → win
+  2. blue VIP (Trump) killed → red wins via protect_unit
+  3. game starts without a winner
 """
 
 from __future__ import annotations
@@ -26,16 +29,16 @@ def test_scenario_loads_with_expected_shape():
     s = load_scenario("13_hormuz")
     blue = [u for u in s.units.values() if u.owner.value == "blue"]
     red = [u for u in s.units.values() if u.owner.value == "red"]
-    assert len(blue) == 5
+    assert len(blue) == 7
     assert len(red) == 7
-    assert s.max_turns == 14
+    assert s.max_turns == 16
 
 
-def test_albuquerque_death_loses_for_blue():
-    """protect_unit: if Albuquerque dies, blue loses."""
+def test_trump_death_loses_for_blue():
+    """protect_unit: if Trump dies, blue loses."""
     s = load_scenario("13_hormuz")
-    assert "u_b_albuquerque_1" in s.units
-    _kill(s, "u_b_albuquerque_1")
+    assert "u_b_trump_1" in s.units
+    _kill(s, "u_b_trump_1")
     from silicon_pantheon.server.engine.rules import EndTurnAction, apply
     result = apply(s, EndTurnAction())
     assert result.get("winner") == "red"

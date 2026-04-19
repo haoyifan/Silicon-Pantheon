@@ -137,8 +137,8 @@ def test_create_room_inherits_max_turns_from_scenario_when_unspecified() -> None
     room_id = out["room_id"]
     room = app.rooms.get(room_id)
     assert room is not None
-    assert room.config.max_turns == 14, (
-        f"Hormuz declares max_turns=14 in YAML but room got "
+    assert room.config.max_turns == 16, (
+        f"Hormuz declares max_turns=16 in YAML but room got "
         f"{room.config.max_turns} — the create_room default isn't "
         f"honoring the scenario"
     )
@@ -185,14 +185,14 @@ def test_update_room_config_scenario_change_resnaps_max_turns() -> None:
     assert out["ok"] is True
     room = app.rooms.get(out["room_id"])
     initial = room.config.max_turns
-    # Switch to Hormuz; expect max_turns to become 14.
+    # Switch to Hormuz; expect max_turns to become 16.
     out2 = _call(
         mcp, "update_room_config",
         connection_id="c3",
         scenario="13_hormuz",
     )
     assert out2["ok"] is True, out2
-    assert room.config.max_turns == 14, (
+    assert room.config.max_turns == 16, (
         f"scenario switch from {initial}-cap → Hormuz didn't update "
         f"max_turns; still {room.config.max_turns}"
     )
