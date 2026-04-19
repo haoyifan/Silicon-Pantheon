@@ -136,10 +136,10 @@ class ServerClient:
                     except Exception:
                         pass
                     log.error(
-                        "call HUNG %s cid=%s pending=%.0fs — "
+                        "call HUNG %s cid=%s pending=%.0fs phase=%s — "
                         "ws_closed=%s rs_closed=%s pending_requests=%s "
                         "sess=%s ws=%s rs=%s",
-                        tool_name, self.connection_id, elapsed,
+                        tool_name, self.connection_id, elapsed, _phase,
                         ws2_closed, rs2_closed, pending_requests,
                         id(self._session),
                         id(ws2) if ws2 else None,
@@ -147,8 +147,38 @@ class ServerClient:
                     )
             wd_task = asyncio.create_task(_watchdog())
             try:
+                # ── Granular diagnostics: instrument the MCP SDK call ──
+                # Phase 1: write the request to the SDK's write stream
+                # Phase 2: wait for the response from the SSE demuxer
+                # This tells us whether the hang is in sending or receiving.
+                _phase = "pre-call"
+                async def _instrumented_call():
+                    nonlocal _phase
+                    _phase = "call_tool:entered"
+                    log.log(
+                        level,
+                        "call PHASE %s %s cid=%s",
+                        _phase, tool_name, self.connection_id,
+                    )
+                    # Inspect the write stream state right before we use it
+                    _ws = getattr(self._session, "_write_stream", None)
+                    _ws_closed = getattr(_ws, "_closed", "?") if _ws else "?"
+                    _req_id = getattr(self._session, "_request_id", "?")
+                    _resp_count = len(getattr(self._session, "_response_streams", {}))
+                    log.log(
+                        level,
+                        "call PHASE pre-send %s cid=%s req_id=%s "
+                        "pending_responses=%s ws_closed=%s",
+                        tool_name, self.connection_id,
+                        _req_id, _resp_count, _ws_closed,
+                    )
+                    _phase = "call_tool:sending"
+                    result = await self._session.call_tool(tool_name, args)
+                    _phase = "call_tool:done"
+                    return result
+
                 result = await asyncio.wait_for(
-                    self._session.call_tool(tool_name, args),
+                    _instrumented_call(),
                     timeout=CALL_TOOL_TIMEOUT_S,
                 )
             except asyncio.TimeoutError:
@@ -156,11 +186,9 @@ class ServerClient:
                 ws2 = getattr(self._session, "_write_stream", None)
                 rs2 = getattr(self._session, "_read_stream", None)
                 log.error(
-                    "call TIMEOUT %s cid=%s dt=%.1fs — "
-                    "ws_closed=%s rs_closed=%s. "
-                    "Root cause: server restart killed SSE connection "
-                    "but MCP SDK didn't detect dead streams.",
-                    tool_name, self.connection_id, elapsed,
+                    "call TIMEOUT %s cid=%s dt=%.1fs phase=%s — "
+                    "ws_closed=%s rs_closed=%s.",
+                    tool_name, self.connection_id, elapsed, _phase,
                     getattr(ws2, "_closed", "?") if ws2 else "?",
                     getattr(rs2, "_closed", "?") if rs2 else "?",
                 )
