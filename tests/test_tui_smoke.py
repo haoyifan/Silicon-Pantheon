@@ -94,7 +94,7 @@ def test_lobby_screen_renders_empty() -> None:
     out = _render(LobbyScreen(app))
     assert "Lobby" in out
     assert "alice" in out
-    assert "no" in out and "rooms" in out  # text may be word-wrapped
+    assert "crick" in out or "rooms" in out  # playful text may be word-wrapped
 
 
 def test_room_screen_renders_with_stub_state() -> None:
@@ -129,6 +129,6 @@ def test_post_match_screen_renders_winner() -> None:
         "units": [{"owner": "blue"}, {"owner": "red"}],
     }
     out = _render(PostMatchScreen(app))
-    assert "won" in out.lower()
+    assert "victory" in out.lower() or "won" in out.lower()
     assert "Blue" in out
     assert "seize" in out

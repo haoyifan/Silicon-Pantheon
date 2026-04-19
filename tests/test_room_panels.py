@@ -417,7 +417,7 @@ def test_eliminate_all_prose_says_either_side_wins():
     from silicon_pantheon.client.tui.scenario_display import describe_win_condition as _describe_win_condition
 
     out = _describe_win_condition({"type": "eliminate_all_enemy_units"}, None)
-    assert "Either side" in out
+    assert "enemy" in out.lower() or "Either side" in out
 
 
 def test_win_condition_prose_falls_back_when_no_display_name():

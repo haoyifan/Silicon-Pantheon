@@ -21,11 +21,11 @@ panel:
 
 # Game status
 status:
-  your_turn: "YOUR TURN"
-  opponent_turn: "opponent's turn"
-  game_over: "GAME OVER"
-  agent_thinking: "agent thinking…"
-  agent_idle: "agent idle"
+  your_turn: "YOUR TURN — go get 'em!"
+  opponent_turn: "opponent is cooking up something…"
+  game_over: "GAME OVER!"
+  agent_thinking: "agent is scheming hard…"
+  agent_idle: "agent is twiddling its thumbs"
   you: "You"
   turn: "Turn"
 
@@ -56,14 +56,14 @@ unit_status:
 
 # Win condition descriptions (used by _describe_win_condition)
 win:
-  seize_enemy_fort: "Either side wins by moving a unit onto the opponent's fort."
-  eliminate_all: "Either side wins by eliminating every enemy unit."
-  max_turns_draw: "Match ends in a draw at the turn cap."
-  protect_unit: "{winner} wins if {name} dies (protected by {loser})."
-  protect_unit_survives: "{protector} wins if {name} survives to the turn cap (hold out to win)."
-  reach_tile: "{team} wins if {who} ends a turn on ({x}, {y})."
-  hold_tile: "{team} wins by holding ({x}, {y}) for {n} consecutive turns."
-  reach_goal_line: "{team} wins by crossing {axis}={value} with any unit."
+  seize_enemy_fort: "Storm the enemy fort and plant your flag — instant victory!"
+  eliminate_all: "Wipe out every last enemy unit. No mercy!"
+  max_turns_draw: "If nobody wins by the turn cap, it's a handshake draw."
+  protect_unit: "If {name} falls, {winner} wins — {loser}, protect them at all costs!"
+  protect_unit_survives: "Keep {name} alive until the final turn and {protector} wins — survival is victory!"
+  reach_tile: "{team} wins if {who} reaches ({x}, {y}) — charge!"
+  hold_tile: "{team} must hold ({x}, {y}) for {n} turns straight — dig in!"
+  reach_goal_line: "Any {team} unit crossing {axis}={value} wins — full speed ahead!"
 
 # Post-match screen
 post_match:
@@ -71,9 +71,9 @@ post_match:
   back_to_lobby: "l back to lobby"
   replay_saved: "Replay saved to"
   download_failed: "Download failed"
-  lesson_pending: "agent reviewing the match…"
-  lesson_done: "lesson saved"
-  lesson_failed: "lesson summary failed"
+  lesson_pending: "agent is writing its memoirs…"
+  lesson_done: "lesson saved — smarter next time!"
+  lesson_failed: "lesson failed (agent in denial)"
 
 # Lobby
 lobby:
@@ -124,7 +124,7 @@ provider:
 login_screen:
   title: "login"
   submit: "Enter submit   Esc language   q quit"
-  connecting: "connecting…"
+  connecting: "linking to the battlefield…"
 
 # Lobby table headers
 lobby_table:
@@ -135,7 +135,7 @@ lobby_table:
   fog: "Fog"
   seats: "Seats"
   col_status: "Status"
-  no_rooms: "(no rooms yet — press n to host one)"
+  no_rooms: "(crickets… press n to start a match!)"
   open: "open"
   footer: "↓/j next   ↑/k prev   Enter join   p preview   n new room   w replay   t tutorial   r refresh   q quit"
 
@@ -148,9 +148,9 @@ room_panel:
 # Post-match
 post_match:
   title: "match over"
-  you_won: "You won!"
-  you_lost: "You lost"
-  draw: "Match ended in a draw"
+  you_won: "VICTORY! 🎉"
+  you_lost: "Defeated… but revenge awaits!"
+  draw: "A hard-fought draw — honor to both sides"
   footer: "d download replay   l back to lobby   q quit"
 
 # Lobby title
@@ -172,8 +172,8 @@ lobby_val:
 # Room action buttons
 room_buttons:
   toggle_ready: "Toggle Ready"
-  ready_yes: "ready"
-  ready_no: "not ready"
+  ready_yes: "locked and loaded!"
+  ready_no: "not ready yet"
   strategy: "Strategy"
   lessons: "Lessons"
   change_scenario: "Change Scenario"
@@ -199,9 +199,9 @@ room_status:
   room_label: "Room"
   fog_label: "fog"
   teams_label: "teams"
-  match_starting: "match starting in {s}s"
-  waiting_opponent: "waiting for opponent…"
-  ready_up: "ready up to start"
+  match_starting: "battle begins in {s}s ⚔"
+  waiting_opponent: "waiting for a worthy challenger…"
+  ready_up: "hit ready — the arena awaits!"
   confirm: "Confirm"
 
 # Section headings (scenario description)
@@ -407,14 +407,14 @@ game_player:
 # Game screen — map panel
 game_map:
   key_hints: "←↑↓→ (or h/j/k/l) move   Enter unit stats"
-  loading_map: "(loading map…)"
+  loading_map: "(the battlefield is materializing…)"
   terrain_label: "terrain"
   enter_details: "Enter for details"
 
 # Game screen — reasoning panel
 game_reasoning:
   key_hints: "j/k ↕   ^f/^b page   ^d/^u ½page   G tail   gg top   0 tail"
-  no_reasoning: "(no reasoning yet)"
+  no_reasoning: "(agent hasn't started thinking yet…)"
   live: "live"
   paused: "PAUSED · scrolled"
   showing: "showing"
@@ -424,7 +424,7 @@ game_reasoning:
 game_coach:
   key_hints_focused: "Enter send   Esc clear"
   key_hints_unfocused: "type a message   Enter send   Esc clear"
-  tab_prompt: "(Tab here to type a coach message)"
+  tab_prompt: "(Tab here to yell at your AI)"
   recent: "recent:"
 
 # Game screen — scenario overlay
@@ -433,11 +433,11 @@ game_overlay:
 
 # Quit confirmations
 game_quit:
-  confirm: "Quit SiliconPantheon?"
+  confirm: "Abandon the battlefield?"
 lobby_quit:
-  confirm: "Quit SiliconPantheon?"
+  confirm: "Leave already? The arena will miss you!"
 post_match_quit:
-  confirm: "Quit? (press 'd' to download replay first)"
+  confirm: "Quit? (press 'd' to save the epic replay first!)"
 
 # Room screen — player panel
 room_player:

@@ -20,11 +20,11 @@ panel:
 
 # 游戏状态
 status:
-  your_turn: "你的回合"
-  opponent_turn: "对手回合"
-  game_over: "游戏结束"
-  agent_thinking: "AI思考中…"
-  agent_idle: "AI空闲"
+  your_turn: "轮到你啦，冲！"
+  opponent_turn: "对手正在憋大招…"
+  game_over: "战斗结束！"
+  agent_thinking: "AI正在绞尽脑汁思考对策…"
+  agent_idle: "AI正在无所事事地等待"
   you: "你"
   turn: "回合"
 
@@ -55,14 +55,14 @@ unit_status:
 
 # 胜利条件描述
 win:
-  seize_enemy_fort: "任一方将单位移动到对方堡垒即可获胜。"
-  eliminate_all: "任一方消灭所有敌方单位即可获胜。"
-  max_turns_draw: "达到回合上限时平局。"
-  protect_unit: "如果{name}阵亡，{winner}获胜（由{loser}保护）。"
-  protect_unit_survives: "如果{name}存活到回合上限，{protector}获胜（坚持到最后）。"
-  reach_tile: "如果{who}在({x}, {y})结束回合，{team}获胜。"
-  hold_tile: "{team}连续占领({x}, {y}){n}个回合即可获胜。"
-  reach_goal_line: "{team}任意单位越过{axis}={value}即可获胜。"
+  seize_enemy_fort: "攻占敌方堡垒，一战定乾坤！"
+  eliminate_all: "赶尽杀绝，不留活口即可获胜。"
+  max_turns_draw: "打满回合仍分不出胜负？握手言和。"
+  protect_unit: "{name}一旦阵亡，{winner}直接获胜——{loser}务必死守！"
+  protect_unit_survives: "{name}只要撑到最后一回合，{protector}就赢了——活着就是胜利！"
+  reach_tile: "{who}只要踏上({x}, {y})并结束回合，{team}就胜利了。"
+  hold_tile: "{team}连续霸占({x}, {y}){n}回合即可获胜——站稳了！"
+  reach_goal_line: "{team}任意单位冲过{axis}={value}线即可获胜——全速前进！"
 
 # 赛后界面
 post_match:
@@ -70,9 +70,9 @@ post_match:
   back_to_lobby: "l 返回大厅"
   replay_saved: "回放已保存至"
   download_failed: "下载失败"
-  lesson_pending: "AI正在复盘…"
-  lesson_done: "复盘已保存"
-  lesson_failed: "复盘失败"
+  lesson_pending: "AI正在复盘，总结经验教训…"
+  lesson_done: "复盘已保存，下次更强！"
+  lesson_failed: "复盘失败（AI拒绝承认错误）"
 
 # 大厅
 lobby:
@@ -122,7 +122,7 @@ provider:
 login_screen:
   title: "登录"
   submit: "Enter 提交   Esc 语言   q 退出"
-  connecting: "连接中…"
+  connecting: "正在接入战场…"
 
 # 大厅表格标题
 lobby_table:
@@ -133,7 +133,7 @@ lobby_table:
   fog: "迷雾"
   seats: "人数"
   col_status: "状态"
-  no_rooms: "（暂无房间——按 n 创建）"
+  no_rooms: "（空空如也——按 n 开一局吧！）"
   open: "开放中"
   footer: "↓/j 下一个   ↑/k 上一个   Enter 加入   p 预览   n 新房间   w 回放   t 教程   r 刷新   q 退出"
 
@@ -146,9 +146,9 @@ room_panel:
 # 赛后界面
 post_match:
   title: "比赛结束"
-  you_won: "你赢了！"
-  you_lost: "你输了"
-  draw: "比赛以平局结束"
+  you_won: "大获全胜！🎉"
+  you_lost: "惨遭翻盘…下次一定！"
+  draw: "势均力敌，握手言和"
   footer: "d 下载回放   l 返回大厅   q 退出"
 
 # 大厅标题
@@ -170,8 +170,8 @@ lobby_val:
 # 房间操作按钮
 room_buttons:
   toggle_ready: "切换准备"
-  ready_yes: "已准备"
-  ready_no: "未准备"
+  ready_yes: "蓄势待发！"
+  ready_no: "还没准备好"
   strategy: "策略"
   lessons: "复盘"
   change_scenario: "更换剧本"
@@ -198,9 +198,9 @@ room_status:
   room_label: "房间"
   fog_label: "迷雾"
   teams_label: "队伍"
-  match_starting: "比赛将在 {s}s 后开始"
-  waiting_opponent: "等待对手…"
-  ready_up: "准备好即可开始"
+  match_starting: "开战倒计时 {s}s ⚔"
+  waiting_opponent: "虚位以待，等英雄入座…"
+  ready_up: "按下准备，战斗一触即发！"
   confirm: "确认"
 
 # 章节标题
@@ -394,14 +394,14 @@ game_player:
 # 游戏界面 — 地图面板
 game_map:
   key_hints: "←↑↓→（或 h/j/k/l）移动   Enter 单位详情"
-  loading_map: "（加载地图中…）"
+  loading_map: "（战场加载中，稍安勿躁…）"
   terrain_label: "地形"
   enter_details: "Enter 查看详情"
 
 # 游戏界面 — 推理面板
 game_reasoning:
   key_hints: "j/k ↕   ^f/^b 翻页   ^d/^u 半页   G 底部   gg 顶部   0 最新"
-  no_reasoning: "（暂无推理内容）"
+  no_reasoning: "（AI还没开始动脑子…）"
   live: "实时"
   paused: "已暂停 · 已滚动"
   showing: "显示中"
@@ -411,7 +411,7 @@ game_reasoning:
 game_coach:
   key_hints_focused: "Enter 发送   Esc 清除"
   key_hints_unfocused: "输入消息   Enter 发送   Esc 清除"
-  tab_prompt: "（Tab 此处输入教练消息）"
+  tab_prompt: "（Tab 此处鞭笞你的AI）"
   recent: "最近："
 
 # 游戏界面 — 剧本浮层
@@ -420,11 +420,11 @@ game_overlay:
 
 # 退出确认
 game_quit:
-  confirm: "退出SiliconPantheon？"
+  confirm: "确定要临阵脱逃吗？"
 lobby_quit:
-  confirm: "退出SiliconPantheon？"
+  confirm: "真的要走吗？战场还需要你！"
 post_match_quit:
-  confirm: "退出？（按 'd' 先下载回放）"
+  confirm: "退出？（按 'd' 先保存精彩回放！）"
 
 # 房间界面 — 玩家面板
 room_player:
