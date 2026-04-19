@@ -250,9 +250,11 @@ unit_classes:
     description: |
       The Black Dread reborn. Largest of Daenerys's three dragons.
       Breathes fire across the battlefield, turning armored men to
-      ash. Flying unit with devastating ranged fire attack.
-    hp_max: 40
-    atk: 15
+      ash. Flying unit with devastating ranged fire attack —
+      formidable, but a scorpion bolt at range 5 can wound him
+      before his flames reach.
+    hp_max: 34
+    atk: 13
     defense: 7
     res: 5
     spd: 7
@@ -344,11 +346,13 @@ unit_classes:
     description: |
       Sellsword turned knight. The only man brave (or crazy) enough
       to man the scorpion ballista against a dragon. Long-range
-      anti-dragon specialist.
+      anti-dragon specialist. A thick leather mantle — stolen,
+      probably — lets him shrug off the worst of a dragon's
+      first breath.
     hp_max: 22
     atk: 12
     defense: 4
-    res: 2
+    res: 5
     spd: 6
     rng_min: 3
     rng_max: 5

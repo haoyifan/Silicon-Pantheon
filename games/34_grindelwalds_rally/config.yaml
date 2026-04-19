@@ -226,15 +226,17 @@ unit_classes:
     display_name: Theseus Scamander
     description: |
       Head of the British Auror Office and war hero. A disciplined
-      duelist who leads from the front with shield and spell.
+      duelist who leads from the front with shield and spell —
+      his reach with a wand matches Grindelwald's own, letting
+      him answer the Dark Lord's bolts at range.
     hp_max: 26
     atk: 10
     defense: 7
     res: 5
     spd: 5
     move: 3
-    rng_min: 1
-    rng_max: 2
+    rng_min: 2
+    rng_max: 4
     is_magic: true
     glyph: "S"
     color: bright_cyan

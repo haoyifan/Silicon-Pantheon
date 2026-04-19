@@ -403,9 +403,10 @@ unit_classes:
     description: |
       The undead dragon, reanimated by the Night King's touch. Breathes
       blue flame that melts castle walls. Long-range magic devastation
-      but vulnerable to dragonfire from Drogon.
-    hp_max: 40
-    atk: 15
+      but wounded and slower than in life — the resurrection blunted
+      his bite. Still vulnerable to dragonfire from Drogon.
+    hp_max: 32
+    atk: 13
     defense: 6
     res: 5
     spd: 4
