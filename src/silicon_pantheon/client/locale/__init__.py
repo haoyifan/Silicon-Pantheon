@@ -22,6 +22,7 @@ Adding a new language = adding one YAML file here. Zero code changes.
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -33,6 +34,8 @@ _cache: dict[str, dict[str, Any]] = {}
 
 def _load(locale: str) -> dict[str, Any]:
     """Load and cache a locale YAML file."""
+    if not re.fullmatch(r"[a-z]{2,5}", locale):
+        return {}
     if locale in _cache:
         return _cache[locale]
     path = _LOCALE_DIR / f"{locale}.yaml"

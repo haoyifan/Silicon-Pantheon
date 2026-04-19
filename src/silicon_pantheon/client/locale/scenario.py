@@ -18,10 +18,14 @@ Adding a new language for a scenario = adding one YAML file at
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+_RE_LOCALE = re.compile(r"^[a-z]{2,5}$")
+_RE_SCENARIO = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 
 def _deep_merge(base: dict, overrides: dict) -> dict:
@@ -59,6 +63,8 @@ def _find_scenario_dir(scenario_name: str) -> Path | None:
 def load_scenario_locale(scenario_name: str, locale: str) -> dict | None:
     """Load the locale override YAML for a scenario, or None if it
     doesn't exist. Does NOT merge — the caller does that."""
+    if not _RE_SCENARIO.fullmatch(scenario_name) or not _RE_LOCALE.fullmatch(locale):
+        return None
     if locale == "en":
         return None
     d = _find_scenario_dir(scenario_name)
@@ -74,6 +80,8 @@ def load_scenario_locale(scenario_name: str, locale: str) -> dict | None:
 def _load_base_locale(locale: str) -> dict | None:
     """Load the shared base locale that covers built-in terrain types
     and unit classes. Located at client/locale/scenario_base/<locale>.yaml."""
+    if not _RE_LOCALE.fullmatch(locale):
+        return None
     if locale == "en":
         return None
     path = Path(__file__).parent / "scenario_base" / f"{locale}.yaml"
