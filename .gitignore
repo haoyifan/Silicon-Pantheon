@@ -17,6 +17,7 @@ runs-server/
 coach_*.txt
 
 .env
+*.log
 
 # Player strategy files — per-player secrets, not shared.
 strategies/
