@@ -1,0 +1,377 @@
+schema_version: 1
+license: fan_work
+fan_work_source: "Game of Thrones (George R.R. Martin / HBO)"
+name: Loot Train Attack
+difficulty: 4
+description: |
+  The Roseroad, the Reach. Jaime Lannister's army marches the spoils
+  of Highgarden back to King's Landing -- gold wagons, grain carts,
+  and a column stretched thin along the road. Then the Dothraki
+  screamers crest the hill, and behind them, Drogon. Daenerys
+  Targaryen rains fire from the sky while her riders smash the
+  Lannister line. Bronn races for the scorpion ballista -- the only
+  weapon that can wound a dragon.
+  Inspired by the Loot Train Attack from Game of Thrones.
+
+board:
+  width: 16
+  height: 14
+  terrain:
+    # The Roseroad runs east-west through the south
+    - {x: 0, y: 9, type: road}
+    - {x: 1, y: 9, type: road}
+    - {x: 2, y: 9, type: road}
+    - {x: 3, y: 9, type: road}
+    - {x: 4, y: 9, type: road}
+    - {x: 5, y: 9, type: road}
+    - {x: 6, y: 9, type: road}
+    - {x: 7, y: 9, type: road}
+    - {x: 8, y: 9, type: road}
+    - {x: 9, y: 9, type: road}
+    - {x: 10, y: 9, type: road}
+    - {x: 11, y: 9, type: road}
+    - {x: 12, y: 9, type: road}
+    - {x: 13, y: 9, type: road}
+    - {x: 14, y: 9, type: road}
+    - {x: 15, y: 9, type: road}
+    # Loot train wagons along the road -- cover for Lannisters
+    - {x: 10, y: 8, type: wagon}
+    - {x: 12, y: 8, type: wagon}
+    - {x: 14, y: 8, type: wagon}
+    - {x: 11, y: 10, type: wagon}
+    - {x: 13, y: 10, type: wagon}
+    # Hillside to the north -- Dothraki charge from here
+    - {x: 0, y: 0, type: hill}
+    - {x: 1, y: 0, type: hill}
+    - {x: 2, y: 0, type: hill}
+    - {x: 3, y: 0, type: hill}
+    - {x: 4, y: 0, type: hill}
+    - {x: 5, y: 0, type: hill}
+    # Blackwater Rush along the south edge
+    - {x: 0, y: 13, type: river}
+    - {x: 1, y: 13, type: river}
+    - {x: 2, y: 13, type: river}
+    - {x: 3, y: 13, type: river}
+    - {x: 4, y: 13, type: river}
+    - {x: 5, y: 13, type: river}
+    - {x: 6, y: 13, type: river}
+    - {x: 7, y: 13, type: river}
+    - {x: 8, y: 13, type: river}
+    - {x: 9, y: 13, type: river}
+    - {x: 10, y: 13, type: river}
+    - {x: 11, y: 13, type: river}
+    - {x: 12, y: 13, type: river}
+    - {x: 13, y: 13, type: river}
+    - {x: 14, y: 13, type: river}
+    - {x: 15, y: 13, type: river}
+  forts: []
+
+terrain_types:
+  road:
+    display_name: Roseroad
+    description: The Roseroad. Fast movement -- costs 1.
+    move_cost: 1
+    glyph: "."
+    color: yellow
+  wagon:
+    display_name: Loot Wagon
+    description: Gold and grain wagons. Provides +3 DEF cover. Costs 2 to move through.
+    move_cost: 2
+    defense_bonus: 3
+    glyph: "W"
+    color: yellow
+  hill:
+    display_name: Hill
+    description: Grassy hillside. +2 DEF, costs 2 movement. The Dothraki charge from here.
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "^"
+    color: green
+  river:
+    display_name: Blackwater Rush
+    description: Impassable river along the south.
+    move_cost: 99
+    passable: false
+    glyph: "~"
+    color: blue
+
+unit_classes:
+  daenerys:
+    display_name: Daenerys Targaryen
+    description: |
+      Mother of Dragons, Breaker of Chains. Rides Drogon into battle
+      for the first time in Westeros. Flying unit -- ignores terrain.
+      Her dragonfire is devastating but she must be protected.
+    hp_max: 20
+    atk: 8
+    defense: 3
+    res: 7
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 6
+    is_magic: true
+    tags: [vip, queen, flying]
+    sight: 6
+    glyph: D
+    color: bright_cyan
+
+  drogon:
+    display_name: Drogon
+    description: |
+      The Black Dread reborn. Largest of Daenerys's three dragons.
+      Breathes fire across the battlefield, turning armored men to
+      ash. Flying unit with devastating ranged fire attack.
+    hp_max: 40
+    atk: 15
+    defense: 7
+    res: 5
+    spd: 7
+    rng_min: 2
+    rng_max: 4
+    move: 6
+    is_magic: true
+    tags: [dragon, flying]
+    sight: 6
+    glyph: "!"
+    color: bright_red
+
+  qhono:
+    display_name: Qhono
+    description: |
+      Dothraki bloodrider, one of Daenerys's most trusted warriors.
+      Leads the charge with an arakh and a war cry that carries
+      across the field.
+    hp_max: 22
+    atk: 10
+    defense: 3
+    res: 2
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [cavalry, dothraki]
+    sight: 3
+    glyph: Q
+    color: cyan
+
+  aggo:
+    display_name: Aggo
+    description: |
+      Dothraki bloodrider and master horse archer. Fires from the
+      saddle at full gallop with lethal accuracy.
+    hp_max: 18
+    atk: 9
+    defense: 2
+    res: 2
+    spd: 7
+    rng_min: 2
+    rng_max: 3
+    move: 5
+    tags: [cavalry, dothraki, archer]
+    sight: 4
+    glyph: A
+    color: cyan
+
+  kovarro:
+    display_name: Kovarro
+    description: |
+      Dothraki rider, fierce and fearless. Charges headlong into
+      the Lannister shield wall with his arakh singing.
+    hp_max: 22
+    atk: 10
+    defense: 3
+    res: 2
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [cavalry, dothraki]
+    sight: 3
+    glyph: V
+    color: cyan
+
+  jaime:
+    display_name: Jaime Lannister
+    description: |
+      The Kingslayer. Commands the Lannister column. One of the
+      finest swordsmen in Westeros even with his golden hand.
+      His death would be a catastrophic blow to Cersei's war effort.
+    hp_max: 28
+    atk: 11
+    defense: 7
+    res: 3
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [vip, commander]
+    sight: 4
+    glyph: J
+    color: bright_red
+
+  bronn:
+    display_name: Bronn
+    description: |
+      Sellsword turned knight. The only man brave (or crazy) enough
+      to man the scorpion ballista against a dragon. Long-range
+      anti-dragon specialist.
+    hp_max: 22
+    atk: 12
+    defense: 4
+    res: 2
+    spd: 6
+    rng_min: 3
+    rng_max: 5
+    move: 4
+    tags: [ranged, scorpion]
+    sight: 5
+    glyph: B
+    color: bright_red
+
+  randyll_tarly:
+    display_name: Randyll Tarly
+    description: |
+      Lord of Horn Hill, finest military commander in the Reach.
+      The only man to defeat Robert Baratheon in battle. Commands
+      the vanguard with iron discipline.
+    hp_max: 26
+    atk: 10
+    defense: 6
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [commander]
+    sight: 4
+    glyph: R
+    color: red
+
+  dickon_tarly:
+    display_name: Dickon Tarly
+    description: |
+      Randyll's heir. Young, brave, eager to prove himself.
+      Fights beside his father in the shield wall.
+    hp_max: 22
+    atk: 9
+    defense: 5
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [infantry]
+    sight: 3
+    glyph: K
+    color: red
+
+  lannister_captain:
+    display_name: Captain Lorch
+    description: |
+      Lannister officer commanding the rearguard. Hardened veteran
+      of the War of the Five Kings. Holds the line while wagons burn.
+    hp_max: 22
+    atk: 8
+    defense: 6
+    res: 2
+    spd: 4
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [infantry, officer]
+    sight: 3
+    glyph: L
+    color: red
+
+  lannister_archer:
+    display_name: Lannister Archer
+    description: |
+      Crossbowman of the Westerlands. Accurate but slow to reload.
+      Fires desperately at the dragon overhead.
+    hp_max: 16
+    atk: 9
+    defense: 2
+    res: 2
+    spd: 4
+    rng_min: 2
+    rng_max: 3
+    move: 3
+    tags: [ranged, archer]
+    sight: 4
+    glyph: X
+    color: red
+
+  lannister_spearman:
+    display_name: Lannister Spearman
+    description: |
+      Shield-and-spear infantry forming the Lannister line. Trained
+      to hold formation, but nothing prepared them for dragonfire.
+    hp_max: 20
+    atk: 7
+    defense: 6
+    res: 2
+    spd: 4
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [infantry, spearman]
+    sight: 3
+    glyph: S
+    color: red
+
+armies:
+  blue:
+    # Daenerys and Drogon approaching from the north
+    - {class: daenerys, pos: {x: 3, y: 1}}
+    - {class: drogon, pos: {x: 4, y: 0}}
+    # Dothraki charging from the hills
+    - {class: qhono, pos: {x: 2, y: 2}}
+    - {class: aggo, pos: {x: 5, y: 1}}
+    - {class: kovarro, pos: {x: 1, y: 2}}
+  red:
+    # Lannister column along the road (y=8-10)
+    - {class: jaime, pos: {x: 11, y: 9}}
+    - {class: bronn, pos: {x: 13, y: 9}}
+    - {class: randyll_tarly, pos: {x: 9, y: 9}}
+    - {class: dickon_tarly, pos: {x: 10, y: 9}}
+    - {class: lannister_captain, pos: {x: 14, y: 9}}
+    - {class: lannister_archer, pos: {x: 12, y: 8}}
+    - {class: lannister_spearman, pos: {x: 10, y: 8}}
+
+rules:
+  max_turns: 20
+  fog_of_war: false
+  first_player: blue
+
+win_conditions:
+  - {type: protect_unit, unit_id: u_b_daenerys_1, owning_team: blue}
+  - {type: protect_unit, unit_id: u_r_jaime_1, owning_team: red}
+  - {type: eliminate_all_enemy_units}
+  - {type: max_turns_draw}
+
+narrative:
+  title: Loot Train Attack
+  description: |
+    The Roseroad burns. Daenerys and Drogon descend on the Lannister
+    column while Dothraki screamers smash the shield wall.
+  intro: |
+    Jaime hears it first -- a low rumble from the hills, then the
+    Dothraki war cry. Then the shadow passes over the sun and the
+    world turns to fire.
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: "Drogon's first pass sets the wagons ablaze. Men scatter, screaming."
+    - trigger: on_turn_start
+      turn: 6
+      text: "Bronn reaches the scorpion. He cranks the bolt into place, aims at the black shape in the sky."
+    - trigger: on_turn_start
+      turn: 10
+      text: "The Lannister line breaks. Dothraki riders pour through the gaps, cutting down fleeing soldiers."
+    - trigger: on_unit_killed
+      unit_id: u_r_jaime_1
+      text: "The Kingslayer falls. The lion banner drops into the mud."
+    - trigger: on_unit_killed
+      unit_id: u_b_daenerys_1
+      text: "Daenerys is struck from Drogon's back. The dragon screams."

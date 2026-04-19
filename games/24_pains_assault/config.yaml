@@ -2,97 +2,98 @@ schema_version: 1
 license: fan_work
 fan_work_source: "Naruto (Masashi Kishimoto / Shueisha)"
 name: "Pain's Assault on Konoha"
-difficulty: 3
+difficulty: 4
 description: |
-  Konoha, the Hidden Leaf Village. The Six Paths of Pain — puppets
-  controlled by Nagato — descend upon the village with godlike power.
-  Kakashi leads the defense while Tsunade heals the wounded. The
-  village must hold out until Naruto returns in Sage Mode at turn 10
-  to turn the tide.
-  Inspired by Pain's Assault on Konoha from Naruto Shippūden by Masashi Kishimoto.
+  The Hidden Leaf Village. The Six Paths of Pain -- puppets controlled
+  by Nagato -- descend upon Konoha with godlike power. Naruto, in
+  Sage Mode, leads the defense alongside Kakashi, Tsunade, Shikamaru,
+  Hinata, Sakura, and Konohamaru. The Deva Path controls gravity
+  itself. The village must destroy all six Paths to win, or protect
+  Naruto until the turn cap when he can locate Nagato's true body.
+  Inspired by Pain's Assault on Konoha from Naruto Shippuden by Masashi Kishimoto.
 
 board:
-  width: 16
-  height: 14
+  width: 14
+  height: 12
   terrain:
-    # Scattered buildings across the village
-    - {x: 3, y: 4, type: building}
-    - {x: 4, y: 4, type: building}
-    - {x: 7, y: 4, type: building}
-    - {x: 8, y: 4, type: building}
-    - {x: 11, y: 4, type: building}
-    - {x: 12, y: 4, type: building}
-    - {x: 2, y: 6, type: building}
-    - {x: 3, y: 6, type: building}
-    - {x: 6, y: 6, type: building}
-    - {x: 9, y: 6, type: building}
-    - {x: 10, y: 6, type: building}
-    - {x: 13, y: 6, type: building}
-    - {x: 4, y: 8, type: building}
-    - {x: 5, y: 8, type: building}
-    - {x: 10, y: 8, type: building}
-    - {x: 11, y: 8, type: building}
-    # Konoha wall at south (y=12-13), gate at (8, 12)
-    - {x: 0, y: 12, type: village_wall}
-    - {x: 1, y: 12, type: village_wall}
-    - {x: 2, y: 12, type: village_wall}
-    - {x: 3, y: 12, type: village_wall}
-    - {x: 4, y: 12, type: village_wall}
-    - {x: 5, y: 12, type: village_wall}
-    - {x: 6, y: 12, type: village_wall}
-    # (7, 8, 9) is the main gate — 3-wide, no wall
-    # (12, 13) is the second gate — Pain blasted open multiple entrances
-    - {x: 10, y: 12, type: village_wall}
-    - {x: 11, y: 12, type: village_wall}
-    # x=12,13 removed — second gate breach
-    - {x: 14, y: 12, type: village_wall}
-    - {x: 15, y: 12, type: village_wall}
-    - {x: 0, y: 13, type: village_wall}
-    - {x: 1, y: 13, type: village_wall}
-    - {x: 2, y: 13, type: village_wall}
-    - {x: 3, y: 13, type: village_wall}
-    - {x: 4, y: 13, type: village_wall}
-    - {x: 5, y: 13, type: village_wall}
-    - {x: 6, y: 13, type: village_wall}
-    - {x: 7, y: 13, type: village_wall}
-    - {x: 8, y: 13, type: village_wall}
-    - {x: 9, y: 13, type: village_wall}
-    - {x: 10, y: 13, type: village_wall}
-    - {x: 11, y: 13, type: village_wall}
-    - {x: 12, y: 13, type: village_wall}
-    - {x: 13, y: 13, type: village_wall}
-    - {x: 14, y: 13, type: village_wall}
-    - {x: 15, y: 13, type: village_wall}
+    # Village buildings -- scattered cover
+    - {x: 2, y: 3, type: building}
+    - {x: 3, y: 3, type: building}
+    - {x: 6, y: 3, type: building}
+    - {x: 7, y: 3, type: building}
+    - {x: 10, y: 3, type: building}
+    - {x: 11, y: 3, type: building}
+    - {x: 1, y: 5, type: building}
+    - {x: 5, y: 5, type: building}
+    - {x: 8, y: 5, type: building}
+    - {x: 12, y: 5, type: building}
+    - {x: 3, y: 7, type: building}
+    - {x: 4, y: 7, type: building}
+    - {x: 9, y: 7, type: building}
+    - {x: 10, y: 7, type: building}
+    # Shinra Tensei crater -- center of the village (open ground)
+    - {x: 6, y: 5, type: crater}
+    - {x: 7, y: 5, type: crater}
+    - {x: 6, y: 6, type: crater}
+    - {x: 7, y: 6, type: crater}
+    # Hokage Monument -- northern cliff
+    - {x: 5, y: 0, type: monument}
+    - {x: 6, y: 0, type: monument}
+    - {x: 7, y: 0, type: monument}
+    - {x: 8, y: 0, type: monument}
   forts: []
 
 terrain_types:
   building:
     display_name: Building
+    description: Konoha village buildings. +3 DEF, costs 2 movement.
     move_cost: 2
     defense_bonus: 3
     glyph: "#"
     color: yellow
+  crater:
+    display_name: Crater
     description: |
-      Konoha village buildings. Provide excellent cover but slow
-      movement through the rubble.
-  village_wall:
-    display_name: Village Wall
+      Shinra Tensei impact crater. Open ground with no cover.
+      The center of destruction.
     move_cost: 1
     defense_bonus: 0
+    glyph: "o"
+    color: bright_black
+  monument:
+    display_name: Hokage Monument
+    description: The carved cliff faces of past Hokage. Impassable terrain.
+    move_cost: 99
     passable: false
     glyph: "#"
-    color: bright_black
-    description: |
-      The great wall surrounding the Hidden Leaf Village.
-      Impassable barrier.
+    color: bright_yellow
 
 unit_classes:
+  naruto:
+    display_name: Naruto Uzumaki
+    description: |
+      The Nine-Tails Jinchuriki in Sage Mode. Nature energy
+      amplifies his speed, strength, and senses beyond anything
+      the Paths of Pain have faced. Rasenshuriken obliterates at
+      range. VIP -- if he falls, Konoha is lost.
+    hp_max: 40
+    atk: 14
+    defense: 6
+    res: 8
+    spd: 8
+    move: 5
+    rng_min: 1
+    rng_max: 2
+    tags: [vip]
+    glyph: "!"
+    color: bright_yellow
+
   kakashi:
     display_name: Kakashi Hatake
     description: |
       The Copy Ninja. Sharingan user who has copied over a thousand
-      jutsu. Konoha's tactical genius and the village's last line
-      of defense before Naruto arrives.
+      jutsu. Konoha's tactical genius. Kamui can warp attacks but
+      drains his chakra fast.
     hp_max: 26
     atk: 11
     defense: 5
@@ -109,10 +110,10 @@ unit_classes:
     display_name: Tsunade
     description: |
       The Fifth Hokage and legendary healer. One of the three
-      Sannin. Keeps the village alive with her medical ninjutsu
-      while directing the defense.
+      Sannin. Keeps the village alive with medical ninjutsu while
+      directing the defense. Superhuman strength in melee.
     hp_max: 30
-    atk: 9
+    atk: 10
     defense: 4
     res: 8
     spd: 5
@@ -125,29 +126,11 @@ unit_classes:
     glyph: "T"
     color: yellow
 
-  choji:
-    display_name: Choji Akimichi
-    description: |
-      Expansion jutsu specialist. Can grow to enormous size,
-      becoming a walking battering ram. Tough and surprisingly
-      powerful despite his gentle nature.
-    hp_max: 32
-    atk: 10
-    defense: 7
-    res: 3
-    spd: 3
-    move: 3
-    rng_min: 1
-    rng_max: 1
-    glyph: "J"
-    color: bright_cyan
-
   shikamaru:
     display_name: Shikamaru Nara
     description: |
       Shadow tactician with an IQ over 200. His shadow techniques
-      can paralyze enemies at range. Too lazy to fight hard, too
-      smart to lose.
+      paralyze enemies at range. The brain of Konoha's defense.
     hp_max: 20
     atk: 7
     defense: 4
@@ -160,45 +143,66 @@ unit_classes:
     glyph: "S"
     color: dim
 
-  konoha_chunin:
-    display_name: Konoha Chunin
+  hinata:
+    display_name: Hinata Hyuga
     description: |
-      Mid-rank ninja of the Hidden Leaf. Professional shinobi
-      who form the backbone of the village's defense.
-    hp_max: 18
-    atk: 7
+      Byakugan user and Gentle Fist practitioner. Steps between
+      Pain and Naruto without hesitation. Her 360-degree vision
+      and chakra-blocking strikes make her dangerous up close.
+    hp_max: 20
+    atk: 9
     defense: 4
-    res: 4
+    res: 5
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "H"
+    color: bright_cyan
+
+  sakura:
+    display_name: Sakura Haruno
+    description: |
+      Tsunade's apprentice. Medical ninja with chakra-enhanced
+      punches that crack the ground. Healer and close-range
+      powerhouse.
+    hp_max: 22
+    atk: 9
+    defense: 4
+    res: 6
     spd: 5
     move: 3
     rng_min: 1
     rng_max: 1
-    glyph: "c"
-    color: cyan
+    can_heal: true
+    heal_amount: 6
+    glyph: "R"
+    color: bright_red
 
-  anbu:
-    display_name: ANBU Operative
+  konohamaru:
+    display_name: Konohamaru Sarutobi
     description: |
-      Elite black ops ninja. Masked assassins who operate in the
-      shadows. Fast, deadly, and utterly loyal to the village.
-    hp_max: 20
-    atk: 9
+      The Third Hokage's grandson. Still a genin but hits above
+      his weight with a surprising Rasengan that takes down one
+      of Pain's bodies. Brave beyond his rank.
+    hp_max: 16
+    atk: 8
     defense: 3
-    res: 5
-    spd: 7
+    res: 4
+    spd: 6
     move: 4
     rng_min: 1
     rng_max: 1
-    glyph: "a"
-    color: bright_black
+    glyph: "C"
+    color: cyan
 
   deva:
     display_name: Deva Path
     description: |
-      The main body of Pain. Controls gravity itself — Shinra
-      Tensei pushes everything away, Chibaku Tensei pulls it in.
-      The most dangerous of the six paths.
-    hp_max: 35
+      The main body of Pain. Controls gravity -- Shinra Tensei
+      repels everything, Chibaku Tensei creates a black hole.
+      The most dangerous of the Six Paths. VIP for red.
+    hp_max: 36
     atk: 14
     defense: 6
     res: 8
@@ -207,6 +211,7 @@ unit_classes:
     rng_min: 2
     rng_max: 4
     is_magic: true
+    tags: [vip]
     glyph: "D"
     color: bright_red
 
@@ -231,7 +236,7 @@ unit_classes:
     display_name: Asura Path
     description: |
       A mechanical body bristling with weapons. Fires missiles,
-      extends extra arms, and acts as Pain's heavy artillery.
+      extends extra arms. Pain's heavy artillery platform.
     hp_max: 30
     atk: 12
     defense: 7
@@ -246,8 +251,8 @@ unit_classes:
   human:
     display_name: Human Path
     description: |
-      Reads minds and tears out souls with a touch. One of the
-      most terrifying paths — a single grab means instant death.
+      Reads minds and tears out souls with a touch. A single grab
+      means instant death. Fast and terrifying.
     hp_max: 24
     atk: 13
     defense: 4
@@ -257,14 +262,14 @@ unit_classes:
     rng_min: 1
     rng_max: 1
     is_magic: true
-    glyph: "H"
+    glyph: "M"
     color: red
 
   preta:
     display_name: Preta Path
     description: |
-      Absorbs all chakra-based attacks. Ninjutsu is useless against
-      this path — only physical attacks can damage it.
+      Absorbs all chakra-based attacks. Ninjutsu is useless --
+      only physical attacks can damage it.
     hp_max: 30
     atk: 7
     defense: 5
@@ -279,9 +284,8 @@ unit_classes:
   naraka:
     display_name: Naraka Path
     description: |
-      Summons the King of Hell to interrogate and heal. Can restore
-      destroyed paths, making Pain's forces nearly unkillable
-      without eliminating this one first.
+      Summons the King of Hell to heal and restore destroyed Paths.
+      Must be eliminated to prevent Pain from regenerating.
     hp_max: 22
     atk: 6
     defense: 4
@@ -292,76 +296,46 @@ unit_classes:
     rng_max: 1
     is_magic: true
     can_heal: true
-    heal_amount: 6
+    heal_amount: 7
     glyph: "N"
     color: red
 
-  naruto_sage:
-    display_name: Naruto (Sage Mode)
-    description: |
-      Naruto Uzumaki in Sage Mode. Infused with nature energy,
-      his speed, strength, and senses are amplified beyond anything
-      the Paths of Pain have faced. The strongest unit on the field.
-    hp_max: 40
-    atk: 15
-    defense: 6
-    res: 8
-    spd: 8
-    move: 5
-    rng_min: 1
-    rng_max: 2
-    glyph: "!"
-    color: bright_yellow
-
 armies:
   blue:
-    # Kakashi — front line defense
-    - {class: kakashi, pos: {x: 8, y: 7}}
-    # Tsunade — behind the lines, healing
-    - {class: tsunade, pos: {x: 8, y: 10}}
-    # Choji — front line tank
-    - {class: choji, pos: {x: 6, y: 8}}
-    # Shikamaru — mid-range support
-    - {class: shikamaru, pos: {x: 10, y: 8}}
-    # Chunin — defending the village
-    - {class: konoha_chunin, pos: {x: 4, y: 9}}
-    - {class: konoha_chunin, pos: {x: 5, y: 9}}
-    - {class: konoha_chunin, pos: {x: 7, y: 9}}
-    - {class: konoha_chunin, pos: {x: 9, y: 9}}
-    - {class: konoha_chunin, pos: {x: 11, y: 9}}
-    - {class: konoha_chunin, pos: {x: 12, y: 9}}
-    # ANBU — elite flankers
-    - {class: anbu, pos: {x: 3, y: 7}}
-    - {class: anbu, pos: {x: 5, y: 7}}
-    - {class: anbu, pos: {x: 11, y: 7}}
-    - {class: anbu, pos: {x: 13, y: 7}}
+    # Naruto at the village center
+    - {class: naruto, pos: {x: 7, y: 8}}
+    # Kakashi on the front line
+    - {class: kakashi, pos: {x: 6, y: 7}}
+    # Tsunade behind the lines
+    - {class: tsunade, pos: {x: 7, y: 10}}
+    # Shikamaru providing support
+    - {class: shikamaru, pos: {x: 9, y: 8}}
+    # Hinata near Naruto
+    - {class: hinata, pos: {x: 8, y: 8}}
+    # Sakura with Tsunade
+    - {class: sakura, pos: {x: 6, y: 10}}
+    # Konohamaru flanking
+    - {class: konohamaru, pos: {x: 5, y: 8}}
 
   red:
-    # Six Paths of Pain — spread across the north
-    - {class: deva, pos: {x: 8, y: 1}}
-    - {class: animal, pos: {x: 5, y: 2}}
-    - {class: asura, pos: {x: 11, y: 2}}
+    # Six Paths of Pain approaching from the north
+    - {class: deva, pos: {x: 7, y: 1}}
+    - {class: animal, pos: {x: 4, y: 2}}
+    - {class: asura, pos: {x: 10, y: 2}}
     - {class: human, pos: {x: 3, y: 1}}
-    - {class: preta, pos: {x: 13, y: 1}}
-    - {class: naraka, pos: {x: 8, y: 3}}
+    - {class: preta, pos: {x: 11, y: 1}}
+    - {class: naraka, pos: {x: 7, y: 2}}
 
 rules:
   max_turns: 20
   first_player: red
 
 win_conditions:
-  # Kakashi dies -> blue loses (the general falls).
-  - {type: protect_unit, unit_id: u_b_kakashi_1, owning_team: blue}
-  # Kakashi survives the turn cap -> blue wins.
-  - {type: protect_unit_survives, unit_id: u_b_kakashi_1, owning_team: blue}
-  # Either side wins by total elimination.
+  - {type: protect_unit, unit_id: u_b_naruto_1, owning_team: blue}
+  - {type: protect_unit, unit_id: u_r_deva_1, owning_team: red}
+  - {type: protect_unit_survives, unit_id: u_b_naruto_1, owning_team: blue}
   - {type: eliminate_all_enemy_units}
-  # Backstop.
   - {type: max_turns_draw}
-
-plugin_hooks:
-  on_turn_start:
-    - naruto_reinforcement
 
 narrative:
   title: "Pain's Assault on Konoha"
@@ -370,25 +344,36 @@ narrative:
     Rinnegan descend from the sky. Pain has come for the Nine-Tails.
   intro: |
     Explosions tear through the village. The Six Paths of Pain
-    drop from the sky like gods of destruction. Kakashi rallies
-    the defenders, but against a foe who controls gravity itself,
-    can the village hold until Naruto returns?
+    drop from the sky like gods of destruction. But this time,
+    Naruto is already here -- standing in Sage Mode atop the
+    great toad Gamabunta. "I am the Fourth Hokage's legacy.
+    I won't let you destroy my home."
   events:
     - trigger: on_turn_start
       turn: 4
       text: |
-        Shinra Tensei! The Deva Path unleashes a massive gravity
-        pulse. Buildings crumble. The village center is flattened.
+        Shinra Tensei! The Deva Path unleashes a gravity pulse.
+        Buildings crumble. The village center is flattened into
+        a crater.
     - trigger: on_turn_start
-      turn: 10
+      turn: 8
       text: |
-        A massive toad crashes down at the village gate. Standing
-        on its head, eyes golden with nature energy — Naruto
-        Uzumaki has arrived in Sage Mode! "I won't let you
-        destroy my village!"
+        Hinata steps between Pain and the fallen Naruto. "I'm not
+        afraid to die protecting you, because... I love you."
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        The battle reaches its climax. Naruto's Sage Mode clones
+        engage the remaining Paths across the ruins.
     - trigger: on_unit_killed
       unit_id: u_r_deva_1
       text: |
-        The Deva Path crumbles. But somewhere, hidden in the
-        trees beyond the village, Nagato coughs blood. The real
-        Pain is still out there.
+        The Deva Path crumbles. Somewhere in the trees beyond the
+        village, Nagato coughs blood. The real Pain still hides,
+        but his strongest puppet is broken.
+    - trigger: on_unit_killed
+      unit_id: u_b_naruto_1
+      text: |
+        Naruto falls. The Nine-Tails stirs inside the seal.
+        Without the jinchuriki, Konoha has nothing left to stop
+        Pain from leveling the village.

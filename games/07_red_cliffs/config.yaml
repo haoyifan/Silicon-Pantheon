@@ -3,48 +3,29 @@ license: public_domain
 name: Red Cliffs
 difficulty: 4
 description: |
-  Winter, 208 AD. The Han dynasty is collapsing. Cao Cao has united
-  the north under his banner and brings 800,000 men (he claims) and
-  a massive fleet down the Yangtze to crush the southern warlords
-  Sun Quan and Liu Bei. The two southerners ally. Their joint
-  strategist Zhuge Liang predicts an east wind. Their veteran admiral
-  Huang Gai feigns defection — letting his fire ships drift toward
-  Cao Cao's chained northern fleet on a borrowed wind. The Yangtze
-  burns through the night and most of Cao Cao's army with it. The
-  Three Kingdoms era begins for real.
+  Winter, 208 AD. Cao Cao has united the north and brings a massive
+  fleet down the Yangtze to crush the allied forces of Sun Quan and
+  Liu Bei. Their strategists Zhou Yu and Zhuge Liang devise a fire
+  attack: Huang Gai feigns defection and sails fire ships into Cao
+  Cao's chained fleet on a borrowed east wind. The Yangtze burns
+  through the night and the Three Kingdoms era begins.
   Inspired by the Battle of Red Cliffs (208 AD), Three Kingdoms period, China.
 
 board:
-  width: 18
-  height: 10
+  width: 16
+  height: 12
   terrain:
-    # The Yangtze fills the middle four rows.
-    - {x: 0, y: 3, type: river}
-    - {x: 1, y: 3, type: river}
-    - {x: 2, y: 3, type: river}
-    - {x: 3, y: 3, type: river}
-    - {x: 4, y: 3, type: river}
-    - {x: 5, y: 3, type: river}
-    - {x: 6, y: 3, type: river}
-    - {x: 7, y: 3, type: river}
-    - {x: 8, y: 3, type: river}
-    - {x: 9, y: 3, type: river}
-    - {x: 15, y: 3, type: river}
-    - {x: 16, y: 3, type: river}
-    - {x: 17, y: 3, type: river}
-    - {x: 0, y: 5, type: river}
-    - {x: 1, y: 5, type: river}
-    - {x: 2, y: 5, type: river}
-    - {x: 3, y: 5, type: river}
-    - {x: 4, y: 5, type: river}
-    - {x: 5, y: 5, type: river}
-    - {x: 6, y: 5, type: river}
-    - {x: 7, y: 5, type: river}
-    - {x: 8, y: 5, type: river}
-    - {x: 9, y: 5, type: river}
-    - {x: 15, y: 5, type: river}
-    - {x: 16, y: 5, type: river}
-    - {x: 17, y: 5, type: river}
+    # Yangtze River -- wide channel y=4 through y=6
+    - {x: 0, y: 4, type: river}
+    - {x: 1, y: 4, type: river}
+    - {x: 2, y: 4, type: river}
+    - {x: 3, y: 4, type: river}
+    - {x: 4, y: 4, type: river}
+    - {x: 5, y: 4, type: river}
+    - {x: 6, y: 4, type: river}
+    - {x: 13, y: 4, type: river}
+    - {x: 14, y: 4, type: river}
+    - {x: 15, y: 4, type: river}
     - {x: 0, y: 6, type: river}
     - {x: 1, y: 6, type: river}
     - {x: 2, y: 6, type: river}
@@ -52,85 +33,72 @@ board:
     - {x: 4, y: 6, type: river}
     - {x: 5, y: 6, type: river}
     - {x: 6, y: 6, type: river}
-    - {x: 7, y: 6, type: river}
-    - {x: 8, y: 6, type: river}
-    - {x: 9, y: 6, type: river}
+    - {x: 13, y: 6, type: river}
+    - {x: 14, y: 6, type: river}
     - {x: 15, y: 6, type: river}
-    - {x: 16, y: 6, type: river}
-    - {x: 17, y: 6, type: river}
-    # Cao Cao's chained fleet — a row of ship tiles spanning x=10..14
-    # at y=4 and y=5. Walkable for red, blocking for blue. The
-    # fire-spread plugin will mutate them into "burning_ship" tiles.
+    # Cao Cao's chained fleet -- ship tiles spanning the crossing
+    - {x: 7, y: 4, type: ship}
+    - {x: 8, y: 4, type: ship}
+    - {x: 9, y: 4, type: ship}
     - {x: 10, y: 4, type: ship}
     - {x: 11, y: 4, type: ship}
     - {x: 12, y: 4, type: ship}
-    - {x: 13, y: 4, type: ship}
-    - {x: 14, y: 4, type: ship}
+    - {x: 7, y: 5, type: ship}
+    - {x: 8, y: 5, type: ship}
+    - {x: 9, y: 5, type: ship}
     - {x: 10, y: 5, type: ship}
     - {x: 11, y: 5, type: ship}
     - {x: 12, y: 5, type: ship}
-    - {x: 13, y: 5, type: ship}
-    - {x: 14, y: 5, type: ship}
+    - {x: 7, y: 6, type: ship}
+    - {x: 8, y: 6, type: ship}
+    - {x: 9, y: 6, type: ship}
+    - {x: 10, y: 6, type: ship}
+    - {x: 11, y: 6, type: ship}
+    - {x: 12, y: 6, type: ship}
+    # Wind terrain on southern bank -- boosts fire attack
+    - {x: 6, y: 8, type: wind}
+    - {x: 7, y: 8, type: wind}
+    - {x: 8, y: 8, type: wind}
   forts: []
 
 terrain_types:
   river:
-    display_name: River
-    description: Impassable river.
+    display_name: Yangtze River
+    description: Impassable river -- deep and swift.
     move_cost: 99
     passable: false
     glyph: "~"
     color: blue
   ship:
-    display_name: Ship
-    # Cao Cao's chained ships — walkable to north troops only.
+    display_name: Chained Ship
+    description: |
+      Cao Cao's ships chained together to prevent seasickness.
+      Walkable terrain. Vulnerable to fire.
     move_cost: 1
     passable: true
     glyph: "M"
     color: yellow
-    class_overrides:
-      huang_gai:
-        passable: true
-      zhou_yu:
-        passable: false
-      guan_yu:
-        passable: false
-      zhuge_liang:
-        passable: false
-      wu_archer:
-        passable: false
-
-unit_classes:
-  zhuge_liang:
-    display_name: Zhuge Liang
+  wind:
+    display_name: East Wind
     description: |
-      Strategist and proto-Daoist sage. The man who "borrows the
-      east wind" — calls the weather change that makes the fire
-      attack possible. Magical attack profile reflects his ritual
-      role in this battle.
-    hp_max: 22
-    atk: 6
-    defense: 4
-    res: 8
-    spd: 6
-    rng_min: 1
-    rng_max: 2
-    move: 4
-    is_magic: true
-    tags: [strategist, magic, vip]
-    sight: 5
-    glyph: Z
+      The borrowed east wind. Units here gain +2 ATK from the
+      favorable conditions.
+    move_cost: 1
+    attack_bonus: 2
+    glyph: ">"
     color: bright_cyan
 
+unit_classes:
   zhou_yu:
     display_name: Zhou Yu
     description: |
-      Sun Quan's young admiral and the actual battlefield commander
-      of the alliance. Brilliant, beautiful, jealous of Zhuge Liang.
+      Sun Quan's young admiral and battlefield commander of the
+      alliance. Brilliant, beautiful, jealous of Zhuge Liang's
+      genius. The architect of the fire attack plan.
     hp_max: 30
     atk: 10
     defense: 6
-    res: 4
+    res: 5
     spd: 7
     rng_min: 1
     rng_max: 1
@@ -138,35 +106,34 @@ unit_classes:
     tags: [hero, admiral]
     sight: 4
     glyph: Y
-    color: cyan
+    color: bright_cyan
 
-  guan_yu:
-    display_name: Guan Yu
+  zhuge_liang:
+    display_name: Zhuge Liang
     description: |
-      Liu Bei's sworn brother — godlike warrior, two-meter beard,
-      green dragon crescent blade. Worth a small army on his own.
-      Later deified as the Chinese god of war.
-    hp_max: 42
-    atk: 13
-    defense: 7
-    res: 4
+      The Sleeping Dragon. Strategist who "borrows the east wind"
+      through ritual. His magic attack reflects his supernatural
+      role in this battle.
+    hp_max: 22
+    atk: 7
+    defense: 4
+    res: 8
     spd: 6
     rng_min: 1
-    rng_max: 1
+    rng_max: 3
     move: 4
-    tags: [hero, legend]
-    sight: 4
-    glyph: G
-    color: cyan
+    is_magic: true
+    tags: [strategist, magic]
+    sight: 5
+    glyph: Z
+    color: bright_cyan
 
   huang_gai:
     display_name: Huang Gai
     description: |
-      Sun Quan's veteran admiral. Volunteers for the suicide ploy:
-      take a beating from Zhou Yu in public so Cao Cao believes his
-      defection is real, then sail straight at the chained fleet
-      with ships full of oil and reeds. Stay adjacent to a ship
-      tile from turn 5 to set the fire.
+      Sun Quan's veteran admiral. Volunteered for the suicide ploy:
+      took a public beating from Zhou Yu to fake his defection,
+      then sailed fire ships straight into Cao Cao's chained fleet.
     hp_max: 26
     atk: 9
     defense: 5
@@ -180,32 +147,71 @@ unit_classes:
     glyph: U
     color: bright_yellow
 
-  wu_archer:
-    display_name: Wu Archer
+  lu_su:
+    display_name: Lu Su
     description: |
-      Sun Quan's bowmen — riverside levies who've trained their
-      whole lives shooting from rocking decks.
-    hp_max: 16
+      Sun Quan's chief diplomat who brokered the Sun-Liu alliance.
+      Steady advisor and competent fighter. Keeps the coalition
+      from falling apart.
+    hp_max: 22
+    atk: 8
+    defense: 4
+    res: 5
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [advisor]
+    sight: 4
+    glyph: L
+    color: cyan
+
+  gan_ning:
+    display_name: Gan Ning
+    description: |
+      Former pirate turned Wu general. Bells tied to his armor
+      jingle as he charges. Leads night raids and boarding actions
+      with reckless courage.
+    hp_max: 26
+    atk: 10
+    defense: 4
+    res: 3
+    spd: 7
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [hero, pirate]
+    sight: 3
+    glyph: G
+    color: cyan
+
+  cheng_pu:
+    display_name: Cheng Pu
+    description: |
+      Three-generation Wu veteran. Has served Sun Jian, Sun Ce,
+      and now Sun Quan. Seasoned commander with a steady hand
+      and iron spear.
+    hp_max: 24
     atk: 9
-    defense: 2
+    defense: 5
     res: 3
     spd: 5
-    rng_min: 2
-    rng_max: 3
+    rng_min: 1
+    rng_max: 1
     move: 4
-    tags: [archer]
-    sight: 4
-    glyph: A
+    tags: [hero]
+    sight: 3
+    glyph: P
     color: cyan
 
   cao_cao:
     display_name: Cao Cao
     description: |
-      Chancellor of Han. Brilliant administrator, ruthless general,
-      eventual founder of Wei. Has chained his ships together so
-      his northern troops don't get seasick. About to learn the
-      cost of that engineering decision.
-    hp_max: 36
+      Chancellor of Han. Brilliant administrator and ruthless
+      general. Chained his ships together so his northern troops
+      would not get seasick. About to discover the cost of that
+      decision. VIP -- his death ends the northern campaign.
+    hp_max: 34
     atk: 11
     defense: 7
     res: 5
@@ -218,11 +224,67 @@ unit_classes:
     glyph: C
     color: bright_red
 
-  cao_guard:
-    display_name: Tiger Guard
+  xiahou_dun:
+    display_name: Xiahou Dun
     description: |
-      Cao Cao's elite household troops. Best soldiers north of
-      the Yellow River.
+      Cao Cao's most loyal general, the One-Eyed Warrior. Lost an
+      eye to an arrow and ate it on the spot. Fearless in melee,
+      utterly devoted to his lord.
+    hp_max: 30
+    atk: 11
+    defense: 6
+    res: 3
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [hero, warrior]
+    sight: 4
+    glyph: X
+    color: bright_red
+
+  zhang_liao:
+    display_name: Zhang Liao
+    description: |
+      Former officer of Lu Bu, now Cao Cao's finest general. Will
+      later hold Hefei with 800 men against 100,000. Tactical
+      genius and devastating fighter.
+    hp_max: 28
+    atk: 10
+    defense: 6
+    res: 4
+    spd: 7
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [hero, warrior]
+    sight: 4
+    glyph: J
+    color: bright_red
+
+  cao_ren:
+    display_name: Cao Ren
+    description: |
+      Cao Cao's cousin and master of defensive warfare. Commands
+      the rearguard on the north bank. Shields and discipline.
+    hp_max: 26
+    atk: 8
+    defense: 7
+    res: 3
+    spd: 4
+    rng_min: 1
+    rng_max: 1
+    move: 3
+    tags: [hero, guard]
+    sight: 3
+    glyph: R
+    color: red
+
+  xu_huang:
+    display_name: Xu Huang
+    description: |
+      Cao Cao's reliable axe-wielding general. Calm, professional,
+      and lethal. Guards the northern flank of the fleet.
     hp_max: 26
     atk: 9
     defense: 6
@@ -230,60 +292,68 @@ unit_classes:
     spd: 5
     rng_min: 1
     rng_max: 1
-    move: 3
-    tags: [elite, guard]
+    move: 4
+    tags: [hero]
     sight: 3
-    glyph: T
+    glyph: H
     color: red
 
-  northern_infantry:
-    display_name: Northern Infantry
+  cai_mao:
+    display_name: Cai Mao
     description: |
-      Conscripts from the central plains. Don't know how to swim.
-      Don't want to be on a boat.
-    hp_max: 18
-    atk: 7
+      Naval commander from Jing Province who trained Cao Cao's
+      northerners to fight on water. Executed by Cao Cao on
+      false suspicion of treachery -- but in this scenario, still
+      commands the fleet.
+    hp_max: 22
+    atk: 8
     defense: 4
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 2
+    move: 4
+    tags: [admiral]
+    sight: 3
+    glyph: M
+    color: red
+
+  northern_archer:
+    display_name: Northern Archer
+    description: |
+      Crossbowmen from the central plains. Accurate from the
+      steady decks of the chained ships. Can't swim.
+    hp_max: 16
+    atk: 9
+    defense: 2
     res: 2
     spd: 4
-    rng_min: 1
-    rng_max: 1
+    rng_min: 2
+    rng_max: 3
     move: 3
-    tags: [infantry]
-    sight: 3
-    glyph: N
+    tags: [archer]
+    sight: 4
+    glyph: A
     color: red
 
 armies:
   blue:
-    # Alliance staging on the south bank.
-    - {class: zhuge_liang, pos: {x: 4, y: 8}}
-    - {class: zhou_yu, pos: {x: 5, y: 8}}
-    - {class: guan_yu, pos: {x: 6, y: 8}}
-    - {class: huang_gai, pos: {x: 9, y: 7}}
-    - {class: wu_archer, pos: {x: 3, y: 8}}
-    - {class: wu_archer, pos: {x: 7, y: 8}}
-    - {class: wu_archer, pos: {x: 4, y: 9}}
-    - {class: wu_archer, pos: {x: 5, y: 9}}
-    - {class: wu_archer, pos: {x: 6, y: 9}}
-    - {class: wu_archer, pos: {x: 8, y: 8}}
+    # Alliance on the south bank
+    - {class: zhou_yu, pos: {x: 7, y: 9}}
+    - {class: zhuge_liang, pos: {x: 8, y: 10}}
+    - {class: huang_gai, pos: {x: 9, y: 8}}
+    - {class: lu_su, pos: {x: 8, y: 9}}
+    - {class: gan_ning, pos: {x: 6, y: 9}}
+    - {class: cheng_pu, pos: {x: 7, y: 10}}
   red:
-    # Cao Cao's command on the north bank, troops on the chained
-    # fleet.
-    - {class: cao_cao, pos: {x: 12, y: 1}}
-    - {class: cao_guard, pos: {x: 11, y: 2}}
-    - {class: cao_guard, pos: {x: 12, y: 2}}
-    - {class: cao_guard, pos: {x: 13, y: 2}}
-    - {class: northern_infantry, pos: {x: 10, y: 4}}
-    - {class: northern_infantry, pos: {x: 11, y: 4}}
-    - {class: northern_infantry, pos: {x: 12, y: 4}}
-    - {class: northern_infantry, pos: {x: 13, y: 4}}
-    - {class: northern_infantry, pos: {x: 14, y: 4}}
-    - {class: northern_infantry, pos: {x: 10, y: 5}}
-    - {class: northern_infantry, pos: {x: 11, y: 5}}
-    - {class: northern_infantry, pos: {x: 12, y: 5}}
-    - {class: northern_infantry, pos: {x: 13, y: 5}}
-    - {class: northern_infantry, pos: {x: 14, y: 5}}
+    # Cao Cao's command on the north bank
+    - {class: cao_cao, pos: {x: 10, y: 1}}
+    - {class: xiahou_dun, pos: {x: 9, y: 2}}
+    - {class: zhang_liao, pos: {x: 11, y: 2}}
+    - {class: cao_ren, pos: {x: 8, y: 1}}
+    - {class: xu_huang, pos: {x: 12, y: 1}}
+    - {class: cai_mao, pos: {x: 10, y: 3}}
+    - {class: northern_archer, pos: {x: 9, y: 3}}
 
 rules:
   max_turns: 25
@@ -293,14 +363,7 @@ rules:
 win_conditions:
   - {type: protect_unit, unit_id: u_r_cao_cao_1, owning_team: red}
   - {type: eliminate_all_enemy_units}
-  # Cao Cao survives the turn cap → Wei withdraws successfully.
-  # Red wins (the Shu-Wu alliance failed to kill Cao Cao).
-  - {type: protect_unit_survives, unit_id: u_r_cao_cao_1, owning_team: red}
   - {type: max_turns_draw}
-
-plugin_hooks:
-  on_turn_start:
-    - light_fire
 
 narrative:
   title: Red Cliffs
@@ -308,20 +371,19 @@ narrative:
     The fire attack at Chibi. The night the Yangtze burned and the
     Three Kingdoms era began.
   intro: |
-    Dusk on the Yangtze. The wind has been blowing west from the
-    sea for weeks; Cao Cao's chained fleet rocks in the chop. Zhuge
-    Liang lights an incense stick and waits. Huang Gai's signal
-    flag goes up.
+    Dusk on the Yangtze. The wind has been blowing west for weeks;
+    Cao Cao's chained fleet rocks in the chop. Zhuge Liang lights
+    an incense stick and waits. Huang Gai's signal flag goes up.
   events:
     - trigger: on_turn_start
       turn: 5
       text: "The wind turns east. Zhuge Liang smiles: 'It is time.'"
     - trigger: on_turn_start
-      turn: 7
-      text: "Huang Gai's lead fire ship rams the chain. Flames leap to the next deck."
+      turn: 8
+      text: "Huang Gai's fire ships ram the chain. Flames leap from deck to deck. The river burns."
     - trigger: on_turn_start
-      turn: 12
+      turn: 14
       text: "The river is bright as noon. Cao Cao's army screams in the smoke."
     - trigger: on_unit_killed
       unit_id: u_r_cao_cao_1
-      text: "Cao Cao falls. The north shatters."
+      text: "Cao Cao falls. The north shatters. The Three Kingdoms are born."

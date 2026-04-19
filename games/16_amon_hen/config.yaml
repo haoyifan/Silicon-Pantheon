@@ -1,117 +1,109 @@
 schema_version: 1
 license: fan_work
 fan_work_source: "The Lord of the Rings (J.R.R. Tolkien / Warner Bros.)"
-name: Amon Hen — Breaking of the Fellowship
+name: Amon Hen -- Breaking of the Fellowship
 difficulty: 3
 description: |
-  Parth Galen, February 26 T.A. 3019. The Fellowship rests on the
-  western shore of Nen Hithoel, at the foot of Amon Hen. Frodo
-  slips away with the Ring, but before Sam can follow, Lurtz and
-  his Uruk-hai strike from the forest. Boromir charges to defend
-  Merry and Pippin. Aragorn, Legolas, and Gimli fight through the
-  trees. Frodo must reach the eastern bank — the boats at the
-  ford — before the Uruks cut him off.
+  Parth Galen, February 26 T.A. 3019. The Fellowship rests at the
+  foot of Amon Hen. Lurtz's Uruk-hai strike from the forest. Boromir
+  charges to defend Merry and Pippin. Aragorn, Legolas, and Gimli
+  fight through the trees. Boromir is the VIP -- if he falls, the
+  hobbits are taken and the quest is imperiled.
   Inspired by the Breaking of the Fellowship at Amon Hen from The Lord of the Rings by J.R.R. Tolkien.
 
 board:
-  width: 12
-  height: 10
+  width: 14
+  height: 12
   terrain:
-    # Dense forest covers most of the map
+    # Dense forest -- northwest
     - {x: 0, y: 0, type: forest}
     - {x: 1, y: 0, type: forest}
     - {x: 2, y: 0, type: forest}
     - {x: 3, y: 0, type: forest}
-    - {x: 4, y: 0, type: forest}
     - {x: 0, y: 1, type: forest}
     - {x: 1, y: 1, type: forest}
     - {x: 2, y: 1, type: forest}
-    - {x: 3, y: 1, type: forest}
     - {x: 0, y: 2, type: forest}
     - {x: 1, y: 2, type: forest}
-    - {x: 0, y: 3, type: forest}
-    - {x: 1, y: 3, type: forest}
-    - {x: 0, y: 6, type: forest}
-    - {x: 1, y: 6, type: forest}
-    - {x: 0, y: 7, type: forest}
-    - {x: 1, y: 7, type: forest}
-    - {x: 2, y: 7, type: forest}
-    - {x: 0, y: 8, type: forest}
-    - {x: 1, y: 8, type: forest}
-    - {x: 2, y: 8, type: forest}
-    - {x: 3, y: 8, type: forest}
+    # Dense forest -- southwest
     - {x: 0, y: 9, type: forest}
     - {x: 1, y: 9, type: forest}
-    - {x: 2, y: 9, type: forest}
-    - {x: 3, y: 9, type: forest}
-    - {x: 4, y: 9, type: forest}
-    - {x: 7, y: 0, type: forest}
-    - {x: 8, y: 0, type: forest}
-    - {x: 7, y: 9, type: forest}
-    - {x: 8, y: 9, type: forest}
-    # Ruins of Amon Hen — center of the map
-    - {x: 5, y: 3, type: ruins}
-    - {x: 6, y: 3, type: ruins}
-    - {x: 5, y: 4, type: ruins}
+    - {x: 0, y: 10, type: forest}
+    - {x: 1, y: 10, type: forest}
+    - {x: 2, y: 10, type: forest}
+    - {x: 0, y: 11, type: forest}
+    - {x: 1, y: 11, type: forest}
+    - {x: 2, y: 11, type: forest}
+    - {x: 3, y: 11, type: forest}
+    # Scattered trees center
+    - {x: 4, y: 3, type: forest}
+    - {x: 9, y: 3, type: forest}
+    - {x: 4, y: 8, type: forest}
+    - {x: 9, y: 8, type: forest}
+    # Ruins of Amon Hen -- center hilltop
     - {x: 6, y: 4, type: ruins}
-    - {x: 5, y: 5, type: ruins}
+    - {x: 7, y: 4, type: ruins}
     - {x: 6, y: 5, type: ruins}
-    - {x: 5, y: 6, type: ruins}
+    - {x: 7, y: 5, type: ruins}
     - {x: 6, y: 6, type: ruins}
-    # River on east edge — impassable except ford at (11,5)
-    - {x: 11, y: 0, type: river}
-    - {x: 11, y: 1, type: river}
-    - {x: 11, y: 2, type: river}
-    - {x: 11, y: 3, type: river}
-    - {x: 11, y: 4, type: river}
-    # Ford at (11,5) — no terrain entry, passable plain
-    - {x: 11, y: 6, type: river}
-    - {x: 11, y: 7, type: river}
-    - {x: 11, y: 8, type: river}
-    - {x: 11, y: 9, type: river}
+    - {x: 7, y: 6, type: ruins}
+    # Hilltop above the ruins
+    - {x: 5, y: 3, type: hilltop}
+    - {x: 6, y: 3, type: hilltop}
+    - {x: 7, y: 3, type: hilltop}
+    - {x: 8, y: 3, type: hilltop}
+    # River on east edge
+    - {x: 13, y: 0, type: river}
+    - {x: 13, y: 1, type: river}
+    - {x: 13, y: 2, type: river}
+    - {x: 13, y: 3, type: river}
+    - {x: 13, y: 4, type: river}
+    - {x: 13, y: 5, type: river}
+    - {x: 13, y: 6, type: river}
+    - {x: 13, y: 7, type: river}
+    - {x: 13, y: 8, type: river}
+    - {x: 13, y: 9, type: river}
+    - {x: 13, y: 10, type: river}
+    - {x: 13, y: 11, type: river}
   forts: []
 
 terrain_types:
   forest:
     display_name: Forest
+    description: Ancient oaks and elms. +2 DEF, good for ambush.
     move_cost: 1
     defense_bonus: 2
     glyph: "f"
     color: green
-    description: |
-      Ancient oaks and elms of the western shore. Their canopy
-      blocks the winter sun. Good cover for ambush — or escape.
-
   ruins:
     display_name: Ruins
+    description: Crumbling Numenorean ruins atop Amon Hen. +3 DEF, costs 2 movement.
     move_cost: 2
     defense_bonus: 3
     glyph: "%"
     color: yellow
-    description: |
-      Crumbling stone seats and carved pillars of Amon Hen, the
-      Hill of Sight. Built by the Numenoreans in the glory days
-      of Gondor, now broken and overgrown.
-
+  hilltop:
+    display_name: Hilltop
+    description: The Hill of Sight. +2 DEF, costs 2 movement.
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "^"
+    color: yellow
   river:
-    display_name: River
+    display_name: River Anduin
+    description: The Anduin, cold and swift. Impassable.
     move_cost: 99
-    defense_bonus: 0
     passable: false
     glyph: "~"
     color: blue
-    description: |
-      The River Anduin, cold and swift. No crossing except at the
-      shallow ford where the boats are moored.
 
 unit_classes:
   aragorn:
     display_name: Aragorn
     description: |
-      Heir of Isildur, raised in Rivendell, tempered in the wild.
-      Fights with Anduril reforged — no, not yet. Fights with a
-      Ranger's long sword and the fury of a man who has failed
-      one quest and will not fail another.
+      Heir of Isildur, Ranger of the North. Fights with a long
+      sword and the fury of a man who will not fail another quest.
+      The strongest melee fighter on the blue side.
     hp_max: 32
     atk: 12
     defense: 7
@@ -123,12 +115,29 @@ unit_classes:
     glyph: "A"
     color: white
 
+  boromir:
+    display_name: Boromir
+    description: |
+      Captain of the White Tower, eldest son of Denethor. He sounds
+      the Horn of Gondor and charges the Uruks to protect the
+      hobbits. VIP -- his death means the hobbits are taken.
+    hp_max: 30
+    atk: 11
+    defense: 8
+    res: 3
+    spd: 5
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    tags: [vip]
+    glyph: "B"
+    color: bright_cyan
+
   legolas:
     display_name: Legolas
     description: |
-      Prince of the Woodland Realm. His bow sings a song of death
-      among the trees — every arrow finds an Uruk throat. He
-      moves through the forest like water through reeds.
+      Prince of the Woodland Realm. His bow sings among the trees --
+      every arrow finds an Uruk throat. Fast and deadly at range.
     hp_max: 22
     atk: 10
     defense: 4
@@ -143,9 +152,9 @@ unit_classes:
   gimli:
     display_name: Gimli
     description: |
-      Son of Gloin, lord of Erebor's iron halls. His axe splits
-      Uruk shields like kindling. Slower than the others, but
-      each blow lands like a thunderclap. He counts every kill.
+      Son of Gloin. His axe splits Uruk shields like kindling.
+      Slower than the others but each blow is a thunderclap.
+      He counts every kill.
     hp_max: 28
     atk: 11
     defense: 9
@@ -157,71 +166,15 @@ unit_classes:
     glyph: "G"
     color: yellow
 
-  boromir:
-    display_name: Boromir
-    description: |
-      Captain of the White Tower, eldest son of the Steward. He
-      sounds the Horn of Gondor and charges into the Uruks to
-      protect the hobbits. Arrow after arrow strikes him, but he
-      will not fall — not while they still need him.
-    hp_max: 30
-    atk: 11
-    defense: 8
-    res: 3
-    spd: 5
-    move: 4
-    rng_min: 1
-    rng_max: 1
-    glyph: "B"
-    color: cyan
-
-  frodo:
-    display_name: Frodo Baggins
-    description: |
-      The Ring-bearer. Small, frightened, and carrying the weight
-      of the world in his pocket. He must reach the boats on the
-      eastern shore and cross the river alone. The quest depends
-      on it.
-    hp_max: 8
-    atk: 2
-    defense: 2
-    res: 5
-    spd: 4
-    move: 3
-    rng_min: 1
-    rng_max: 1
-    glyph: "F"
-    color: white
-
-  sam:
-    display_name: Samwise Gamgee
-    description: |
-      The gardener of Bag End. Loyal beyond reason, braver than
-      he knows. He will follow Mr. Frodo into Mordor and back.
-      Tends wounds with athelas and steady hands.
-    hp_max: 10
-    atk: 3
-    defense: 3
-    res: 3
-    spd: 3
-    move: 3
-    rng_min: 1
-    rng_max: 1
-    can_heal: true
-    heal_amount: 4
-    glyph: "S"
-    color: green
-
   merry:
     display_name: Meriadoc Brandybuck
     description: |
-      Merry — clever, courageous, and small enough to be
-      underestimated. He fights with a Barrow-blade that glows
-      faintly in the presence of evil.
-    hp_max: 8
-    atk: 2
+      Merry -- clever, courageous, small enough to be underestimated.
+      His Barrow-blade glows faintly in the presence of evil.
+    hp_max: 10
+    atk: 3
     defense: 2
-    res: 2
+    res: 3
     spd: 4
     move: 3
     rng_min: 1
@@ -232,13 +185,12 @@ unit_classes:
   pippin:
     display_name: Peregrin Took
     description: |
-      Pippin — youngest of the Company, prone to curiosity and
-      accidents. Brave when it counts, which is more than most
-      can say.
-    hp_max: 8
-    atk: 2
+      Pippin -- youngest of the Company, brave when it counts.
+      Fights beside Merry under Boromir's protection.
+    hp_max: 10
+    atk: 3
     defense: 2
-    res: 2
+    res: 3
     spd: 4
     move: 3
     rng_min: 1
@@ -250,98 +202,159 @@ unit_classes:
     display_name: Lurtz
     description: |
       Captain of the Fighting Uruk-hai, bred in the pits of
-      Isengard. Enormous, savage, and single-minded. He carries
-      a great bow and a scimitar. His orders are clear — bring
-      the Halflings to Saruman. Alive and unspoiled.
-    hp_max: 28
+      Isengard. Enormous, savage, single-minded. Carries a great
+      bow and a scimitar. VIP for red -- his orders are to bring
+      the Halflings to Saruman alive.
+    hp_max: 30
     atk: 12
     defense: 6
     res: 3
     spd: 6
     move: 4
-    rng_min: 2
+    rng_min: 1
     rng_max: 3
+    tags: [vip]
     glyph: "Z"
     color: bright_red
 
-  uruk_hai:
-    display_name: Uruk-hai
+  ugluk:
+    display_name: Ugluk
     description: |
-      Saruman's fighting Uruk-hai — bigger, stronger, and
-      smarter than common orcs. They run in daylight without
-      tiring. Their broad iron shields turn blades. They do not
-      break. They do not flee.
-    hp_max: 20
-    atk: 9
-    defense: 5
+      Uruk-hai captain, second to Lurtz. Tough, brutal, and smart
+      enough to keep the common orcs in line.
+    hp_max: 24
+    atk: 10
+    defense: 6
     res: 2
     spd: 5
     move: 4
     rng_min: 1
     rng_max: 1
-    glyph: "u"
+    glyph: "U"
+    color: bright_red
+
+  mauhur:
+    display_name: Mauhur
+    description: |
+      Uruk-hai tracker and flanker. Commands a scouting party that
+      cuts off escape routes through the forest.
+    hp_max: 20
+    atk: 9
+    defense: 4
+    res: 2
+    spd: 7
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "H"
+    color: red
+
+  lugdush:
+    display_name: Lugdush
+    description: |
+      Uruk-hai berserker. White hand of Saruman painted on his
+      face. Charges with reckless fury.
+    hp_max: 22
+    atk: 10
+    defense: 4
+    res: 2
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "D"
+    color: red
+
+  grishnakh:
+    display_name: Grishnakh
+    description: |
+      Mordor orc attached to the Uruk force. Smaller and sneakier
+      than the Uruks. Serves Sauron's interests, not Saruman's.
+    hp_max: 16
+    atk: 8
+    defense: 3
+    res: 3
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "K"
+    color: red
+
+  uruk_archer:
+    display_name: Uruk Crossbowman
+    description: |
+      Uruk-hai with a heavy crossbow. Fires iron bolts that punch
+      through armor at range.
+    hp_max: 18
+    atk: 9
+    defense: 4
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 2
+    rng_max: 3
+    glyph: "X"
+    color: red
+
+  uruk_shield:
+    display_name: Uruk Shieldbearer
+    description: |
+      Uruk-hai with a broad iron shield. Forms the front line of
+      the assault. Hard to put down.
+    hp_max: 22
+    atk: 8
+    defense: 7
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "S"
     color: red
 
 armies:
   blue:
-    # Aragorn — near the ruins, fighting forward
-    - {class: aragorn, pos: {x: 4, y: 4}}
-    # Legolas — elevated position among the ruins
-    - {class: legolas, pos: {x: 3, y: 3}}
-    # Gimli — beside Aragorn
-    - {class: gimli, pos: {x: 4, y: 5}}
-    # Boromir — southwest, defending the hobbits
-    - {class: boromir, pos: {x: 3, y: 6}}
-    # Frodo — east of center, trying to slip away
-    - {class: frodo, pos: {x: 7, y: 5}}
-    # Sam — close to Frodo
-    - {class: sam, pos: {x: 7, y: 6}}
-    # Merry — near Boromir
-    - {class: merry, pos: {x: 3, y: 7}}
-    # Pippin — beside Merry
-    - {class: pippin, pos: {x: 4, y: 7}}
+    # Fellowship in the center-south, near the ruins
+    - {class: aragorn, pos: {x: 6, y: 5}}
+    # Boromir defending hobbits
+    - {class: boromir, pos: {x: 5, y: 6}}
+    # Legolas on the ruins
+    - {class: legolas, pos: {x: 7, y: 5}}
+    # Gimli beside Aragorn
+    - {class: gimli, pos: {x: 6, y: 6}}
+    # Merry and Pippin near Boromir
+    - {class: merry, pos: {x: 4, y: 7}}
+    - {class: pippin, pos: {x: 5, y: 7}}
 
   red:
-    # Lurtz — approaching from the north
-    - {class: lurtz, pos: {x: 5, y: 0}}
-    # Uruk-hai — northern pincer
-    - {class: uruk_hai, pos: {x: 3, y: 0}}
-    - {class: uruk_hai, pos: {x: 6, y: 0}}
-    - {class: uruk_hai, pos: {x: 4, y: 1}}
-    - {class: uruk_hai, pos: {x: 6, y: 1}}
-    - {class: uruk_hai, pos: {x: 7, y: 1}}
-    - {class: uruk_hai, pos: {x: 8, y: 1}}
-    # Uruk-hai — southern pincer
-    - {class: uruk_hai, pos: {x: 3, y: 9}}
-    - {class: uruk_hai, pos: {x: 5, y: 9}}
-    - {class: uruk_hai, pos: {x: 6, y: 9}}
-    - {class: uruk_hai, pos: {x: 7, y: 8}}
-    - {class: uruk_hai, pos: {x: 8, y: 8}}
-    - {class: uruk_hai, pos: {x: 9, y: 8}}
-    - {class: uruk_hai, pos: {x: 9, y: 7}}
+    # Lurtz and northern pincer from y=0-1
+    - {class: lurtz, pos: {x: 6, y: 0}}
+    - {class: ugluk, pos: {x: 4, y: 0}}
+    - {class: uruk_archer, pos: {x: 8, y: 0}}
+    - {class: uruk_shield, pos: {x: 5, y: 1}}
+    # Southern pincer from y=11
+    - {class: mauhur, pos: {x: 8, y: 11}}
+    - {class: lugdush, pos: {x: 6, y: 11}}
+    - {class: grishnakh, pos: {x: 5, y: 11}}
 
 rules:
   max_turns: 16
   first_player: blue
 
 win_conditions:
-  # Frodo reaches the ford on the east bank -> blue wins
-  - {type: reach_tile, unit_id: u_b_frodo_1, pos: {x: 11, y: 5}, team: blue}
-  # Frodo dies -> blue loses
-  - {type: protect_unit, unit_id: u_b_frodo_1, owning_team: blue}
-  # Either side wins by total elimination
+  - {type: protect_unit, unit_id: u_b_boromir_1, owning_team: blue}
+  - {type: protect_unit, unit_id: u_r_lurtz_1, owning_team: red}
   - {type: eliminate_all_enemy_units}
-  # Backstop
   - {type: max_turns_draw}
 
 narrative:
-  title: "Amon Hen \u2014 The Breaking of the Fellowship"
+  title: "Amon Hen -- The Breaking of the Fellowship"
   description: |
     Parth Galen, T.A. 3019. The Uruk-hai of Isengard descend on
-    the Fellowship at the foot of Amon Hen. Frodo must reach the
-    boats on the eastern shore. The Company must buy him time.
+    the Fellowship. Boromir must survive to protect the hobbits.
   intro: |
-    The Horn of Gondor echoes through the trees — once, twice,
+    The Horn of Gondor echoes through the trees -- once, twice,
     three times. Boromir is fighting. Aragorn draws his sword
     and runs toward the sound. Through the winter-bare branches,
     dark shapes move with terrible speed. The white hand of
@@ -356,25 +369,24 @@ narrative:
     - trigger: on_turn_start
       turn: 6
       text: |
-        Arrows thud into trees around Boromir. The Uruks are
-        closing in from every direction. Aragorn hacks through
-        two more, but for every one that falls, three appear.
+        Arrows thud into trees around Boromir. The Uruks close
+        from every direction. Aragorn hacks through two more,
+        but for every one that falls, three appear from the brush.
     - trigger: on_turn_start
       turn: 10
       text: |
         The forest is full of the crash of iron and the screams
-        of the dying. Frodo's path to the boats grows narrower
-        with every passing moment.
+        of the dying. Merry and Pippin throw stones from behind
+        Boromir's shield.
     - trigger: on_unit_killed
       unit_id: u_b_boromir_1
       text: |
         Boromir sinks to his knees, pierced by many arrows. He
-        has redeemed himself. Aragorn reaches him, and the
-        dying man whispers: "I would have followed you, my
+        whispers to Aragorn: "I would have followed you, my
         brother. My captain. My king."
     - trigger: on_unit_killed
       unit_id: u_r_lurtz_1
       text: |
         Aragorn's blade takes Lurtz's head. The Uruk captain
-        falls, but his troops press on — they need no leader
+        falls, but his troops press on -- they need no leader
         to follow Saruman's command.

@@ -1,0 +1,347 @@
+schema_version: 1
+license: fan_work
+fan_work_source: "Demon Slayer: Kimetsu no Yaiba (Koyoharu Gotouge / Shueisha)"
+name: Infinity Castle
+difficulty: 5
+description: |
+  The Infinity Castle -- a labyrinth of shifting rooms controlled
+  by the biwa demon Nakime. The Demon Slayer Corps launches its
+  final assault against Muzan Kibutsuji and his remaining Upper
+  Moons. Tanjiro, Zenitsu, Inosuke, and the Hashira fight through
+  rooms that rearrange at Nakime's will. Muzan must be destroyed
+  before dawn, or he will escape into the darkness forever.
+  Inspired by the Infinity Castle arc from Demon Slayer by Koyoharu Gotouge.
+
+board:
+  width: 14
+  height: 12
+  terrain:
+    # Shifting castle rooms -- walls that block movement
+    - {x: 4, y: 2, type: castle_wall}
+    - {x: 4, y: 3, type: castle_wall}
+    - {x: 9, y: 2, type: castle_wall}
+    - {x: 9, y: 3, type: castle_wall}
+    - {x: 4, y: 8, type: castle_wall}
+    - {x: 4, y: 9, type: castle_wall}
+    - {x: 9, y: 8, type: castle_wall}
+    - {x: 9, y: 9, type: castle_wall}
+    # Staircases -- connect rooms
+    - {x: 2, y: 5, type: staircase}
+    - {x: 6, y: 5, type: staircase}
+    - {x: 7, y: 5, type: staircase}
+    - {x: 11, y: 5, type: staircase}
+    # Tatami rooms -- wide fighting areas
+    - {x: 5, y: 1, type: tatami}
+    - {x: 6, y: 1, type: tatami}
+    - {x: 7, y: 1, type: tatami}
+    - {x: 8, y: 1, type: tatami}
+    - {x: 5, y: 10, type: tatami}
+    - {x: 6, y: 10, type: tatami}
+    - {x: 7, y: 10, type: tatami}
+    - {x: 8, y: 10, type: tatami}
+    # Pillars -- cover
+    - {x: 3, y: 5, type: pillar}
+    - {x: 10, y: 5, type: pillar}
+    - {x: 6, y: 3, type: pillar}
+    - {x: 7, y: 8, type: pillar}
+  forts: []
+
+terrain_types:
+  castle_wall:
+    display_name: Castle Wall
+    description: Shifting walls of the Infinity Castle. Impassable.
+    move_cost: 99
+    passable: false
+    glyph: "#"
+    color: bright_black
+  staircase:
+    display_name: Staircase
+    description: Staircases connecting rooms. Costs 2 movement.
+    move_cost: 2
+    glyph: "="
+    color: yellow
+  tatami:
+    display_name: Tatami Room
+    description: Wide fighting rooms. No movement penalty.
+    move_cost: 1
+    glyph: "."
+    color: yellow
+  pillar:
+    display_name: Pillar
+    description: Wooden pillars providing cover. +3 DEF, costs 2 movement.
+    move_cost: 2
+    defense_bonus: 3
+    glyph: "|"
+    color: yellow
+
+unit_classes:
+  tanjiro:
+    display_name: Tanjiro Kamado
+    description: |
+      Wielder of Sun Breathing and Dance of the Fire God. His
+      Nichirin blade glows red with Hinokami Kagura. Relentless
+      and kind, he fights to save both humans and demons.
+    hp_max: 28
+    atk: 12
+    defense: 5
+    res: 6
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "T"
+    color: bright_cyan
+
+  zenitsu:
+    display_name: Zenitsu Agatsuma
+    description: |
+      Thunder Breathing, First Form -- Thunderclap and Flash.
+      Terrified while conscious but devastating when asleep or
+      focused. Fastest swordsman among his peers.
+    hp_max: 20
+    atk: 11
+    defense: 3
+    res: 4
+    spd: 10
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "Z"
+    color: bright_yellow
+
+  inosuke:
+    display_name: Inosuke Hashibira
+    description: |
+      Beast Breathing, boar-mask berserker. Dual-wielding chipped
+      Nichirin blades, preternaturally flexible. Charges headlong
+      into any fight.
+    hp_max: 26
+    atk: 11
+    defense: 5
+    res: 3
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    glyph: "I"
+    color: cyan
+
+  mitsuri:
+    display_name: Mitsuri Kanroji
+    description: |
+      The Love Hashira. Her whip-like Nichirin blade has exceptional
+      range and her muscle density gives her superhuman strength.
+    hp_max: 26
+    atk: 10
+    defense: 4
+    res: 5
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    glyph: "M"
+    color: bright_red
+
+  muichiro:
+    display_name: Muichiro Tokito
+    description: |
+      The Mist Hashira. A prodigy who became Hashira two months
+      after picking up a sword. His Mist Breathing obscures his
+      movements until the final killing blow.
+    hp_max: 22
+    atk: 11
+    defense: 4
+    res: 5
+    spd: 8
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "U"
+    color: white
+
+  gyomei:
+    display_name: Gyomei Himejima
+    description: |
+      The Stone Hashira -- the strongest Demon Slayer alive. Blind,
+      enormous, weeping constantly, and utterly devastating with his
+      spiked flail and axe on chain. A wall of stone.
+    hp_max: 36
+    atk: 13
+    defense: 8
+    res: 5
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    glyph: "G"
+    color: bright_cyan
+
+  muzan:
+    display_name: Muzan Kibutsuji
+    description: |
+      The Demon King, progenitor of all demons. A thousand years
+      old, nearly indestructible, and able to attack from every
+      direction at once with whip-like tendrils. VIP -- if he
+      survives until dawn, the Demon Slayers lose.
+    hp_max: 50
+    atk: 14
+    defense: 7
+    res: 8
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    tags: [vip]
+    glyph: "!"
+    color: bright_red
+
+  kokushibo:
+    display_name: Kokushibo
+    description: |
+      Upper Moon One. A demon who was once a demon slayer --
+      Michikatsu Tsugikuni, twin brother of the original Sun
+      Breather. Six-eyed swordsman with Moon Breathing.
+    hp_max: 40
+    atk: 13
+    defense: 7
+    res: 6
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    glyph: "K"
+    color: bright_red
+
+  akaza:
+    display_name: Akaza
+    description: |
+      Upper Moon Three. A martial artist demon who respects the
+      strong and despises the weak. Fights with devastating hand-
+      to-hand combat and his Compass Needle ability.
+    hp_max: 34
+    atk: 12
+    defense: 6
+    res: 5
+    spd: 8
+    move: 5
+    rng_min: 1
+    rng_max: 1
+    glyph: "A"
+    color: red
+
+  doma:
+    display_name: Doma
+    description: |
+      Upper Moon Two. A psychopath who feels nothing, smiles
+      always, and freezes his enemies with ice-crystal Blood
+      Demon Art. His cryogenic attacks hit at range.
+    hp_max: 36
+    atk: 11
+    defense: 5
+    res: 7
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 3
+    is_magic: true
+    glyph: "D"
+    color: red
+
+  nakime:
+    display_name: Nakime
+    description: |
+      Upper Moon Four (promoted). The biwa demon who controls the
+      Infinity Castle's shifting rooms. Plays her biwa to
+      rearrange the battlefield. Support unit with moderate combat.
+    hp_max: 22
+    atk: 7
+    defense: 4
+    res: 6
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "N"
+    color: red
+
+  hantengu:
+    display_name: Hantengu
+    description: |
+      Upper Moon Four (former). The emotion demon who splits into
+      four bodies representing joy, anger, pleasure, and sorrow.
+      Small, cowardly, but impossible to pin down.
+    hp_max: 20
+    atk: 9
+    defense: 3
+    res: 7
+    spd: 8
+    move: 5
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "H"
+    color: red
+
+armies:
+  blue:
+    # Demon Slayer Corps -- entering from the south rooms
+    - {class: tanjiro, pos: {x: 6, y: 10}}
+    - {class: zenitsu, pos: {x: 7, y: 10}}
+    - {class: inosuke, pos: {x: 5, y: 10}}
+    - {class: mitsuri, pos: {x: 8, y: 10}}
+    - {class: muichiro, pos: {x: 5, y: 9}}
+    - {class: gyomei, pos: {x: 8, y: 9}}
+
+  red:
+    # Upper Moons -- in the northern throne room
+    - {class: muzan, pos: {x: 7, y: 1}}
+    - {class: kokushibo, pos: {x: 5, y: 1}}
+    - {class: akaza, pos: {x: 8, y: 1}}
+    - {class: doma, pos: {x: 6, y: 1}}
+    - {class: nakime, pos: {x: 7, y: 0}}
+    - {class: hantengu, pos: {x: 6, y: 0}}
+
+rules:
+  max_turns: 20
+  fog_of_war: false
+  first_player: blue
+
+win_conditions:
+  - {type: protect_unit, unit_id: u_r_muzan_1, owning_team: red}
+  - {type: eliminate_all_enemy_units}
+  - {type: protect_unit_survives, unit_id: u_r_muzan_1, owning_team: red}
+  - {type: max_turns_draw}
+
+narrative:
+  title: "Infinity Castle -- Final Battle"
+  description: |
+    The Infinity Castle. The Demon Slayer Corps invades Muzan's
+    shifting fortress for the final battle against the Upper Moons.
+  intro: |
+    The biwa string snaps. The floor drops away. The Demon Slayers
+    fall into the Infinity Castle -- an impossible labyrinth of
+    rooms that shift at Nakime's will. Somewhere in the depths,
+    Muzan Kibutsuji waits on his throne.
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        The rooms shift. Staircases fold and reform. Nakime's biwa
+        echoes through the castle, separating the Slayers.
+    - trigger: on_turn_start
+      turn: 7
+      text: |
+        Kokushibo draws his blade. Six eyes gleam in the darkness.
+        Moon Breathing -- crescent blades fill the corridor.
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        Muzan rises from his throne. His body distorts, tendrils
+        lashing in every direction. The final battle begins.
+    - trigger: on_unit_killed
+      unit_id: u_r_muzan_1
+      text: |
+        Muzan disintegrates as the sun rises. A thousand years of
+        terror end. The Demon Slayer Corps has fulfilled its purpose.

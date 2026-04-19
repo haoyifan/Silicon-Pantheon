@@ -5,99 +5,111 @@ name: Siege of the North
 difficulty: 4
 description: |
   The Northern Water Tribe, the last great waterbending stronghold.
-  Admiral Zhao's Fire Nation armada has reached the ice walls after
-  weeks of siege. Aang, Katara, Sokka, and Master Pakku defend the
-  fortress while Zhao seeks to reach the Spirit Oasis and kill the
-  Moon Spirit. If Aang survives to the turn cap, the Avatar State
-  will unleash the Ocean Spirit and end the siege.
+  Admiral Zhao's Fire Nation armada reaches the ice walls after weeks
+  of siege. Aang, Katara, Sokka, and Master Pakku defend the fortress
+  while Zhao seeks the Spirit Oasis to kill the Moon Spirit. Zuko
+  infiltrates alone. Iroh stands with the Fire Nation but may turn
+  against Zhao if the Moon Spirit is threatened. If Aang survives,
+  the Avatar State will unleash the Ocean Spirit and end the siege.
   Inspired by the Siege of the North from Avatar: The Last Airbender.
 
 board:
-  width: 16
-  height: 10
+  width: 14
+  height: 12
   terrain:
-    # Ice fortress walls at y=7-9 with gate at (8, 7)
-    - {x: 0, y: 7, type: ice_wall}
-    - {x: 1, y: 7, type: ice_wall}
-    # x=2,3 removed — Fire Nation melted through the ice
-    - {x: 4, y: 7, type: ice_wall}
-    - {x: 5, y: 7, type: ice_wall}
-    - {x: 6, y: 7, type: ice_wall}
-    # (7, 8, 9) is the main gate — 3-wide, no wall
-    - {x: 10, y: 7, type: ice_wall}
-    - {x: 11, y: 7, type: ice_wall}
-    - {x: 12, y: 7, type: ice_wall}
-    - {x: 13, y: 7, type: ice_wall}
-    - {x: 14, y: 7, type: ice_wall}
-    - {x: 15, y: 7, type: ice_wall}
-    # Canals running through the approach
-    - {x: 4, y: 3, type: canal}
-    - {x: 4, y: 4, type: canal}
-    - {x: 4, y: 5, type: canal}
-    - {x: 11, y: 3, type: canal}
-    - {x: 11, y: 4, type: canal}
-    - {x: 11, y: 5, type: canal}
+    # Ice fortress walls at y=8 with gate at x=6,7
+    - {x: 0, y: 8, type: ice_wall}
+    - {x: 1, y: 8, type: ice_wall}
+    - {x: 2, y: 8, type: ice_wall}
+    - {x: 3, y: 8, type: ice_wall}
+    - {x: 4, y: 8, type: ice_wall}
+    - {x: 5, y: 8, type: ice_wall}
+    # Gate opening at x=6,7
+    - {x: 8, y: 8, type: ice_wall}
+    - {x: 9, y: 8, type: ice_wall}
+    - {x: 10, y: 8, type: ice_wall}
+    - {x: 11, y: 8, type: ice_wall}
+    - {x: 12, y: 8, type: ice_wall}
+    - {x: 13, y: 8, type: ice_wall}
+    # Canals in the approach zone
+    - {x: 3, y: 3, type: canal}
+    - {x: 3, y: 4, type: canal}
+    - {x: 3, y: 5, type: canal}
+    - {x: 10, y: 3, type: canal}
+    - {x: 10, y: 4, type: canal}
+    - {x: 10, y: 5, type: canal}
+    - {x: 6, y: 4, type: canal}
     - {x: 7, y: 4, type: canal}
-    - {x: 8, y: 4, type: canal}
-    - {x: 7, y: 5, type: canal}
-    - {x: 8, y: 5, type: canal}
+    # Spirit Oasis deep inside the fortress
+    - {x: 6, y: 11, type: spirit_oasis}
+    - {x: 7, y: 11, type: spirit_oasis}
+    # Ice towers flanking the gate
+    - {x: 5, y: 7, type: ice_tower}
+    - {x: 8, y: 7, type: ice_tower}
   forts: []
 
 terrain_types:
   ice_wall:
     display_name: Ice Wall
+    description: Massive waterbent ice walls. Impassable.
     move_cost: 99
     passable: false
-    defense_bonus: 0
     glyph: "#"
     color: bright_blue
-    description: |
-      Massive walls of waterbent ice, reinforced over centuries
-      by generations of waterbenders. Impassable except through
-      the gate.
-
   canal:
     display_name: Canal
+    description: Freezing arctic canals. Costs 2 movement. Waterbenders fight well here.
     move_cost: 2
-    defense_bonus: 0
     glyph: "~"
     color: blue
+  spirit_oasis:
+    display_name: Spirit Oasis
     description: |
-      Canals of freezing arctic water crisscrossing the approach
-      to the fortress. Slow to wade through.
+      Sacred pool where the Moon and Ocean spirits swim as koi fish.
+      If the Fire Nation reaches this tile, the Moon Spirit dies.
+    move_cost: 1
+    defense_bonus: 2
+    glyph: "O"
+    color: bright_cyan
+  ice_tower:
+    display_name: Ice Tower
+    description: Waterbent guard towers flanking the gate. +4 DEF.
+    move_cost: 2
+    defense_bonus: 4
+    glyph: "T"
+    color: bright_blue
 
 unit_classes:
   aang:
     display_name: Aang
     description: |
-      The Avatar — master of air, learning water. Young but the
-      bridge between the physical and spirit worlds. If he survives,
-      the Avatar State will fuse him with the Ocean Spirit and
-      sweep the Fire Nation into the sea.
+      The Avatar -- master of air, learning water. If he survives,
+      the Avatar State fuses him with the Ocean Spirit to sweep
+      the Fire Nation into the sea. VIP for blue.
     hp_max: 24
     atk: 10
     defense: 4
     res: 8
-    spd: 7
-    move: 4
+    spd: 8
+    move: 5
     rng_min: 1
     rng_max: 3
     is_magic: true
+    tags: [vip]
     glyph: "A"
     color: bright_yellow
 
   katara:
     display_name: Katara
     description: |
-      Waterbender from the Southern Tribe. Her healing abilities
-      and growing combat skill make her invaluable. The full moon
-      amplifies her bending to its peak.
+      Southern Water Tribe waterbender. The full moon amplifies
+      her bending. Healer and fighter in equal measure.
     hp_max: 20
     atk: 9
     defense: 3
     res: 7
     spd: 6
-    move: 3
+    move: 4
     rng_min: 1
     rng_max: 2
     is_magic: true
@@ -109,9 +121,8 @@ unit_classes:
   sokka:
     display_name: Sokka
     description: |
-      Warrior and tactician of the Southern Water Tribe. No bending,
-      but his strategic mind and boomerang make up for it. Plans the
-      defense of the outer wall.
+      Southern Water Tribe warrior and tactician. No bending, but
+      a sharp mind and a sharper boomerang. Plans the gate defense.
     hp_max: 20
     atk: 8
     defense: 5
@@ -119,16 +130,16 @@ unit_classes:
     spd: 5
     move: 3
     rng_min: 1
-    rng_max: 1
+    rng_max: 2
     glyph: "S"
     color: cyan
 
   pakku:
     display_name: Master Pakku
     description: |
-      Grandmaster of the Northern Water Tribe waterbenders. Under
-      the full moon, his bending is devastating — ice spears and
-      water whips that shatter Fire Nation armor.
+      Grandmaster waterbender of the Northern Tribe. Under the full
+      moon, his ice spears and water whips are devastating. The
+      most powerful bender defending the fortress.
     hp_max: 22
     atk: 12
     defense: 3
@@ -141,11 +152,27 @@ unit_classes:
     glyph: "P"
     color: blue
 
-  water_tribe_warrior:
-    display_name: Water Tribe Warrior
+  hahn:
+    display_name: Hahn
     description: |
-      Defenders of the Northern Water Tribe. Armed with clubs and
-      spears, they man the ice walls and fight in the canals.
+      Northern Water Tribe warrior and Yue's fiance. Arrogant but
+      brave. Leads a commando squad against the Fire Nation ships.
+    hp_max: 18
+    atk: 7
+    defense: 4
+    res: 3
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "H"
+    color: cyan
+
+  sangok:
+    display_name: Sangok
+    description: |
+      Young Northern Water Tribe warrior. One of Sokka's allies
+      in the defense. Fights with club and spear on the ice walls.
     hp_max: 18
     atk: 7
     defense: 5
@@ -154,33 +181,16 @@ unit_classes:
     move: 3
     rng_min: 1
     rng_max: 1
-    glyph: "w"
+    glyph: "G"
     color: cyan
-
-  waterbender:
-    display_name: Waterbender
-    description: |
-      Northern Water Tribe waterbenders, empowered by the full moon.
-      Their ice attacks control the battlefield from range.
-    hp_max: 16
-    atk: 8
-    defense: 2
-    res: 6
-    spd: 5
-    move: 3
-    rng_min: 1
-    rng_max: 2
-    is_magic: true
-    glyph: "b"
-    color: blue
 
   zhao:
     display_name: Admiral Zhao
     description: |
-      Fire Nation admiral obsessed with glory. His real target is
-      the Moon Spirit in the Spirit Oasis — killing it would strip
-      all waterbenders of their power forever.
-    hp_max: 24
+      Fire Nation admiral obsessed with glory. His true target is
+      the Moon Spirit in the Spirit Oasis. Killing it would strip
+      all waterbenders of their power forever. VIP for red.
+    hp_max: 26
     atk: 10
     defense: 5
     res: 5
@@ -189,20 +199,21 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
+    tags: [vip]
     glyph: "Z"
     color: bright_red
 
   zuko:
     display_name: Prince Zuko
     description: |
-      The banished prince, conflicted between honor and obsession.
-      A skilled firebender who fights with dual dao swords. His
-      loyalties are... complicated.
+      The banished prince. Infiltrates the fortress alone, seeking
+      the Avatar. Skilled firebender and dual dao swordsman. His
+      loyalties are conflicted.
     hp_max: 22
     atk: 9
     defense: 5
     res: 5
-    spd: 6
+    spd: 7
     move: 4
     rng_min: 1
     rng_max: 2
@@ -210,28 +221,45 @@ unit_classes:
     glyph: "!"
     color: red
 
-  fire_nation_soldier:
-    display_name: Fire Nation Soldier
+  iroh:
+    display_name: General Iroh
     description: |
-      Disciplined infantry of Zhao's invasion force. Well-armored
-      and trained, but at a disadvantage in the arctic environment.
-    hp_max: 18
-    atk: 7
+      The Dragon of the West. Retired general and Zuko's uncle.
+      Fights with the Fire Nation but opposes Zhao's plan to kill
+      the Moon Spirit. The most powerful firebender on the field.
+    hp_max: 28
+    atk: 11
     defense: 5
+    res: 7
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "I"
+    color: bright_red
+
+  fire_nation_soldier:
+    display_name: Commander Shinu
+    description: |
+      Fire Nation garrison commander. Well-armored and disciplined,
+      leads the infantry assault through the breached walls.
+    hp_max: 20
+    atk: 8
+    defense: 6
     res: 3
     spd: 4
     move: 3
     rng_min: 1
     rng_max: 1
-    glyph: "f"
+    glyph: "N"
     color: red
 
   firebender:
-    display_name: Firebender
+    display_name: Lieutenant Jee
     description: |
-      Fire Nation benders. Their flames lose potency under the full
-      moon as waterbending strengthens, but they remain dangerous
-      at range.
+      Fire Nation naval officer and firebender. Served under Zuko
+      on his ship. Competent and professional.
     hp_max: 18
     atk: 9
     defense: 3
@@ -241,17 +269,32 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
-    glyph: "B"
-    color: bright_red
+    glyph: "J"
+    color: red
+
+  komodo_rhino:
+    display_name: Komodo Rhino Rider
+    description: |
+      Armored war beast of the Fire Nation. Heavy cavalry that
+      smashes through ice barricades and tramples defenders.
+    hp_max: 28
+    atk: 9
+    defense: 7
+    res: 2
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    glyph: "R"
+    color: red
 
   fire_sage:
     display_name: Fire Sage
     description: |
-      A Fire Nation sage who channels spiritual flame to mend
-      wounds. Their healing fire restores allies while their
-      combat firebending remains formidable.
+      A Fire Nation sage who channels spiritual flame to heal
+      allies. Their combat firebending remains formidable.
     hp_max: 16
-    atk: 6
+    atk: 7
     defense: 3
     res: 6
     spd: 4
@@ -264,84 +307,43 @@ unit_classes:
     glyph: "s"
     color: bright_red
 
-  komodo_rhino:
-    display_name: Komodo Rhino
-    description: |
-      Armored war beasts of the Fire Nation. Heavily built cavalry
-      that can smash through ice barricades and trample defenders.
-    hp_max: 28
-    atk: 9
-    defense: 7
-    res: 2
-    spd: 4
-    move: 3
-    rng_min: 1
-    rng_max: 1
-    glyph: "R"
-    color: red
-
 armies:
   blue:
-    # Aang — inside the fortress near the Spirit Oasis
-    - {class: aang, pos: {x: 8, y: 9}}
-    # Katara — near Aang
-    - {class: katara, pos: {x: 9, y: 9}}
-    # Sokka — at the gate
-    - {class: sokka, pos: {x: 8, y: 6}}
-    # Pakku — on the wall line
-    - {class: pakku, pos: {x: 6, y: 6}}
-    # Water Tribe warriors — manning the wall
-    - {class: water_tribe_warrior, pos: {x: 3, y: 6}}
-    - {class: water_tribe_warrior, pos: {x: 5, y: 6}}
-    - {class: water_tribe_warrior, pos: {x: 10, y: 6}}
-    - {class: water_tribe_warrior, pos: {x: 12, y: 6}}
-    - {class: water_tribe_warrior, pos: {x: 7, y: 8}}
-    - {class: water_tribe_warrior, pos: {x: 10, y: 8}}
-    # Waterbenders — behind the wall
-    - {class: waterbender, pos: {x: 4, y: 8}}
-    - {class: waterbender, pos: {x: 6, y: 8}}
-    - {class: waterbender, pos: {x: 11, y: 8}}
-    - {class: waterbender, pos: {x: 13, y: 8}}
+    # Aang near the Spirit Oasis
+    - {class: aang, pos: {x: 7, y: 10}}
+    # Katara beside Aang
+    - {class: katara, pos: {x: 6, y: 10}}
+    # Sokka at the gate
+    - {class: sokka, pos: {x: 6, y: 7}}
+    # Pakku on the wall
+    - {class: pakku, pos: {x: 4, y: 7}}
+    # Hahn and Sangok defending
+    - {class: hahn, pos: {x: 9, y: 7}}
+    - {class: sangok, pos: {x: 7, y: 9}}
 
   red:
-    # Zhao — behind the assault force
-    - {class: zhao, pos: {x: 8, y: 1}}
-    # Zuko — flanking
-    - {class: zuko, pos: {x: 13, y: 2}}
-    # Fire Nation soldiers — assault line
-    - {class: fire_nation_soldier, pos: {x: 2, y: 0}}
+    # Zhao behind the assault force
+    - {class: zhao, pos: {x: 7, y: 1}}
+    # Zuko flanking east
+    - {class: zuko, pos: {x: 12, y: 2}}
+    # Iroh near Zuko
+    - {class: iroh, pos: {x: 11, y: 1}}
+    # Assault force
     - {class: fire_nation_soldier, pos: {x: 5, y: 0}}
-    - {class: fire_nation_soldier, pos: {x: 7, y: 0}}
-    - {class: fire_nation_soldier, pos: {x: 9, y: 0}}
-    - {class: fire_nation_soldier, pos: {x: 12, y: 0}}
-    - {class: fire_nation_soldier, pos: {x: 3, y: 1}}
-    - {class: fire_nation_soldier, pos: {x: 6, y: 1}}
-    - {class: fire_sage, pos: {x: 10, y: 1}}
-    # Firebenders — ranged support
-    - {class: firebender, pos: {x: 1, y: 2}}
-    - {class: firebender, pos: {x: 5, y: 2}}
-    - {class: firebender, pos: {x: 10, y: 2}}
-    - {class: firebender, pos: {x: 14, y: 2}}
-    # Komodo rhinos — heavy assault
-    - {class: komodo_rhino, pos: {x: 7, y: 2}}
-    - {class: komodo_rhino, pos: {x: 9, y: 2}}
+    - {class: firebender, pos: {x: 8, y: 0}}
+    - {class: komodo_rhino, pos: {x: 6, y: 2}}
+    - {class: fire_sage, pos: {x: 9, y: 1}}
 
 rules:
   max_turns: 16
   first_player: red
 
 win_conditions:
-  # Aang dies → blue loses
   - {type: protect_unit, unit_id: u_b_aang_1, owning_team: blue}
-  # Zhao dies → red loses
   - {type: protect_unit, unit_id: u_r_zhao_1, owning_team: red}
-  # Aang alive at turn cap → Avatar State resolves the battle
   - {type: protect_unit_survives, unit_id: u_b_aang_1, owning_team: blue}
-  # Fire Nation reaches Spirit Oasis → moon spirit killed
-  - {type: reach_tile, team: red, pos: {x: 8, y: 9}}
-  # Either side wins by total elimination
+  - {type: reach_tile, team: red, pos: {x: 6, y: 11}}
   - {type: eliminate_all_enemy_units}
-  # Backstop
   - {type: max_turns_draw}
 
 narrative:
@@ -352,22 +354,26 @@ narrative:
     Moon Spirit and end waterbending forever.
   intro: |
     The full moon hangs low over the arctic. Fire Nation warships
-    fill the harbor, their engines churning through sea ice. On
-    the walls, waterbenders draw power from the moon and prepare
-    for the assault.
+    fill the harbor, engines churning through sea ice. On the walls,
+    waterbenders draw power from the moon and prepare for the final
+    assault.
   events:
     - trigger: on_turn_start
       turn: 4
       text: |
         The Fire Nation breaches the outer wall with concentrated
-        firebending. Soldiers pour through the gap as waterbenders
-        struggle to seal it with ice.
+        firebending. Soldiers pour through the gap.
     - trigger: on_turn_start
-      turn: 10
+      turn: 8
       text: |
         The moon turns red. Something is wrong at the Spirit Oasis.
-        Aang feels the spirit world calling — the Ocean Spirit
-        stirs in its pool.
+        Zhao is close. Iroh warns: "Whatever you do to that spirit,
+        I will unleash on you tenfold."
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        Aang feels the spirit world calling. The Ocean Spirit stirs
+        in its pool, waiting for the Avatar.
     - trigger: on_unit_killed
       unit_id: u_r_zhao_1
       text: |

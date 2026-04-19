@@ -3,50 +3,66 @@ license: public_domain
 name: Little Bighorn
 difficulty: 5
 description: |
-  June 25, 1876. Lt. Colonel George Armstrong Custer's 7th Cavalry
-  attacks a vast Lakota and Cheyenne encampment on the Little
-  Bighorn River — the largest gathering of Plains Indians ever,
-  led in spirit by Sitting Bull and on the field by Crazy Horse.
-  Custer divides his command into three battalions and advances
-  on a force outnumbering him three to one. His battalion is
-  surrounded on a low ridge and annihilated to the last man.
-  "Custer's Last Stand."
+  June 25, 1876. Lt. Colonel George Armstrong Custer leads five
+  companies of the 7th Cavalry against the largest gathering of
+  Plains Indians ever assembled along the Little Bighorn River.
+  Sitting Bull's vision of soldiers falling like grasshoppers has
+  drawn Lakota, Cheyenne, and Arapaho warriors by the thousands.
+  Crazy Horse and Gall strike from ravines on both flanks. Custer's
+  battalion is surrounded on a low ridge and annihilated to the
+  last man. Reno and Benteen hold a separate hilltop miles away,
+  unable to reach him.
   Inspired by the Battle of Little Bighorn (1876), American frontier history.
 
 board:
-  width: 12
-  height: 14
+  width: 14
+  height: 18
   terrain:
-    # The Little Bighorn — impassable river along x=2 with two fords.
+    # Little Bighorn River along x=2 with two fords
     - {x: 2, y: 0, type: river}
     - {x: 2, y: 1, type: river}
     - {x: 2, y: 2, type: river}
-    - {x: 2, y: 3, type: ford}
-    - {x: 2, y: 4, type: river}
+    - {x: 2, y: 3, type: river}
+    - {x: 2, y: 4, type: ford}
     - {x: 2, y: 5, type: river}
     - {x: 2, y: 6, type: river}
     - {x: 2, y: 7, type: river}
-    - {x: 2, y: 8, type: ford}
+    - {x: 2, y: 8, type: river}
     - {x: 2, y: 9, type: river}
     - {x: 2, y: 10, type: river}
-    - {x: 2, y: 11, type: river}
+    - {x: 2, y: 11, type: ford}
     - {x: 2, y: 12, type: river}
     - {x: 2, y: 13, type: river}
-    # Rolling hills (high ground) in the center.
-    - {x: 5, y: 5, type: hill}
-    - {x: 6, y: 5, type: hill}
-    - {x: 5, y: 6, type: hill}
-    - {x: 6, y: 6, type: hill}
-    # Custer's ridge — fort cluster (his last stand).
-    - {x: 8, y: 4, type: ridge}
-    - {x: 9, y: 4, type: ridge}
-    - {x: 8, y: 5, type: ridge}
+    - {x: 2, y: 14, type: river}
+    - {x: 2, y: 15, type: river}
+    - {x: 2, y: 16, type: river}
+    - {x: 2, y: 17, type: river}
+    # Bluffs along the east side
+    - {x: 11, y: 6, type: bluff}
+    - {x: 12, y: 6, type: bluff}
+    - {x: 11, y: 7, type: bluff}
+    - {x: 12, y: 7, type: bluff}
+    # Custer's Last Stand ridge -- center
+    - {x: 7, y: 7, type: ridge}
+    - {x: 8, y: 7, type: ridge}
+    - {x: 7, y: 8, type: ridge}
+    - {x: 8, y: 8, type: ridge}
+    # Ravines cutting through the terrain
+    - {x: 5, y: 5, type: ravine}
+    - {x: 6, y: 6, type: ravine}
+    - {x: 10, y: 10, type: ravine}
+    - {x: 11, y: 11, type: ravine}
+    # Rolling hills
+    - {x: 5, y: 3, type: hill}
+    - {x: 6, y: 3, type: hill}
+    - {x: 5, y: 13, type: hill}
+    - {x: 6, y: 13, type: hill}
   forts: []
 
 terrain_types:
   river:
     display_name: River
-    description: Impassable river.
+    description: The Little Bighorn -- impassable except at fords.
     move_cost: 99
     passable: false
     glyph: "~"
@@ -57,31 +73,43 @@ terrain_types:
     move_cost: 2
     glyph: "="
     color: yellow
-  hill:
-    display_name: Hill
-    description: Elevated ground. Costs 2 movement. +2 DEF.
+  bluff:
+    display_name: Bluff
+    description: Steep bluffs overlooking the valley. +3 DEF, costs 2 movement.
     move_cost: 2
-    defense_bonus: 2
+    defense_bonus: 3
     glyph: "^"
-    color: green
+    color: yellow
   ridge:
     display_name: Ridge
     description: Last Stand Hill. Costs 2 movement. +4 DEF.
-    # Last Stand Hill — fort-like high defense terrain.
     move_cost: 2
     defense_bonus: 4
     glyph: "*"
     color: yellow
+  ravine:
+    display_name: Ravine
+    description: Deep coulees cutting through the hills. +2 DEF, costs 2 movement. Good ambush terrain.
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "v"
+    color: green
+  hill:
+    display_name: Hill
+    description: Rolling grassland hills. +2 DEF, costs 2 movement.
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "^"
+    color: green
 
 unit_classes:
   custer:
     display_name: George A. Custer
     description: |
-      Lt. Colonel of the 7th US Cavalry. Yellow-haired, theatrical,
-      brave to the point of carelessness. Decided not to wait for
-      his other two battalions before attacking. Has 24 hours to
-      live in real history; the engine doesn't enforce that, but
-      the protect_unit rule will fire the moment he falls.
+      Lt. Colonel of the 7th Cavalry. Yellow-haired, theatrical,
+      brave to the point of recklessness. Divided his command and
+      charged into a force three times his size. VIP -- if he falls,
+      the cavalry is finished.
     hp_max: 30
     atk: 11
     defense: 5
@@ -95,69 +123,125 @@ unit_classes:
     glyph: C
     color: bright_cyan
 
-  trooper:
-    display_name: Cavalry Trooper
+  reno:
+    display_name: Major Reno
     description: |
-      Single-shot Springfield carbine, Colt revolver, sabre rarely
-      used. Veteran of the Civil War or fresh recruit; either way,
-      outnumbered today.
-    hp_max: 18
+      Commander of the first battalion to attack the village. His
+      charge broke under withering fire and he retreated to the
+      bluffs. Steady but shaken.
+    hp_max: 24
+    atk: 9
+    defense: 5
+    res: 3
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [officer, cavalry]
+    sight: 4
+    glyph: R
+    color: cyan
+
+  benteen:
+    display_name: Captain Benteen
+    description: |
+      Senior captain commanding the reserve battalion. Received
+      Custer's final message -- "Come quick, bring pacs" -- but
+      arrived too late. Cool under fire.
+    hp_max: 24
+    atk: 9
+    defense: 6
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [officer, cavalry]
+    sight: 4
+    glyph: B
+    color: cyan
+
+  keogh:
+    display_name: Captain Keogh
+    description: |
+      Irish-born officer of I Company. His horse Comanche was the
+      only survivor found on the ridge. Fights with saber and revolver.
+    hp_max: 22
+    atk: 9
+    defense: 4
+    res: 3
+    spd: 6
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [officer, cavalry]
+    sight: 3
+    glyph: K
+    color: cyan
+
+  calhoun:
+    display_name: Lt. Calhoun
+    description: |
+      Custer's brother-in-law, commanding L Company on the southern
+      skirmish line. His position collapsed first under Gall's charge.
+    hp_max: 20
     atk: 8
-    defense: 3
+    defense: 4
     res: 2
     spd: 6
     rng_min: 1
     rng_max: 1
     move: 5
-    tags: [cavalry]
+    tags: [officer, cavalry]
     sight: 3
-    glyph: T
+    glyph: L
     color: cyan
 
-  cav_sharpshooter:
-    display_name: Cavalry Sharpshooter
+  cooke:
+    display_name: Lt. Cooke
     description: |
-      Mounted scout-marksman with a Sharps rifle. Long range, soft
-      in melee.
-    hp_max: 14
+      Custer's adjutant, famous for his enormous dundreary whiskers.
+      Carried Custer's last message to Benteen. Sharpshooter with
+      a Sharps carbine.
+    hp_max: 18
     atk: 10
-    defense: 2
+    defense: 3
     res: 2
     spd: 5
     rng_min: 2
     rng_max: 3
     move: 4
-    tags: [ranged, cavalry]
+    tags: [ranged, officer]
     sight: 4
-    glyph: S
+    glyph: W
     color: cyan
 
   sitting_bull:
     display_name: Sitting Bull
     description: |
-      Hunkpapa Lakota holy man and chief. Had a vision before the
-      battle of soldiers falling 'like grasshoppers from the sky'.
-      Doesn't fight personally but his presence steadies the
-      camp — protected unit on the Lakota side.
+      Hunkpapa Lakota holy man and chief. His vision of soldiers
+      falling like grasshoppers drew the nations together. Does not
+      fight personally but his presence inspires every warrior on
+      the field.
     hp_max: 28
     atk: 8
     defense: 5
-    res: 4
-    spd: 6
+    res: 5
+    spd: 5
     rng_min: 1
     rng_max: 1
     move: 4
     tags: [chief, holy_man]
     sight: 5
-    glyph: B
+    glyph: S
     color: bright_red
 
   crazy_horse:
     display_name: Crazy Horse
     description: |
-      Oglala Lakota war chief. Led the charge that broke the
-      cavalry line. Said to be impossible to wound — has the
-      highest combat stats on the field.
+      Oglala Lakota war chief. Led the flanking charge that broke
+      the cavalry line from the north. Said to be impossible to
+      wound. The most dangerous warrior on the field.
     hp_max: 32
     atk: 12
     defense: 5
@@ -171,14 +255,70 @@ unit_classes:
     glyph: H
     color: bright_red
 
-  lakota_warrior:
-    display_name: Lakota Warrior
+  gall:
+    display_name: Gall
     description: |
-      Mounted, lance and bow, knows every fold of this country.
-      Outpaces and outmaneuvers the cavalry at every turn.
+      Hunkpapa war chief. Led the initial charge that routed Reno's
+      battalion, then swept north to crush Custer's flank. Furious --
+      two of his wives were killed in the opening attack.
+    hp_max: 28
+    atk: 11
+    defense: 5
+    res: 3
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [chief, warrior]
+    sight: 4
+    glyph: G
+    color: bright_red
+
+  rain_in_the_face:
+    display_name: Rain-in-the-Face
+    description: |
+      Hunkpapa Lakota warrior with a personal grudge against the
+      Custer brothers. Fast, relentless, and driven by vengeance.
+    hp_max: 24
+    atk: 10
+    defense: 4
+    res: 3
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [warrior]
+    sight: 3
+    glyph: F
+    color: red
+
+  two_moons:
+    display_name: Two Moons
+    description: |
+      Northern Cheyenne chief. Led Cheyenne warriors in the
+      encirclement from the west. Painted for war and burning with
+      grief from the Washita massacre eight years prior.
+    hp_max: 24
+    atk: 10
+    defense: 4
+    res: 3
+    spd: 7
+    rng_min: 1
+    rng_max: 1
+    move: 5
+    tags: [chief, warrior]
+    sight: 4
+    glyph: T
+    color: red
+
+  wooden_leg:
+    display_name: Wooden Leg
+    description: |
+      Young Northern Cheyenne warrior. One of the first to reach
+      Custer's ridge. Armed with lance and bow.
     hp_max: 20
     atk: 9
-    defense: 4
+    defense: 3
     res: 3
     spd: 7
     rng_min: 1
@@ -186,18 +326,37 @@ unit_classes:
     move: 5
     tags: [warrior]
     sight: 3
-    glyph: L
+    glyph: Y
     color: red
 
-  cheyenne_warrior:
-    display_name: Cheyenne Warrior
+  white_bull:
+    display_name: White Bull
     description: |
-      Northern Cheyenne fighter, painted for war. Fast, fierce,
-      already burning with grief from the Washita massacre eight
-      years before — at Custer's hand.
-    hp_max: 18
-    atk: 9
+      Minneconjou Lakota warrior, nephew of Sitting Bull. Claimed
+      to have personally killed Custer in hand-to-hand combat.
+      Expert mounted archer.
+    hp_max: 22
+    atk: 10
     defense: 3
+    res: 3
+    spd: 7
+    rng_min: 1
+    rng_max: 2
+    move: 5
+    tags: [warrior, archer]
+    sight: 4
+    glyph: E
+    color: red
+
+  low_dog:
+    display_name: Low Dog
+    description: |
+      Oglala Lakota war leader. Fought alongside Crazy Horse in the
+      northern flanking attack. Said "they came like a stampede of
+      buffalo" about the cavalry charge.
+    hp_max: 22
+    atk: 9
+    defense: 4
     res: 3
     spd: 7
     rng_min: 1
@@ -205,77 +364,33 @@ unit_classes:
     move: 5
     tags: [warrior]
     sight: 3
-    glyph: Y
-    color: red
-
-  native_archer:
-    display_name: Native Archer
-    description: |
-      Quick draw bow, accurate from horseback at speed. Soldiers
-      under fire couldn't tell where it was coming from.
-    hp_max: 14
-    atk: 9
-    defense: 2
-    res: 2
-    spd: 6
-    rng_min: 2
-    rng_max: 3
-    move: 4
-    tags: [archer]
-    sight: 4
-    glyph: A
+    glyph: D
     color: red
 
 armies:
   blue:
-    # Custer's battalion strung out across the river east bank,
-    # heading south toward the encampment.
-    - {class: custer, pos: {x: 8, y: 4}}
-    - {class: trooper, pos: {x: 7, y: 4}}
-    - {class: trooper, pos: {x: 9, y: 4}}
-    - {class: trooper, pos: {x: 7, y: 5}}
-    - {class: trooper, pos: {x: 8, y: 6}}
-    - {class: trooper, pos: {x: 9, y: 5}}
-    - {class: trooper, pos: {x: 9, y: 6}}
-    - {class: trooper, pos: {x: 7, y: 3}}
-    - {class: trooper, pos: {x: 8, y: 3}}
-    - {class: trooper, pos: {x: 9, y: 3}}
-    - {class: trooper, pos: {x: 10, y: 4}}
-    - {class: cav_sharpshooter, pos: {x: 10, y: 5}}
-    - {class: cav_sharpshooter, pos: {x: 10, y: 3}}
-    - {class: cav_sharpshooter, pos: {x: 11, y: 4}}
-    - {class: cav_sharpshooter, pos: {x: 11, y: 5}}
+    # Custer's command on the ridge (y=7-9)
+    - {class: custer, pos: {x: 7, y: 7}}
+    - {class: keogh, pos: {x: 8, y: 8}}
+    - {class: calhoun, pos: {x: 7, y: 9}}
+    - {class: cooke, pos: {x: 9, y: 7}}
+    # Reno and Benteen on the bluffs
+    - {class: reno, pos: {x: 11, y: 7}}
+    - {class: benteen, pos: {x: 12, y: 6}}
   red:
-    # Lakota/Cheyenne encampment to the south, with Crazy Horse
-    # leading the warriors who pour up from the river bottoms.
-    - {class: sitting_bull, pos: {x: 5, y: 12}}
-    - {class: crazy_horse, pos: {x: 6, y: 10}}
-    - {class: lakota_warrior, pos: {x: 5, y: 10}}
-    - {class: lakota_warrior, pos: {x: 6, y: 11}}
-    - {class: lakota_warrior, pos: {x: 7, y: 10}}
-    - {class: lakota_warrior, pos: {x: 7, y: 11}}
-    - {class: lakota_warrior, pos: {x: 4, y: 11}}
-    - {class: lakota_warrior, pos: {x: 4, y: 12}}
-    - {class: lakota_warrior, pos: {x: 5, y: 11}}
-    - {class: lakota_warrior, pos: {x: 8, y: 11}}
-    - {class: lakota_warrior, pos: {x: 8, y: 12}}
-    - {class: lakota_warrior, pos: {x: 6, y: 12}}
-    - {class: cheyenne_warrior, pos: {x: 3, y: 11}}
-    - {class: cheyenne_warrior, pos: {x: 3, y: 12}}
-    - {class: cheyenne_warrior, pos: {x: 9, y: 11}}
-    - {class: cheyenne_warrior, pos: {x: 9, y: 12}}
-    - {class: cheyenne_warrior, pos: {x: 10, y: 11}}
-    - {class: cheyenne_warrior, pos: {x: 10, y: 12}}
-    - {class: cheyenne_warrior, pos: {x: 7, y: 12}}
-    - {class: cheyenne_warrior, pos: {x: 4, y: 13}}
-    - {class: cheyenne_warrior, pos: {x: 9, y: 13}}
-    - {class: cheyenne_warrior, pos: {x: 6, y: 13}}
-    - {class: native_archer, pos: {x: 5, y: 13}}
-    - {class: native_archer, pos: {x: 7, y: 13}}
-    - {class: native_archer, pos: {x: 8, y: 13}}
-    - {class: native_archer, pos: {x: 3, y: 13}}
-    - {class: native_archer, pos: {x: 10, y: 13}}
-    - {class: native_archer, pos: {x: 11, y: 13}}
+    # Crazy Horse from the north (y=0-2)
+    - {class: crazy_horse, pos: {x: 7, y: 1}}
+    - {class: low_dog, pos: {x: 8, y: 2}}
+    # Gall from the south (y=15-16)
+    - {class: gall, pos: {x: 6, y: 15}}
+    - {class: rain_in_the_face, pos: {x: 7, y: 16}}
+    # Two Moons and Cheyenne from the southwest (y=14)
+    - {class: two_moons, pos: {x: 4, y: 14}}
+    - {class: wooden_leg, pos: {x: 5, y: 14}}
+    # White Bull from the south-east
+    - {class: white_bull, pos: {x: 10, y: 15}}
+    # Sitting Bull in the encampment
+    - {class: sitting_bull, pos: {x: 5, y: 17}}
 
 rules:
   max_turns: 25
@@ -290,22 +405,23 @@ win_conditions:
 narrative:
   title: Little Bighorn
   description: |
-    Custer's Last Stand. Three to one against and getting worse
-    every minute.
+    Custer's Last Stand. Surrounded on a ridge above the Little
+    Bighorn, outnumbered three to one and getting worse every minute.
   intro: |
     Sweltering afternoon in the Powder River country. Custer's
     battalion descends from the bluffs into a valley fuller of
-    teepees than any soldier alive has seen.
+    teepees than any soldier alive has seen. Dust rises from every
+    direction. The trap is closing.
   events:
     - trigger: on_turn_start
       turn: 4
-      text: "Crazy Horse leads the warriors up from the river. The cavalry's left flank starts to crumble."
+      text: "Crazy Horse leads warriors down from the north. Gall's Hunkpapa pour up from the river. The cavalry's flanks crumble."
     - trigger: on_turn_start
       turn: 10
       text: "Custer's troopers form a circle on the ridge. Their dead horses are the only cover."
     - trigger: on_turn_start
       turn: 15
-      text: "The dust settles. The shooting slows."
+      text: "The dust settles. The shooting slows. Few cavalrymen remain standing."
     - trigger: on_unit_killed
       unit_id: u_b_custer_1
       text: "Custer falls on the ridge. His command is finished."
