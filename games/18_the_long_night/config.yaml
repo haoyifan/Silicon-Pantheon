@@ -187,7 +187,7 @@ terrain_types:
     move_cost: 3
     defense_bonus: 0
     glyph: "~"
-    color: bright_blue
+    color: magenta
 
   fire_trench:
     display_name: Fire Trench
@@ -198,7 +198,7 @@ terrain_types:
     defense_bonus: 0
     passable: false
     glyph: "="
-    color: yellow
+    color: bright_yellow
 
   godswood:
     display_name: Godswood
@@ -219,7 +219,7 @@ terrain_types:
     passable: false
     defense_bonus: 3
     glyph: "#"
-    color: white
+    color: bright_white
 
   crypts:
     display_name: Crypts of Winterfell
@@ -239,7 +239,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 1
     glyph: "+"
-    color: yellow
+    color: bright_yellow
 
 unit_classes:
   # ═══════════════════════════════════════════════

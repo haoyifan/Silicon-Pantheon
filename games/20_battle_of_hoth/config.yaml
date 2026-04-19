@@ -211,7 +211,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 2
     glyph: "="
-    color: yellow
+    color: green
     description: |
       Snow trenches dug by Rebel engineers. Strong defensive
       positions with good cover against blaster fire and walker
@@ -244,7 +244,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 1
     glyph: "#"
-    color: white
+    color: bright_white
     description: |
       Interior corridors of Echo Base carved into the ice. Narrow
       passages offer some protection but the walls are crumbling

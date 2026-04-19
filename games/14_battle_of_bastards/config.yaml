@@ -135,7 +135,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 3
     glyph: "="
-    color: red
+    color: magenta
 
 unit_classes:
   # ═══════════════════════════════════════════════

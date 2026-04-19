@@ -106,35 +106,35 @@ terrain_types:
     move_cost: 1
     defense_bonus: 2
     glyph: "f"
-    color: green
+    color: bright_green
   ruins:
     display_name: Ruins
     description: Crumbling Numenorean ruins atop Amon Hen. +3 DEF, costs 2 movement.
     move_cost: 2
     defense_bonus: 3
     glyph: "%"
-    color: yellow
+    color: bright_yellow
   hilltop:
     display_name: Hilltop
     description: The Hill of Sight. +2 DEF, costs 2 movement.
     move_cost: 2
     defense_bonus: 2
     glyph: "^"
-    color: yellow
+    color: bright_yellow
   pillars:
     display_name: Fallen Pillars
     description: Toppled Numenorean columns, half-buried in moss. +2 DEF, costs 2 movement.
     move_cost: 2
     defense_bonus: 2
     glyph: "|"
-    color: white
+    color: bright_white
   rocks:
     display_name: Rocky Ground
     description: Broken stone and scree. +1 DEF, costs 2 movement.
     move_cost: 2
     defense_bonus: 1
     glyph: "o"
-    color: white
+    color: bright_white
   river:
     display_name: River Anduin
     description: The Anduin, cold and swift. Impassable.

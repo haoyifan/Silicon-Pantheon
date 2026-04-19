@@ -254,7 +254,7 @@ terrain_types:
     defense_bonus: 0
     passable: false
     glyph: "#"
-    color: white
+    color: bright_white
     description: |
       Hogwarts castle stone — ancient, enchanted, and impassable.
       A thousand years of magic hold these walls together.
@@ -263,7 +263,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 3
     glyph: "^"
-    color: bright_cyan
+    color: blue
     description: |
       The crenellated top of the Astronomy Tower. Stone
       battlements provide excellent cover and a commanding view
@@ -273,7 +273,7 @@ terrain_types:
     move_cost: 3
     defense_bonus: 0
     glyph: "~"
-    color: bright_yellow
+    color: yellow
     description: |
       Hogwarts' enchanted staircases shift without warning.
       Crossing takes time — they like to move while you're
@@ -283,7 +283,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 1
     glyph: "="
-    color: cyan
+    color: blue
     description: |
       An abandoned classroom with overturned desks and scattered
       chairs. Modest cover — good enough to duck behind.
@@ -312,7 +312,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 1
     glyph: "?"
-    color: bright_magenta
+    color: magenta
     description: |
       The Room of Requirement. It becomes whatever the occupant
       needs most — right now, it's become a breach point.

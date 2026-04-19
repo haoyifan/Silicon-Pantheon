@@ -427,7 +427,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: -1
     glyph: "="
-    color: yellow
+    color: bright_green
     description: |
       The Bridge of Hesitation. Narrow, exposed, no cover.
       Units here are sitting ducks for ranged attacks.
@@ -488,7 +488,7 @@ terrain_types:
     move_cost: 2
     defense_bonus: 1
     glyph: "_"
-    color: cyan
+    color: bright_cyan
     description: |
       A maintenance tunnel running beneath the waterfall.
       Narrow and damp. Slower than the bridge (costs 2 movement)
@@ -498,7 +498,7 @@ terrain_types:
     move_cost: 2
     defense_bonus: 3
     glyph: "^"
-    color: green
+    color: bright_green
     description: |
       The courthouse rooftop — an elevated firing position.
       Excellent defensive cover (+3 DEF) and sightlines down
@@ -526,7 +526,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 0
     glyph: "G"
-    color: bright_red
+    color: magenta
     description: |
       The Gates of Justice. Once Robin passes through these
       massive doors, she is lost to the World Government forever.

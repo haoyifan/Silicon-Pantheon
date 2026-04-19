@@ -181,7 +181,7 @@ terrain_types:
     move_cost: 3
     defense_bonus: 0
     glyph: "~"
-    color: green
+    color: bright_green
     description: |
       Boggy ground along the southern Pelennor near the Harlond.
       Mud and standing water slow all movement.

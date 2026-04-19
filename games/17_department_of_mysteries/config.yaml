@@ -248,7 +248,7 @@ terrain_types:
     defense_bonus: 0
     passable: false
     glyph: "#"
-    color: bright_black
+    color: dim
     description: |
       Black stone walls of the Ministry's deepest level. Ancient,
       cold, and impervious to most spells.
@@ -264,7 +264,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: -1
     glyph: "V"
-    color: magenta
+    color: bright_magenta
 
   prophecy_shelf:
     display_name: Prophecy Shelf
@@ -282,7 +282,7 @@ terrain_types:
     move_cost: 2
     defense_bonus: 1
     glyph: "O"
-    color: bright_blue
+    color: blue
     description: |
       Miniature planets float through this room in slow orbits,
       casting eerie light and shadow. They provide partial cover
@@ -293,7 +293,7 @@ terrain_types:
     move_cost: 2
     defense_bonus: 0
     glyph: "T"
-    color: bright_yellow
+    color: bright_green
     description: |
       A crystal bell jar containing a hummingbird that endlessly
       cycles through birth, life, and death. Time flows strangely
@@ -304,7 +304,7 @@ terrain_types:
     move_cost: 2
     defense_bonus: -1
     glyph: "B"
-    color: green
+    color: bright_green
     description: |
       Tanks of sickly green liquid containing floating human brains.
       Tendrils of thought lash out at anyone who gets too close,

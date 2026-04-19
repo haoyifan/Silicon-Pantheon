@@ -107,7 +107,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 3
     glyph: "S"
-    color: bright_cyan
+    color: cyan
     description: |
       Ground zero. The Chitauri portal blazes above the penthouse,
       raining alien soldiers onto the streets below. Fortified
@@ -118,7 +118,7 @@ terrain_types:
     passable: false
     defense_bonus: 0
     glyph: "W"
-    color: bright_red
+    color: magenta
     description: |
       The armored carcass of a Chitauri Leviathan, brought down by
       the Hulk's fists and Iron Man's missiles. Its massive bulk

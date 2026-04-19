@@ -168,7 +168,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: -2
     glyph: "!"
-    color: bright_red
+    color: magenta
     description: |
       The shattered dock ceiling where sentinels are breaking through.
       Debris rains down and machines pour in from above — anyone
@@ -212,7 +212,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 2
     glyph: "A"
-    color: bright_yellow
+    color: yellow
     description: |
       Ammunition resupply platforms stacked with crates of shells.
       Good cover and the ammunition keeps the APUs firing.
@@ -222,7 +222,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 2
     glyph: "M"
-    color: bright_cyan
+    color: cyan
     description: |
       APU storage bays along the dock walls. Heavy machinery and
       ammunition crates provide excellent cover. The exoskeletons
@@ -244,7 +244,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 2
     glyph: "G"
-    color: bright_yellow
+    color: yellow
     description: |
       The reinforced gate separating the dock from the city proper.
       If the machines breach this, Zion's civilian levels are

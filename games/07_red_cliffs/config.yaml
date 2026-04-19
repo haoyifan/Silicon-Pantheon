@@ -269,7 +269,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: -2
     glyph: "#"
-    color: bright_red
+    color: magenta
 
   small_boat:
     display_name: Sampan
@@ -280,7 +280,7 @@ terrain_types:
     move_cost: 2
     defense_bonus: 0
     glyph: "o"
-    color: bright_yellow
+    color: yellow
 
   wind:
     display_name: East Wind
@@ -291,7 +291,7 @@ terrain_types:
     move_cost: 1
     attack_bonus: 2
     glyph: ">"
-    color: bright_cyan
+    color: blue
 
   palisade:
     display_name: Palisade
@@ -311,7 +311,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 1
     glyph: "T"
-    color: bright_red
+    color: magenta
 
   altar:
     display_name: Wind Altar

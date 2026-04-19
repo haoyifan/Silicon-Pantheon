@@ -218,7 +218,7 @@ terrain_types:
     passable: false
     defense_bonus: 0
     glyph: "#"
-    color: bright_black
+    color: dim
     description: |
       Ancient enchanted stone walls of Hogwarts castle. A thousand
       years of magic reinforces these stones. Impassable.
@@ -228,7 +228,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 2
     glyph: "="
-    color: bright_yellow
+    color: yellow
     description: |
       The Great Hall of Hogwarts. Enchanted ceiling, long tables
       overturned for cover. Strong defensive position for the
@@ -269,7 +269,7 @@ terrain_types:
     move_cost: 3
     defense_bonus: -2
     glyph: "W"
-    color: green
+    color: yellow
     description: |
       The Whomping Willow flails its branches at anything that
       moves. Extremely dangerous to cross — heavy movement

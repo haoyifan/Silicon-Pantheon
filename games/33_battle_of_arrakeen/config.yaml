@@ -228,7 +228,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 3
     glyph: "+"
-    color: bright_red
+    color: magenta
     description: |
       The seat of power on Arrakis. Once House Atreides' home,
       now occupied by the Harkonnens. A fortified stronghold.

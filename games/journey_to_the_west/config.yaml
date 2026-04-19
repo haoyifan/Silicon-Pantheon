@@ -170,7 +170,7 @@ terrain_types:
     move_cost: 3
     defense_bonus: -1
     glyph: "."
-    color: cyan
+    color: blue
   bridge:
     display_name: Bridge
     move_cost: 1

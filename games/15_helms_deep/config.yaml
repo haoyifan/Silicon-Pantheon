@@ -255,7 +255,7 @@ terrain_types:
     move_cost: 2
     defense_bonus: 1
     glyph: "b"
-    color: red
+    color: magenta
 
   ladder:
     display_name: Siege Ladder
@@ -266,7 +266,7 @@ terrain_types:
     move_cost: 2
     defense_bonus: 0
     glyph: "l"
-    color: red
+    color: magenta
 
   keep_wall:
     display_name: Keep Wall

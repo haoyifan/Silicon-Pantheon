@@ -148,7 +148,7 @@ terrain_types:
     defense_bonus: 0
     passable: false
     glyph: "~"
-    color: bright_cyan
+    color: blue
     description: |
       A shimmering lake of otherworldly power. Impassable, but its
       waters heal those who stand at its shores. The Lady of the
@@ -168,7 +168,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 3
     glyph: "@"
-    color: bright_cyan
+    color: blue
     description: |
       The last gate of Camelot. Arthur's knights rally here,
       defending the remnants of their once-great kingdom.
@@ -177,7 +177,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 3
     glyph: "!"
-    color: bright_red
+    color: magenta
     description: |
       Mordred's war camp, flying the black banner of rebellion.
       A fortified command post for the usurper's forces.

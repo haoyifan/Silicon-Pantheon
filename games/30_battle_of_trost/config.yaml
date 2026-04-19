@@ -88,7 +88,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 0
     glyph: "."
-    color: yellow
+    color: green
     description: |
       Open streets of Trost. No cover from titan attacks.
   building:
@@ -105,7 +105,7 @@ terrain_types:
     move_cost: 2
     defense_bonus: 1
     glyph: "%"
-    color: yellow
+    color: green
     description: |
       Collapsed buildings and debris from the titan assault.
       Difficult terrain that slows movement but offers cover.
@@ -114,7 +114,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 3
     glyph: "="
-    color: white
+    color: bright_white
     description: |
       The top of Wall Rose. An elevated firing position that gives
       ranged units excellent sightlines over the breach. Defenders

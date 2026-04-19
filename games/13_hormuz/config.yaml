@@ -330,7 +330,7 @@ terrain_types:
     defense_bonus: -2
     passable: true
     glyph: "*"
-    color: bright_red
+    color: magenta
 
   beach:
     display_name: Beach

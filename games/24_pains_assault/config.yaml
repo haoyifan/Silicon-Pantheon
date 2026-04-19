@@ -62,7 +62,7 @@ terrain_types:
     move_cost: 2
     defense_bonus: 3
     glyph: "#"
-    color: yellow
+    color: green
   crater:
     display_name: Crater
     description: |
@@ -98,7 +98,7 @@ terrain_types:
     move_cost: 99
     passable: false
     glyph: "M"
-    color: bright_yellow
+    color: green
 
 unit_classes:
   naruto:

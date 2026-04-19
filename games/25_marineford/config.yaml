@@ -250,7 +250,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: 3
     glyph: "^"
-    color: bright_yellow
+    color: yellow
     description: |
       The execution platform where Portgas D. Ace awaits death.
       Reaching this tile means freedom.
@@ -268,7 +268,7 @@ terrain_types:
     move_cost: 3
     defense_bonus: 4
     glyph: "H"
-    color: bright_black
+    color: dim
     description: |
       Fortified walls of Marineford. Difficult to cross but
       offer excellent defensive positions.
@@ -277,7 +277,7 @@ terrain_types:
     move_cost: 1
     defense_bonus: -1
     glyph: "="
-    color: bright_blue
+    color: blue
     description: |
       Frozen bay created by Admiral Aokiji. Slippery surface
       offers no cover — but the pirates can cross it.

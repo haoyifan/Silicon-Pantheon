@@ -158,7 +158,7 @@ terrain_types:
     move_cost: 3
     defense_bonus: -1
     glyph: "="
-    color: cyan
+    color: blue
   high_ground:
     display_name: Abbey Craig
     description: |

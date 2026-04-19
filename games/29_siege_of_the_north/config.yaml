@@ -154,13 +154,13 @@ terrain_types:
     move_cost: 99
     passable: false
     glyph: "#"
-    color: bright_blue
+    color: bright_cyan
   canal:
     display_name: Canal
     description: Freezing arctic canals. Costs 2 movement. Waterbenders fight well here.
     move_cost: 2
     glyph: "~"
-    color: blue
+    color: bright_cyan
   spirit_oasis:
     display_name: Spirit Oasis
     description: |
@@ -176,7 +176,7 @@ terrain_types:
     move_cost: 2
     defense_bonus: 4
     glyph: "T"
-    color: bright_blue
+    color: bright_cyan
   snow_barricade:
     display_name: Snow Barricade
     description: Packed snow fortifications in the approach zone. +2 DEF, costs 2 movement.
@@ -190,7 +190,7 @@ terrain_types:
     move_cost: 2
     defense_bonus: 3
     glyph: "^"
-    color: bright_blue
+    color: bright_cyan
 
 unit_classes:
   aang:
