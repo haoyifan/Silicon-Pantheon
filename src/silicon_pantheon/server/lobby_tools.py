@@ -168,6 +168,17 @@ _BUILTIN_DESCRIPTIONS = {
 def register_lobby_tools(mcp: FastMCP, app: App) -> None:
     """Attach the lobby tool set to a FastMCP instance."""
 
+    # Cache list_rooms response to avoid redundant serialization when
+    # many clients poll simultaneously. Invalidated after 1 second or
+    # when a room mutation occurs (create/join/leave/kick/start/finish).
+    _list_rooms_cache = {"result": None, "at": 0.0}
+
+    def _invalidate_room_cache():
+        _list_rooms_cache["result"] = None
+
+    # Expose invalidator on the app so room-mutating tools can call it.
+    app._invalidate_room_cache = _invalidate_room_cache  # type: ignore[attr-defined]
+
     @mcp.tool()
     def list_rooms(connection_id: str) -> dict:
         """List rooms currently open. Available in any post-anonymous state.
@@ -181,12 +192,20 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                 ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
                 "set_player_metadata first",
             )
+        import time as _time
+
+        now = _time.monotonic()
+        if _list_rooms_cache["result"] is not None and now - _list_rooms_cache["at"] < 1.0:
+            return _list_rooms_cache["result"]
         rooms = [
             _serialize_room_summary(r)
             for r in app.rooms.list()
             if r.status != RoomStatus.FINISHED
         ]
-        return _ok({"rooms": rooms})
+        result = _ok({"rooms": rooms})
+        _list_rooms_cache["result"] = result
+        _list_rooms_cache["at"] = now
+        return result
 
     @mcp.tool()
     def list_scenarios(connection_id: str) -> dict:
@@ -389,7 +408,17 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
             })
 
         import hashlib
-        import json as _json
+
+        try:
+            import orjson as _json
+
+            def _json_dumps(obj, **kw):
+                return _json.dumps(obj, option=_json.OPT_SORT_KEYS).decode()
+        except ImportError:
+            import json as _json  # type: ignore[assignment]
+
+            def _json_dumps(obj, **kw):
+                return _json.dumps(obj, sort_keys=True, default=str)
 
         from silicon_pantheon.server.engine.scenarios import (
             _games_root,
@@ -467,7 +496,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
             }
 
         # Compute content hash from sorted JSON and cache for future calls.
-        content = _json.dumps(scenarios, sort_keys=True, default=str)
+        content = _json_dumps(scenarios)
         bundle_hash = hashlib.sha256(content.encode()).hexdigest()[:16]
         _bundle_cache["hash"] = bundle_hash
         _bundle_cache["scenarios"] = scenarios
@@ -700,6 +729,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         import time as _time
         from silicon_pantheon.server.heartbeat import HeartbeatState
         app.heartbeat_state[connection_id] = HeartbeatState(joined_room_at=_time.time())
+        _invalidate_room_cache()
         return _ok({"room_id": room.id, "slot": slot.value})
 
     @mcp.tool()
@@ -727,6 +757,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         import time as _time
         from silicon_pantheon.server.heartbeat import HeartbeatState
         app.heartbeat_state[connection_id] = HeartbeatState(joined_room_at=_time.time())
+        _invalidate_room_cache()
         return _ok({"room_id": room_id, "slot": slot.value})
 
     @mcp.tool()
@@ -773,6 +804,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         app.heartbeat_state.pop(joiner_cid, None)
         room.recompute_status()
         log.info("kick_player: host=%s kicked=%s room=%s", connection_id[:8], joiner_cid[:8] if joiner_cid else "?", room_id)
+        _invalidate_room_cache()
         return _ok({"kicked": joiner_cid[:8] if joiner_cid else None})
 
     @mcp.tool()
@@ -843,6 +875,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                 app.sessions.pop(room_id, None)
                 app.slot_to_team.pop(room_id, None)
                 log.info("room %s deleted (player left pre-game)", room_id)
+        _invalidate_room_cache()
         return _ok({})
 
     @mcp.tool()

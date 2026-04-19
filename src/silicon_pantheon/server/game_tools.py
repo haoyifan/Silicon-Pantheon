@@ -16,7 +16,6 @@ single transform that every game tool output passes through.
 
 from __future__ import annotations
 
-import json
 import logging
 import random
 from typing import Any
@@ -279,7 +278,7 @@ def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
         viewer.value,
         session.state.active_player.value,
         session.state.turn,
-        json.dumps(args, default=str)[:200] if args else "{}",
+        str(args)[:200] if args else "{}",
     )
     _t0_dispatch = _time.time()
     with session.lock:

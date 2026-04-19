@@ -2,9 +2,19 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
+
+try:
+    import orjson
+
+    def _dumps(obj: Any) -> str:
+        return orjson.dumps(obj).decode()
+except ImportError:
+    import json
+
+    def _dumps(obj: Any) -> str:
+        return json.dumps(obj)
 
 
 class ReplayWriter:
@@ -14,7 +24,7 @@ class ReplayWriter:
         self._f = self.path.open("a", buffering=1)
 
     def write(self, event: dict[str, Any]) -> None:
-        self._f.write(json.dumps(event) + "\n")
+        self._f.write(_dumps(event) + "\n")
 
     def close(self) -> None:
         try:

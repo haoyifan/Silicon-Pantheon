@@ -49,7 +49,7 @@ if TYPE_CHECKING:
     from silicon_pantheon.client.agent_bridge import NetworkedAgent
 
 TICK_INTERVAL_S = 0.25
-POLL_INTERVAL_S = 1.0  # lobby / room state polling cadence
+POLL_INTERVAL_S = 5.0  # lobby / room state polling cadence
 THOUGHTS_BUFFER_SIZE = 100
 
 
