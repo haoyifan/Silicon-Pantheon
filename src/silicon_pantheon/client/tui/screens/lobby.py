@@ -51,7 +51,7 @@ class LobbyScreen(Screen):
         table.add_column(t("lobby_table.room_id", lc), width=8, no_wrap=True)
         table.add_column(t("lobby_table.host", lc), overflow="fold")
         table.add_column(t("lobby_table.joiner", lc), overflow="fold")
-        table.add_column(t("lobby_table.scenario", lc), overflow="fold")
+        table.add_column(t("lobby_table.scenario", lc), overflow="ellipsis", max_width=36, no_wrap=True)
         table.add_column(t("lobby_table.col_status", lc))
 
         if not rooms:
