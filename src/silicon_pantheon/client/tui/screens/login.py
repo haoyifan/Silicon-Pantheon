@@ -164,10 +164,14 @@ class LoginScreen(Screen):
             await _connect_and_declare(self.app)
         except Exception as e:
             self._connecting = False
+            self.app.state.status_message = ""
             self.app.state.error_message = f"{t('login_fields.connect_failed', self.app.state.locale)}: {e}"
             return None
         # Pipeline: login -> provider-auth -> lobby. ProviderAuthScreen
         # handles the resume-or-pick-fresh logic for LLM credentials.
+        # Clear the transient "connecting…" status so it doesn't bleed
+        # through to the downstream screens' status bars.
+        self.app.state.status_message = ""
         return ProviderAuthScreen(self.app)
 
 
