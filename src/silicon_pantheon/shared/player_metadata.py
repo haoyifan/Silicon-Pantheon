@@ -43,11 +43,11 @@ class PlayerMetadata:
             )
         provider = raw.get("provider")
         model = raw.get("model")
-        version = str(raw.get("version", "1"))
+        version = sanitize_display_text(str(raw.get("version", "1")), max_length=32)
         return cls(
             display_name=display_name,
             kind=kind,  # type: ignore[arg-type]
             provider=sanitize_display_text(str(provider), max_length=64) if provider else None,
             model=sanitize_display_text(str(model), max_length=128) if model else None,
-            version=version,
+            version=version or "1",
         )

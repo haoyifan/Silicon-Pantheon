@@ -30,6 +30,11 @@ def get_unit_range(session: Session, viewer: Team, unit_id: str) -> dict:
     u = state.units.get(unit_id)
     if u is None or not u.alive:
         raise ToolError(f"unit {unit_id} does not exist or is dead")
+    # Fog check: enemy units hidden by fog must not be queryable.
+    if u.owner != viewer:
+        visible_enemies = _visible_enemies(session, viewer)
+        if u not in visible_enemies:
+            raise ToolError(f"unit {unit_id} does not exist or is dead")
 
     # Always show full hypothetical range from the unit's current
     # tile, regardless of status (ready/moved/done). This is a
@@ -106,6 +111,12 @@ def simulate_attack(
         raise ToolError(f"target {target_id} does not exist or is dead")
     if attacker.owner is target.owner:
         raise ToolError("attacker and target are on the same team")
+    # Fog check: cannot simulate attacks involving units hidden by fog.
+    # Attacker must be own-team; target must be visible.
+    if target.owner != viewer:
+        visible_enemies = _visible_enemies(session, viewer)
+        if target not in visible_enemies:
+            raise ToolError(f"target {target_id} does not exist or is dead")
 
     origin = Pos.from_dict(from_tile) if from_tile else attacker.pos
     if not in_attack_range(origin, target.pos, attacker.stats):

@@ -75,7 +75,7 @@ def _apply_filter(
         return filter_state(session.state, ctx)
     if tool_name in _FILTERED_UNIT_TOOLS:
         filtered = filter_unit(result.get("id", ""), result, session.state, ctx)
-        return filtered if filtered is not None else {"error": "unit not visible"}
+        return filtered if filtered is not None else {"error": "unit does not exist or is dead"}
     if tool_name in _FILTERED_THREAT_TOOLS:
         return filter_threat_map(result, session.state, ctx)
     if tool_name in _FILTERED_HISTORY_TOOLS:

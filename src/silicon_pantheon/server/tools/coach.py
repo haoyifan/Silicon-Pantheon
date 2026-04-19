@@ -9,7 +9,10 @@ from ..session import CoachMessage, Session
 
 
 def send_to_agent(session: Session, viewer: Team, team: str, text: str) -> dict:
-    target = Team(team)
+    try:
+        target = Team(team)
+    except ValueError:
+        return {"ok": False, "error": f"invalid team: {team!r} (must be 'blue' or 'red')"}
     if target != viewer:
         return {"ok": False, "error": "can only message your own team's agent"}
     text = sanitize_freetext(text, max_length=2_000)
