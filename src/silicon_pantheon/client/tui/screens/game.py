@@ -1261,7 +1261,7 @@ class GameScreen(Screen):
         # for vim-style scrolling. The underlying game state keeps
         # refreshing in the background.
         if self._scenario_overlay is not None:
-            if key in ("f3", "escape", "q"):
+            if key in ("f3", "esc", "q"):
                 self._scenario_overlay = None
                 return None
             await self._scenario_overlay.handle_key(key)
@@ -1300,7 +1300,7 @@ class GameScreen(Screen):
         # still route to the Player panel, so without this global
         # intercept the card would be stuck until Tab→Map→Esc.
         if self.unit_card is not None:
-            if key in ("escape", "esc", "enter", "q"):
+            if key in ("esc", "enter", "q"):
                 # Snap map cursor to the card's unit position on close.
                 pos = self.unit_card.unit.get("pos") or {}
                 self.map_panel.cx = int(pos.get("x", self.map_panel.cx))
