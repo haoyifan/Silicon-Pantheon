@@ -282,6 +282,27 @@ unit_classes:
     glyph: "D"
     color: bright_cyan
 
+  rhaegal:
+    display_name: Rhaegal
+    description: |
+      The green dragon, named for Rhaegar. Flies with Daenerys
+      above the walls of Winterfell — the second living dragon
+      answering Viserion's undead fire. Drogon's brother.
+      Without him, Daenerys duels Viserion + the Night King in
+      the sky alone.
+    hp_max: 32
+    atk: 12
+    defense: 6
+    res: 6
+    spd: 5
+    move: 5
+    rng_min: 2
+    rng_max: 4
+    is_magic: true
+    tags: [dragon, flying]
+    glyph: "R"
+    color: bright_cyan
+
   arya:
     display_name: Arya Stark
     description: |
@@ -531,6 +552,8 @@ armies:
     - {class: jon_snow, pos: {x: 4, y: 8}}
     # Daenerys — rear, dragonfire support from the keep
     - {class: daenerys, pos: {x: 10, y: 15}}
+    # Rhaegal — flying wing alongside Daenerys, answers Viserion's undead fire
+    - {class: rhaegal, pos: {x: 13, y: 15}}
     # Arya — hidden deep inside Winterfell, waiting to strike
     - {class: arya, pos: {x: 11, y: 14}}
     # The Hound — holding the center trench gap

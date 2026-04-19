@@ -18,6 +18,12 @@ unit_classes:
     description: |
       龙女王。骑乘卓耿在战场上空倾泻龙焰。
       法术型——伤害由魔抗减免。
+  rhaegal:
+    display_name: 雷哥
+    description: |
+      绿龙雷哥，以雷加为名。与丹妮莉丝并肩飞越临冬城墙——
+      第二条活龙，对抗韦赛利昂的亡灵之焰。卓耿的弟弟。
+      没有他，丹妮莉丝独自在天空中同时对抗韦赛利昂和夜王。
   brienne:
     display_name: 布蕾妮
     description: |
