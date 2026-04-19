@@ -14,50 +14,94 @@ description: |
   before the trap closes.
   Inspired by the Battle of the Bastards from Game of Thrones by George R.R. Martin.
 
+# ───────────────────────────────────────────────────────
+#  MAP LAYOUT  (20 wide x 14 tall)
+#
+#  y=0   . R . . . . . . . . . . . . . . . . . .   Winterfell (Ramsay far rear)
+#  y=1   . . . . A A A A A A A A A A A A . . . .   Shield wall line (Bolton arc)
+#  y=2   + . . + . . . . . . . . . . . . + . . +   Corpse walls (north)
+#  y=3   + T T + . . . . . . . . . . . . + T T +   Corpse walls + forest
+#  y=4   + T T + . . . . . . . . . . . . + T T +   Corpse walls + forest
+#  y=5   + T T + . . . . . . . . . . . . + T T +   Corpse walls + forest
+#  y=6   + T T + . . . . . . . . . . . . + T T +   Corpse walls + forest
+#  y=7   + . . + . . . . . . . . . . . . + . . +   Corpse walls (south opening)
+#  y=8   . . . . . . . . . . . . . . . . . . . .   Open field
+#  y=9   . . . . . . . . . . . . . . . . . . . .   Open field
+#  y=10  . . . . . . . . . . . . . . . . . . . .   Jon's force (center)
+#  y=11  . . . . . . . . . . . . . . . . . . . .   Stark rear
+#  y=12  . . . . . . . . . . . . . . . . . . . .   Open south
+#  y=13  . . . . . . . . . . . . . . . . . . . .   Vale arrival zone (far south)
+# ───────────────────────────────────────────────────────
+
 board:
-  width: 12
-  height: 10
+  width: 20
+  height: 14
   terrain:
-    # ── Corpse piles (impassable walls forming the trap) ──
-    # Western corpse wall — blocks retreat to the left
-    - {x: 2, y: 3, type: corpse_wall}
-    - {x: 2, y: 4, type: corpse_wall}
-    - {x: 2, y: 5, type: corpse_wall}
-    - {x: 2, y: 6, type: corpse_wall}
-    # Eastern corpse wall — blocks retreat to the right
-    - {x: 9, y: 3, type: corpse_wall}
-    - {x: 9, y: 4, type: corpse_wall}
-    - {x: 9, y: 5, type: corpse_wall}
-    - {x: 9, y: 6, type: corpse_wall}
-    # Northern corpse ridge — funnels the Stark force south
+    # ── Western corpse wall (x=0 and x=3, y=2-7) ──
+    - {x: 0, y: 2, type: corpse_wall}
+    - {x: 0, y: 3, type: corpse_wall}
+    - {x: 0, y: 4, type: corpse_wall}
+    - {x: 0, y: 5, type: corpse_wall}
+    - {x: 0, y: 6, type: corpse_wall}
+    - {x: 0, y: 7, type: corpse_wall}
+    - {x: 3, y: 2, type: corpse_wall}
     - {x: 3, y: 3, type: corpse_wall}
-    - {x: 8, y: 3, type: corpse_wall}
-    # ── Forest flanks ──
-    # West forest
-    - {x: 0, y: 3, type: forest}
-    - {x: 0, y: 4, type: forest}
-    - {x: 0, y: 5, type: forest}
-    - {x: 0, y: 6, type: forest}
-    - {x: 0, y: 7, type: forest}
+    - {x: 3, y: 4, type: corpse_wall}
+    - {x: 3, y: 5, type: corpse_wall}
+    - {x: 3, y: 6, type: corpse_wall}
+    - {x: 3, y: 7, type: corpse_wall}
+
+    # ── Eastern corpse wall (x=16 and x=19, y=2-7) ──
+    - {x: 16, y: 2, type: corpse_wall}
+    - {x: 16, y: 3, type: corpse_wall}
+    - {x: 16, y: 4, type: corpse_wall}
+    - {x: 16, y: 5, type: corpse_wall}
+    - {x: 16, y: 6, type: corpse_wall}
+    - {x: 16, y: 7, type: corpse_wall}
+    - {x: 19, y: 2, type: corpse_wall}
+    - {x: 19, y: 3, type: corpse_wall}
+    - {x: 19, y: 4, type: corpse_wall}
+    - {x: 19, y: 5, type: corpse_wall}
+    - {x: 19, y: 6, type: corpse_wall}
+    - {x: 19, y: 7, type: corpse_wall}
+
+    # ── Northern corpse ridge (y=2, connecting the walls) ──
+    - {x: 4, y: 2, type: corpse_wall}
+    - {x: 15, y: 2, type: corpse_wall}
+
+    # ── West forest pocket (x=1-2, y=3-6) — trapped between corpse walls ──
+    - {x: 1, y: 3, type: forest}
+    - {x: 2, y: 3, type: forest}
     - {x: 1, y: 4, type: forest}
+    - {x: 2, y: 4, type: forest}
     - {x: 1, y: 5, type: forest}
+    - {x: 2, y: 5, type: forest}
     - {x: 1, y: 6, type: forest}
-    # East forest
-    - {x: 11, y: 3, type: forest}
-    - {x: 11, y: 4, type: forest}
-    - {x: 11, y: 5, type: forest}
-    - {x: 11, y: 6, type: forest}
-    - {x: 11, y: 7, type: forest}
-    - {x: 10, y: 4, type: forest}
-    - {x: 10, y: 5, type: forest}
-    - {x: 10, y: 6, type: forest}
-    # ── Bolton shield wall terrain (+DEF line across row 2) ──
-    - {x: 3, y: 2, type: shield_wall}
-    - {x: 4, y: 2, type: shield_wall}
-    - {x: 5, y: 2, type: shield_wall}
-    - {x: 6, y: 2, type: shield_wall}
-    - {x: 7, y: 2, type: shield_wall}
-    - {x: 8, y: 2, type: shield_wall}
+    - {x: 2, y: 6, type: forest}
+
+    # ── East forest pocket (x=17-18, y=3-6) ──
+    - {x: 17, y: 3, type: forest}
+    - {x: 18, y: 3, type: forest}
+    - {x: 17, y: 4, type: forest}
+    - {x: 18, y: 4, type: forest}
+    - {x: 17, y: 5, type: forest}
+    - {x: 18, y: 5, type: forest}
+    - {x: 17, y: 6, type: forest}
+    - {x: 18, y: 6, type: forest}
+
+    # ── Bolton shield wall terrain (y=1, arc across the north) ──
+    - {x: 4, y: 1, type: shield_wall}
+    - {x: 5, y: 1, type: shield_wall}
+    - {x: 6, y: 1, type: shield_wall}
+    - {x: 7, y: 1, type: shield_wall}
+    - {x: 8, y: 1, type: shield_wall}
+    - {x: 9, y: 1, type: shield_wall}
+    - {x: 10, y: 1, type: shield_wall}
+    - {x: 11, y: 1, type: shield_wall}
+    - {x: 12, y: 1, type: shield_wall}
+    - {x: 13, y: 1, type: shield_wall}
+    - {x: 14, y: 1, type: shield_wall}
+    - {x: 15, y: 1, type: shield_wall}
   forts: []
 
 terrain_types:
@@ -380,40 +424,40 @@ unit_classes:
 
 armies:
   blue:
-    # ── Blue starts south, spread across rows 7-9 ──
-    # Jon Snow — front center, charging ahead as always.
-    - {class: jon_snow, pos: {x: 5, y: 7}}
-    # Tormund — beside Jon, right flank.
-    - {class: tormund, pos: {x: 7, y: 7}}
-    # Wun Wun — center, lumbering forward.
-    - {class: wun_wun, pos: {x: 6, y: 8}}
-    # Sansa — rear, safe behind the line.
-    - {class: sansa, pos: {x: 5, y: 9}}
-    # Davos — rear ranged position, directing troops.
-    - {class: davos, pos: {x: 8, y: 9}}
-    # Lyanna Mormont — forward, fearless.
-    - {class: lyanna_mormont, pos: {x: 4, y: 8}}
-    # Melisandre — rear support.
-    - {class: melisandre, pos: {x: 3, y: 9}}
+    # ── Blue starts far south, spread across rows 10-12 ──
+    # Jon Snow — front center, charging ahead as always
+    - {class: jon_snow, pos: {x: 9, y: 10}}
+    # Tormund — beside Jon, right flank
+    - {class: tormund, pos: {x: 13, y: 10}}
+    # Wun Wun — left-center, lumbering forward
+    - {class: wun_wun, pos: {x: 7, y: 11}}
+    # Sansa — far rear, safe behind the line
+    - {class: sansa, pos: {x: 10, y: 13}}
+    # Davos — rear ranged position, directing troops
+    - {class: davos, pos: {x: 14, y: 12}}
+    # Lyanna Mormont — forward, fearless, left side
+    - {class: lyanna_mormont, pos: {x: 5, y: 10}}
+    # Melisandre — rear support
+    - {class: melisandre, pos: {x: 6, y: 12}}
 
   red:
     # ── Red starts north with encirclement capability ──
-    # Ramsay — far back, safe behind his lines.
-    - {class: ramsay, pos: {x: 6, y: 0}}
-    # Archer Captain — second row, raining arrows.
-    - {class: archer_captain, pos: {x: 4, y: 1}}
-    # Shield Wall Captain — on the shield wall defensive line.
-    - {class: shield_wall_captain, pos: {x: 5, y: 2}}
-    # Pikeman Captain — holding the wall center.
-    - {class: pikeman_captain, pos: {x: 7, y: 2}}
-    # Smalljon Umber — forward berserker, ready to charge.
-    - {class: smalljon_umber, pos: {x: 6, y: 2}}
-    # Harald Karstark — far right flank, cavalry encirclement.
-    - {class: harald_karstark, pos: {x: 10, y: 1}}
-    # Steelshanks — left flank, closing the vice.
-    - {class: steelshanks, pos: {x: 1, y: 1}}
-    # Ben Bones — right side, supporting the trap.
-    - {class: ben_bones, pos: {x: 8, y: 1}}
+    # Ramsay — far back behind Winterfell, safe
+    - {class: ramsay, pos: {x: 10, y: 0}}
+    # Archer Captain — behind the shield wall
+    - {class: archer_captain, pos: {x: 8, y: 0}}
+    # Shield Wall Captain — on the wall center
+    - {class: shield_wall_captain, pos: {x: 9, y: 1}}
+    # Pikeman Captain — right-center of the wall
+    - {class: pikeman_captain, pos: {x: 12, y: 1}}
+    # Smalljon Umber — forward of the wall, ready to charge south
+    - {class: smalljon_umber, pos: {x: 7, y: 1}}
+    # Harald Karstark — far right flank, cavalry encirclement
+    - {class: harald_karstark, pos: {x: 18, y: 3}}
+    # Steelshanks — far left flank, closing the vice
+    - {class: steelshanks, pos: {x: 1, y: 2}}
+    # Ben Bones — east side, supporting the trap
+    - {class: ben_bones, pos: {x: 15, y: 1}}
 
 rules:
   max_turns: 18

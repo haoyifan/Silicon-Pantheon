@@ -12,60 +12,204 @@ description: |
   Inspired by the Battle of Hogwarts from Harry Potter by J.K. Rowling.
 
 board:
-  width: 10
-  height: 10
+  width: 22
+  height: 16
   terrain:
-    # Castle walls — northern perimeter
-    - {x: 0, y: 0, type: castle_wall}
-    - {x: 1, y: 0, type: castle_wall}
-    - {x: 2, y: 0, type: castle_wall}
+    # =============================================
+    # HOGWARTS CASTLE — northern section (rows 0-6)
+    # =============================================
+
+    # --- Castle outer walls (north perimeter) ---
+    - {x: 3, y: 0, type: castle_wall}
+    - {x: 4, y: 0, type: castle_wall}
+    - {x: 5, y: 0, type: castle_wall}
+    - {x: 6, y: 0, type: castle_wall}
     - {x: 7, y: 0, type: castle_wall}
     - {x: 8, y: 0, type: castle_wall}
     - {x: 9, y: 0, type: castle_wall}
-    # Castle walls — side walls
-    - {x: 0, y: 1, type: castle_wall}
-    - {x: 9, y: 1, type: castle_wall}
-    - {x: 0, y: 2, type: castle_wall}
-    - {x: 9, y: 2, type: castle_wall}
-    - {x: 0, y: 3, type: castle_wall}
-    - {x: 9, y: 3, type: castle_wall}
-    # Great Hall — interior, blue's stronghold
-    - {x: 3, y: 1, type: great_hall}
-    - {x: 4, y: 1, type: great_hall}
-    - {x: 5, y: 1, type: great_hall}
-    - {x: 6, y: 1, type: great_hall}
-    - {x: 3, y: 2, type: great_hall}
-    - {x: 4, y: 2, type: great_hall}
-    - {x: 5, y: 2, type: great_hall}
-    - {x: 6, y: 2, type: great_hall}
-    # Courtyard — open ground between castle and approach
-    - {x: 3, y: 4, type: courtyard}
-    - {x: 4, y: 4, type: courtyard}
-    - {x: 5, y: 4, type: courtyard}
-    - {x: 6, y: 4, type: courtyard}
-    - {x: 3, y: 5, type: courtyard}
-    - {x: 4, y: 5, type: courtyard}
-    - {x: 5, y: 5, type: courtyard}
-    - {x: 6, y: 5, type: courtyard}
-    # Covered bridge — narrow approach, defensive terrain
-    - {x: 4, y: 6, type: covered_bridge}
-    - {x: 5, y: 6, type: covered_bridge}
-    - {x: 4, y: 7, type: covered_bridge}
-    - {x: 5, y: 7, type: covered_bridge}
-    # Lake edge — difficult terrain on the flanks
-    - {x: 0, y: 7, type: lake_edge}
-    - {x: 1, y: 7, type: lake_edge}
-    - {x: 0, y: 8, type: lake_edge}
-    - {x: 1, y: 8, type: lake_edge}
-    - {x: 0, y: 9, type: lake_edge}
-    - {x: 8, y: 7, type: lake_edge}
-    - {x: 9, y: 7, type: lake_edge}
-    - {x: 8, y: 8, type: lake_edge}
-    - {x: 9, y: 8, type: lake_edge}
-    - {x: 9, y: 9, type: lake_edge}
+    - {x: 10, y: 0, type: castle_wall}
+    - {x: 11, y: 0, type: castle_wall}
+    - {x: 12, y: 0, type: castle_wall}
+    - {x: 13, y: 0, type: castle_wall}
+    - {x: 14, y: 0, type: castle_wall}
+    - {x: 15, y: 0, type: castle_wall}
+    - {x: 16, y: 0, type: castle_wall}
+    - {x: 17, y: 0, type: castle_wall}
+    - {x: 18, y: 0, type: castle_wall}
+
+    # --- Castle west wall ---
+    - {x: 3, y: 1, type: castle_wall}
+    - {x: 3, y: 2, type: castle_wall}
+    - {x: 3, y: 3, type: castle_wall}
+    - {x: 3, y: 4, type: castle_wall}
+    - {x: 3, y: 5, type: castle_wall}
+    - {x: 3, y: 6, type: castle_wall}
+
+    # --- Castle east wall ---
+    - {x: 18, y: 1, type: castle_wall}
+    - {x: 18, y: 2, type: castle_wall}
+    - {x: 18, y: 3, type: castle_wall}
+    - {x: 18, y: 4, type: castle_wall}
+    - {x: 18, y: 5, type: castle_wall}
+    - {x: 18, y: 6, type: castle_wall}
+
+    # --- Great Hall (center of the castle) ---
+    - {x: 7, y: 1, type: great_hall}
+    - {x: 8, y: 1, type: great_hall}
+    - {x: 9, y: 1, type: great_hall}
+    - {x: 10, y: 1, type: great_hall}
+    - {x: 11, y: 1, type: great_hall}
+    - {x: 12, y: 1, type: great_hall}
+    - {x: 13, y: 1, type: great_hall}
+    - {x: 14, y: 1, type: great_hall}
+    - {x: 7, y: 2, type: great_hall}
+    - {x: 8, y: 2, type: great_hall}
+    - {x: 9, y: 2, type: great_hall}
+    - {x: 10, y: 2, type: great_hall}
+    - {x: 11, y: 2, type: great_hall}
+    - {x: 12, y: 2, type: great_hall}
+    - {x: 13, y: 2, type: great_hall}
+    - {x: 14, y: 2, type: great_hall}
+
+    # --- Interior walls forming corridors ---
+    # Wall between Great Hall and west wing
+    - {x: 6, y: 1, type: castle_wall}
+    - {x: 6, y: 2, type: castle_wall}
+    - {x: 6, y: 3, type: castle_wall}
+    # door at y=4
+    - {x: 6, y: 5, type: castle_wall}
+    - {x: 6, y: 6, type: castle_wall}
+
+    # Wall between Great Hall and east wing
+    - {x: 15, y: 1, type: castle_wall}
+    - {x: 15, y: 2, type: castle_wall}
+    - {x: 15, y: 3, type: castle_wall}
+    # door at y=4
+    - {x: 15, y: 5, type: castle_wall}
+    - {x: 15, y: 6, type: castle_wall}
+
+    # Wall south of Great Hall
+    - {x: 7, y: 3, type: castle_wall}
+    - {x: 8, y: 3, type: castle_wall}
+    # door at x=9
+    - {x: 10, y: 3, type: castle_wall}
+    - {x: 11, y: 3, type: castle_wall}
+    # door at x=12
+    - {x: 13, y: 3, type: castle_wall}
+    - {x: 14, y: 3, type: castle_wall}
+
+    # --- Castle south wall (separating castle from courtyard) ---
+    - {x: 3, y: 6, type: castle_wall}
+    - {x: 4, y: 6, type: castle_wall}
+    - {x: 5, y: 6, type: castle_wall}
+    - {x: 6, y: 6, type: castle_wall}
+    - {x: 7, y: 6, type: castle_wall}
+    - {x: 8, y: 6, type: castle_wall}
+    # gate at x=9-10
+    - {x: 11, y: 6, type: castle_wall}
+    - {x: 12, y: 6, type: castle_wall}
+    # gate at x=13
+    - {x: 14, y: 6, type: castle_wall}
+    - {x: 15, y: 6, type: castle_wall}
+    - {x: 16, y: 6, type: castle_wall}
+    - {x: 17, y: 6, type: castle_wall}
+    - {x: 18, y: 6, type: castle_wall}
+
+    # =============================================
+    # COURTYARD — open ground between castle and grounds (rows 7-8)
+    # =============================================
+    - {x: 6, y: 7, type: courtyard}
+    - {x: 7, y: 7, type: courtyard}
+    - {x: 8, y: 7, type: courtyard}
+    - {x: 9, y: 7, type: courtyard}
+    - {x: 10, y: 7, type: courtyard}
+    - {x: 11, y: 7, type: courtyard}
+    - {x: 12, y: 7, type: courtyard}
+    - {x: 13, y: 7, type: courtyard}
+    - {x: 14, y: 7, type: courtyard}
+    - {x: 15, y: 7, type: courtyard}
+    - {x: 6, y: 8, type: courtyard}
+    - {x: 7, y: 8, type: courtyard}
+    - {x: 8, y: 8, type: courtyard}
+    - {x: 9, y: 8, type: courtyard}
+    - {x: 10, y: 8, type: courtyard}
+    - {x: 11, y: 8, type: courtyard}
+    - {x: 12, y: 8, type: courtyard}
+    - {x: 13, y: 8, type: courtyard}
+    - {x: 14, y: 8, type: courtyard}
+    - {x: 15, y: 8, type: courtyard}
+
+    # =============================================
+    # COVERED BRIDGE — western approach (narrow chokepoint)
+    # =============================================
+    - {x: 2, y: 7, type: covered_bridge}
+    - {x: 1, y: 8, type: covered_bridge}
+    - {x: 2, y: 8, type: covered_bridge}
+    - {x: 1, y: 9, type: covered_bridge}
+    - {x: 2, y: 9, type: covered_bridge}
+    - {x: 1, y: 10, type: covered_bridge}
+
+    # =============================================
+    # WHOMPING WILLOW — west grounds (dangerous terrain)
+    # =============================================
+    - {x: 4, y: 10, type: whomping_willow}
+    - {x: 5, y: 10, type: whomping_willow}
+    - {x: 4, y: 11, type: whomping_willow}
+
+    # =============================================
+    # BOATHOUSE — southeast, near the lake
+    # =============================================
+    - {x: 18, y: 8, type: castle_wall}
+    - {x: 19, y: 8, type: castle_wall}
+    - {x: 18, y: 9, type: courtyard}
+    - {x: 19, y: 9, type: courtyard}
+    - {x: 18, y: 10, type: castle_wall}
+    - {x: 19, y: 10, type: castle_wall}
+
+    # =============================================
+    # BLACK LAKE — eastern edge (rows 10-15)
+    # =============================================
+    - {x: 20, y: 7, type: lake_edge}
+    - {x: 21, y: 7, type: lake_edge}
+    - {x: 20, y: 8, type: lake_edge}
+    - {x: 21, y: 8, type: lake_edge}
+    - {x: 20, y: 9, type: lake_edge}
+    - {x: 21, y: 9, type: lake_edge}
+    - {x: 20, y: 10, type: lake_edge}
+    - {x: 21, y: 10, type: lake_edge}
+    - {x: 19, y: 11, type: lake_edge}
+    - {x: 20, y: 11, type: lake_edge}
+    - {x: 21, y: 11, type: lake_edge}
+    - {x: 19, y: 12, type: lake_edge}
+    - {x: 20, y: 12, type: lake_edge}
+    - {x: 21, y: 12, type: lake_edge}
+    - {x: 19, y: 13, type: lake_edge}
+    - {x: 20, y: 13, type: lake_edge}
+    - {x: 21, y: 13, type: lake_edge}
+    - {x: 20, y: 14, type: lake_edge}
+    - {x: 21, y: 14, type: lake_edge}
+    - {x: 20, y: 15, type: lake_edge}
+    - {x: 21, y: 15, type: lake_edge}
+
+    # =============================================
+    # GROUNDS — open terrain south of the courtyard (rows 9-15)
+    # Battle approaches from here
+    # =============================================
+    # Some courtyard tiles in the south grounds
+    - {x: 8, y: 9, type: courtyard}
+    - {x: 9, y: 9, type: courtyard}
+    - {x: 10, y: 9, type: courtyard}
+    - {x: 11, y: 9, type: courtyard}
+    - {x: 12, y: 9, type: courtyard}
+
+    # Stone walls forming the outer grounds boundary (west)
+    - {x: 0, y: 11, type: castle_wall}
+    - {x: 0, y: 12, type: castle_wall}
+    - {x: 0, y: 13, type: castle_wall}
+
   forts:
     # Great Hall — blue's defensive position
-    - {x: 4, y: 1, owner: blue}
+    - {x: 10, y: 2, owner: blue}
 
 terrain_types:
   castle_wall:
@@ -119,6 +263,18 @@ terrain_types:
     description: |
       Muddy shore of the Black Lake. Difficult footing and no
       cover. The giant squid watches from the depths.
+
+  whomping_willow:
+    display_name: Whomping Willow
+    move_cost: 3
+    defense_bonus: -2
+    glyph: "W"
+    color: green
+    description: |
+      The Whomping Willow flails its branches at anything that
+      moves. Extremely dangerous to cross — heavy movement
+      penalty and severe defensive disadvantage. But it provides
+      a shortcut to the castle grounds.
 
 unit_classes:
   harry:
@@ -267,6 +423,7 @@ unit_classes:
     rng_min: 1
     rng_max: 3
     is_magic: true
+    tags: [flying]
     glyph: "V"
     color: bright_red
 
@@ -398,28 +555,38 @@ unit_classes:
 
 armies:
   blue:
-    # Defenders in the Great Hall and courtyard
-    - {class: harry, pos: {x: 4, y: 3}}
-    - {class: hermione, pos: {x: 5, y: 3}}
-    - {class: ron, pos: {x: 6, y: 3}}
-    - {class: neville, pos: {x: 4, y: 2}}
-    - {class: mcgonagall, pos: {x: 5, y: 1}}
-    - {class: kingsley, pos: {x: 6, y: 2}}
-    - {class: molly, pos: {x: 3, y: 2}}
+    # Defenders spread across the castle
+    # Harry in the corridor between Great Hall and courtyard
+    - {class: harry, pos: {x: 9, y: 4}}
+    # Hermione in the west wing
+    - {class: hermione, pos: {x: 4, y: 3}}
+    # Ron in the east wing
+    - {class: ron, pos: {x: 17, y: 4}}
+    # Neville at the courtyard gate
+    - {class: neville, pos: {x: 10, y: 7}}
+    # McGonagall in the Great Hall
+    - {class: mcgonagall, pos: {x: 11, y: 2}}
+    # Kingsley defending the covered bridge approach
+    - {class: kingsley, pos: {x: 3, y: 7}}
+    # Molly in the courtyard
+    - {class: molly, pos: {x: 13, y: 8}}
 
   red:
-    # Death Eaters approaching from the south
-    - {class: voldemort, pos: {x: 5, y: 9}}
-    - {class: bellatrix, pos: {x: 4, y: 8}}
-    - {class: lucius, pos: {x: 6, y: 8}}
-    - {class: dolohov, pos: {x: 3, y: 9}}
-    - {class: fenrir, pos: {x: 7, y: 9}}
-    - {class: nagini, pos: {x: 5, y: 8}}
-    - {class: yaxley, pos: {x: 2, y: 9}}
-    - {class: carrow, pos: {x: 7, y: 8}}
+    # Death Eaters approaching from THREE directions
+    # South main force — Voldemort leading
+    - {class: voldemort, pos: {x: 10, y: 15}}
+    - {class: nagini, pos: {x: 11, y: 14}}
+    - {class: dolohov, pos: {x: 8, y: 14}}
+    - {class: yaxley, pos: {x: 13, y: 15}}
+    # West bridge assault — Bellatrix leading
+    - {class: bellatrix, pos: {x: 0, y: 12}}
+    - {class: fenrir, pos: {x: 1, y: 13}}
+    # East lake approach — Lucius and Carrow
+    - {class: lucius, pos: {x: 17, y: 13}}
+    - {class: carrow, pos: {x: 18, y: 12}}
 
 rules:
-  max_turns: 14
+  max_turns: 16
   fog_of_war: false
   first_player: red
 

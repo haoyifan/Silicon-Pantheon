@@ -13,15 +13,58 @@ description: |
   Inspired by the Battle of Zion from The Matrix Revolutions.
 
 board:
-  width: 12
-  height: 10
+  width: 20
+  height: 14
   terrain:
-    # Breach ceiling — where sentinels break through (dangerous zone)
+    # === BREACH CEILING — two separate breach points (y=0-1) ===
+    # West breach
     - {x: 4, y: 0, type: breach_ceiling}
     - {x: 5, y: 0, type: breach_ceiling}
     - {x: 6, y: 0, type: breach_ceiling}
     - {x: 5, y: 1, type: breach_ceiling}
-    # Dock bay — main open area where the fighting happens
+    # East breach
+    - {x: 13, y: 0, type: breach_ceiling}
+    - {x: 14, y: 0, type: breach_ceiling}
+    - {x: 15, y: 0, type: breach_ceiling}
+    - {x: 14, y: 1, type: breach_ceiling}
+
+    # === CAVERN WALLS — impassable rock pillars throughout the dock ===
+    # Left cavern wall
+    - {x: 0, y: 0, type: cavern_wall}
+    - {x: 1, y: 0, type: cavern_wall}
+    - {x: 0, y: 1, type: cavern_wall}
+    - {x: 0, y: 5, type: cavern_wall}
+    - {x: 0, y: 6, type: cavern_wall}
+    # Right cavern wall
+    - {x: 18, y: 0, type: cavern_wall}
+    - {x: 19, y: 0, type: cavern_wall}
+    - {x: 19, y: 1, type: cavern_wall}
+    - {x: 19, y: 5, type: cavern_wall}
+    - {x: 19, y: 6, type: cavern_wall}
+    # Center rock pillars — force routing decisions
+    - {x: 9, y: 3, type: cavern_wall}
+    - {x: 10, y: 3, type: cavern_wall}
+    - {x: 9, y: 4, type: cavern_wall}
+    - {x: 10, y: 4, type: cavern_wall}
+
+    # === TUNNELS — flanking corridors along the sides (y=2-5) ===
+    # West tunnel
+    - {x: 0, y: 2, type: tunnel}
+    - {x: 0, y: 3, type: tunnel}
+    - {x: 0, y: 4, type: tunnel}
+    - {x: 1, y: 2, type: tunnel}
+    - {x: 1, y: 3, type: tunnel}
+    # East tunnel
+    - {x: 19, y: 2, type: tunnel}
+    - {x: 19, y: 3, type: tunnel}
+    - {x: 19, y: 4, type: tunnel}
+    - {x: 18, y: 2, type: tunnel}
+    - {x: 18, y: 3, type: tunnel}
+
+    # === DOCK BAY — open ground (y=2-6) ===
+    # West bay
+    - {x: 2, y: 2, type: dock_bay}
+    - {x: 3, y: 2, type: dock_bay}
     - {x: 2, y: 3, type: dock_bay}
     - {x: 3, y: 3, type: dock_bay}
     - {x: 4, y: 3, type: dock_bay}
@@ -29,43 +72,94 @@ board:
     - {x: 6, y: 3, type: dock_bay}
     - {x: 7, y: 3, type: dock_bay}
     - {x: 8, y: 3, type: dock_bay}
-    - {x: 9, y: 3, type: dock_bay}
-    - {x: 2, y: 4, type: dock_bay}
+    # East bay
+    - {x: 16, y: 2, type: dock_bay}
+    - {x: 17, y: 2, type: dock_bay}
+    - {x: 11, y: 3, type: dock_bay}
+    - {x: 12, y: 3, type: dock_bay}
+    - {x: 13, y: 3, type: dock_bay}
+    - {x: 14, y: 3, type: dock_bay}
+    - {x: 15, y: 3, type: dock_bay}
+    - {x: 16, y: 3, type: dock_bay}
+    - {x: 17, y: 3, type: dock_bay}
+    # Central bay (y=4-6)
     - {x: 3, y: 4, type: dock_bay}
     - {x: 4, y: 4, type: dock_bay}
     - {x: 5, y: 4, type: dock_bay}
     - {x: 6, y: 4, type: dock_bay}
     - {x: 7, y: 4, type: dock_bay}
     - {x: 8, y: 4, type: dock_bay}
-    - {x: 9, y: 4, type: dock_bay}
-    # Mech suit bays — defensive positions along the sides
-    - {x: 0, y: 5, type: mech_bay}
-    - {x: 1, y: 5, type: mech_bay}
-    - {x: 10, y: 5, type: mech_bay}
-    - {x: 11, y: 5, type: mech_bay}
-    - {x: 0, y: 6, type: mech_bay}
-    - {x: 11, y: 6, type: mech_bay}
-    # Tunnels — side approaches the machines can exploit
-    - {x: 0, y: 2, type: tunnel}
-    - {x: 0, y: 3, type: tunnel}
-    - {x: 0, y: 4, type: tunnel}
-    - {x: 11, y: 2, type: tunnel}
-    - {x: 11, y: 3, type: tunnel}
-    - {x: 11, y: 4, type: tunnel}
-    # Gate — the objective red must breach
-    - {x: 4, y: 8, type: gate}
-    - {x: 5, y: 8, type: gate}
-    - {x: 6, y: 8, type: gate}
-    - {x: 7, y: 8, type: gate}
-    # Defensive positions — elevated platforms with cover
-    - {x: 2, y: 7, type: defense_platform}
-    - {x: 3, y: 7, type: defense_platform}
-    - {x: 4, y: 7, type: defense_platform}
-    - {x: 5, y: 7, type: defense_platform}
-    - {x: 6, y: 7, type: defense_platform}
-    - {x: 7, y: 7, type: defense_platform}
-    - {x: 8, y: 7, type: defense_platform}
-    - {x: 9, y: 7, type: defense_platform}
+    - {x: 11, y: 4, type: dock_bay}
+    - {x: 12, y: 4, type: dock_bay}
+    - {x: 13, y: 4, type: dock_bay}
+    - {x: 14, y: 4, type: dock_bay}
+    - {x: 15, y: 4, type: dock_bay}
+    - {x: 16, y: 4, type: dock_bay}
+    - {x: 4, y: 5, type: dock_bay}
+    - {x: 5, y: 5, type: dock_bay}
+    - {x: 6, y: 5, type: dock_bay}
+    - {x: 7, y: 5, type: dock_bay}
+    - {x: 8, y: 5, type: dock_bay}
+    - {x: 9, y: 5, type: dock_bay}
+    - {x: 10, y: 5, type: dock_bay}
+    - {x: 11, y: 5, type: dock_bay}
+    - {x: 12, y: 5, type: dock_bay}
+    - {x: 13, y: 5, type: dock_bay}
+    - {x: 14, y: 5, type: dock_bay}
+    - {x: 15, y: 5, type: dock_bay}
+
+    # === LOADING CRANES — scattered cover in the open bay ===
+    - {x: 3, y: 5, type: loading_crane}
+    - {x: 16, y: 5, type: loading_crane}
+    - {x: 6, y: 6, type: loading_crane}
+    - {x: 13, y: 6, type: loading_crane}
+
+    # === AMMO PLATFORMS — resupply positions with cover ===
+    - {x: 4, y: 7, type: ammo_platform}
+    - {x: 5, y: 7, type: ammo_platform}
+    - {x: 14, y: 7, type: ammo_platform}
+    - {x: 15, y: 7, type: ammo_platform}
+
+    # === MECH BAYS — fortified APU positions (y=8-9) ===
+    # West mech bay cluster
+    - {x: 0, y: 8, type: mech_bay}
+    - {x: 1, y: 8, type: mech_bay}
+    - {x: 2, y: 8, type: mech_bay}
+    - {x: 0, y: 9, type: mech_bay}
+    - {x: 1, y: 9, type: mech_bay}
+    # Center mech bay
+    - {x: 8, y: 8, type: mech_bay}
+    - {x: 9, y: 8, type: mech_bay}
+    - {x: 10, y: 8, type: mech_bay}
+    - {x: 11, y: 8, type: mech_bay}
+    # East mech bay cluster
+    - {x: 17, y: 8, type: mech_bay}
+    - {x: 18, y: 8, type: mech_bay}
+    - {x: 19, y: 8, type: mech_bay}
+    - {x: 18, y: 9, type: mech_bay}
+    - {x: 19, y: 9, type: mech_bay}
+
+    # === DEFENSE PLATFORMS — elevated firing line (y=10) ===
+    - {x: 2, y: 10, type: defense_platform}
+    - {x: 3, y: 10, type: defense_platform}
+    - {x: 4, y: 10, type: defense_platform}
+    - {x: 5, y: 10, type: defense_platform}
+    - {x: 7, y: 10, type: defense_platform}
+    - {x: 8, y: 10, type: defense_platform}
+    - {x: 11, y: 10, type: defense_platform}
+    - {x: 12, y: 10, type: defense_platform}
+    - {x: 14, y: 10, type: defense_platform}
+    - {x: 15, y: 10, type: defense_platform}
+    - {x: 16, y: 10, type: defense_platform}
+    - {x: 17, y: 10, type: defense_platform}
+
+    # === GATE — the final objective (y=12) ===
+    - {x: 7, y: 12, type: gate}
+    - {x: 8, y: 12, type: gate}
+    - {x: 9, y: 12, type: gate}
+    - {x: 10, y: 12, type: gate}
+    - {x: 11, y: 12, type: gate}
+    - {x: 12, y: 12, type: gate}
   forts: []
 
 terrain_types:
@@ -90,6 +184,38 @@ terrain_types:
       The cavernous main dock of Zion. Open ground beneath a
       shattered ceiling — sentinels pour through the breach above.
       No cover in the open bay.
+
+  cavern_wall:
+    display_name: Cavern Wall
+    move_cost: 99
+    defense_bonus: 0
+    passable: false
+    glyph: "#"
+    color: bright_black
+    description: |
+      Solid rock walls of the dock cavern. Impassable natural
+      stone that channels movement through the open bays.
+
+  loading_crane:
+    display_name: Loading Crane
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "C"
+    color: yellow
+    description: |
+      Massive industrial cranes used for loading hovercrafts.
+      The steel framework provides solid cover but is difficult
+      to move through.
+
+  ammo_platform:
+    display_name: Ammo Platform
+    move_cost: 1
+    defense_bonus: 2
+    glyph: "A"
+    color: bright_yellow
+    description: |
+      Ammunition resupply platforms stacked with crates of shells.
+      Good cover and the ammunition keeps the APUs firing.
 
   mech_bay:
     display_name: Mech Bay
@@ -366,31 +492,28 @@ unit_classes:
 armies:
   blue:
     # Niobe — VIP, near the gate
-    - {class: niobe, pos: {x: 6, y: 8}}
-    # Mifune — center of the defensive line
-    - {class: mifune, pos: {x: 6, y: 6}}
-    # Zee — support behind the line
-    - {class: zee, pos: {x: 4, y: 7}}
-    # Kid — mobile defender
-    - {class: kid, pos: {x: 3, y: 6}}
-    # Link — operator position
-    - {class: link, pos: {x: 8, y: 7}}
+    - {class: niobe, pos: {x: 9, y: 12}}
+    # Mifune — center mech bay, anchoring the line
+    - {class: mifune, pos: {x: 9, y: 8}}
+    # Zee — support behind center line
+    - {class: zee, pos: {x: 8, y: 10}}
+    # Kid — mobile defender, west flank
+    - {class: kid, pos: {x: 3, y: 10}}
+    # Link — operator position, east platform
+    - {class: link, pos: {x: 15, y: 10}}
 
   red:
-    # Sentinel Alpha — leading the swarm through the breach
+    # West breach assault
     - {class: sentinel_alpha, pos: {x: 5, y: 1}}
-    # Bomber — ranged threat
-    - {class: sentinel_bomber, pos: {x: 3, y: 1}}
-    # Tunneler — flanking through tunnels
-    - {class: sentinel_tunneler, pos: {x: 0, y: 1}}
-    # Swarm — overwhelming numbers
-    - {class: sentinel_swarm, pos: {x: 8, y: 1}}
-    # Diggers — slow heavy hitters
-    - {class: digger_heavy, pos: {x: 4, y: 1}}
-    - {class: digger_light, pos: {x: 7, y: 2}}
-    # Flyers — fast attackers
-    - {class: flyer_interceptor, pos: {x: 2, y: 2}}
-    - {class: flyer_hunter, pos: {x: 10, y: 2}}
+    - {class: sentinel_bomber, pos: {x: 4, y: 0}}
+    - {class: digger_heavy, pos: {x: 6, y: 0}}
+    - {class: flyer_interceptor, pos: {x: 3, y: 2}}
+    # East breach assault
+    - {class: sentinel_swarm, pos: {x: 14, y: 1}}
+    - {class: flyer_hunter, pos: {x: 15, y: 0}}
+    - {class: digger_light, pos: {x: 13, y: 2}}
+    # Tunnel flankers
+    - {class: sentinel_tunneler, pos: {x: 0, y: 2}}
 
 rules:
   max_turns: 10
@@ -399,8 +522,8 @@ rules:
 
 win_conditions:
   # Any red unit reaches the gate -> red wins (breach)
-  - {type: reach_tile, team: red, pos: {x: 5, y: 8}}
-  - {type: reach_tile, team: red, pos: {x: 6, y: 8}}
+  - {type: reach_tile, team: red, pos: {x: 9, y: 12}}
+  - {type: reach_tile, team: red, pos: {x: 10, y: 12}}
   # Niobe dies -> blue loses (no one to relay Neo's signal)
   - {type: protect_unit, unit_id: u_b_niobe_1, owning_team: blue}
   # Niobe survives the turn cap -> Neo succeeds, blue wins

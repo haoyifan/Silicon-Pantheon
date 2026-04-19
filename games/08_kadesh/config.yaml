@@ -16,36 +16,114 @@ description: |
   Inspired by the Battle of Kadesh (1274 BC), ancient Egypt vs Hittite Empire.
 
 board:
-  width: 10
-  height: 8
+  width: 20
+  height: 16
   terrain:
-    # Orontes River — runs east-west across the center (row 3).
-    # Mostly impassable with two ford crossings.
-    - {x: 0, y: 3, type: river}
-    - {x: 1, y: 3, type: river}
-    - {x: 2, y: 3, type: river}
-    - {x: 3, y: 3, type: ford}      # western ford
-    - {x: 4, y: 3, type: river}
-    - {x: 5, y: 3, type: river}
-    - {x: 6, y: 3, type: ford}      # eastern ford
-    - {x: 7, y: 3, type: river}
-    # x=8,9 at y=3 are dust_cloud (eastern bank ambush zone)
-    - {x: 8, y: 3, type: dust_cloud}
-    - {x: 9, y: 3, type: dust_cloud}
-    # Hills on the western bank — rough terrain, good defensive ground
-    - {x: 0, y: 2, type: hill}
-    - {x: 1, y: 2, type: hill}
-    - {x: 0, y: 5, type: hill}
-    # Hills on the eastern side
-    - {x: 8, y: 5, type: hill}
-    - {x: 9, y: 5, type: hill}
-    # Dust cloud on the eastern flank — conceals the chariot ambush
-    - {x: 8, y: 4, type: dust_cloud}
-    - {x: 9, y: 4, type: dust_cloud}
-    # Open plains fill the rest of the map (default terrain)
+    # =============================================
+    # Orontes River — major feature, runs roughly east-west
+    # across rows 6-8, bending south on the west side
+    # =============================================
+    # Western bend of the Orontes (deeper, wider)
+    - {x: 0, y: 6, type: river}
+    - {x: 1, y: 6, type: river}
+    - {x: 2, y: 6, type: river}
+    - {x: 0, y: 7, type: river}
+    - {x: 1, y: 7, type: river}
+    - {x: 2, y: 7, type: river}
+    - {x: 0, y: 8, type: river}
+    - {x: 1, y: 8, type: river}
+    - {x: 2, y: 8, type: river}
+
+    # Western ford
+    - {x: 3, y: 7, type: ford}
+    - {x: 3, y: 8, type: ford}
+
+    # Central river (deep)
+    - {x: 3, y: 6, type: river}
+    - {x: 4, y: 6, type: river}
+    - {x: 5, y: 6, type: river}
+    - {x: 6, y: 6, type: river}
+    - {x: 4, y: 7, type: river}
+    - {x: 5, y: 7, type: river}
+    - {x: 6, y: 7, type: river}
+
+    # Central ford (main crossing)
+    - {x: 7, y: 6, type: ford}
+    - {x: 7, y: 7, type: ford}
+
+    # East-central river
+    - {x: 8, y: 6, type: river}
+    - {x: 9, y: 6, type: river}
+    - {x: 10, y: 6, type: river}
+    - {x: 11, y: 6, type: river}
+    - {x: 8, y: 7, type: river}
+    - {x: 9, y: 7, type: river}
+    - {x: 10, y: 7, type: river}
+    - {x: 11, y: 7, type: river}
+
+    # Eastern ford (flanking route)
+    - {x: 12, y: 6, type: ford}
+    - {x: 12, y: 7, type: ford}
+
+    # Far eastern river
+    - {x: 13, y: 6, type: river}
+    - {x: 14, y: 6, type: river}
+    - {x: 15, y: 6, type: river}
+    - {x: 16, y: 6, type: river}
+    - {x: 13, y: 7, type: river}
+    - {x: 14, y: 7, type: river}
+    - {x: 15, y: 7, type: river}
+    - {x: 16, y: 7, type: river}
+
+    # River continues to east edge
+    - {x: 17, y: 6, type: river}
+    - {x: 18, y: 6, type: river}
+    - {x: 19, y: 6, type: river}
+    - {x: 17, y: 7, type: river}
+    - {x: 18, y: 7, type: river}
+    - {x: 19, y: 7, type: river}
+
+    # =============================================
+    # Hills — rocky elevated ground
+    # =============================================
+    # Western hills (Egyptian left flank)
+    - {x: 0, y: 10, type: hill}
+    - {x: 1, y: 10, type: hill}
+    - {x: 0, y: 11, type: hill}
+    - {x: 1, y: 11, type: hill}
+
+    # Eastern hills near Kadesh
+    - {x: 16, y: 2, type: hill}
+    - {x: 17, y: 2, type: hill}
+    - {x: 18, y: 2, type: hill}
+    - {x: 16, y: 3, type: hill}
+    - {x: 17, y: 3, type: hill}
+
+    # Central hills (north of river)
+    - {x: 5, y: 3, type: hill}
+    - {x: 6, y: 3, type: hill}
+    - {x: 5, y: 4, type: hill}
+
+    # =============================================
+    # Dust clouds — concealing the Hittite ambush on the east
+    # =============================================
+    - {x: 17, y: 8, type: dust_cloud}
+    - {x: 18, y: 8, type: dust_cloud}
+    - {x: 19, y: 8, type: dust_cloud}
+    - {x: 17, y: 9, type: dust_cloud}
+    - {x: 18, y: 9, type: dust_cloud}
+    - {x: 19, y: 9, type: dust_cloud}
+    - {x: 18, y: 10, type: dust_cloud}
+    - {x: 19, y: 10, type: dust_cloud}
+
+    # Secondary dust near central-east
+    - {x: 15, y: 9, type: dust_cloud}
+    - {x: 16, y: 9, type: dust_cloud}
+    - {x: 16, y: 10, type: dust_cloud}
+
   forts:
     # Kadesh fortress — Red-owned, north side of the river
-    - {x: 5, y: 1, owner: red}
+    - {x: 10, y: 2, owner: red}
 
 terrain_types:
   river:
@@ -329,25 +407,37 @@ unit_classes:
 
 armies:
   blue:
-    # Egyptian column — south side of the Orontes
-    - {class: ramses, pos: {x: 4, y: 6}}
-    - {class: amenmesse, pos: {x: 3, y: 7}}
-    - {class: khaemwaset, pos: {x: 5, y: 7}}
-    - {class: nubian_scout, pos: {x: 7, y: 6}}
-    - {class: sherden_guard, pos: {x: 3, y: 6}}
-    - {class: royal_charioteer, pos: {x: 5, y: 6}}
+    # Egyptian column — strung out on the south side of the Orontes
+    # Ramses with his Amun division, marching north
+    - {class: ramses, pos: {x: 8, y: 13}}
+    # Amenmesse guarding the western flank
+    - {class: amenmesse, pos: {x: 3, y: 12}}
+    # Khaemwaset with archers, center-south
+    - {class: khaemwaset, pos: {x: 10, y: 14}}
+    # Nubian scout, far ahead scouting the crossing
+    - {class: nubian_scout, pos: {x: 7, y: 9}}
+    # Sherden bodyguard with Ramses
+    - {class: sherden_guard, pos: {x: 9, y: 13}}
+    # Royal charioteer on the open eastern flank
+    - {class: royal_charioteer, pos: {x: 14, y: 12}}
   red:
-    # Hittite force — north side, near Kadesh fortress
-    - {class: muwatalli, pos: {x: 5, y: 0}}
-    - {class: hattusili, pos: {x: 4, y: 1}}
-    - {class: urhi_teshub, pos: {x: 7, y: 1}}
-    - {class: hittite_champion, pos: {x: 6, y: 1}}
-    - {class: hittite_archer, pos: {x: 3, y: 2}}
-    - {class: hittite_chariot_captain, pos: {x: 8, y: 2}}
-    - {class: syrian_ally, pos: {x: 9, y: 2}}
-    # Ambush chariots hidden in the dust cloud
-    - {class: hittite_chariot_captain, pos: {x: 9, y: 4}}
-    - {class: hittite_chariot_captain, pos: {x: 9, y: 3}}
+    # Muwatalli behind Kadesh fortress with reserves
+    - {class: muwatalli, pos: {x: 10, y: 1}}
+    # Hattusili commanding infantry north of the river
+    - {class: hattusili, pos: {x: 6, y: 2}}
+    # Urhi-Teshub with chariot force, ready to cross
+    - {class: urhi_teshub, pos: {x: 13, y: 4}}
+    # Champion guarding the central ford from the north
+    - {class: hittite_champion, pos: {x: 8, y: 4}}
+    # Archer on the hills overlooking the western ford
+    - {class: hittite_archer, pos: {x: 5, y: 3}}
+    # Chariot captain at Kadesh
+    - {class: hittite_chariot_captain, pos: {x: 12, y: 2}}
+    # Syrian ally positioned west
+    - {class: syrian_ally, pos: {x: 2, y: 4}}
+    # Ambush chariots hidden in the eastern dust clouds
+    - {class: hittite_chariot_captain, pos: {x: 18, y: 9}}
+    - {class: hittite_chariot_captain, pos: {x: 19, y: 8}}
 
 rules:
   max_turns: 30

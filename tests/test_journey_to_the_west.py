@@ -7,8 +7,8 @@ from silicon_pantheon.server.engine.scenarios import load_scenario
 
 def test_jttw_loads():
     state = load_scenario("journey_to_the_west")
-    assert state.board.width == 14
-    assert state.board.height == 9
+    assert state.board.width == 22
+    assert state.board.height == 14
     # Blue pilgrims + red monsters.
     blue_ids = {u.id for u in state.units.values() if u.owner.value == "blue"}
     red_ids = {u.id for u in state.units.values() if u.owner.value == "red"}

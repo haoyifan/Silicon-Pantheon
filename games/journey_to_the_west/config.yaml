@@ -8,43 +8,130 @@ description: |
   eastward to Thunder Temple to retrieve the sutras. Hungry demons bar
   their path.
 
-  Blue (pilgrims) wins by getting Tang Monk to the temple at (13, 4),
+  Blue (pilgrims) wins by getting Tang Monk to the temple at (21, 6),
   OR by wiping out all the monsters. Blue loses if Tang Monk dies.
   Inspired by Journey to the West (西游记) by Wu Cheng'en, Chinese classical literature.
 
 board:
-  width: 14
-  height: 9
+  width: 22
+  height: 14
   terrain:
-    # Mountain passes along the north / south edges
+    # === WESTERN MOUNTAINS — impassable peaks framing the start (y=0-2, x=0-3) ===
     - {x: 0, y: 0, type: mountain}
     - {x: 1, y: 0, type: mountain}
-    - {x: 12, y: 0, type: mountain}
-    - {x: 13, y: 0, type: mountain}
-    - {x: 0, y: 8, type: mountain}
-    - {x: 1, y: 8, type: mountain}
-    - {x: 12, y: 8, type: mountain}
-    - {x: 13, y: 8, type: mountain}
-    # Forest patches (cover for archers / ambush sites)
-    - {x: 3, y: 2, type: forest}
-    - {x: 3, y: 6, type: forest}
-    - {x: 7, y: 1, type: forest}
-    - {x: 7, y: 7, type: forest}
-    - {x: 10, y: 3, type: forest}
-    - {x: 10, y: 5, type: forest}
-    # The river — impassable to most units
-    - {x: 6, y: 2, type: river}
-    - {x: 6, y: 3, type: river}
-    - {x: 6, y: 5, type: river}
-    - {x: 6, y: 6, type: river}
-    # Bridge at center — narrow chokepoint
-    - {x: 6, y: 4, type: bridge}
-    # Ford — second river crossing, slower but safer detour
-    - {x: 6, y: 7, type: ford}
-    # Poison swamp — slow, hurts units standing in it
-    - {x: 9, y: 4, type: swamp}
-    # Thunder Temple goal tile
-    - {x: 13, y: 4, type: temple}
+    - {x: 2, y: 0, type: mountain}
+    - {x: 0, y: 1, type: mountain}
+    - {x: 1, y: 1, type: mountain}
+    - {x: 0, y: 2, type: mountain}
+    # Southern mountains mirroring
+    - {x: 0, y: 11, type: mountain}
+    - {x: 1, y: 11, type: mountain}
+    - {x: 0, y: 12, type: mountain}
+    - {x: 1, y: 12, type: mountain}
+    - {x: 2, y: 12, type: mountain}
+    - {x: 0, y: 13, type: mountain}
+    - {x: 1, y: 13, type: mountain}
+    - {x: 2, y: 13, type: mountain}
+    - {x: 3, y: 13, type: mountain}
+
+    # === MOUNTAIN PASS — narrow corridor through peaks (x=3-5) ===
+    - {x: 3, y: 0, type: mountain}
+    - {x: 4, y: 0, type: mountain}
+    - {x: 5, y: 0, type: mountain}
+    - {x: 5, y: 1, type: mountain}
+    - {x: 5, y: 2, type: mountain}
+    - {x: 4, y: 12, type: mountain}
+    - {x: 5, y: 12, type: mountain}
+    - {x: 5, y: 13, type: mountain}
+    - {x: 5, y: 11, type: mountain}
+
+    # === WESTERN FOREST — first ambush zone (x=3-6) ===
+    - {x: 3, y: 3, type: forest}
+    - {x: 4, y: 3, type: forest}
+    - {x: 3, y: 4, type: forest}
+    - {x: 4, y: 4, type: forest}
+    - {x: 3, y: 9, type: forest}
+    - {x: 4, y: 9, type: forest}
+    - {x: 3, y: 10, type: forest}
+    - {x: 4, y: 10, type: forest}
+    - {x: 6, y: 2, type: forest}
+    - {x: 6, y: 11, type: forest}
+
+    # === THE RIVER — major barrier running north-south (x=9) ===
+    - {x: 9, y: 0, type: river}
+    - {x: 9, y: 1, type: river}
+    - {x: 9, y: 2, type: river}
+    - {x: 9, y: 3, type: river}
+    - {x: 9, y: 4, type: river}
+    # Bridge at y=5 (center)
+    - {x: 9, y: 6, type: river}
+    - {x: 9, y: 7, type: river}
+    - {x: 9, y: 8, type: river}
+    # Ford at y=9 (southern crossing)
+    - {x: 9, y: 10, type: river}
+    - {x: 9, y: 11, type: river}
+    - {x: 9, y: 12, type: river}
+    - {x: 9, y: 13, type: river}
+
+    # === BRIDGE — main chokepoint ===
+    - {x: 9, y: 5, type: bridge}
+
+    # === FORD — secondary crossing, slower ===
+    - {x: 9, y: 9, type: ford}
+
+    # === MID-FIELD FORESTS — ambush positions east of river ===
+    - {x: 7, y: 3, type: forest}
+    - {x: 8, y: 3, type: forest}
+    - {x: 7, y: 10, type: forest}
+    - {x: 8, y: 10, type: forest}
+    - {x: 11, y: 2, type: forest}
+    - {x: 12, y: 2, type: forest}
+    - {x: 11, y: 11, type: forest}
+    - {x: 12, y: 11, type: forest}
+
+    # === DEMON TERRITORY — eastern mountains and forests (x=13-17) ===
+    # Mountain barriers creating corridors
+    - {x: 14, y: 0, type: mountain}
+    - {x: 15, y: 0, type: mountain}
+    - {x: 14, y: 1, type: mountain}
+    - {x: 14, y: 13, type: mountain}
+    - {x: 15, y: 13, type: mountain}
+    - {x: 14, y: 12, type: mountain}
+    # Demon forests
+    - {x: 13, y: 4, type: forest}
+    - {x: 14, y: 4, type: forest}
+    - {x: 13, y: 9, type: forest}
+    - {x: 14, y: 9, type: forest}
+    - {x: 15, y: 6, type: forest}
+    - {x: 15, y: 7, type: forest}
+
+    # === POISON SWAMP — dangerous shortcut through demon territory ===
+    - {x: 12, y: 6, type: swamp}
+    - {x: 12, y: 7, type: swamp}
+    - {x: 13, y: 6, type: swamp}
+    - {x: 13, y: 7, type: swamp}
+
+    # === EASTERN MOUNTAINS — final barrier before temple ===
+    - {x: 17, y: 0, type: mountain}
+    - {x: 18, y: 0, type: mountain}
+    - {x: 19, y: 0, type: mountain}
+    - {x: 17, y: 1, type: mountain}
+    - {x: 17, y: 2, type: mountain}
+    - {x: 17, y: 11, type: mountain}
+    - {x: 17, y: 12, type: mountain}
+    - {x: 17, y: 13, type: mountain}
+    - {x: 18, y: 13, type: mountain}
+    - {x: 19, y: 13, type: mountain}
+
+    # === THUNDER TEMPLE — the goal (x=20-21) ===
+    - {x: 20, y: 5, type: temple}
+    - {x: 21, y: 5, type: temple}
+    - {x: 20, y: 6, type: temple}
+    - {x: 21, y: 6, type: temple}
+    - {x: 20, y: 7, type: temple}
+    - {x: 21, y: 7, type: temple}
+    - {x: 20, y: 8, type: temple}
+    - {x: 21, y: 8, type: temple}
   forts: []
 
 terrain_types:
@@ -144,7 +231,7 @@ unit_classes:
     rng_max: 1
     move: 5
     can_enter_mountain: true
-    tags: [hero, monkey, immortal]
+    tags: [hero, monkey, immortal, flying]
     sight: 4
     glyph: S
     color: cyan
@@ -304,20 +391,26 @@ unit_classes:
 
 armies:
   blue:
-    - {class: tang_monk,   pos: {x: 0, y: 4}}
-    - {class: sun_wukong,  pos: {x: 0, y: 3}}
-    - {class: zhu_bajie,   pos: {x: 1, y: 5}}
-    - {class: sha_wujing,  pos: {x: 0, y: 5}}
-    - {class: bai_long_ma, pos: {x: 1, y: 4}}
+    # Pilgrims start in the western mountain pass
+    - {class: tang_monk,   pos: {x: 1, y: 6}}
+    - {class: sun_wukong,  pos: {x: 2, y: 5}}
+    - {class: zhu_bajie,   pos: {x: 2, y: 8}}
+    - {class: sha_wujing,  pos: {x: 1, y: 7}}
+    - {class: bai_long_ma, pos: {x: 2, y: 6}}
   red:
-    - {class: demon_king,       pos: {x: 12, y: 4}}
-    - {class: bull_demon,       pos: {x: 11, y: 3}}
-    - {class: white_bone_demon, pos: {x: 11, y: 5}}
-    - {class: spider_spirit,    pos: {x: 8, y: 2}}
-    - {class: spider_spirit,    pos: {x: 8, y: 6}}
-    - {class: skeleton,         pos: {x: 5, y: 1}}
-    - {class: skeleton,         pos: {x: 5, y: 7}}
-    - {class: skeleton,         pos: {x: 9, y: 1}}
+    # Demon King — guarding the approach to the temple
+    - {class: demon_king,       pos: {x: 16, y: 6}}
+    # Bull Demon — blocking the bridge
+    - {class: bull_demon,       pos: {x: 10, y: 5}}
+    # White-Bone Demoness — in the demon forest, ranged ambush
+    - {class: white_bone_demon, pos: {x: 14, y: 4}}
+    # Spider spirits — fast ambushers at the flanks
+    - {class: spider_spirit,    pos: {x: 8, y: 3}}
+    - {class: spider_spirit,    pos: {x: 8, y: 10}}
+    # Skeletons — forward scouts and bridge guards
+    - {class: skeleton,         pos: {x: 6, y: 4}}
+    - {class: skeleton,         pos: {x: 6, y: 9}}
+    - {class: skeleton,         pos: {x: 11, y: 8}}
 
 rules:
   max_turns: 40
@@ -326,7 +419,7 @@ rules:
 
 win_conditions:
   - {type: protect_unit, unit_id: u_b_tang_monk_1, owning_team: blue}
-  - {type: reach_tile,   team: blue, pos: {x: 13, y: 4}, unit_id: u_b_tang_monk_1}
+  - {type: reach_tile,   team: blue, pos: {x: 21, y: 6}, unit_id: u_b_tang_monk_1}
   - {type: eliminate_all_enemy_units}
   - {type: max_turns_draw}
 

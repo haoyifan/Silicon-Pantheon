@@ -11,62 +11,171 @@ description: |
   kill the Night King. Survive twelve turns and dawn comes.
   Inspired by the Long Night from Game of Thrones by George R.R. Martin.
 
-#  MAP LAYOUT  (10 wide × 10 tall, y=0 is north)
+# ──────────────────────────────────────────────────────────
+#  MAP LAYOUT  (22 wide x 16 tall, y=0 is north)
 #
-#  y=0-1  Dark plains (open ground, Dead staging area)
-#  y=2    Frozen lake (high move cost, slippery)
-#  y=3-4  Open field / approach
-#  y=5    Fire trench (impassable — gaps at x=2 and x=7)
-#  y=6-7  Godswood forest (center), courtyard flanks
-#  y=8-9  Winterfell walls (y=8, +3 DEF — gate at x=4,5)
-#         Heart tree at (5, 7) — Red's reach_tile target
+#  y=0-1   Vast dark plains — Dead staging far north
+#  y=2     Scattered dead — open ground
+#  y=3     Frozen lake band across center
+#  y=4     Open approach
+#  y=5     Open field
+#  y=6-7   Fire trench (impassable, gaps at x=4, x=11, x=17)
+#  y=8     Outer courtyard / open ground
+#  y=9     Winterfell walls (impassable, gates at x=5-6, x=15-16)
+#  y=10    Inner courtyard
+#  y=11    Godswood forest (center), crypts (left), armory (right)
+#  y=12    Godswood continues — heart tree at (11, 12)
+#  y=13    Inner walls (impassable, gap at x=10-11)
+#  y=14    Keep interior
+#  y=15    Keep rear
+# ──────────────────────────────────────────────────────────
 
 board:
-  width: 10
-  height: 10
+  width: 22
+  height: 16
   terrain:
-    # ── Dark plains (y=0-1) — open, no special terrain ──
+    # ── Frozen lake (y=3) — treacherous ice band ──
+    - {x: 3, y: 3, type: frozen_lake}
+    - {x: 4, y: 3, type: frozen_lake}
+    - {x: 5, y: 3, type: frozen_lake}
+    - {x: 6, y: 3, type: frozen_lake}
+    - {x: 7, y: 3, type: frozen_lake}
+    - {x: 8, y: 3, type: frozen_lake}
+    - {x: 9, y: 3, type: frozen_lake}
+    - {x: 12, y: 3, type: frozen_lake}
+    - {x: 13, y: 3, type: frozen_lake}
+    - {x: 14, y: 3, type: frozen_lake}
+    - {x: 15, y: 3, type: frozen_lake}
+    - {x: 16, y: 3, type: frozen_lake}
+    - {x: 17, y: 3, type: frozen_lake}
+    - {x: 18, y: 3, type: frozen_lake}
 
-    # ── Frozen lake (y=2) — slippery, high move cost ──
-    - {x: 2, y: 2, type: frozen_lake}
-    - {x: 3, y: 2, type: frozen_lake}
-    - {x: 4, y: 2, type: frozen_lake}
-    - {x: 5, y: 2, type: frozen_lake}
-    - {x: 6, y: 2, type: frozen_lake}
-    - {x: 7, y: 2, type: frozen_lake}
+    # ── Fire trench (y=6-7) — two rows, impassable with gaps ──
+    # Row y=6
+    - {x: 0, y: 6, type: fire_trench}
+    - {x: 1, y: 6, type: fire_trench}
+    - {x: 2, y: 6, type: fire_trench}
+    - {x: 3, y: 6, type: fire_trench}
+    # gap at x=4
+    - {x: 5, y: 6, type: fire_trench}
+    - {x: 6, y: 6, type: fire_trench}
+    - {x: 7, y: 6, type: fire_trench}
+    - {x: 8, y: 6, type: fire_trench}
+    - {x: 9, y: 6, type: fire_trench}
+    - {x: 10, y: 6, type: fire_trench}
+    # gap at x=11
+    - {x: 12, y: 6, type: fire_trench}
+    - {x: 13, y: 6, type: fire_trench}
+    - {x: 14, y: 6, type: fire_trench}
+    - {x: 15, y: 6, type: fire_trench}
+    - {x: 16, y: 6, type: fire_trench}
+    # gap at x=17
+    - {x: 18, y: 6, type: fire_trench}
+    - {x: 19, y: 6, type: fire_trench}
+    - {x: 20, y: 6, type: fire_trench}
+    - {x: 21, y: 6, type: fire_trench}
 
-    # ── Fire trench (y=5) — impassable, gaps at x=2 and x=7 ──
-    - {x: 0, y: 5, type: fire_trench}
-    - {x: 1, y: 5, type: fire_trench}
-    # gap at x=2
-    - {x: 3, y: 5, type: fire_trench}
-    - {x: 4, y: 5, type: fire_trench}
-    - {x: 5, y: 5, type: fire_trench}
-    - {x: 6, y: 5, type: fire_trench}
-    # gap at x=7
-    - {x: 8, y: 5, type: fire_trench}
-    - {x: 9, y: 5, type: fire_trench}
+    # Row y=7 — second trench line, offset gaps
+    - {x: 0, y: 7, type: fire_trench}
+    - {x: 1, y: 7, type: fire_trench}
+    - {x: 2, y: 7, type: fire_trench}
+    - {x: 3, y: 7, type: fire_trench}
+    # gap at x=4
+    - {x: 5, y: 7, type: fire_trench}
+    - {x: 6, y: 7, type: fire_trench}
+    - {x: 7, y: 7, type: fire_trench}
+    - {x: 8, y: 7, type: fire_trench}
+    - {x: 9, y: 7, type: fire_trench}
+    - {x: 10, y: 7, type: fire_trench}
+    # gap at x=11
+    - {x: 12, y: 7, type: fire_trench}
+    - {x: 13, y: 7, type: fire_trench}
+    - {x: 14, y: 7, type: fire_trench}
+    - {x: 15, y: 7, type: fire_trench}
+    - {x: 16, y: 7, type: fire_trench}
+    # gap at x=17
+    - {x: 18, y: 7, type: fire_trench}
+    - {x: 19, y: 7, type: fire_trench}
+    - {x: 20, y: 7, type: fire_trench}
+    - {x: 21, y: 7, type: fire_trench}
 
-    # ── Godswood forest (y=6-7, center) ──
-    - {x: 3, y: 6, type: godswood}
-    - {x: 4, y: 6, type: godswood}
-    - {x: 5, y: 6, type: godswood}
-    - {x: 6, y: 6, type: godswood}
-    - {x: 3, y: 7, type: godswood}
-    - {x: 4, y: 7, type: godswood}
-    - {x: 5, y: 7, type: godswood}  # Heart tree tile
-    - {x: 6, y: 7, type: godswood}
+    # ── Winterfell outer walls (y=9) — gates at x=5-6 and x=15-16 ──
+    - {x: 0, y: 9, type: winterfell_wall}
+    - {x: 1, y: 9, type: winterfell_wall}
+    - {x: 2, y: 9, type: winterfell_wall}
+    - {x: 3, y: 9, type: winterfell_wall}
+    - {x: 4, y: 9, type: winterfell_wall}
+    # gate at x=5,6
+    - {x: 7, y: 9, type: winterfell_wall}
+    - {x: 8, y: 9, type: winterfell_wall}
+    - {x: 9, y: 9, type: winterfell_wall}
+    - {x: 10, y: 9, type: winterfell_wall}
+    - {x: 11, y: 9, type: winterfell_wall}
+    - {x: 12, y: 9, type: winterfell_wall}
+    - {x: 13, y: 9, type: winterfell_wall}
+    - {x: 14, y: 9, type: winterfell_wall}
+    # gate at x=15,16
+    - {x: 17, y: 9, type: winterfell_wall}
+    - {x: 18, y: 9, type: winterfell_wall}
+    - {x: 19, y: 9, type: winterfell_wall}
+    - {x: 20, y: 9, type: winterfell_wall}
+    - {x: 21, y: 9, type: winterfell_wall}
 
-    # ── Winterfell walls (y=8) — +3 DEF, gate at x=4,5 ──
-    - {x: 0, y: 8, type: winterfell_wall}
-    - {x: 1, y: 8, type: winterfell_wall}
-    - {x: 2, y: 8, type: winterfell_wall}
-    - {x: 3, y: 8, type: winterfell_wall}
-    # gate at x=4,5 — no wall
-    - {x: 6, y: 8, type: winterfell_wall}
-    - {x: 7, y: 8, type: winterfell_wall}
-    - {x: 8, y: 8, type: winterfell_wall}
-    - {x: 9, y: 8, type: winterfell_wall}
+    # ── Crypts (x=1-3, y=11-12) — left wing ──
+    - {x: 1, y: 11, type: crypts}
+    - {x: 2, y: 11, type: crypts}
+    - {x: 3, y: 11, type: crypts}
+    - {x: 1, y: 12, type: crypts}
+    - {x: 2, y: 12, type: crypts}
+    - {x: 3, y: 12, type: crypts}
+
+    # ── Godswood (x=8-14, y=11-12) — center, sacred grove ──
+    - {x: 8, y: 11, type: godswood}
+    - {x: 9, y: 11, type: godswood}
+    - {x: 10, y: 11, type: godswood}
+    - {x: 11, y: 11, type: godswood}
+    - {x: 12, y: 11, type: godswood}
+    - {x: 13, y: 11, type: godswood}
+    - {x: 14, y: 11, type: godswood}
+    - {x: 8, y: 12, type: godswood}
+    - {x: 9, y: 12, type: godswood}
+    - {x: 10, y: 12, type: godswood}
+    - {x: 11, y: 12, type: godswood}  # Heart tree
+    - {x: 12, y: 12, type: godswood}
+    - {x: 13, y: 12, type: godswood}
+    - {x: 14, y: 12, type: godswood}
+
+    # ── Armory / smithy (x=18-20, y=11-12) — right wing ──
+    - {x: 18, y: 11, type: armory}
+    - {x: 19, y: 11, type: armory}
+    - {x: 20, y: 11, type: armory}
+    - {x: 18, y: 12, type: armory}
+    - {x: 19, y: 12, type: armory}
+    - {x: 20, y: 12, type: armory}
+
+    # ── Inner walls (y=13) — last fallback, gap at x=10-11 ──
+    - {x: 0, y: 13, type: winterfell_wall}
+    - {x: 1, y: 13, type: winterfell_wall}
+    - {x: 2, y: 13, type: winterfell_wall}
+    - {x: 3, y: 13, type: winterfell_wall}
+    - {x: 4, y: 13, type: winterfell_wall}
+    - {x: 5, y: 13, type: winterfell_wall}
+    - {x: 6, y: 13, type: winterfell_wall}
+    - {x: 7, y: 13, type: winterfell_wall}
+    - {x: 8, y: 13, type: winterfell_wall}
+    - {x: 9, y: 13, type: winterfell_wall}
+    # gap at x=10,11
+    - {x: 12, y: 13, type: winterfell_wall}
+    - {x: 13, y: 13, type: winterfell_wall}
+    - {x: 14, y: 13, type: winterfell_wall}
+    - {x: 15, y: 13, type: winterfell_wall}
+    - {x: 16, y: 13, type: winterfell_wall}
+    - {x: 17, y: 13, type: winterfell_wall}
+    - {x: 18, y: 13, type: winterfell_wall}
+    - {x: 19, y: 13, type: winterfell_wall}
+    - {x: 20, y: 13, type: winterfell_wall}
+    - {x: 21, y: 13, type: winterfell_wall}
+
   forts: []
 
 terrain_types:
@@ -104,12 +213,33 @@ terrain_types:
   winterfell_wall:
     display_name: Winterfell Wall
     description: |
-      The ancient granite walls of Winterfell. Grants +3 DEF to any
-      defender standing on the battlements.
-    move_cost: 2
+      The ancient granite walls of Winterfell. Impassable — the dead
+      must breach the gates to enter.
+    move_cost: 99
+    passable: false
     defense_bonus: 3
     glyph: "#"
     color: white
+
+  crypts:
+    display_name: Crypts of Winterfell
+    description: |
+      The ancient burial vaults beneath Winterfell. Dark, cramped
+      passages. +1 DEF from cover, costs 2 movement.
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "v"
+    color: bright_black
+
+  armory:
+    display_name: Armory
+    description: |
+      The castle smithy and dragonglass armory. Forges glow red in
+      the darkness. +1 DEF, costs 1 movement.
+    move_cost: 1
+    defense_bonus: 1
+    glyph: "+"
+    color: yellow
 
 unit_classes:
   # ═══════════════════════════════════════════════
@@ -396,34 +526,34 @@ unit_classes:
 
 armies:
   blue:
-    # Jon Snow — behind the trench, commanding the defense
-    - {class: jon_snow, pos: {x: 5, y: 6}}
-    # Daenerys — rear, dragonfire support
-    - {class: daenerys, pos: {x: 4, y: 9}}
-    # Arya — hidden inside Winterfell, waiting to strike
-    - {class: arya, pos: {x: 6, y: 9}}
-    # The Hound — holding a trench gap
-    - {class: the_hound, pos: {x: 2, y: 6}}
-    # Jorah — near Daenerys, bodyguard duty
-    - {class: jorah, pos: {x: 3, y: 8}}
-    # Brienne — holding the other trench gap
-    - {class: brienne, pos: {x: 7, y: 6}}
+    # Jon Snow — at the western gate, commanding the trench defense
+    - {class: jon_snow, pos: {x: 4, y: 8}}
+    # Daenerys — rear, dragonfire support from the keep
+    - {class: daenerys, pos: {x: 10, y: 15}}
+    # Arya — hidden deep inside Winterfell, waiting to strike
+    - {class: arya, pos: {x: 11, y: 14}}
+    # The Hound — holding the center trench gap
+    - {class: the_hound, pos: {x: 11, y: 8}}
+    # Jorah — near Daenerys, bodyguard duty at the inner wall
+    - {class: jorah, pos: {x: 9, y: 10}}
+    # Brienne — holding the eastern trench gap
+    - {class: brienne, pos: {x: 17, y: 8}}
     # Theon — in the godswood, guarding the heart tree
-    - {class: theon, pos: {x: 5, y: 7}}
+    - {class: theon, pos: {x: 11, y: 12}}
 
   red:
-    # Night King — far rear, directing the assault
-    - {class: night_king, pos: {x: 5, y: 0}}
-    # Viserion — undead dragon, air support
-    - {class: viserion, pos: {x: 3, y: 0}}
-    # White Walker generals — behind the vanguard
-    - {class: frostfang, pos: {x: 2, y: 1}}
-    - {class: bonelord, pos: {x: 5, y: 1}}
-    - {class: coldhands, pos: {x: 8, y: 1}}
-    # Elite wight champions — front line assault
-    - {class: grim, pos: {x: 1, y: 3}}
-    - {class: hollow, pos: {x: 5, y: 3}}
-    - {class: shade, pos: {x: 9, y: 3}}
+    # Night King — far rear, directing the assault from above
+    - {class: night_king, pos: {x: 11, y: 0}}
+    # Viserion — undead dragon, air support on the eastern flank
+    - {class: viserion, pos: {x: 18, y: 0}}
+    # White Walker generals — spread across the northern approach
+    - {class: frostfang, pos: {x: 3, y: 1}}
+    - {class: bonelord, pos: {x: 11, y: 2}}
+    - {class: coldhands, pos: {x: 19, y: 2}}
+    # Elite wight champions — vanguard, targeting the trench gaps
+    - {class: grim, pos: {x: 1, y: 4}}
+    - {class: hollow, pos: {x: 10, y: 4}}
+    - {class: shade, pos: {x: 20, y: 4}}
 
 rules:
   max_turns: 12
@@ -431,13 +561,13 @@ rules:
   first_player: blue
 
 win_conditions:
-  # Night King dies → blue wins instantly (the dead collapse).
+  # Night King dies -> blue wins instantly (the dead collapse).
   - {type: protect_unit, unit_id: u_r_night_king_1, owning_team: red}
-  # Red reaches the heart tree in the godswood → blue loses.
-  - {type: reach_tile, team: red, pos: {x: 5, y: 7}}
-  # All living units eliminated → red wins.
+  # Red reaches the heart tree in the godswood -> blue loses.
+  - {type: reach_tile, team: red, pos: {x: 11, y: 12}}
+  # All living units eliminated -> red wins.
   - {type: eliminate_all_enemy_units}
-  # Survive 12 turns → dawn comes, blue wins.
+  # Survive 12 turns -> dawn comes, blue wins.
   - {type: protect_unit_survives, unit_id: u_b_jon_snow_1, owning_team: blue}
   # Backstop — if Jon falls but blue still has units at turn cap.
   - {type: max_turns_draw}

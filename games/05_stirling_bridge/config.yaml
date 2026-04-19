@@ -13,28 +13,123 @@ description: |
   Inspired by the Battle of Stirling Bridge (1297), Scottish Wars of Independence.
 
 board:
-  width: 10
-  height: 8
+  width: 20
+  height: 14
   terrain:
-    # River Forth — impassable, runs across row 4
-    # Bridge is a 2-tile chokepoint at (4,4) and (5,4)
-    - {x: 0, y: 4, type: river}
-    - {x: 1, y: 4, type: ford}
-    - {x: 2, y: 4, type: river}
-    - {x: 3, y: 4, type: river}
-    - {x: 4, y: 4, type: bridge}
-    - {x: 5, y: 4, type: bridge}
-    - {x: 6, y: 4, type: river}
-    - {x: 7, y: 4, type: river}
-    - {x: 8, y: 4, type: river}
-    - {x: 9, y: 4, type: river}
-    # Abbey Craig — hills on the Scottish (north) side
-    - {x: 1, y: 0, type: high_ground}
+    # =============================================
+    # Abbey Craig — high ground, northwest hills (Scottish staging)
+    # =============================================
     - {x: 2, y: 0, type: high_ground}
     - {x: 3, y: 0, type: high_ground}
-    - {x: 1, y: 1, type: high_ground}
+    - {x: 4, y: 0, type: high_ground}
+    - {x: 5, y: 0, type: high_ground}
     - {x: 2, y: 1, type: high_ground}
     - {x: 3, y: 1, type: high_ground}
+    - {x: 4, y: 1, type: high_ground}
+    - {x: 5, y: 1, type: high_ground}
+    - {x: 3, y: 2, type: high_ground}
+    - {x: 4, y: 2, type: high_ground}
+
+    # Ochil foothills — northeast high ground
+    - {x: 14, y: 0, type: high_ground}
+    - {x: 15, y: 0, type: high_ground}
+    - {x: 16, y: 0, type: high_ground}
+    - {x: 14, y: 1, type: high_ground}
+    - {x: 15, y: 1, type: high_ground}
+
+    # =============================================
+    # River Forth — WIDE, meandering, rows 5-8
+    # The river is 3-4 tiles wide, not just a line
+    # =============================================
+    # Western river bend (wide)
+    - {x: 0, y: 5, type: river}
+    - {x: 1, y: 5, type: river}
+    - {x: 2, y: 5, type: river}
+    - {x: 3, y: 5, type: river}
+    - {x: 4, y: 5, type: river}
+    - {x: 0, y: 6, type: river}
+    - {x: 1, y: 6, type: river}
+    - {x: 2, y: 6, type: river}
+    - {x: 3, y: 6, type: river}
+    - {x: 0, y: 7, type: river}
+    - {x: 1, y: 7, type: river}
+    - {x: 2, y: 7, type: river}
+
+    # Western ford — upstream, shallow but slow
+    - {x: 3, y: 7, type: ford}
+    - {x: 4, y: 6, type: ford}
+
+    # Central river (around the bridge)
+    - {x: 5, y: 5, type: river}
+    - {x: 6, y: 5, type: river}
+    - {x: 7, y: 5, type: river}
+    - {x: 5, y: 6, type: river}
+    - {x: 6, y: 6, type: river}
+    - {x: 7, y: 6, type: river}
+    - {x: 5, y: 7, type: river}
+    - {x: 6, y: 7, type: river}
+    - {x: 7, y: 7, type: river}
+
+    # Stirling Bridge — 2 tiles wide chokepoint
+    - {x: 8, y: 6, type: bridge}
+    - {x: 9, y: 6, type: bridge}
+
+    # Eastern river
+    - {x: 8, y: 5, type: river}
+    - {x: 9, y: 5, type: river}
+    - {x: 10, y: 5, type: river}
+    - {x: 11, y: 5, type: river}
+    - {x: 12, y: 5, type: river}
+    - {x: 10, y: 6, type: river}
+    - {x: 11, y: 6, type: river}
+    - {x: 12, y: 6, type: river}
+    - {x: 13, y: 6, type: river}
+    - {x: 8, y: 7, type: river}
+    - {x: 9, y: 7, type: river}
+    - {x: 10, y: 7, type: river}
+    - {x: 11, y: 7, type: river}
+    - {x: 12, y: 7, type: river}
+    - {x: 13, y: 7, type: river}
+
+    # Eastern ford — downstream crossing
+    - {x: 14, y: 6, type: ford}
+    - {x: 14, y: 7, type: ford}
+
+    # Far eastern river continues
+    - {x: 13, y: 5, type: river}
+    - {x: 14, y: 5, type: river}
+    - {x: 15, y: 5, type: river}
+    - {x: 16, y: 5, type: river}
+    - {x: 17, y: 5, type: river}
+    - {x: 18, y: 5, type: river}
+    - {x: 19, y: 5, type: river}
+    - {x: 15, y: 6, type: river}
+    - {x: 16, y: 6, type: river}
+    - {x: 17, y: 6, type: river}
+    - {x: 18, y: 6, type: river}
+    - {x: 19, y: 6, type: river}
+    - {x: 14, y: 7, type: ford}
+    - {x: 15, y: 7, type: river}
+    - {x: 16, y: 7, type: river}
+    - {x: 17, y: 7, type: river}
+    - {x: 18, y: 7, type: river}
+    - {x: 19, y: 7, type: river}
+
+    # =============================================
+    # Marshland — south bank, slows English approach
+    # =============================================
+    - {x: 5, y: 9, type: marsh}
+    - {x: 6, y: 9, type: marsh}
+    - {x: 7, y: 9, type: marsh}
+    - {x: 8, y: 9, type: marsh}
+    - {x: 6, y: 10, type: marsh}
+    - {x: 7, y: 10, type: marsh}
+    - {x: 12, y: 9, type: marsh}
+    - {x: 13, y: 9, type: marsh}
+    - {x: 14, y: 9, type: marsh}
+    - {x: 12, y: 10, type: marsh}
+    - {x: 13, y: 10, type: marsh}
+
   forts: []
 
 terrain_types:
@@ -72,6 +167,15 @@ terrain_types:
     move_cost: 2
     defense_bonus: 3
     glyph: "^"
+    color: green
+  marsh:
+    display_name: Marshland
+    description: |
+      Boggy ground south of the Forth. Wet, treacherous footing
+      that sucks at boots and hooves. Costs 2 movement, -1 DEF.
+    move_cost: 2
+    defense_bonus: -1
+    glyph: ","
     color: green
 
 unit_classes:
@@ -315,23 +419,33 @@ unit_classes:
 
 armies:
   blue:
-    # Wallace on Abbey Craig with the foot
-    - {class: wallace, pos: {x: 2, y: 1}}
-    - {class: andrew_de_moray, pos: {x: 3, y: 1}}
-    - {class: malcolm_wallace, pos: {x: 4, y: 2}}
-    - {class: hamish, pos: {x: 5, y: 2}}
-    - {class: stephen_irish, pos: {x: 6, y: 2}}
-    - {class: pike_captain, pos: {x: 4, y: 3}}
+    # Wallace and Moray on Abbey Craig (northwest hills)
+    - {class: wallace, pos: {x: 3, y: 1}}
+    - {class: andrew_de_moray, pos: {x: 5, y: 1}}
+    # Malcolm guarding the western ford approach
+    - {class: malcolm_wallace, pos: {x: 2, y: 3}}
+    # Hamish on the northeast hills — separate theater
+    - {class: hamish, pos: {x: 15, y: 1}}
+    # Stephen scouting near the bridge, north side
+    - {class: stephen_irish, pos: {x: 10, y: 4}}
+    # Pike captain blocking the bridge approach
+    - {class: pike_captain, pos: {x: 9, y: 4}}
 
   red:
-    # English on the south bank, pressing toward the bridge
-    - {class: earl_surrey, pos: {x: 5, y: 7}}
-    - {class: cressingham, pos: {x: 4, y: 6}}
-    - {class: english_knight_cmdr, pos: {x: 5, y: 5}}
-    - {class: english_archer_cpt, pos: {x: 7, y: 6}}
-    - {class: english_sergeant, pos: {x: 3, y: 6}}
-    - {class: english_pikeman, pos: {x: 6, y: 6}}
-    - {class: english_footman, pos: {x: 4, y: 7}}
+    # Surrey commanding from far south
+    - {class: earl_surrey, pos: {x: 10, y: 13}}
+    # Cressingham pushing toward the bridge
+    - {class: cressingham, pos: {x: 9, y: 11}}
+    # Thweng leading the vanguard toward the bridge
+    - {class: english_knight_cmdr, pos: {x: 8, y: 10}}
+    # Archers on the southern marsh edge for covering fire
+    - {class: english_archer_cpt, pos: {x: 15, y: 11}}
+    # Sergeant advancing through western marshes
+    - {class: english_sergeant, pos: {x: 4, y: 12}}
+    # Somerville probing the eastern ford
+    - {class: english_pikeman, pos: {x: 16, y: 10}}
+    # Aldeburgh flanking far east
+    - {class: english_footman, pos: {x: 18, y: 12}}
 
 rules:
   max_turns: 20
@@ -342,8 +456,8 @@ win_conditions:
   # Scots lose if Wallace dies
   - {type: protect_unit, unit_id: u_b_wallace_1, owning_team: blue}
   # Scots win by holding the bridge approach for 6 consecutive turns
-  - {type: hold_tile, team: blue, pos: {x: 4, y: 3}, consecutive_turns: 6}
-  - {type: hold_tile, team: blue, pos: {x: 5, y: 3}, consecutive_turns: 6}
+  - {type: hold_tile, team: blue, pos: {x: 8, y: 4}, consecutive_turns: 6}
+  - {type: hold_tile, team: blue, pos: {x: 9, y: 4}, consecutive_turns: 6}
   # Red wins by getting a unit across to the Scottish side
   - {type: reach_goal_line, team: red, axis: y, value: 1}
   # Either side wins by total elimination

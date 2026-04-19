@@ -15,25 +15,38 @@ description: |
   Inspired by the Battle of Helm's Deep from The Lord of the Rings by J.R.R. Tolkien.
 
 # ──────────────────────────────────────────────────────────
-#  MAP LAYOUT  (12 wide × 10 tall)
+#  MAP LAYOUT  (22 wide x 14 tall)
 #
-#  x=0-1   Inner Keep (Théoden's refuge — Red's reach_tile target)
-#  x=2-3   Fortress courtyard
-#  x=4     Deeping Wall (impassable stone, gate at y=4-5)
-#  x=5     Ramparts atop the wall (+3 DEF for defenders)
-#  x=6-7   Causeway / approach ground
-#  x=8-11  Open field (Uruk staging area)
+#  y=0     ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^   North cliffs
+#  y=1     ^ | . . . | . ; ; ; ; ; ; ^ ^ ^ ^ ^ ^ ^ ^ ^   Keep + ramparts
+#  y=2     ^ | . . . | . ; ; ; ; ; ; . . . . . . . . .   Keep wall + ramparts
+#  y=3     ^ | . . . . . # # . # # . . . . . . . . . .   Courtyard + wall
+#  y=4     ^ | . . . . . # = . # # . . . . . . . . . .   Wall + gate (=)
+#  y=5     ^ | . . . . . # = . # # . . . . . . . . . .   Wall + gate (=)
+#  y=6     ^ | . . . . . # # . # # . . . . . . . . . .   Wall continues
+#  y=7     ^ | . . . | . ; ; ; ; ; ; . . . . . . . . .   Keep wall + ramparts
+#  y=8     ^ | . . . | . ; ; ; ; o ; . . . . . . . . .   Ramparts + culvert
+#  y=9     ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^   South cliffs
+#  y=10    . . . . . . . : : . . . . . . . . . . . . .   Causeway approach
+#  y=11    . . . . . . . . . . . . . . . . . . . . . .   Open field
+#  y=12    . . . . . . . . . . . . . . . . . . . . . .   Uruk staging
+#  y=13    . . . . . . . . . . . . . . . . . . . . . .   Uruk rear
 #
-#  y=0, y=9  Mountain cliffs (impassable borders)
-#  Gate at (4,4) and (4,5) — the only passage through the wall
-#  Culvert breach at (4,8) — weakened section
+#  The fortress occupies x=0-12, y=0-9 (within cliffs).
+#  Inner keep: x=1-4, y=1-8 (keep walls at x=1 and x=5 partial).
+#  Deeping Wall: x=7, y=1-8 (impassable, gate at y=4-5).
+#  Ramparts: x=7-12, y=1-2 and y=7-8 (atop the wall).
+#  Culvert: x=10, y=8.
+#  Causeway: x=7-8, y=10.
+#  The gorge opens at y=9 south edge — cliffs force Red through
+#  a narrow approach before the open field.
 # ──────────────────────────────────────────────────────────
 
 board:
-  width: 12
-  height: 10
+  width: 22
+  height: 14
   terrain:
-    # ── Mountain cliffs: north edge (y=0) ──
+    # ── North cliffs (y=0) — full width ──
     - {x: 0, y: 0, type: cliff}
     - {x: 1, y: 0, type: cliff}
     - {x: 2, y: 0, type: cliff}
@@ -46,8 +59,18 @@ board:
     - {x: 9, y: 0, type: cliff}
     - {x: 10, y: 0, type: cliff}
     - {x: 11, y: 0, type: cliff}
+    - {x: 12, y: 0, type: cliff}
+    - {x: 13, y: 0, type: cliff}
+    - {x: 14, y: 0, type: cliff}
+    - {x: 15, y: 0, type: cliff}
+    - {x: 16, y: 0, type: cliff}
+    - {x: 17, y: 0, type: cliff}
+    - {x: 18, y: 0, type: cliff}
+    - {x: 19, y: 0, type: cliff}
+    - {x: 20, y: 0, type: cliff}
+    - {x: 21, y: 0, type: cliff}
 
-    # ── Mountain cliffs: south edge (y=9) ──
+    # ── South cliffs (y=9) — fortress boundary ──
     - {x: 0, y: 9, type: cliff}
     - {x: 1, y: 9, type: cliff}
     - {x: 2, y: 9, type: cliff}
@@ -60,37 +83,99 @@ board:
     - {x: 9, y: 9, type: cliff}
     - {x: 10, y: 9, type: cliff}
     - {x: 11, y: 9, type: cliff}
+    - {x: 12, y: 9, type: cliff}
+    - {x: 13, y: 9, type: cliff}
+    - {x: 14, y: 9, type: cliff}
+    - {x: 15, y: 9, type: cliff}
+    - {x: 16, y: 9, type: cliff}
+    - {x: 17, y: 9, type: cliff}
+    - {x: 18, y: 9, type: cliff}
+    - {x: 19, y: 9, type: cliff}
+    - {x: 20, y: 9, type: cliff}
+    - {x: 21, y: 9, type: cliff}
 
-    # ── The Deeping Wall (x=4, impassable except at gate) ──
-    - {x: 4, y: 1, type: deeping_wall}
-    - {x: 4, y: 2, type: deeping_wall}
-    - {x: 4, y: 3, type: deeping_wall}
-    - {x: 4, y: 4, type: fortress_gate}     # Main gate — upper
-    - {x: 4, y: 5, type: fortress_gate}     # Main gate — lower
-    - {x: 4, y: 6, type: deeping_wall}
-    - {x: 4, y: 7, type: deeping_wall}
-    - {x: 4, y: 8, type: culvert}           # Weakened culvert section
+    # ── Left cliff wall (x=0, y=1-8) ──
+    - {x: 0, y: 1, type: cliff}
+    - {x: 0, y: 2, type: cliff}
+    - {x: 0, y: 3, type: cliff}
+    - {x: 0, y: 4, type: cliff}
+    - {x: 0, y: 5, type: cliff}
+    - {x: 0, y: 6, type: cliff}
+    - {x: 0, y: 7, type: cliff}
+    - {x: 0, y: 8, type: cliff}
 
-    # ── Ramparts atop the wall (x=5, defenders fire from here) ──
-    - {x: 5, y: 1, type: rampart}
-    - {x: 5, y: 2, type: rampart}
-    - {x: 5, y: 3, type: rampart}
-    - {x: 5, y: 6, type: rampart}
-    - {x: 5, y: 7, type: rampart}
-    - {x: 5, y: 8, type: rampart}
+    # ── Mountain walls east of fortress (y=1-2, x=13-21) ──
+    - {x: 13, y: 1, type: cliff}
+    - {x: 14, y: 1, type: cliff}
+    - {x: 15, y: 1, type: cliff}
+    - {x: 16, y: 1, type: cliff}
+    - {x: 17, y: 1, type: cliff}
+    - {x: 18, y: 1, type: cliff}
+    - {x: 19, y: 1, type: cliff}
+    - {x: 20, y: 1, type: cliff}
+    - {x: 21, y: 1, type: cliff}
 
-    # ── Causeway (x=6, narrow approach to the gate) ──
-    - {x: 6, y: 4, type: causeway}
-    - {x: 6, y: 5, type: causeway}
-
-    # ── Inner keep walls (x=1, partial — protect the throne) ──
+    # ── Inner keep walls (x=1, y=1-8 — gaps at y=3-6 for courtyard access) ──
     - {x: 1, y: 1, type: keep_wall}
     - {x: 1, y: 2, type: keep_wall}
     - {x: 1, y: 7, type: keep_wall}
     - {x: 1, y: 8, type: keep_wall}
 
+    # ── Inner keep walls (x=5, y=1-2 and y=7-8 — courtyard partition) ──
+    - {x: 5, y: 1, type: keep_wall}
+    - {x: 5, y: 2, type: keep_wall}
+    - {x: 5, y: 7, type: keep_wall}
+    - {x: 5, y: 8, type: keep_wall}
+
+    # ── The Deeping Wall (x=7, y=1-8 — gate at y=4-5) ──
+    - {x: 7, y: 1, type: deeping_wall}
+    - {x: 7, y: 2, type: deeping_wall}
+    - {x: 7, y: 3, type: deeping_wall}
+    - {x: 7, y: 4, type: fortress_gate}
+    - {x: 7, y: 5, type: fortress_gate}
+    - {x: 7, y: 6, type: deeping_wall}
+    - {x: 7, y: 7, type: deeping_wall}
+    - {x: 7, y: 8, type: deeping_wall}
+
+    # ── Second wall section (x=10, y=3-6 — inner defense line) ──
+    - {x: 10, y: 3, type: deeping_wall}
+    - {x: 10, y: 4, type: deeping_wall}
+    - {x: 10, y: 5, type: deeping_wall}
+    - {x: 10, y: 6, type: deeping_wall}
+
+    # ── Ramparts north (x=7-12, y=1-2 — atop the wall) ──
+    - {x: 8, y: 1, type: rampart}
+    - {x: 9, y: 1, type: rampart}
+    - {x: 10, y: 1, type: rampart}
+    - {x: 11, y: 1, type: rampart}
+    - {x: 12, y: 1, type: rampart}
+    - {x: 8, y: 2, type: rampart}
+    - {x: 9, y: 2, type: rampart}
+    - {x: 10, y: 2, type: rampart}
+    - {x: 11, y: 2, type: rampart}
+    - {x: 12, y: 2, type: rampart}
+
+    # ── Ramparts south (x=7-12, y=7-8 — atop the wall) ──
+    - {x: 8, y: 7, type: rampart}
+    - {x: 9, y: 7, type: rampart}
+    - {x: 10, y: 7, type: rampart}
+    - {x: 11, y: 7, type: rampart}
+    - {x: 12, y: 7, type: rampart}
+    - {x: 8, y: 8, type: rampart}
+    - {x: 9, y: 8, type: rampart}
+    # culvert at x=10, y=8
+    - {x: 11, y: 8, type: rampart}
+    - {x: 12, y: 8, type: rampart}
+
+    # ── Culvert (x=10, y=8) — the weak point ──
+    - {x: 10, y: 8, type: culvert}
+
+    # ── Causeway (x=7-8, y=10) — narrow approach to the gate ──
+    - {x: 7, y: 10, type: causeway}
+    - {x: 8, y: 10, type: causeway}
+
   forts:
-    - {x: 0, y: 4, owner: blue}
+    - {x: 3, y: 4, owner: blue}
 
 terrain_types:
   cliff:
@@ -442,31 +527,32 @@ unit_classes:
 
 armies:
   blue:
-    # Théoden in the inner keep, protected.
-    - {class: theoden,  pos: {x: 0, y: 5}}
-    # Aragorn and Gimli hold the gate from the courtyard side.
-    - {class: aragorn,  pos: {x: 3, y: 4}}
-    - {class: gimli,    pos: {x: 3, y: 5}}
-    # Legolas and Haldir on the ramparts (north and south sections).
-    - {class: legolas,  pos: {x: 5, y: 2}}
-    - {class: haldir,   pos: {x: 5, y: 7}}
-    # Éomer as mobile reserve in the courtyard.
-    - {class: eomer,    pos: {x: 2, y: 4}}
+    # Théoden in the inner keep, protected
+    - {class: theoden,  pos: {x: 3, y: 5}}
+    # Aragorn and Gimli hold the gate from the courtyard side
+    - {class: aragorn,  pos: {x: 6, y: 4}}
+    - {class: gimli,    pos: {x: 6, y: 5}}
+    # Legolas on the northern ramparts — high ground, clear shots
+    - {class: legolas,  pos: {x: 9, y: 2}}
+    # Haldir on the southern ramparts
+    - {class: haldir,   pos: {x: 9, y: 7}}
+    # Éomer as mobile reserve in the courtyard
+    - {class: eomer,    pos: {x: 4, y: 4}}
 
   red:
-    # Gate assault column — Uglúk, Gorûl the Ram-master, Berserker
-    - {class: ugluk,            pos: {x: 8,  y: 4}}
-    - {class: siege_captain,    pos: {x: 9,  y: 5}}
-    - {class: berserker,        pos: {x: 8,  y: 5}}
-    # Northern ladder assault — Ghâshnak
-    - {class: ladder_captain,   pos: {x: 9,  y: 2}}
-    # Southern culvert approach — Sharkû + Sapper
-    - {class: sharku,           pos: {x: 9,  y: 7}}
-    - {class: sapper,           pos: {x: 10, y: 8}}
-    # Lurtz with crossbow — ranging from the east
-    - {class: lurtz,            pos: {x: 10, y: 3}}
-    # Mauhúr providing covering fire from distance
-    - {class: crossbow_captain, pos: {x: 11, y: 5}}
+    # Gate assault column — approaching from the south field
+    - {class: ugluk,            pos: {x: 8,  y: 12}}
+    - {class: siege_captain,    pos: {x: 7,  y: 13}}
+    - {class: berserker,        pos: {x: 10, y: 12}}
+    # Northern ladder assault — approaching wide right
+    - {class: ladder_captain,   pos: {x: 16, y: 11}}
+    # Southern culvert approach — sapper under escort
+    - {class: sharku,           pos: {x: 14, y: 13}}
+    - {class: sapper,           pos: {x: 18, y: 12}}
+    # Lurtz with crossbow — ranging from distance
+    - {class: lurtz,            pos: {x: 12, y: 13}}
+    # Mauhúr providing covering fire from far back
+    - {class: crossbow_captain, pos: {x: 20, y: 11}}
 
 rules:
   max_turns: 12
@@ -476,9 +562,9 @@ rules:
 win_conditions:
   # Blue loses instantly if Théoden falls.
   - {type: protect_unit, unit_id: u_b_theoden_1, owning_team: blue}
-  # Red wins by reaching the inner keep throne (x=0, y=4 or y=5).
-  - {type: reach_tile, team: red, pos: {x: 0, y: 4}}
-  - {type: reach_tile, team: red, pos: {x: 0, y: 5}}
+  # Red wins by reaching the inner keep throne
+  - {type: reach_tile, team: red, pos: {x: 3, y: 4}}
+  - {type: reach_tile, team: red, pos: {x: 3, y: 5}}
   # Either side wins by eliminating all enemies.
   - {type: eliminate_all_enemy_units}
   # Blue wins if Théoden survives 12 turns — Gandalf arrives at dawn.

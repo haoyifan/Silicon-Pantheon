@@ -12,69 +12,124 @@ description: |
   Inspired by Arthurian legend, primarily Le Morte d'Arthur by Thomas Malory.
 
 board:
-  width: 12
-  height: 12
+  width: 20
+  height: 16
   terrain:
-    # Castle ruins — upper left
-    - {x: 0, y: 0, type: castle_ruins}
-    - {x: 1, y: 0, type: castle_ruins}
-    - {x: 2, y: 0, type: castle_ruins}
-    - {x: 0, y: 1, type: castle_ruins}
-    - {x: 1, y: 1, type: castle_ruins}
-    - {x: 0, y: 2, type: castle_ruins}
-    # Stone walls — shortened, channels movement
-    - {x: 3, y: 0, type: stone_wall}
-    - {x: 3, y: 1, type: stone_wall}
-    - {x: 5, y: 5, type: stone_wall}
-    - {x: 6, y: 5, type: stone_wall}
-    - {x: 5, y: 6, type: stone_wall}
-    - {x: 6, y: 6, type: stone_wall}
-    # Enchanted lake — center, smaller
-    - {x: 8, y: 5, type: enchanted_lake}
-    - {x: 9, y: 5, type: enchanted_lake}
-    - {x: 8, y: 6, type: enchanted_lake}
-    - {x: 9, y: 6, type: enchanted_lake}
-    # Muddy ground — blood-soaked field of Camlann
-    - {x: 3, y: 4, type: muddy_ground}
-    - {x: 4, y: 4, type: muddy_ground}
-    - {x: 5, y: 4, type: muddy_ground}
-    - {x: 6, y: 4, type: muddy_ground}
-    - {x: 7, y: 4, type: muddy_ground}
-    - {x: 3, y: 7, type: muddy_ground}
-    - {x: 4, y: 7, type: muddy_ground}
+    # === CAMELOT GATE — blue fort, southwest (y=13-15) ===
+    - {x: 0, y: 13, type: camelot_gate}
+    - {x: 1, y: 13, type: camelot_gate}
+    - {x: 0, y: 14, type: camelot_gate}
+    - {x: 1, y: 14, type: camelot_gate}
+    - {x: 0, y: 15, type: camelot_gate}
+    - {x: 1, y: 15, type: camelot_gate}
+
+    # === MORDRED'S CAMP — red fort, northeast (y=0-2) ===
+    - {x: 17, y: 0, type: mordred_camp}
+    - {x: 18, y: 0, type: mordred_camp}
+    - {x: 19, y: 0, type: mordred_camp}
+    - {x: 17, y: 1, type: mordred_camp}
+    - {x: 18, y: 1, type: mordred_camp}
+    - {x: 19, y: 1, type: mordred_camp}
+
+    # === CASTLE RUINS — scattered strongpoints ===
+    # Southwest ruins (near Camelot)
+    - {x: 0, y: 10, type: castle_ruins}
+    - {x: 1, y: 10, type: castle_ruins}
+    - {x: 2, y: 10, type: castle_ruins}
+    - {x: 0, y: 11, type: castle_ruins}
+    - {x: 1, y: 11, type: castle_ruins}
+    # Northeast ruins (near Mordred's camp)
+    - {x: 17, y: 4, type: castle_ruins}
+    - {x: 18, y: 4, type: castle_ruins}
+    - {x: 19, y: 4, type: castle_ruins}
+    - {x: 18, y: 5, type: castle_ruins}
+    - {x: 19, y: 5, type: castle_ruins}
+    # Center ruins — old keep
+    - {x: 9, y: 6, type: castle_ruins}
+    - {x: 10, y: 6, type: castle_ruins}
+    - {x: 9, y: 7, type: castle_ruins}
+
+    # === STONE WALLS — impassable barriers channeling movement ===
+    # West wall segment — forces units around or through the mud
+    - {x: 4, y: 5, type: stone_wall}
+    - {x: 4, y: 6, type: stone_wall}
+    - {x: 4, y: 7, type: stone_wall}
+    # Central wall — splits the battlefield
+    - {x: 8, y: 3, type: stone_wall}
+    - {x: 9, y: 3, type: stone_wall}
+    - {x: 10, y: 3, type: stone_wall}
+    - {x: 11, y: 3, type: stone_wall}
+    # East wall segment
+    - {x: 15, y: 8, type: stone_wall}
+    - {x: 15, y: 9, type: stone_wall}
+    - {x: 15, y: 10, type: stone_wall}
+
+    # === ENCHANTED LAKE — impassable, center-east ===
+    - {x: 12, y: 7, type: enchanted_lake}
+    - {x: 13, y: 7, type: enchanted_lake}
+    - {x: 14, y: 7, type: enchanted_lake}
+    - {x: 12, y: 8, type: enchanted_lake}
+    - {x: 13, y: 8, type: enchanted_lake}
+    - {x: 14, y: 8, type: enchanted_lake}
+    - {x: 13, y: 9, type: enchanted_lake}
+
+    # === MUDDY GROUND — treacherous no-man's land ===
+    # Wide muddy band across the center (y=7-9)
     - {x: 5, y: 7, type: muddy_ground}
     - {x: 6, y: 7, type: muddy_ground}
     - {x: 7, y: 7, type: muddy_ground}
-    # Fallen banners — scattered cover
-    - {x: 4, y: 3, type: fallen_banner}
-    - {x: 7, y: 3, type: fallen_banner}
-    - {x: 4, y: 8, type: fallen_banner}
-    - {x: 7, y: 8, type: fallen_banner}
-    - {x: 2, y: 6, type: fallen_banner}
-    - {x: 10, y: 5, type: fallen_banner}
-    # Camelot gate — blue fort, left side
-    - {x: 0, y: 10, type: camelot_gate}
-    - {x: 1, y: 10, type: camelot_gate}
-    - {x: 0, y: 11, type: camelot_gate}
-    - {x: 1, y: 11, type: camelot_gate}
-    # Mordred's camp — red fort, right side
-    - {x: 10, y: 0, type: mordred_camp}
-    - {x: 11, y: 0, type: mordred_camp}
-    - {x: 10, y: 1, type: mordred_camp}
-    - {x: 11, y: 1, type: mordred_camp}
-    # Castle ruins — lower right
-    - {x: 10, y: 10, type: castle_ruins}
-    - {x: 11, y: 10, type: castle_ruins}
-    - {x: 11, y: 9, type: castle_ruins}
+    - {x: 8, y: 7, type: muddy_ground}
+    - {x: 5, y: 8, type: muddy_ground}
+    - {x: 6, y: 8, type: muddy_ground}
+    - {x: 7, y: 8, type: muddy_ground}
+    - {x: 8, y: 8, type: muddy_ground}
+    - {x: 9, y: 8, type: muddy_ground}
+    - {x: 10, y: 8, type: muddy_ground}
+    - {x: 11, y: 8, type: muddy_ground}
+    - {x: 5, y: 9, type: muddy_ground}
+    - {x: 6, y: 9, type: muddy_ground}
+    - {x: 7, y: 9, type: muddy_ground}
+    - {x: 8, y: 9, type: muddy_ground}
+    - {x: 9, y: 9, type: muddy_ground}
+    - {x: 10, y: 9, type: muddy_ground}
+    - {x: 11, y: 9, type: muddy_ground}
+    - {x: 12, y: 9, type: muddy_ground}
+    # Northern mud patches
+    - {x: 6, y: 5, type: muddy_ground}
+    - {x: 7, y: 5, type: muddy_ground}
+    - {x: 13, y: 5, type: muddy_ground}
+    - {x: 14, y: 5, type: muddy_ground}
+
+    # === FALLEN BANNERS — scattered cover across the field ===
+    - {x: 3, y: 4, type: fallen_banner}
+    - {x: 7, y: 4, type: fallen_banner}
+    - {x: 13, y: 4, type: fallen_banner}
+    - {x: 16, y: 6, type: fallen_banner}
+    - {x: 3, y: 8, type: fallen_banner}
+    - {x: 16, y: 10, type: fallen_banner}
+    - {x: 6, y: 11, type: fallen_banner}
+    - {x: 12, y: 11, type: fallen_banner}
+    - {x: 3, y: 12, type: fallen_banner}
+    - {x: 16, y: 3, type: fallen_banner}
+
+    # === ADDITIONAL CASTLE RUINS — southeast corner ===
+    - {x: 17, y: 13, type: castle_ruins}
+    - {x: 18, y: 13, type: castle_ruins}
+    - {x: 19, y: 13, type: castle_ruins}
+    - {x: 19, y: 14, type: castle_ruins}
   forts:
-    - {x: 0, y: 10, owner: blue}
-    - {x: 1, y: 10, owner: blue}
-    - {x: 0, y: 11, owner: blue}
-    - {x: 1, y: 11, owner: blue}
-    - {x: 10, y: 0, owner: red}
-    - {x: 11, y: 0, owner: red}
-    - {x: 10, y: 1, owner: red}
-    - {x: 11, y: 1, owner: red}
+    - {x: 0, y: 13, owner: blue}
+    - {x: 1, y: 13, owner: blue}
+    - {x: 0, y: 14, owner: blue}
+    - {x: 1, y: 14, owner: blue}
+    - {x: 0, y: 15, owner: blue}
+    - {x: 1, y: 15, owner: blue}
+    - {x: 17, y: 0, owner: red}
+    - {x: 18, y: 0, owner: red}
+    - {x: 19, y: 0, owner: red}
+    - {x: 17, y: 1, owner: red}
+    - {x: 18, y: 1, owner: red}
+    - {x: 19, y: 1, owner: red}
 
 terrain_types:
   castle_ruins:
@@ -358,24 +413,30 @@ unit_classes:
 
 armies:
   blue:
-    - {class: arthur, pos: {x: 2, y: 9}}
-    - {class: lancelot, pos: {x: 3, y: 9}}
-    - {class: gawain, pos: {x: 1, y: 9}}
-    - {class: percival, pos: {x: 3, y: 10}}
-    - {class: galahad, pos: {x: 2, y: 10}}
-    - {class: merlin, pos: {x: 0, y: 11}}
-    - {class: camelot_archer, pos: {x: 4, y: 9}}
-    - {class: camelot_archer, pos: {x: 4, y: 10}}
+    # Main force — Arthur center-left
+    - {class: arthur, pos: {x: 3, y: 13}}
+    - {class: lancelot, pos: {x: 5, y: 12}}
+    - {class: gawain, pos: {x: 2, y: 12}}
+    # Support — Merlin and Galahad behind the line
+    - {class: merlin, pos: {x: 1, y: 14}}
+    - {class: galahad, pos: {x: 4, y: 14}}
+    # Right flank — Percival and archers pushing east
+    - {class: percival, pos: {x: 7, y: 13}}
+    - {class: camelot_archer, pos: {x: 6, y: 14}}
+    - {class: camelot_archer, pos: {x: 9, y: 12}}
 
   red:
-    - {class: mordred, pos: {x: 9, y: 2}}
-    - {class: morgan, pos: {x: 11, y: 1}}
-    - {class: agravaine, pos: {x: 8, y: 2}}
-    - {class: saxon_skirmisher, pos: {x: 7, y: 2}}
-    - {class: saxon_skirmisher, pos: {x: 8, y: 3}}
-    - {class: dark_knight, pos: {x: 9, y: 3}}
-    - {class: dark_knight, pos: {x: 10, y: 2}}
-    - {class: dark_knight, pos: {x: 10, y: 3}}
+    # Main force — Mordred center-right
+    - {class: mordred, pos: {x: 16, y: 2}}
+    - {class: morgan, pos: {x: 18, y: 2}}
+    - {class: agravaine, pos: {x: 14, y: 3}}
+    # West flank — Saxons pushing through the gap
+    - {class: saxon_skirmisher, pos: {x: 12, y: 2}}
+    - {class: saxon_skirmisher, pos: {x: 11, y: 4}}
+    # Dark knights — armored anvil across the front
+    - {class: dark_knight, pos: {x: 15, y: 4}}
+    - {class: dark_knight, pos: {x: 17, y: 5}}
+    - {class: dark_knight, pos: {x: 13, y: 5}}
 
 rules:
   max_turns: 20

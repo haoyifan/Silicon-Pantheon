@@ -12,40 +12,139 @@ description: |
   guns, and storm the citadel before reinforcements arrive.
   Inspired by the Portuguese conquest of Hormuz (1507).
 
+# ───────────────────────────────────────────────────────
+#  MAP LAYOUT  (20 wide x 14 tall)
+#
+#  The western third (x=0-5) is open sea — Portuguese approach.
+#  Reefs line the north and south edges of the channel.
+#  Harbor chain at x=8 blocks the narrows.
+#  The citadel island occupies x=12-19, with fortress walls
+#  forming rooms and corridors. Multiple entry points:
+#  - Main harbor gate (damaged wall) at y=6
+#  - Northern breach at y=3
+#  - Southern sea wall gap at y=10
+# ───────────────────────────────────────────────────────
+
 board:
-  width: 14
-  height: 10
+  width: 20
+  height: 14
   terrain:
-    # Harbor water (impassable shallows flanking the channel)
+    # ── Reefs: northern shallows (y=0) ──
+    - {x: 3, y: 0, type: reef}
+    - {x: 4, y: 0, type: reef}
     - {x: 5, y: 0, type: reef}
     - {x: 6, y: 0, type: reef}
-    - {x: 5, y: 9, type: reef}
-    - {x: 6, y: 9, type: reef}
-    # Hormuz island fortifications (east side)
-    - {x: 9, y: 1, type: damaged_wall}
-    - {x: 10, y: 0, type: fort_wall}
-    - {x: 10, y: 1, type: fort_wall}
-    - {x: 10, y: 8, type: fort_wall}
-    - {x: 10, y: 9, type: fort_wall}
-    - {x: 9, y: 8, type: fort_wall}
-    # Citadel interior
-    - {x: 11, y: 3, type: citadel}
-    - {x: 12, y: 3, type: citadel}
-    - {x: 11, y: 6, type: citadel}
-    - {x: 12, y: 6, type: citadel}
-    - {x: 11, y: 4, type: citadel}
-    - {x: 11, y: 5, type: citadel}
-    - {x: 12, y: 4, type: citadel}
-    - {x: 12, y: 5, type: citadel}
-    - {x: 13, y: 3, type: citadel}
+    - {x: 7, y: 0, type: reef}
+    - {x: 8, y: 0, type: reef}
+    - {x: 9, y: 0, type: reef}
+    - {x: 10, y: 0, type: reef}
+
+    # ── Reefs: southern shallows (y=13) ──
+    - {x: 3, y: 13, type: reef}
+    - {x: 4, y: 13, type: reef}
+    - {x: 5, y: 13, type: reef}
+    - {x: 6, y: 13, type: reef}
+    - {x: 7, y: 13, type: reef}
+    - {x: 8, y: 13, type: reef}
+    - {x: 9, y: 13, type: reef}
+    - {x: 10, y: 13, type: reef}
+
+    # ── Scattered reefs in the channel ──
+    - {x: 5, y: 3, type: reef}
+    - {x: 5, y: 10, type: reef}
+    - {x: 7, y: 1, type: reef}
+    - {x: 7, y: 12, type: reef}
+
+    # ── Harbor chain (x=8, y=4-9 — gaps at y=6 and y=7) ──
+    - {x: 8, y: 4, type: harbor_chain}
+    - {x: 8, y: 5, type: harbor_chain}
+    # gap at y=6,7 — the chain opening
+    - {x: 8, y: 8, type: harbor_chain}
+    - {x: 8, y: 9, type: harbor_chain}
+
+    # ── Citadel outer walls (x=12, full height with breaches) ──
+    - {x: 12, y: 0, type: fort_wall}
+    - {x: 12, y: 1, type: fort_wall}
+    - {x: 12, y: 2, type: fort_wall}
+    - {x: 12, y: 3, type: damaged_wall}   # Northern breach
+    - {x: 12, y: 4, type: fort_wall}
+    - {x: 12, y: 5, type: fort_wall}
+    - {x: 12, y: 6, type: damaged_wall}   # Main harbor gate (breach)
+    - {x: 12, y: 7, type: fort_wall}
+    - {x: 12, y: 8, type: fort_wall}
+    - {x: 12, y: 9, type: fort_wall}
+    - {x: 12, y: 10, type: damaged_wall}  # Southern breach
+    - {x: 12, y: 11, type: fort_wall}
+    - {x: 12, y: 12, type: fort_wall}
+    - {x: 12, y: 13, type: fort_wall}
+
+    # ── Citadel inner walls — north wing (y=2, x=13-16) ──
+    - {x: 13, y: 2, type: fort_wall}
+    - {x: 14, y: 2, type: fort_wall}
+    - {x: 15, y: 2, type: fort_wall}
+    - {x: 16, y: 2, type: fort_wall}
+
+    # ── Citadel inner walls — south wing (y=11, x=13-16) ──
+    - {x: 13, y: 11, type: fort_wall}
+    - {x: 14, y: 11, type: fort_wall}
+    - {x: 15, y: 11, type: fort_wall}
+    - {x: 16, y: 11, type: fort_wall}
+
+    # ── Citadel inner partition — throne room walls ──
+    - {x: 16, y: 4, type: fort_wall}
+    - {x: 16, y: 5, type: fort_wall}
+    # gap at y=6,7 — throne room entrance
+    - {x: 16, y: 8, type: fort_wall}
+    - {x: 16, y: 9, type: fort_wall}
+
+    # ── Eastern citadel wall (x=19) ──
+    - {x: 19, y: 0, type: fort_wall}
+    - {x: 19, y: 1, type: fort_wall}
+    - {x: 19, y: 2, type: fort_wall}
+    - {x: 19, y: 3, type: fort_wall}
+    - {x: 19, y: 4, type: fort_wall}
+    - {x: 19, y: 5, type: fort_wall}
+    - {x: 19, y: 6, type: fort_wall}
+    - {x: 19, y: 7, type: fort_wall}
+    - {x: 19, y: 8, type: fort_wall}
+    - {x: 19, y: 9, type: fort_wall}
+    - {x: 19, y: 10, type: fort_wall}
+    - {x: 19, y: 11, type: fort_wall}
+    - {x: 19, y: 12, type: fort_wall}
+    - {x: 19, y: 13, type: fort_wall}
+
+    # ── Citadel interior — throne room (x=17-18, y=5-8) ──
+    - {x: 17, y: 5, type: citadel}
+    - {x: 17, y: 6, type: citadel}
+    - {x: 17, y: 7, type: citadel}
+    - {x: 17, y: 8, type: citadel}
+    - {x: 18, y: 5, type: citadel}
+    - {x: 18, y: 6, type: citadel}
+    - {x: 18, y: 7, type: citadel}
+    - {x: 18, y: 8, type: citadel}
+
+    # ── Citadel interior — outer courtyard (x=13-15, y=3-10) ──
     - {x: 13, y: 4, type: citadel}
     - {x: 13, y: 5, type: citadel}
     - {x: 13, y: 6, type: citadel}
-    # Harbor chain (slows movement through the narrows)
-    - {x: 7, y: 4, type: harbor_chain}
-    - {x: 7, y: 5, type: harbor_chain}
+    - {x: 13, y: 7, type: citadel}
+    - {x: 13, y: 8, type: citadel}
+    - {x: 13, y: 9, type: citadel}
+    - {x: 14, y: 4, type: citadel}
+    - {x: 14, y: 5, type: citadel}
+    - {x: 14, y: 6, type: citadel}
+    - {x: 14, y: 7, type: citadel}
+    - {x: 14, y: 8, type: citadel}
+    - {x: 14, y: 9, type: citadel}
+    - {x: 15, y: 4, type: citadel}
+    - {x: 15, y: 5, type: citadel}
+    - {x: 15, y: 6, type: citadel}
+    - {x: 15, y: 7, type: citadel}
+    - {x: 15, y: 8, type: citadel}
+    - {x: 15, y: 9, type: citadel}
+
   forts:
-    - {x: 12, y: 5, owner: red}
+    - {x: 18, y: 7, owner: red}
 
 terrain_types:
   reef:
@@ -293,20 +392,28 @@ unit_classes:
 
 armies:
   blue:
-    - {class: albuquerque,    pos: {x: 1, y: 4}}
+    # Portuguese fleet approaches from the west, spread across the channel
+    - {class: albuquerque,    pos: {x: 1, y: 6}}
     - {class: joao_de_nova,   pos: {x: 0, y: 3}}
-    - {class: duarte_pacheco, pos: {x: 2, y: 5}}
-    - {class: padre_miguel,   pos: {x: 0, y: 5}}
-    - {class: gaspar_almada,  pos: {x: 1, y: 6}}
+    - {class: duarte_pacheco, pos: {x: 2, y: 9}}
+    - {class: padre_miguel,   pos: {x: 0, y: 7}}
+    - {class: gaspar_almada,  pos: {x: 1, y: 11}}
 
   red:
-    - {class: sultan_sayf,       pos: {x: 12, y: 5}}
-    - {class: ottoman_admiral,   pos: {x: 8, y: 3}}
-    - {class: hormuz_sorcerer,   pos: {x: 11, y: 4}}
-    - {class: hormuz_corsair,    pos: {x: 8, y: 6}}
-    - {class: shore_gunner,      pos: {x: 10, y: 2}}
-    - {class: palace_guard,      pos: {x: 11, y: 5}}
-    - {class: ottoman_janissary, pos: {x: 10, y: 7}}
+    # Sultan in the throne room
+    - {class: sultan_sayf,       pos: {x: 18, y: 7}}
+    # Ottoman admiral patrolling the harbor
+    - {class: ottoman_admiral,   pos: {x: 10, y: 4}}
+    # Vizier in the outer courtyard
+    - {class: hormuz_sorcerer,   pos: {x: 14, y: 6}}
+    # Corsair in the open water south of the chain
+    - {class: hormuz_corsair,    pos: {x: 9, y: 10}}
+    # Shore gunner on the citadel wall, northern position
+    - {class: shore_gunner,      pos: {x: 13, y: 3}}
+    # Palace guard at the main gate breach
+    - {class: palace_guard,      pos: {x: 15, y: 6}}
+    # Janissary covering the southern approach
+    - {class: ottoman_janissary, pos: {x: 14, y: 9}}
 
 rules:
   max_turns: 14

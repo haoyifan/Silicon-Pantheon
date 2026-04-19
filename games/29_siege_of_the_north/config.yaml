@@ -14,60 +14,137 @@ description: |
   Inspired by the Siege of the North from Avatar: The Last Airbender.
 
 board:
-  width: 14
-  height: 12
+  width: 22
+  height: 16
   terrain:
-    # Ice fortress walls at y=8 with gate at x=6,7
+    # === FIRE NATION FLEET ZONE — open water and ice floes (y=0-3) ===
+    # Open water along south edge where ships anchor
+    - {x: 0, y: 0, type: canal}
+    - {x: 1, y: 0, type: canal}
+    - {x: 2, y: 0, type: canal}
+    - {x: 5, y: 0, type: canal}
+    - {x: 6, y: 0, type: canal}
+    - {x: 15, y: 0, type: canal}
+    - {x: 16, y: 0, type: canal}
+    - {x: 19, y: 0, type: canal}
+    - {x: 20, y: 0, type: canal}
+    - {x: 21, y: 0, type: canal}
+    - {x: 0, y: 1, type: canal}
+    - {x: 1, y: 1, type: canal}
+    - {x: 20, y: 1, type: canal}
+    - {x: 21, y: 1, type: canal}
+
+    # === APPROACH ZONE — snow and ice terrain (y=3-6) ===
+    # West canal system — natural corridor
+    - {x: 4, y: 3, type: canal}
+    - {x: 4, y: 4, type: canal}
+    - {x: 4, y: 5, type: canal}
+    - {x: 4, y: 6, type: canal}
+    # Center canal — splits the approach
+    - {x: 10, y: 3, type: canal}
+    - {x: 10, y: 4, type: canal}
+    - {x: 11, y: 4, type: canal}
+    - {x: 11, y: 3, type: canal}
+    # East canal system
+    - {x: 17, y: 3, type: canal}
+    - {x: 17, y: 4, type: canal}
+    - {x: 17, y: 5, type: canal}
+    - {x: 17, y: 6, type: canal}
+
+    # === SNOW BARRICADES — contested cover in the approach ===
+    # West flank barricades
+    - {x: 1, y: 4, type: snow_barricade}
+    - {x: 2, y: 4, type: snow_barricade}
+    - {x: 2, y: 6, type: snow_barricade}
+    - {x: 3, y: 6, type: snow_barricade}
+    # Center barricades
+    - {x: 7, y: 5, type: snow_barricade}
+    - {x: 8, y: 5, type: snow_barricade}
+    - {x: 13, y: 5, type: snow_barricade}
+    - {x: 14, y: 5, type: snow_barricade}
+    # East flank barricades
+    - {x: 19, y: 4, type: snow_barricade}
+    - {x: 20, y: 4, type: snow_barricade}
+    - {x: 18, y: 6, type: snow_barricade}
+    - {x: 19, y: 6, type: snow_barricade}
+
+    # === ICE TOWERS — forward watchtowers (y=7) ===
+    - {x: 3, y: 7, type: ice_tower}
+    - {x: 10, y: 7, type: ice_tower}
+    - {x: 11, y: 7, type: ice_tower}
+    - {x: 18, y: 7, type: ice_tower}
+
+    # === OUTER ICE WALL — main fortress wall (y=8) ===
+    # Left section
     - {x: 0, y: 8, type: ice_wall}
     - {x: 1, y: 8, type: ice_wall}
     - {x: 2, y: 8, type: ice_wall}
     - {x: 3, y: 8, type: ice_wall}
     - {x: 4, y: 8, type: ice_wall}
     - {x: 5, y: 8, type: ice_wall}
-    # Gate opening at x=6,7
+    - {x: 6, y: 8, type: ice_wall}
+    - {x: 7, y: 8, type: ice_wall}
     - {x: 8, y: 8, type: ice_wall}
-    - {x: 9, y: 8, type: ice_wall}
-    - {x: 10, y: 8, type: ice_wall}
-    - {x: 11, y: 8, type: ice_wall}
-    - {x: 12, y: 8, type: ice_wall}
+    # GATE at x=9,10,11,12
+    # Right section
     - {x: 13, y: 8, type: ice_wall}
-    # Canals in the approach zone
-    - {x: 3, y: 3, type: canal}
-    - {x: 3, y: 4, type: canal}
-    - {x: 3, y: 5, type: canal}
-    - {x: 10, y: 3, type: canal}
-    - {x: 10, y: 4, type: canal}
-    - {x: 10, y: 5, type: canal}
-    - {x: 6, y: 4, type: canal}
-    - {x: 7, y: 4, type: canal}
-    # Spirit Oasis deep inside the fortress
-    - {x: 6, y: 11, type: spirit_oasis}
-    - {x: 7, y: 11, type: spirit_oasis}
-    # Ice towers flanking the gate
-    - {x: 5, y: 7, type: ice_tower}
-    - {x: 8, y: 7, type: ice_tower}
-    # Snow barricades in the approach -- cover for both sides to contest
-    - {x: 1, y: 5, type: snow_barricade}
-    - {x: 2, y: 5, type: snow_barricade}
-    - {x: 5, y: 5, type: snow_barricade}
-    - {x: 8, y: 5, type: snow_barricade}
-    - {x: 11, y: 5, type: snow_barricade}
-    - {x: 12, y: 5, type: snow_barricade}
-    # Frozen harbor ice floes at the southern edge of the approach
-    - {x: 1, y: 2, type: canal}
-    - {x: 2, y: 2, type: canal}
-    - {x: 4, y: 1, type: canal}
-    - {x: 9, y: 2, type: canal}
-    - {x: 11, y: 3, type: canal}
-    - {x: 12, y: 3, type: canal}
-    # Inner ice ramparts behind the main wall
+    - {x: 14, y: 8, type: ice_wall}
+    - {x: 15, y: 8, type: ice_wall}
+    - {x: 16, y: 8, type: ice_wall}
+    - {x: 17, y: 8, type: ice_wall}
+    - {x: 18, y: 8, type: ice_wall}
+    - {x: 19, y: 8, type: ice_wall}
+    - {x: 20, y: 8, type: ice_wall}
+    - {x: 21, y: 8, type: ice_wall}
+
+    # === INNER RAMPARTS — second defensive line (y=9-10) ===
     - {x: 2, y: 9, type: ice_rampart}
     - {x: 3, y: 9, type: ice_rampart}
-    - {x: 10, y: 9, type: ice_rampart}
-    - {x: 11, y: 9, type: ice_rampart}
-    # Snowdrifts along flanks
-    - {x: 0, y: 6, type: snow_barricade}
-    - {x: 13, y: 6, type: snow_barricade}
+    - {x: 4, y: 9, type: ice_rampart}
+    - {x: 17, y: 9, type: ice_rampart}
+    - {x: 18, y: 9, type: ice_rampart}
+    - {x: 19, y: 9, type: ice_rampart}
+    # Inner canal network — city waterways
+    - {x: 7, y: 10, type: canal}
+    - {x: 8, y: 10, type: canal}
+    - {x: 13, y: 10, type: canal}
+    - {x: 14, y: 10, type: canal}
+    - {x: 7, y: 11, type: canal}
+    - {x: 14, y: 11, type: canal}
+    # Inner ice walls — secondary barriers
+    - {x: 6, y: 10, type: ice_wall}
+    - {x: 15, y: 10, type: ice_wall}
+    - {x: 6, y: 11, type: ice_wall}
+    - {x: 15, y: 11, type: ice_wall}
+
+    # === ICE BRIDGES — crossing the inner canals ===
+    - {x: 8, y: 11, type: snow_barricade}
+    - {x: 13, y: 11, type: snow_barricade}
+
+    # === INNER CITY — buildings and streets (y=11-13) ===
+    - {x: 2, y: 11, type: ice_rampart}
+    - {x: 3, y: 11, type: ice_rampart}
+    - {x: 18, y: 11, type: ice_rampart}
+    - {x: 19, y: 11, type: ice_rampart}
+    - {x: 0, y: 12, type: ice_wall}
+    - {x: 21, y: 12, type: ice_wall}
+    - {x: 0, y: 13, type: ice_wall}
+    - {x: 21, y: 13, type: ice_wall}
+
+    # === SPIRIT OASIS — deep inside the city (y=14-15) ===
+    - {x: 9, y: 14, type: spirit_oasis}
+    - {x: 10, y: 14, type: spirit_oasis}
+    - {x: 11, y: 14, type: spirit_oasis}
+    - {x: 12, y: 14, type: spirit_oasis}
+    - {x: 10, y: 15, type: spirit_oasis}
+    - {x: 11, y: 15, type: spirit_oasis}
+    # Walls protecting the Oasis flanks
+    - {x: 8, y: 14, type: ice_wall}
+    - {x: 13, y: 14, type: ice_wall}
+    - {x: 8, y: 15, type: ice_wall}
+    - {x: 9, y: 15, type: ice_wall}
+    - {x: 12, y: 15, type: ice_wall}
+    - {x: 13, y: 15, type: ice_wall}
   forts: []
 
 terrain_types:
@@ -347,30 +424,31 @@ unit_classes:
 
 armies:
   blue:
-    # Aang near the Spirit Oasis
-    - {class: aang, pos: {x: 7, y: 10}}
-    # Katara beside Aang
-    - {class: katara, pos: {x: 6, y: 10}}
-    # Sokka at the gate
-    - {class: sokka, pos: {x: 6, y: 7}}
-    # Pakku on the wall
-    - {class: pakku, pos: {x: 4, y: 7}}
-    # Hahn and Sangok defending
-    - {class: hahn, pos: {x: 9, y: 7}}
-    - {class: sangok, pos: {x: 7, y: 9}}
+    # Aang — near the Spirit Oasis, deep inside
+    - {class: aang, pos: {x: 10, y: 13}}
+    # Katara — beside Aang
+    - {class: katara, pos: {x: 11, y: 13}}
+    # Sokka — commanding the gate defense
+    - {class: sokka, pos: {x: 10, y: 9}}
+    # Pakku — on the wall, west tower
+    - {class: pakku, pos: {x: 3, y: 7}}
+    # Hahn — aggressive forward position, east
+    - {class: hahn, pos: {x: 18, y: 7}}
+    # Sangok — inner rampart, blocking the path to the Oasis
+    - {class: sangok, pos: {x: 11, y: 11}}
 
   red:
-    # Zhao behind the assault force
-    - {class: zhao, pos: {x: 7, y: 1}}
-    # Zuko flanking east
-    - {class: zuko, pos: {x: 12, y: 2}}
-    # Iroh near Zuko
-    - {class: iroh, pos: {x: 11, y: 1}}
-    # Assault force
-    - {class: fire_nation_soldier, pos: {x: 5, y: 0}}
-    - {class: firebender, pos: {x: 8, y: 0}}
-    - {class: komodo_rhino, pos: {x: 6, y: 2}}
-    - {class: fire_sage, pos: {x: 9, y: 1}}
+    # Zhao — behind the center assault force
+    - {class: zhao, pos: {x: 10, y: 2}}
+    # Zuko — infiltrating alone, far east flank
+    - {class: zuko, pos: {x: 20, y: 2}}
+    # Iroh — near center, conflicted loyalties
+    - {class: iroh, pos: {x: 12, y: 1}}
+    # Assault force — spread across three approach lanes
+    - {class: fire_nation_soldier, pos: {x: 6, y: 1}}
+    - {class: firebender, pos: {x: 14, y: 1}}
+    - {class: komodo_rhino, pos: {x: 8, y: 2}}
+    - {class: fire_sage, pos: {x: 3, y: 1}}
 
 rules:
   max_turns: 16
@@ -380,7 +458,7 @@ win_conditions:
   - {type: protect_unit, unit_id: u_b_aang_1, owning_team: blue}
   - {type: protect_unit, unit_id: u_r_zhao_1, owning_team: red}
   - {type: protect_unit_survives, unit_id: u_b_aang_1, owning_team: blue}
-  - {type: reach_tile, team: red, pos: {x: 6, y: 11}}
+  - {type: reach_tile, team: red, pos: {x: 10, y: 14}}
   - {type: eliminate_all_enemy_units}
   - {type: max_turns_draw}
 

@@ -15,72 +15,114 @@ description: |
   Inspired by the Battle of Five Armies from The Hobbit by J.R.R. Tolkien.
 
 # ───────────────────────────────────────────────────────
-#  MAP LAYOUT  (12 wide x 10 tall)
+#  MAP LAYOUT  (22 wide x 16 tall)
 #
-#  y=0  ^ ^ ^ ^ . . . . ^ ^ ^ ^   Mountain ridge
-#  y=1  ^ . . F . . . . . . . ^   Erebor gate (F=fort), mountain flanks
-#  y=2  . . # . . T T . . # . .   Ruins of Dale (#), trees (T)
-#  y=3  . . # . . . . . . # . .   Ruins continue — Blue defensive line
-#  y=4  . . . . . . . . . . . .   Open ground — no-man's-land
-#  y=5  . . . . ~ ~ ~ ~ . . . .   River crossing (~ impassable except bridge)
-#  y=6  T . . . . . . . . . . T   Forest flanks
-#  y=7  T . . . . . . . . . . T   Red approaches from multiple angles
-#  y=8  . . . . . . . . . . . .   Red staging area
-#  y=9  . . . . . F . . . . . .   Goblin camp (F=red fort)
+#  y=0   ^ ^ ^ ^ ^ ^ ^ . . . . . . . . ^ ^ ^ ^ ^ ^ ^   Mountain ridge
+#  y=1   ^ ^ ^ . . . F . . . . . . . F . . . ^ ^ ^ ^   Erebor gates (F=forts)
+#  y=2   ^ . . . . # # . . T T . . # # . . . . . ^ ^   Dale ruins + forest
+#  y=3   ^ . . . # # . . . . . . . . # # . . . . . ^   Dale ruins continue
+#  y=4   . . . . # . . . . . . . . . . # . . . . . .   Dale outer edge
+#  y=5   . . . . . . . . . . . . . . . . . . . . . .   Open ground
+#  y=6   . . . . . . . . . . . . . . . . . . . . . .   No-man's-land
+#  y=7   . . ~ ~ ~ ~ ~ . . . . . . . ~ ~ ~ ~ ~ . . .   River (bridge at x=7-8, 13-14)
+#  y=8   . . . . . . . . . . . . . . . . . . . . . .   South approach
+#  y=9   T T . . . . . . . . . . . . . . . . . . T T   Forest flanks
+#  y=10  T T . . . . . . . . . . . . . . . . . . T T   Forest flanks
+#  y=11  . . . . . . . . . . . . . . . . . . . . . .   Red staging west
+#  y=12  . . . . . . . . . . . . . . . . . . . . . .   Open approach
+#  y=13  . . . . . . . . . . . . . . . . . . . . . .   Red staging east
+#  y=14  . . . . . . . . . . . F . . . . . . . . . .   Goblin camp (F=red fort)
+#  y=15  . . . . . . . . . . . . . . . . . . . . . .   Red rear
 # ───────────────────────────────────────────────────────
 
 board:
-  width: 12
-  height: 10
+  width: 22
+  height: 16
   terrain:
     # ── Mountain ridge (y=0) ──
     - {x: 0, y: 0, type: mountain}
     - {x: 1, y: 0, type: mountain}
     - {x: 2, y: 0, type: mountain}
     - {x: 3, y: 0, type: mountain}
-    - {x: 8, y: 0, type: mountain}
-    - {x: 9, y: 0, type: mountain}
-    - {x: 10, y: 0, type: mountain}
-    - {x: 11, y: 0, type: mountain}
-    # Gap at x=4..7 y=0 is the high pass — accessible but costly
+    - {x: 4, y: 0, type: mountain}
+    - {x: 5, y: 0, type: mountain}
+    - {x: 6, y: 0, type: mountain}
+    - {x: 15, y: 0, type: mountain}
+    - {x: 16, y: 0, type: mountain}
+    - {x: 17, y: 0, type: mountain}
+    - {x: 18, y: 0, type: mountain}
+    - {x: 19, y: 0, type: mountain}
+    - {x: 20, y: 0, type: mountain}
+    - {x: 21, y: 0, type: mountain}
 
     # ── Mountain flanks (y=1) ──
     - {x: 0, y: 1, type: mountain}
-    - {x: 11, y: 1, type: mountain}
+    - {x: 1, y: 1, type: mountain}
+    - {x: 2, y: 1, type: mountain}
+    - {x: 17, y: 1, type: mountain}
+    - {x: 18, y: 1, type: mountain}
+    - {x: 19, y: 1, type: mountain}
+    - {x: 20, y: 1, type: mountain}
+    - {x: 21, y: 1, type: mountain}
 
-    # ── Ruins of Dale (y=2..3) — cover for Blue's defensive line ──
-    - {x: 2, y: 2, type: ruins}
-    - {x: 3, y: 2, type: ruins}
-    - {x: 9, y: 2, type: ruins}
-    - {x: 2, y: 3, type: ruins}
-    - {x: 9, y: 3, type: ruins}
+    # ── Mountain flanks (y=2-3) ──
+    - {x: 0, y: 2, type: mountain}
+    - {x: 20, y: 2, type: mountain}
+    - {x: 21, y: 2, type: mountain}
+    - {x: 0, y: 3, type: mountain}
+    - {x: 21, y: 3, type: mountain}
 
-    # ── Trees near Dale — concealment and flanking cover ──
-    - {x: 5, y: 2, type: forest}
-    - {x: 6, y: 2, type: forest}
+    # ── Ruins of Dale (y=2-4) ──
+    - {x: 5, y: 2, type: ruins}
+    - {x: 6, y: 2, type: ruins}
+    - {x: 13, y: 2, type: ruins}
+    - {x: 14, y: 2, type: ruins}
+    - {x: 4, y: 3, type: ruins}
+    - {x: 5, y: 3, type: ruins}
+    - {x: 14, y: 3, type: ruins}
+    - {x: 15, y: 3, type: ruins}
+    - {x: 4, y: 4, type: ruins}
+    - {x: 15, y: 4, type: ruins}
 
-    # ── River (y=5) — impassable except at the bridge (x=5,6) ──
-    - {x: 2, y: 5, type: river}
-    - {x: 3, y: 5, type: river}
-    - {x: 4, y: 5, type: river}
-    - {x: 7, y: 5, type: river}
-    - {x: 8, y: 5, type: river}
-    - {x: 9, y: 5, type: river}
-    # x=5 and x=6 at y=5 are open — the bridge / ford
+    # ── Trees near Dale (y=2) ──
+    - {x: 9, y: 2, type: forest}
+    - {x: 10, y: 2, type: forest}
 
-    # ── Forest flanks (y=6..7) — flanking paths for fast units ──
-    - {x: 0, y: 6, type: forest}
-    - {x: 1, y: 6, type: forest}
-    - {x: 10, y: 6, type: forest}
-    - {x: 11, y: 6, type: forest}
-    - {x: 0, y: 7, type: forest}
-    - {x: 11, y: 7, type: forest}
+    # ── River (y=7) — impassable except at two bridges ──
+    - {x: 2, y: 7, type: river}
+    - {x: 3, y: 7, type: river}
+    - {x: 4, y: 7, type: river}
+    - {x: 5, y: 7, type: river}
+    - {x: 6, y: 7, type: river}
+    # bridge at x=7,8
+    - {x: 9, y: 7, type: river}
+    - {x: 10, y: 7, type: river}
+    - {x: 11, y: 7, type: river}
+    - {x: 12, y: 7, type: river}
+    # bridge at x=13,14
+    - {x: 15, y: 7, type: river}
+    - {x: 16, y: 7, type: river}
+    - {x: 17, y: 7, type: river}
+    - {x: 18, y: 7, type: river}
+    - {x: 19, y: 7, type: river}
+
+    # ── Forest flanks (y=9-10) ──
+    - {x: 0, y: 9, type: forest}
+    - {x: 1, y: 9, type: forest}
+    - {x: 20, y: 9, type: forest}
+    - {x: 21, y: 9, type: forest}
+    - {x: 0, y: 10, type: forest}
+    - {x: 1, y: 10, type: forest}
+    - {x: 20, y: 10, type: forest}
+    - {x: 21, y: 10, type: forest}
 
   forts:
-    # Erebor Gate — Blue's stronghold behind the defensive line
-    - {x: 4, y: 1, owner: blue}
+    # Erebor Gate West — Blue's stronghold
+    - {x: 6, y: 1, owner: blue}
+    # Erebor Gate East — Blue's stronghold
+    - {x: 14, y: 1, owner: blue}
     # Goblin Camp — Red's staging area in the south
-    - {x: 5, y: 9, owner: red}
+    - {x: 11, y: 14, owner: red}
 
 terrain_types:
   mountain:
@@ -269,6 +311,26 @@ unit_classes:
     glyph: H
     color: bright_cyan
 
+  eagles:
+    display_name: Great Eagles
+    description: |
+      The Eagles of the Misty Mountains, led by the Lord of Eagles.
+      They arrive on the winds of battle — swift, devastating, and
+      able to fly over any terrain. Their talons rend orc armor and
+      scatter warg riders from above.
+    hp_max: 26
+    atk: 12
+    defense: 4
+    res: 5
+    spd: 8
+    rng_min: 1
+    rng_max: 1
+    move: 6
+    tags: [hero, eagle, flying]
+    sight: 6
+    glyph: W
+    color: bright_cyan
+
   # ═══════════════════════════════════════
   #  RED — The Goblin Host (8 units)
   # ═══════════════════════════════════════
@@ -444,37 +506,40 @@ unit_classes:
 
 armies:
   blue:
-    # Thorin and Dwalin hold the center behind the ruins
-    - {class: thorin, pos: {x: 5, y: 2}}
-    - {class: dwalin, pos: {x: 6, y: 3}}
-    # Bard on the right flank, elevated in the ruins
-    - {class: bard, pos: {x: 9, y: 2}}
-    # Thranduil on the left flank, ready to intercept
-    - {class: thranduil, pos: {x: 2, y: 3}}
-    # Gandalf behind the center line
-    - {class: gandalf, pos: {x: 5, y: 1}}
-    # Beorn anchoring the right-center
-    - {class: beorn, pos: {x: 7, y: 1}}
-    # Bilbo scouting forward
-    - {class: bilbo, pos: {x: 3, y: 2}}
+    # Thorin at Erebor west gate, the anchor
+    - {class: thorin, pos: {x: 7, y: 2}}
+    # Dwalin in the Dale ruins, right sector
+    - {class: dwalin, pos: {x: 14, y: 3}}
+    # Bard on the left flank, elevated in the ruins
+    - {class: bard, pos: {x: 5, y: 3}}
+    # Thranduil on the far left, ready to intercept flankers
+    - {class: thranduil, pos: {x: 3, y: 4}}
+    # Gandalf behind the center line at Erebor
+    - {class: gandalf, pos: {x: 10, y: 1}}
+    # Beorn anchoring the right flank near the forest
+    - {class: beorn, pos: {x: 16, y: 2}}
+    # Bilbo scouting forward center
+    - {class: bilbo, pos: {x: 9, y: 4}}
+    # Eagles arriving from the mountain peaks
+    - {class: eagles, pos: {x: 11, y: 0}}
 
   red:
     # Azog commanding from the center-south
-    - {class: azog, pos: {x: 5, y: 8}}
-    # Bolg leading the right flank through the forest
-    - {class: bolg, pos: {x: 10, y: 7}}
-    # Fimbul providing ranged support from behind
-    - {class: fimbul, pos: {x: 6, y: 9}}
-    # Yazneg flanking wide left through the forest
-    - {class: yazneg, pos: {x: 1, y: 7}}
+    - {class: azog, pos: {x: 11, y: 13}}
+    # Bolg leading the eastern flank through the forest
+    - {class: bolg, pos: {x: 20, y: 11}}
+    # Fimbul providing ranged support from behind center
+    - {class: fimbul, pos: {x: 10, y: 14}}
+    # Yazneg flanking wide left through the western forest
+    - {class: yazneg, pos: {x: 1, y: 11}}
     # Narzug buffing the center push
-    - {class: narzug, pos: {x: 4, y: 8}}
+    - {class: narzug, pos: {x: 8, y: 12}}
     # Grinnah healing behind the front line
-    - {class: grinnah, pos: {x: 5, y: 9}}
-    # Bat swarm rushing to block Bard's line of fire
-    - {class: bat_swarm, pos: {x: 8, y: 8}}
+    - {class: grinnah, pos: {x: 12, y: 14}}
+    # Bat swarm rushing north to disrupt archers
+    - {class: bat_swarm, pos: {x: 15, y: 11}}
     # Gundabad berserker charging straight up the middle
-    - {class: gundabad_berserker, pos: {x: 6, y: 7}}
+    - {class: gundabad_berserker, pos: {x: 11, y: 11}}
 
 rules:
   max_turns: 25
@@ -485,7 +550,7 @@ win_conditions:
   - {type: protect_unit, unit_id: u_b_thorin_1, owning_team: blue}
   - {type: protect_unit, unit_id: u_r_azog_1, owning_team: red}
   - {type: eliminate_all_enemy_units}
-  - {type: reach_tile, unit_id: u_r_azog_1, pos: {x: 4, y: 1}, team: red}
+  - {type: reach_tile, unit_id: u_r_azog_1, pos: {x: 6, y: 1}, team: red}
   - {type: seize_enemy_fort}
   - {type: max_turns_draw}
 

@@ -13,28 +13,52 @@ description: |
   Inspired by the Battle of Hoth from Star Wars: The Empire Strikes Back.
 
 board:
-  width: 12
-  height: 8
+  width: 22
+  height: 14
   terrain:
-    # Trenches — defensive line across the middle
-    - {x: 2, y: 4, type: trench}
-    - {x: 3, y: 4, type: trench}
-    - {x: 4, y: 4, type: trench}
-    - {x: 7, y: 4, type: trench}
-    - {x: 8, y: 4, type: trench}
-    - {x: 9, y: 4, type: trench}
-    - {x: 10, y: 4, type: trench}
-    # Ice ridge — western flanking corridor with cover
-    - {x: 0, y: 2, type: ice_ridge}
-    - {x: 1, y: 2, type: ice_ridge}
-    - {x: 0, y: 3, type: ice_ridge}
-    - {x: 1, y: 3, type: ice_ridge}
-    - {x: 0, y: 4, type: ice_ridge}
-    - {x: 1, y: 4, type: ice_ridge}
-    - {x: 0, y: 5, type: ice_ridge}
-    - {x: 1, y: 5, type: ice_ridge}
-    # Ice plains — open ground, no cover
-    - {x: 2, y: 2, type: ice_plain}
+    # =============================================
+    # ICE PLAINS — vast open killing ground (north)
+    # AT-ATs approach from rows 0-3
+    # =============================================
+    # Row 0 — Imperial landing zone
+    - {x: 2, y: 0, type: ice_plain}
+    - {x: 3, y: 0, type: ice_plain}
+    - {x: 4, y: 0, type: ice_plain}
+    - {x: 5, y: 0, type: ice_plain}
+    - {x: 6, y: 0, type: ice_plain}
+    - {x: 7, y: 0, type: ice_plain}
+    - {x: 8, y: 0, type: ice_plain}
+    - {x: 9, y: 0, type: ice_plain}
+    - {x: 10, y: 0, type: ice_plain}
+    - {x: 11, y: 0, type: ice_plain}
+    - {x: 12, y: 0, type: ice_plain}
+    - {x: 13, y: 0, type: ice_plain}
+    - {x: 14, y: 0, type: ice_plain}
+    - {x: 15, y: 0, type: ice_plain}
+    - {x: 16, y: 0, type: ice_plain}
+    - {x: 17, y: 0, type: ice_plain}
+    - {x: 18, y: 0, type: ice_plain}
+    - {x: 19, y: 0, type: ice_plain}
+    # Row 1
+    - {x: 2, y: 1, type: ice_plain}
+    - {x: 3, y: 1, type: ice_plain}
+    - {x: 4, y: 1, type: ice_plain}
+    - {x: 5, y: 1, type: ice_plain}
+    - {x: 6, y: 1, type: ice_plain}
+    - {x: 7, y: 1, type: ice_plain}
+    - {x: 8, y: 1, type: ice_plain}
+    - {x: 9, y: 1, type: ice_plain}
+    - {x: 10, y: 1, type: ice_plain}
+    - {x: 11, y: 1, type: ice_plain}
+    - {x: 12, y: 1, type: ice_plain}
+    - {x: 13, y: 1, type: ice_plain}
+    - {x: 14, y: 1, type: ice_plain}
+    - {x: 15, y: 1, type: ice_plain}
+    - {x: 16, y: 1, type: ice_plain}
+    - {x: 17, y: 1, type: ice_plain}
+    - {x: 18, y: 1, type: ice_plain}
+    - {x: 19, y: 1, type: ice_plain}
+    # Row 2
     - {x: 3, y: 2, type: ice_plain}
     - {x: 4, y: 2, type: ice_plain}
     - {x: 5, y: 2, type: ice_plain}
@@ -44,31 +68,142 @@ board:
     - {x: 9, y: 2, type: ice_plain}
     - {x: 10, y: 2, type: ice_plain}
     - {x: 11, y: 2, type: ice_plain}
-    - {x: 2, y: 3, type: ice_plain}
+    - {x: 12, y: 2, type: ice_plain}
+    - {x: 13, y: 2, type: ice_plain}
+    - {x: 14, y: 2, type: ice_plain}
+    - {x: 15, y: 2, type: ice_plain}
+    - {x: 16, y: 2, type: ice_plain}
+    - {x: 17, y: 2, type: ice_plain}
+    - {x: 18, y: 2, type: ice_plain}
+    # Row 3 — no man's land
+    - {x: 3, y: 3, type: ice_plain}
+    - {x: 4, y: 3, type: ice_plain}
+    - {x: 5, y: 3, type: ice_plain}
+    - {x: 6, y: 3, type: ice_plain}
+    - {x: 7, y: 3, type: ice_plain}
+    - {x: 8, y: 3, type: ice_plain}
     - {x: 9, y: 3, type: ice_plain}
     - {x: 10, y: 3, type: ice_plain}
     - {x: 11, y: 3, type: ice_plain}
-    # AT-AT approach lanes — wide open snow
-    - {x: 3, y: 0, type: ice_plain}
-    - {x: 4, y: 0, type: ice_plain}
-    - {x: 7, y: 0, type: ice_plain}
-    - {x: 8, y: 0, type: ice_plain}
-    - {x: 3, y: 1, type: ice_plain}
-    - {x: 4, y: 1, type: ice_plain}
-    - {x: 7, y: 1, type: ice_plain}
-    - {x: 8, y: 1, type: ice_plain}
-    # Echo base corridors — behind the line
-    - {x: 4, y: 6, type: echo_base}
-    - {x: 5, y: 6, type: echo_base}
-    - {x: 6, y: 6, type: echo_base}
-    - {x: 7, y: 6, type: echo_base}
-    - {x: 4, y: 7, type: echo_base}
-    - {x: 5, y: 7, type: echo_base}
-    - {x: 6, y: 7, type: echo_base}
-    - {x: 7, y: 7, type: echo_base}
+    - {x: 12, y: 3, type: ice_plain}
+    - {x: 13, y: 3, type: ice_plain}
+    - {x: 14, y: 3, type: ice_plain}
+    - {x: 15, y: 3, type: ice_plain}
+    - {x: 16, y: 3, type: ice_plain}
+    - {x: 17, y: 3, type: ice_plain}
+    # Row 4 — more open ground before the trenches
+    - {x: 4, y: 4, type: ice_plain}
+    - {x: 5, y: 4, type: ice_plain}
+    - {x: 6, y: 4, type: ice_plain}
+    - {x: 7, y: 4, type: ice_plain}
+    - {x: 8, y: 4, type: ice_plain}
+    - {x: 9, y: 4, type: ice_plain}
+    - {x: 10, y: 4, type: ice_plain}
+    - {x: 11, y: 4, type: ice_plain}
+    - {x: 12, y: 4, type: ice_plain}
+    - {x: 13, y: 4, type: ice_plain}
+    - {x: 14, y: 4, type: ice_plain}
+    - {x: 15, y: 4, type: ice_plain}
+    - {x: 16, y: 4, type: ice_plain}
+
+    # =============================================
+    # ICE RIDGES — western and eastern flanking cover
+    # =============================================
+    # Western ridge
+    - {x: 0, y: 1, type: ice_ridge}
+    - {x: 1, y: 1, type: ice_ridge}
+    - {x: 0, y: 2, type: ice_ridge}
+    - {x: 1, y: 2, type: ice_ridge}
+    - {x: 0, y: 3, type: ice_ridge}
+    - {x: 1, y: 3, type: ice_ridge}
+    - {x: 2, y: 3, type: ice_ridge}
+    - {x: 0, y: 4, type: ice_ridge}
+    - {x: 1, y: 4, type: ice_ridge}
+    - {x: 2, y: 4, type: ice_ridge}
+    - {x: 0, y: 5, type: ice_ridge}
+    - {x: 1, y: 5, type: ice_ridge}
+    - {x: 2, y: 5, type: ice_ridge}
+    - {x: 0, y: 6, type: ice_ridge}
+    - {x: 1, y: 6, type: ice_ridge}
+    # Eastern ridge
+    - {x: 20, y: 2, type: ice_ridge}
+    - {x: 21, y: 2, type: ice_ridge}
+    - {x: 20, y: 3, type: ice_ridge}
+    - {x: 21, y: 3, type: ice_ridge}
+    - {x: 19, y: 4, type: ice_ridge}
+    - {x: 20, y: 4, type: ice_ridge}
+    - {x: 21, y: 4, type: ice_ridge}
+    - {x: 19, y: 5, type: ice_ridge}
+    - {x: 20, y: 5, type: ice_ridge}
+    - {x: 21, y: 5, type: ice_ridge}
+
+    # =============================================
+    # TRENCH LINES — Rebel defensive positions
+    # Forward trench line (row 6)
+    # =============================================
+    - {x: 3, y: 6, type: trench}
+    - {x: 4, y: 6, type: trench}
+    - {x: 5, y: 6, type: trench}
+    - {x: 6, y: 6, type: trench}
+    - {x: 7, y: 6, type: trench}
+    # gap at 8
+    - {x: 9, y: 6, type: trench}
+    - {x: 10, y: 6, type: trench}
+    - {x: 11, y: 6, type: trench}
+    - {x: 12, y: 6, type: trench}
+    # gap at 13
+    - {x: 14, y: 6, type: trench}
+    - {x: 15, y: 6, type: trench}
+    - {x: 16, y: 6, type: trench}
+    - {x: 17, y: 6, type: trench}
+    - {x: 18, y: 6, type: trench}
+
+    # Rear trench line (row 8)
+    - {x: 4, y: 8, type: trench}
+    - {x: 5, y: 8, type: trench}
+    - {x: 6, y: 8, type: trench}
+    - {x: 7, y: 8, type: trench}
+    - {x: 8, y: 8, type: trench}
+    - {x: 9, y: 8, type: trench}
+    # gap at 10-11
+    - {x: 12, y: 8, type: trench}
+    - {x: 13, y: 8, type: trench}
+    - {x: 14, y: 8, type: trench}
+    - {x: 15, y: 8, type: trench}
+    - {x: 16, y: 8, type: trench}
+    - {x: 17, y: 8, type: trench}
+
+    # =============================================
+    # ECHO BASE — Rebel base interior (south)
+    # =============================================
+    - {x: 7, y: 10, type: echo_base}
+    - {x: 8, y: 10, type: echo_base}
+    - {x: 9, y: 10, type: echo_base}
+    - {x: 10, y: 10, type: echo_base}
+    - {x: 11, y: 10, type: echo_base}
+    - {x: 12, y: 10, type: echo_base}
+    - {x: 13, y: 10, type: echo_base}
+    - {x: 7, y: 11, type: echo_base}
+    - {x: 8, y: 11, type: echo_base}
+    - {x: 9, y: 11, type: echo_base}
+    - {x: 10, y: 11, type: echo_base}
+    - {x: 11, y: 11, type: echo_base}
+    - {x: 12, y: 11, type: echo_base}
+    - {x: 13, y: 11, type: echo_base}
+    - {x: 8, y: 12, type: echo_base}
+    - {x: 9, y: 12, type: echo_base}
+    - {x: 10, y: 12, type: echo_base}
+    - {x: 11, y: 12, type: echo_base}
+    - {x: 12, y: 12, type: echo_base}
+    - {x: 8, y: 13, type: echo_base}
+    - {x: 9, y: 13, type: echo_base}
+    - {x: 10, y: 13, type: echo_base}
+    - {x: 11, y: 13, type: echo_base}
+    - {x: 12, y: 13, type: echo_base}
+
   forts:
-    # Shield generator — blue's critical asset
-    - {x: 6, y: 6, owner: blue}
+    # Shield generator — blue's critical asset, deep in the base
+    - {x: 10, y: 11, owner: blue}
 
 terrain_types:
   trench:
@@ -131,6 +266,7 @@ unit_classes:
     move: 5
     rng_min: 1
     rng_max: 2
+    tags: [flying]
     glyph: "L"
     color: bright_yellow
 
@@ -199,6 +335,7 @@ unit_classes:
     move: 5
     rng_min: 2
     rng_max: 3
+    tags: [flying]
     glyph: "W"
     color: bright_cyan
 
@@ -345,42 +482,42 @@ unit_classes:
 
 armies:
   blue:
-    # Luke — forward in snowspeeder
-    - {class: luke, pos: {x: 5, y: 3}}
-    # Leia — command center behind shield generator
-    - {class: leia, pos: {x: 5, y: 7}}
-    # Han — near the base
-    - {class: han, pos: {x: 7, y: 5}}
-    # Chewie — tank on the trench line
-    - {class: chewie, pos: {x: 4, y: 4}}
-    # Wedge — flanking snowspeeder
-    - {class: wedge, pos: {x: 9, y: 3}}
-    # Dak — support behind the line
-    - {class: dak, pos: {x: 6, y: 5}}
+    # Luke in snowspeeder — forward, flying
+    - {class: luke, pos: {x: 8, y: 5}}
+    # Leia deep in Echo Base command center
+    - {class: leia, pos: {x: 10, y: 13}}
+    # Han near the base perimeter
+    - {class: han, pos: {x: 14, y: 9}}
+    # Chewie holding the forward trench line
+    - {class: chewie, pos: {x: 6, y: 6}}
+    # Wedge in snowspeeder — flanking east, flying
+    - {class: wedge, pos: {x: 16, y: 5}}
+    # Dak — support behind the rear trench
+    - {class: dak, pos: {x: 9, y: 9}}
 
   red:
-    # Vader — advancing with the assault
-    - {class: vader, pos: {x: 6, y: 0}}
-    # Veers — lead AT-AT
-    - {class: veers, pos: {x: 4, y: 0}}
-    # Piett — rear fire support
-    - {class: piett, pos: {x: 5, y: 0}}
-    # Second AT-AT
-    - {class: blizzard_two, pos: {x: 8, y: 0}}
-    # AT-ST scout
-    - {class: blizzard_scout, pos: {x: 1, y: 1}}
-    # Snowtrooper infantry
-    - {class: snowtrooper_sgt, pos: {x: 3, y: 1}}
-    - {class: snowtrooper_heavy, pos: {x: 9, y: 1}}
+    # Vader — advancing from the north, center
+    - {class: vader, pos: {x: 10, y: 0}}
+    # Veers — lead AT-AT, left-center
+    - {class: veers, pos: {x: 6, y: 0}}
+    # Piett — rear fire support, far north
+    - {class: piett, pos: {x: 10, y: 1}}
+    # Second AT-AT — right flank
+    - {class: blizzard_two, pos: {x: 15, y: 0}}
+    # AT-ST scout — western flanking
+    - {class: blizzard_scout, pos: {x: 2, y: 2}}
+    # Snowtrooper infantry — spread behind walkers
+    - {class: snowtrooper_sgt, pos: {x: 8, y: 2}}
+    - {class: snowtrooper_heavy, pos: {x: 18, y: 1}}
 
 rules:
-  max_turns: 12
+  max_turns: 14
   fog_of_war: false
   first_player: red
 
 win_conditions:
   # Any red unit reaches shield generator -> red wins
-  - {type: reach_tile, team: red, pos: {x: 6, y: 6}}
+  - {type: reach_tile, team: red, pos: {x: 10, y: 11}}
   # Leia dies -> evacuation fails, blue loses
   - {type: protect_unit, unit_id: u_b_leia_1, owning_team: blue}
   # Leia survives the turn cap -> transports escape, blue wins

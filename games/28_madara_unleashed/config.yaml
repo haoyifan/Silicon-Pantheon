@@ -15,48 +15,143 @@ description: |
   Inspired by the Fourth Shinobi World War from Naruto Shippuden by Masashi Kishimoto.
 
 board:
-  width: 10
-  height: 8
+  width: 20
+  height: 16
   terrain:
-    # --- Northern zone: Ten-Tails devastation ---
-    # Bijuu bomb crater cluster (center-north)
-    - {x: 4, y: 1, type: crater}
-    - {x: 5, y: 1, type: crater}
-    - {x: 5, y: 2, type: crater}
-    # Scorched earth flanking the craters
-    - {x: 3, y: 1, type: scorched}
-    - {x: 6, y: 1, type: scorched}
-    - {x: 3, y: 2, type: scorched}
-    - {x: 6, y: 2, type: scorched}
+    # =============================================
+    # NORTHERN DEVASTATION — Ten-Tails impact zone
+    # Bijuu bomb craters, scorched earth, rock walls
+    # =============================================
+    # Central mega-crater from Bijuu Bomb
+    - {x: 9, y: 1, type: crater}
+    - {x: 10, y: 1, type: crater}
+    - {x: 11, y: 1, type: crater}
+    - {x: 9, y: 2, type: crater}
+    - {x: 10, y: 2, type: crater}
+    - {x: 11, y: 2, type: crater}
+    # Scorched ring around the mega-crater
+    - {x: 8, y: 0, type: scorched}
+    - {x: 9, y: 0, type: scorched}
+    - {x: 10, y: 0, type: scorched}
+    - {x: 11, y: 0, type: scorched}
+    - {x: 12, y: 0, type: scorched}
+    - {x: 8, y: 1, type: scorched}
+    - {x: 12, y: 1, type: scorched}
+    - {x: 8, y: 2, type: scorched}
+    - {x: 12, y: 2, type: scorched}
+    - {x: 8, y: 3, type: scorched}
+    - {x: 9, y: 3, type: scorched}
+    - {x: 10, y: 3, type: scorched}
+    - {x: 11, y: 3, type: scorched}
+    - {x: 12, y: 3, type: scorched}
 
-    # --- West chokepoint: rock wall with gap ---
-    - {x: 1, y: 2, type: rock}
-    - {x: 1, y: 3, type: rock}
-    - {x: 1, y: 4, type: rock}  # gap at y=5
-    - {x: 2, y: 3, type: forest}
+    # =============================================
+    # WESTERN ROCK WALL — channeling movement
+    # =============================================
+    - {x: 3, y: 3, type: rock}
+    - {x: 3, y: 4, type: rock}
+    - {x: 3, y: 5, type: rock}
+    - {x: 3, y: 6, type: rock}
+    # gap at y=7
+    - {x: 3, y: 8, type: rock}
+    - {x: 3, y: 9, type: rock}
 
-    # --- East chokepoint: rock wall with gap ---
-    - {x: 8, y: 2, type: rock}
-    - {x: 8, y: 3, type: rock}
-    - {x: 8, y: 4, type: rock}  # gap at y=5
-    - {x: 7, y: 3, type: forest}
+    # Western secondary wall
+    - {x: 1, y: 5, type: rock}
+    - {x: 1, y: 6, type: rock}
+    - {x: 1, y: 7, type: rock}
 
-    # --- Central corridor: defensible rubble ---
-    # Pillars offset to create unequal flanking lanes:
-    # West lane (x=2-3) is wider, east lane (x=6-7) is narrower
-    - {x: 4, y: 3, type: rock}   # impassable pillar
-    - {x: 6, y: 4, type: rock}   # shifted pillar -- narrows east lane
-    - {x: 3, y: 4, type: crater}
+    # =============================================
+    # EASTERN ROCK WALL — channeling movement
+    # =============================================
+    - {x: 16, y: 3, type: rock}
+    - {x: 16, y: 4, type: rock}
+    - {x: 16, y: 5, type: rock}
+    - {x: 16, y: 6, type: rock}
+    # gap at y=7
+    - {x: 16, y: 8, type: rock}
+    - {x: 16, y: 9, type: rock}
 
-    # --- Southern zone: Alliance staging area ---
-    # Forest cover for blue's back line
-    - {x: 2, y: 5, type: forest}
-    - {x: 3, y: 5, type: forest}
-    - {x: 6, y: 5, type: forest}
-    - {x: 7, y: 5, type: forest}
-    # Scorched no-man's-land in mid-south
-    - {x: 4, y: 5, type: scorched}
-    - {x: 5, y: 5, type: scorched}
+    # Eastern secondary wall
+    - {x: 18, y: 5, type: rock}
+    - {x: 18, y: 6, type: rock}
+    - {x: 18, y: 7, type: rock}
+
+    # =============================================
+    # CENTRAL PILLARS — creating lanes and cover
+    # =============================================
+    # Left-center pillar cluster
+    - {x: 7, y: 5, type: rock}
+    - {x: 7, y: 6, type: rock}
+    - {x: 6, y: 6, type: rock}
+
+    # Right-center pillar cluster
+    - {x: 13, y: 5, type: rock}
+    - {x: 13, y: 6, type: rock}
+    - {x: 14, y: 6, type: rock}
+
+    # Central divide pillar
+    - {x: 10, y: 7, type: rock}
+    - {x: 10, y: 8, type: rock}
+
+    # =============================================
+    # SECONDARY CRATERS — scattered across mid-field
+    # =============================================
+    # Western crater
+    - {x: 5, y: 7, type: crater}
+    - {x: 5, y: 8, type: crater}
+    - {x: 6, y: 8, type: crater}
+
+    # Eastern crater
+    - {x: 14, y: 7, type: crater}
+    - {x: 15, y: 7, type: crater}
+    - {x: 14, y: 8, type: crater}
+
+    # Southern crater
+    - {x: 9, y: 11, type: crater}
+    - {x: 10, y: 11, type: crater}
+
+    # =============================================
+    # SCORCHED EARTH — mid-field danger zones
+    # =============================================
+    - {x: 6, y: 4, type: scorched}
+    - {x: 7, y: 4, type: scorched}
+    - {x: 13, y: 4, type: scorched}
+    - {x: 14, y: 4, type: scorched}
+    - {x: 8, y: 9, type: scorched}
+    - {x: 9, y: 9, type: scorched}
+    - {x: 11, y: 9, type: scorched}
+    - {x: 12, y: 9, type: scorched}
+
+    # =============================================
+    # FOREST PATCHES — Alliance staging cover
+    # =============================================
+    # Southwest forest
+    - {x: 2, y: 12, type: forest}
+    - {x: 3, y: 12, type: forest}
+    - {x: 2, y: 13, type: forest}
+    - {x: 3, y: 13, type: forest}
+
+    # South-center forest
+    - {x: 8, y: 13, type: forest}
+    - {x: 9, y: 13, type: forest}
+    - {x: 10, y: 13, type: forest}
+    - {x: 11, y: 13, type: forest}
+
+    # Southeast forest
+    - {x: 16, y: 12, type: forest}
+    - {x: 17, y: 12, type: forest}
+    - {x: 16, y: 13, type: forest}
+    - {x: 17, y: 13, type: forest}
+
+    # Far west forest
+    - {x: 0, y: 9, type: forest}
+    - {x: 0, y: 10, type: forest}
+
+    # Far east forest
+    - {x: 19, y: 9, type: forest}
+    - {x: 19, y: 10, type: forest}
+
   forts: []
 
 terrain_types:
@@ -245,7 +340,7 @@ unit_classes:
     rng_min: 1
     rng_max: 3
     is_magic: true
-    tags: [vip]
+    tags: [vip, flying]
     glyph: "!"
     color: bright_red
 
@@ -321,23 +416,35 @@ unit_classes:
 
 armies:
   blue:
-    - {class: naruto, pos: {x: 5, y: 7}}
-    - {class: sasuke, pos: {x: 4, y: 7}}
-    - {class: kakashi, pos: {x: 6, y: 7}}
-    - {class: guy, pos: {x: 2, y: 7}}
-    - {class: gaara, pos: {x: 3, y: 6}}
-    - {class: tsunade, pos: {x: 5, y: 6}}
-    - {class: minato, pos: {x: 7, y: 6}}
+    # Alliance forces spread across multiple positions
+    # Naruto and Sasuke — south-center, main strike force
+    - {class: naruto, pos: {x: 10, y: 15}}
+    - {class: sasuke, pos: {x: 9, y: 14}}
+    # Kakashi — western approach
+    - {class: kakashi, pos: {x: 4, y: 13}}
+    # Guy — far west, isolated, ready to charge through gap
+    - {class: guy, pos: {x: 0, y: 11}}
+    # Gaara — eastern defensive position
+    - {class: gaara, pos: {x: 17, y: 14}}
+    # Tsunade — rear healer, south-center
+    - {class: tsunade, pos: {x: 11, y: 15}}
+    # Minato — flanking from the east
+    - {class: minato, pos: {x: 19, y: 12}}
 
   red:
-    - {class: madara, pos: {x: 5, y: 0}}
-    - {class: obito, pos: {x: 4, y: 0}}
-    - {class: tentails_head, pos: {x: 7, y: 0}}
-    - {class: tentails_arm, pos: {x: 2, y: 0}}
-    - {class: tentails_maw, pos: {x: 9, y: 0}}
+    # Madara — center of the devastation, floating (flying)
+    - {class: madara, pos: {x: 10, y: 4}}
+    # Obito — north-west of center
+    - {class: obito, pos: {x: 6, y: 3}}
+    # Ten-Tails head — behind the crater field
+    - {class: tentails_head, pos: {x: 10, y: 0}}
+    # Ten-Tails arm — western flank
+    - {class: tentails_arm, pos: {x: 2, y: 2}}
+    # Ten-Tails maw — eastern flank
+    - {class: tentails_maw, pos: {x: 17, y: 2}}
 
 rules:
-  max_turns: 10
+  max_turns: 12
   first_player: red
 
 win_conditions:

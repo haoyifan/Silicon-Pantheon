@@ -14,59 +14,233 @@ description: |
   Inspired by the Battle of the Department of Mysteries from Harry Potter by J.K. Rowling.
 
 board:
-  width: 12
-  height: 8
+  width: 20
+  height: 14
   terrain:
-    # Stone walls — impassable, forming corridors and rooms
-    # Northern wall
+    # =============================================
+    # OUTER WALLS — the Department boundary
+    # =============================================
+    # Top wall
     - {x: 0, y: 0, type: stone_wall}
     - {x: 1, y: 0, type: stone_wall}
     - {x: 2, y: 0, type: stone_wall}
     - {x: 3, y: 0, type: stone_wall}
+    - {x: 4, y: 0, type: stone_wall}
     - {x: 5, y: 0, type: stone_wall}
     - {x: 6, y: 0, type: stone_wall}
     - {x: 7, y: 0, type: stone_wall}
     - {x: 8, y: 0, type: stone_wall}
+    - {x: 9, y: 0, type: stone_wall}
     - {x: 10, y: 0, type: stone_wall}
     - {x: 11, y: 0, type: stone_wall}
-    # Interior walls forming rooms
-    - {x: 3, y: 2, type: stone_wall}
-    - {x: 8, y: 2, type: stone_wall}
-    - {x: 3, y: 5, type: stone_wall}
-    - {x: 8, y: 5, type: stone_wall}
-    # Chokepoint walls around prophecy hall — narrow the approaches
-    - {x: 3, y: 3, type: stone_wall}
-    - {x: 3, y: 4, type: stone_wall}
-    - {x: 8, y: 3, type: stone_wall}
-    - {x: 8, y: 4, type: stone_wall}
-    - {x: 5, y: 1, type: prophecy_shelf}
-    - {x: 6, y: 1, type: prophecy_shelf}
-    - {x: 7, y: 1, type: prophecy_shelf}
-    # Southern wall
+    - {x: 12, y: 0, type: stone_wall}
+    - {x: 13, y: 0, type: stone_wall}
+    - {x: 14, y: 0, type: stone_wall}
+    - {x: 15, y: 0, type: stone_wall}
+    - {x: 16, y: 0, type: stone_wall}
+    - {x: 17, y: 0, type: stone_wall}
+    - {x: 18, y: 0, type: stone_wall}
+    - {x: 19, y: 0, type: stone_wall}
+    # Bottom wall
+    - {x: 0, y: 13, type: stone_wall}
+    - {x: 1, y: 13, type: stone_wall}
+    - {x: 2, y: 13, type: stone_wall}
+    - {x: 3, y: 13, type: stone_wall}
+    - {x: 4, y: 13, type: stone_wall}
+    - {x: 5, y: 13, type: stone_wall}
+    - {x: 6, y: 13, type: stone_wall}
+    - {x: 7, y: 13, type: stone_wall}
+    - {x: 8, y: 13, type: stone_wall}
+    - {x: 9, y: 13, type: stone_wall}
+    - {x: 10, y: 13, type: stone_wall}
+    - {x: 11, y: 13, type: stone_wall}
+    - {x: 12, y: 13, type: stone_wall}
+    - {x: 13, y: 13, type: stone_wall}
+    - {x: 14, y: 13, type: stone_wall}
+    - {x: 15, y: 13, type: stone_wall}
+    - {x: 16, y: 13, type: stone_wall}
+    - {x: 17, y: 13, type: stone_wall}
+    - {x: 18, y: 13, type: stone_wall}
+    - {x: 19, y: 13, type: stone_wall}
+    # Left wall
+    - {x: 0, y: 1, type: stone_wall}
+    - {x: 0, y: 2, type: stone_wall}
+    - {x: 0, y: 3, type: stone_wall}
+    - {x: 0, y: 4, type: stone_wall}
+    - {x: 0, y: 5, type: stone_wall}
+    - {x: 0, y: 6, type: stone_wall}
     - {x: 0, y: 7, type: stone_wall}
-    - {x: 1, y: 7, type: stone_wall}
-    - {x: 2, y: 7, type: stone_wall}
-    - {x: 3, y: 7, type: stone_wall}
-    - {x: 5, y: 7, type: stone_wall}
-    - {x: 6, y: 7, type: stone_wall}
-    - {x: 7, y: 7, type: stone_wall}
-    - {x: 8, y: 7, type: stone_wall}
-    - {x: 10, y: 7, type: stone_wall}
-    - {x: 11, y: 7, type: stone_wall}
-    # Prophecy shelves — the Hall of Prophecy
+    - {x: 0, y: 8, type: stone_wall}
+    - {x: 0, y: 9, type: stone_wall}
+    - {x: 0, y: 10, type: stone_wall}
+    - {x: 0, y: 11, type: stone_wall}
+    - {x: 0, y: 12, type: stone_wall}
+    # Right wall
+    - {x: 19, y: 1, type: stone_wall}
+    - {x: 19, y: 2, type: stone_wall}
+    - {x: 19, y: 3, type: stone_wall}
+    - {x: 19, y: 4, type: stone_wall}
+    - {x: 19, y: 5, type: stone_wall}
+    - {x: 19, y: 6, type: stone_wall}
+    - {x: 19, y: 7, type: stone_wall}
+    - {x: 19, y: 8, type: stone_wall}
+    - {x: 19, y: 9, type: stone_wall}
+    - {x: 19, y: 10, type: stone_wall}
+    - {x: 19, y: 11, type: stone_wall}
+    - {x: 19, y: 12, type: stone_wall}
+
+    # =============================================
+    # HALL OF PROPHECY — top-left room (cols 1-6, rows 1-4)
+    # =============================================
+    # South wall of Prophecy Hall
+    - {x: 1, y: 4, type: stone_wall}
+    - {x: 2, y: 4, type: stone_wall}
+    - {x: 3, y: 4, type: stone_wall}
+    # door at x=4
+    - {x: 5, y: 4, type: stone_wall}
+    - {x: 6, y: 4, type: stone_wall}
+    # East wall of Prophecy Hall
+    - {x: 6, y: 1, type: stone_wall}
+    - {x: 6, y: 2, type: stone_wall}
+    - {x: 6, y: 3, type: stone_wall}
+    # Prophecy shelves inside
+    - {x: 2, y: 1, type: prophecy_shelf}
+    - {x: 2, y: 2, type: prophecy_shelf}
+    - {x: 2, y: 3, type: prophecy_shelf}
+    - {x: 4, y: 1, type: prophecy_shelf}
     - {x: 4, y: 2, type: prophecy_shelf}
-    - {x: 5, y: 2, type: prophecy_shelf}
-    - {x: 6, y: 2, type: prophecy_shelf}
-    - {x: 7, y: 2, type: prophecy_shelf}
-    - {x: 4, y: 5, type: prophecy_shelf}
-    - {x: 5, y: 5, type: prophecy_shelf}
-    - {x: 6, y: 5, type: prophecy_shelf}
-    - {x: 7, y: 5, type: prophecy_shelf}
-    # Death Chamber — a 2x2 open area with the veil between life and death
-    - {x: 5, y: 3, type: veil}
-    - {x: 6, y: 3, type: veil}
-    - {x: 5, y: 4, type: veil}
-    - {x: 6, y: 4, type: veil}
+    - {x: 4, y: 3, type: prophecy_shelf}
+
+    # =============================================
+    # PLANET ROOM — top-right room (cols 13-18, rows 1-4)
+    # =============================================
+    # West wall
+    - {x: 13, y: 1, type: stone_wall}
+    - {x: 13, y: 2, type: stone_wall}
+    - {x: 13, y: 3, type: stone_wall}
+    # South wall
+    - {x: 13, y: 4, type: stone_wall}
+    - {x: 14, y: 4, type: stone_wall}
+    - {x: 15, y: 4, type: stone_wall}
+    # door at x=16
+    - {x: 17, y: 4, type: stone_wall}
+    - {x: 18, y: 4, type: stone_wall}
+    # Floating planets (decorative terrain with slight effect)
+    - {x: 15, y: 2, type: planet_orb}
+    - {x: 17, y: 2, type: planet_orb}
+    - {x: 16, y: 3, type: planet_orb}
+
+    # =============================================
+    # TIME ROOM — middle-left room (cols 1-5, rows 6-9)
+    # =============================================
+    # North wall
+    - {x: 1, y: 5, type: stone_wall}
+    - {x: 2, y: 5, type: stone_wall}
+    - {x: 3, y: 5, type: stone_wall}
+    - {x: 4, y: 5, type: stone_wall}
+    - {x: 5, y: 5, type: stone_wall}
+    # East wall
+    - {x: 5, y: 6, type: stone_wall}
+    - {x: 5, y: 7, type: stone_wall}
+    # door at y=8
+    - {x: 5, y: 9, type: stone_wall}
+    # South wall
+    - {x: 1, y: 9, type: stone_wall}
+    - {x: 2, y: 9, type: stone_wall}
+    - {x: 3, y: 9, type: stone_wall}
+    - {x: 4, y: 9, type: stone_wall}
+    # Time turners (terrain)
+    - {x: 2, y: 7, type: time_bell}
+    - {x: 3, y: 7, type: time_bell}
+
+    # =============================================
+    # DEATH CHAMBER — center room (cols 8-12, rows 5-9)
+    # The Veil sits in the middle
+    # =============================================
+    # North wall
+    - {x: 8, y: 5, type: stone_wall}
+    # door at x=9
+    - {x: 10, y: 5, type: stone_wall}
+    - {x: 11, y: 5, type: stone_wall}
+    - {x: 12, y: 5, type: stone_wall}
+    # West wall
+    - {x: 8, y: 6, type: stone_wall}
+    # door at y=7
+    - {x: 8, y: 8, type: stone_wall}
+    - {x: 8, y: 9, type: stone_wall}
+    # East wall
+    - {x: 12, y: 6, type: stone_wall}
+    - {x: 12, y: 7, type: stone_wall}
+    # door at y=8
+    - {x: 12, y: 9, type: stone_wall}
+    # South wall
+    - {x: 8, y: 9, type: stone_wall}
+    - {x: 9, y: 9, type: stone_wall}
+    # door at x=10
+    - {x: 11, y: 9, type: stone_wall}
+    - {x: 12, y: 9, type: stone_wall}
+    # The Veil — center of the Death Chamber
+    - {x: 10, y: 7, type: veil}
+    - {x: 10, y: 6, type: veil}
+
+    # =============================================
+    # BRAIN ROOM — middle-right room (cols 14-18, rows 6-9)
+    # =============================================
+    # North wall
+    - {x: 14, y: 5, type: stone_wall}
+    - {x: 15, y: 5, type: stone_wall}
+    - {x: 16, y: 5, type: stone_wall}
+    - {x: 17, y: 5, type: stone_wall}
+    - {x: 18, y: 5, type: stone_wall}
+    # West wall
+    - {x: 14, y: 6, type: stone_wall}
+    - {x: 14, y: 7, type: stone_wall}
+    # door at y=8
+    - {x: 14, y: 9, type: stone_wall}
+    # South wall
+    - {x: 14, y: 9, type: stone_wall}
+    - {x: 15, y: 9, type: stone_wall}
+    - {x: 16, y: 9, type: stone_wall}
+    # door at x=17
+    - {x: 18, y: 9, type: stone_wall}
+    # Brain tanks inside
+    - {x: 16, y: 7, type: brain_tank}
+    - {x: 16, y: 8, type: brain_tank}
+
+    # =============================================
+    # CORRIDORS — connecting passages between rooms
+    # =============================================
+    # North corridor (connecting Prophecy Hall to Planet Room)
+    # Walls along y=2-3 forming the corridor
+    - {x: 7, y: 1, type: stone_wall}
+    - {x: 7, y: 3, type: stone_wall}
+    - {x: 8, y: 1, type: stone_wall}
+    - {x: 8, y: 3, type: stone_wall}
+    - {x: 9, y: 3, type: stone_wall}
+    - {x: 10, y: 1, type: stone_wall}
+    - {x: 10, y: 3, type: stone_wall}
+    - {x: 11, y: 1, type: stone_wall}
+    - {x: 11, y: 3, type: stone_wall}
+    - {x: 12, y: 1, type: stone_wall}
+    - {x: 12, y: 3, type: stone_wall}
+    # door at x=9 y=1 (north entrance)
+
+    # Central spine corridor (y=4, connecting upper and lower rooms)
+    # Already has doors from the rooms above
+
+    # South corridor (bottom area, cols 1-18, rows 10-12)
+    # Divider walls creating multiple paths
+    - {x: 4, y: 10, type: stone_wall}
+    - {x: 4, y: 11, type: stone_wall}
+    - {x: 9, y: 10, type: stone_wall}
+    - {x: 9, y: 11, type: stone_wall}
+    - {x: 14, y: 10, type: stone_wall}
+    - {x: 14, y: 11, type: stone_wall}
+
+    # Prophecy shelf debris in south corridors
+    - {x: 6, y: 11, type: prophecy_shelf}
+    - {x: 12, y: 11, type: prophecy_shelf}
+
   forts: []
 
 terrain_types:
@@ -104,6 +278,39 @@ terrain_types:
       Towering shelves of glass orbs, each containing a recorded
       prophecy. They glow with pale blue light and shatter
       spectacularly when hit by stray curses. +1 DEF, costs 2 to enter.
+
+  planet_orb:
+    display_name: Floating Planet
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "O"
+    color: bright_blue
+    description: |
+      Miniature planets float through this room in slow orbits,
+      casting eerie light and shadow. They provide partial cover
+      but disorient anyone trying to move through them.
+
+  time_bell:
+    display_name: Time Bell Jar
+    move_cost: 2
+    defense_bonus: 0
+    glyph: "T"
+    color: bright_yellow
+    description: |
+      A crystal bell jar containing a hummingbird that endlessly
+      cycles through birth, life, and death. Time flows strangely
+      near it — movement is sluggish and unpredictable.
+
+  brain_tank:
+    display_name: Brain Tank
+    move_cost: 2
+    defense_bonus: -1
+    glyph: "B"
+    color: green
+    description: |
+      Tanks of sickly green liquid containing floating human brains.
+      Tendrils of thought lash out at anyone who gets too close,
+      wrapping around them and burning. -1 DEF, costs 2 to enter.
 
 unit_classes:
   harry:
@@ -428,25 +635,35 @@ unit_classes:
 
 armies:
   blue:
-    # DA starts in the center room (prophecy hall)
-    - {class: harry, pos: {x: 5, y: 3}}
-    - {class: hermione, pos: {x: 6, y: 3}}
-    - {class: ron, pos: {x: 5, y: 4}}
-    - {class: neville, pos: {x: 6, y: 4}}
-    - {class: luna, pos: {x: 7, y: 3}}
-    - {class: ginny, pos: {x: 7, y: 4}}
+    # DA scattered across the Department
+    # Harry and Neville in the Prophecy Hall
+    - {class: harry, pos: {x: 3, y: 2}}
+    - {class: neville, pos: {x: 5, y: 3}}
+    # Hermione in the Time Room
+    - {class: hermione, pos: {x: 3, y: 7}}
+    # Ron in the south corridor
+    - {class: ron, pos: {x: 7, y: 11}}
+    # Luna in the Planet Room
+    - {class: luna, pos: {x: 16, y: 2}}
+    # Ginny near the Death Chamber entrance
+    - {class: ginny, pos: {x: 9, y: 5}}
 
   red:
-    # Death Eaters approach from north corridor (x=4, y=0 gap)
-    - {class: lucius, pos: {x: 4, y: 1}}
-    - {class: dolohov, pos: {x: 4, y: 0}}
-    - {class: rookwood, pos: {x: 9, y: 0}}
-    - {class: nott, pos: {x: 9, y: 1}}
-    # Death Eaters from east corridor
-    - {class: bellatrix, pos: {x: 10, y: 3}}
-    - {class: jugson, pos: {x: 11, y: 3}}
-    - {class: death_eater, pos: {x: 10, y: 4}}
-    - {class: death_eater, pos: {x: 11, y: 4}}
+    # Death Eaters entering from multiple points
+    # Lucius and Dolohov through north entrance
+    - {class: lucius, pos: {x: 9, y: 2}}
+    - {class: dolohov, pos: {x: 11, y: 2}}
+    # Bellatrix from the south
+    - {class: bellatrix, pos: {x: 10, y: 12}}
+    # Rookwood knows the Department — he's in the Brain Room
+    - {class: rookwood, pos: {x: 17, y: 7}}
+    # Nott blocking the south corridor
+    - {class: nott, pos: {x: 3, y: 12}}
+    # Jugson flanking from the east
+    - {class: jugson, pos: {x: 18, y: 11}}
+    # Death Eaters at separate entry points
+    - {class: death_eater, pos: {x: 15, y: 12}}
+    - {class: death_eater, pos: {x: 1, y: 6}}
 
 rules:
   max_turns: 16

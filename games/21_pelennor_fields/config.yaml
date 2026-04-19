@@ -11,59 +11,126 @@ description: |
   earth falls — unless the heroes can hold.
   Inspired by the Battle of the Pelennor Fields from The Lord of the Rings by J.R.R. Tolkien.
 
+# ──────────────────────────────────────────────────────────
+#  MAP LAYOUT  (24 wide x 16 tall)
+#
+#  y=0   # # . . . . . . . . . . . . . . . . % % % % % %   City wall + Osgiliath
+#  y=1   # # . . . . . . . . . . . . . . . . % % % % % %   City wall + Osgiliath
+#  y=2   # # . . . . . . . . . . . . . . . . % % % % % %   City wall + Osgiliath
+#  y=3   # # . . . . . . . # # # . . . . . . . . . . . .   City wall + Rammas
+#  y=4   . . . . . . . . . # . # . . . . . . . . . . . .   Gate + Rammas (breach)
+#  y=5   # # . . . . . . . # # # . . . . . . . . . . . .   City wall + Rammas
+#  y=6   # # . . . . . . . . . . . . . . . . . . . . . .   City wall
+#  y=7   # # . . . . . . . . . . . . . . . . . . . . . .   City wall
+#  y=8   # # . . . . . . . . . . . . . . . . . . . . . .   Open Pelennor
+#  y=9   # # . . . . . . . . . . . . . . . . . . . . . .   Open Pelennor
+#  y=10  # # . . . . . . . . . . . . . . . . . . . . . .   Open Pelennor
+#  y=11  . . . . . . . . . . . . . . . . . . . . . . . .   Open field
+#  y=12  . . . . . . . . . . . . . . . . . . . . . . . .   Harad approach
+#  y=13  . . . . . . . . . . . . . . . . . . . . . . . .   Open south
+#  y=14  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ . . . . . . . . . .   Marsh / Harlond
+#  y=15  ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ . . . . . . . .   Marsh extends
+# ──────────────────────────────────────────────────────────
+
 board:
-  width: 12
-  height: 10
+  width: 24
+  height: 16
   terrain:
-    # ── Minas Tirith walls (x=0, full height) — impassable ──
+    # ── Minas Tirith walls (x=0-1, y=0-10) — impassable ──
     - {x: 0, y: 0, type: city_wall}
-    - {x: 0, y: 1, type: city_wall}
-    - {x: 0, y: 2, type: city_wall}
-    - {x: 0, y: 3, type: city_wall}
-    # (0, 4) is the GATE — passable plain tile
-    - {x: 0, y: 5, type: city_wall}
-    - {x: 0, y: 6, type: city_wall}
-    - {x: 0, y: 7, type: city_wall}
-    - {x: 0, y: 8, type: city_wall}
-    - {x: 0, y: 9, type: city_wall}
-    # ── Second wall layer (x=1, north & south sections) ──
     - {x: 1, y: 0, type: city_wall}
+    - {x: 0, y: 1, type: city_wall}
     - {x: 1, y: 1, type: city_wall}
+    - {x: 0, y: 2, type: city_wall}
     - {x: 1, y: 2, type: city_wall}
-    # gap at y=3-5 (gate approach / sally port)
+    - {x: 0, y: 3, type: city_wall}
+    - {x: 1, y: 3, type: city_wall}
+    # Gate at y=4 — x=0 is open (the gate tile), x=1 is wall
+    - {x: 1, y: 4, type: city_wall}
+    - {x: 0, y: 5, type: city_wall}
+    - {x: 1, y: 5, type: city_wall}
+    - {x: 0, y: 6, type: city_wall}
     - {x: 1, y: 6, type: city_wall}
+    - {x: 0, y: 7, type: city_wall}
     - {x: 1, y: 7, type: city_wall}
+    - {x: 0, y: 8, type: city_wall}
     - {x: 1, y: 8, type: city_wall}
+    - {x: 0, y: 9, type: city_wall}
     - {x: 1, y: 9, type: city_wall}
-    # ── Rammas Echor — outer wall with breach ──
-    - {x: 5, y: 3, type: rammas_wall}
-    - {x: 6, y: 3, type: rammas_wall}
-    # (6, 4) is the breach — passable gap
-    - {x: 5, y: 4, type: rammas_wall}
-    - {x: 5, y: 5, type: rammas_wall}
-    - {x: 6, y: 5, type: rammas_wall}
+    - {x: 0, y: 10, type: city_wall}
+    - {x: 1, y: 10, type: city_wall}
+
+    # ── Rammas Echor — outer wall with breach (x=9, y=3-5) ──
+    - {x: 9, y: 3, type: rammas_wall}
+    - {x: 10, y: 3, type: rammas_wall}
+    - {x: 11, y: 3, type: rammas_wall}
+    - {x: 9, y: 4, type: rammas_wall}
+    # breach at x=10, y=4 — open gap
+    - {x: 11, y: 4, type: rammas_wall}
+    - {x: 9, y: 5, type: rammas_wall}
+    - {x: 10, y: 5, type: rammas_wall}
+    - {x: 11, y: 5, type: rammas_wall}
+
+    # ── Osgiliath ruins (x=18-23, y=0-2) — far northeast ──
+    - {x: 18, y: 0, type: osgiliath_ruins}
+    - {x: 19, y: 0, type: osgiliath_ruins}
+    - {x: 20, y: 0, type: osgiliath_ruins}
+    - {x: 21, y: 0, type: osgiliath_ruins}
+    - {x: 22, y: 0, type: osgiliath_ruins}
+    - {x: 23, y: 0, type: osgiliath_ruins}
+    - {x: 18, y: 1, type: osgiliath_ruins}
+    - {x: 19, y: 1, type: osgiliath_ruins}
+    - {x: 20, y: 1, type: osgiliath_ruins}
+    - {x: 21, y: 1, type: osgiliath_ruins}
+    - {x: 22, y: 1, type: osgiliath_ruins}
+    - {x: 23, y: 1, type: osgiliath_ruins}
+    - {x: 18, y: 2, type: osgiliath_ruins}
+    - {x: 19, y: 2, type: osgiliath_ruins}
+    - {x: 20, y: 2, type: osgiliath_ruins}
+    - {x: 21, y: 2, type: osgiliath_ruins}
+    - {x: 22, y: 2, type: osgiliath_ruins}
+    - {x: 23, y: 2, type: osgiliath_ruins}
+
     # ── Scattered ruins on the Pelennor (cover) ──
-    - {x: 4, y: 2, type: ruins}
-    - {x: 3, y: 6, type: ruins}
-    - {x: 5, y: 7, type: ruins}
-    # ── Osgiliath ruins (east edge) ──
-    - {x: 10, y: 2, type: osgiliath_ruins}
-    - {x: 11, y: 2, type: osgiliath_ruins}
-    - {x: 10, y: 3, type: osgiliath_ruins}
-    - {x: 11, y: 3, type: osgiliath_ruins}
-    - {x: 10, y: 4, type: osgiliath_ruins}
-    - {x: 11, y: 4, type: osgiliath_ruins}
-    # ── Marsh / river (south edge) — slow terrain ──
-    - {x: 4, y: 9, type: marsh}
-    - {x: 5, y: 9, type: marsh}
-    - {x: 6, y: 9, type: marsh}
-    - {x: 7, y: 9, type: marsh}
-    - {x: 8, y: 9, type: marsh}
-    - {x: 9, y: 9, type: marsh}
-    - {x: 10, y: 9, type: marsh}
-    - {x: 11, y: 9, type: marsh}
-    - {x: 6, y: 8, type: marsh}
-    - {x: 7, y: 8, type: marsh}
+    - {x: 5, y: 2, type: ruins}
+    - {x: 6, y: 5, type: ruins}
+    - {x: 4, y: 8, type: ruins}
+    - {x: 8, y: 7, type: ruins}
+    - {x: 13, y: 6, type: ruins}
+    - {x: 7, y: 10, type: ruins}
+
+    # ── Marsh / Harlond (y=14-15) — southern bog ──
+    - {x: 0, y: 14, type: marsh}
+    - {x: 1, y: 14, type: marsh}
+    - {x: 2, y: 14, type: marsh}
+    - {x: 3, y: 14, type: marsh}
+    - {x: 4, y: 14, type: marsh}
+    - {x: 5, y: 14, type: marsh}
+    - {x: 6, y: 14, type: marsh}
+    - {x: 7, y: 14, type: marsh}
+    - {x: 8, y: 14, type: marsh}
+    - {x: 9, y: 14, type: marsh}
+    - {x: 10, y: 14, type: marsh}
+    - {x: 11, y: 14, type: marsh}
+    - {x: 12, y: 14, type: marsh}
+    - {x: 13, y: 14, type: marsh}
+    - {x: 0, y: 15, type: marsh}
+    - {x: 1, y: 15, type: marsh}
+    - {x: 2, y: 15, type: marsh}
+    - {x: 3, y: 15, type: marsh}
+    - {x: 4, y: 15, type: marsh}
+    - {x: 5, y: 15, type: marsh}
+    - {x: 6, y: 15, type: marsh}
+    - {x: 7, y: 15, type: marsh}
+    - {x: 8, y: 15, type: marsh}
+    - {x: 9, y: 15, type: marsh}
+    - {x: 10, y: 15, type: marsh}
+    - {x: 11, y: 15, type: marsh}
+    - {x: 12, y: 15, type: marsh}
+    - {x: 13, y: 15, type: marsh}
+    - {x: 14, y: 15, type: marsh}
+    - {x: 15, y: 15, type: marsh}
+
   forts:
     # Minas Tirith gate — blue fort
     - {x: 0, y: 4, owner: blue}
@@ -258,6 +325,7 @@ unit_classes:
     rng_min: 1
     rng_max: 2
     is_magic: true
+    tags: [flying]
     glyph: "W"
     color: bright_red
 
@@ -395,39 +463,39 @@ unit_classes:
 armies:
   blue:
     # Gandalf — at the gate, holding the line
-    - {class: gandalf, pos: {x: 1, y: 4}}
-    # Aragorn — forward on the Pelennor
-    - {class: aragorn, pos: {x: 2, y: 3}}
-    # Éowyn — flanking near the southern approach
-    - {class: eowyn, pos: {x: 2, y: 5}}
-    # Legolas — elevated, raining arrows
-    - {class: legolas, pos: {x: 1, y: 3}}
-    # Gimli — beside the gate
-    - {class: gimli, pos: {x: 2, y: 4}}
-    # Prince Imrahil — mobile reserve, south
-    - {class: imrahil, pos: {x: 3, y: 5}}
-    # Éomer — cavalry, north flank
-    - {class: eomer, pos: {x: 3, y: 2}}
+    - {class: gandalf, pos: {x: 2, y: 4}}
+    # Aragorn — forward on the Pelennor near the Rammas breach
+    - {class: aragorn, pos: {x: 5, y: 4}}
+    # Gimli — beside the gate, anchored
+    - {class: gimli, pos: {x: 3, y: 5}}
+    # Legolas — elevated position, raining arrows
+    - {class: legolas, pos: {x: 3, y: 2}}
+    # Prince Imrahil — mobile reserve, south sector
+    - {class: imrahil, pos: {x: 4, y: 7}}
+    # Éomer — cavalry arriving from the northwest
+    - {class: eomer, pos: {x: 3, y: 0}}
+    # Éowyn — with the Rohirrim, riding beside Éomer
+    - {class: eowyn, pos: {x: 5, y: 1}}
 
   red:
-    # Witch-King — airborne, behind the horde
-    - {class: witch_king, pos: {x: 9, y: 4}}
-    # Gothmog — commanding the center
-    - {class: gothmog, pos: {x: 8, y: 5}}
+    # Witch-King — airborne, circling over the center field
+    - {class: witch_king, pos: {x: 15, y: 5}}
+    # Gothmog — commanding the center push
+    - {class: gothmog, pos: {x: 14, y: 4}}
     # Guritz (troll captain) — heading for the gate
-    - {class: guritz, pos: {x: 9, y: 3}}
-    # Suladân — Haradrim commander, south approach
-    - {class: suladan, pos: {x: 10, y: 7}}
-    # Mumakil — super-tank, slow advance
-    - {class: mumakil, pos: {x: 10, y: 5}}
-    # Zagdûf — siege captain, targeting the gate
-    - {class: zagdûf, pos: {x: 8, y: 3}}
-    # Khamûl — flanking from the north
-    - {class: khamul, pos: {x: 9, y: 1}}
-    # Gorbag — vanguard scout, fast
-    - {class: gorbag, pos: {x: 7, y: 6}}
-    # Shagrat — armored advance, center
-    - {class: shagrat, pos: {x: 8, y: 4}}
+    - {class: guritz, pos: {x: 16, y: 3}}
+    # Zagduf — siege captain, targeting the gate
+    - {class: zagdûf, pos: {x: 14, y: 2}}
+    # Khamul — flanking from Osgiliath, northeastern approach
+    - {class: khamul, pos: {x: 19, y: 3}}
+    # Gorbag — vanguard scout, fast, central
+    - {class: gorbag, pos: {x: 12, y: 7}}
+    # Shagrat — armored advance, south of Rammas
+    - {class: shagrat, pos: {x: 13, y: 6}}
+    # Suladan — Haradrim commander, approaching from the far south
+    - {class: suladan, pos: {x: 20, y: 13}}
+    # Mumakil — super-tank from the deep south, slow advance
+    - {class: mumakil, pos: {x: 18, y: 15}}
 
 rules:
   max_turns: 14
@@ -435,11 +503,11 @@ rules:
   first_player: blue
 
 win_conditions:
-  # Gandalf dies → blue loses (he's holding the gate).
+  # Gandalf dies -> blue loses (he's holding the gate).
   - {type: protect_unit, unit_id: u_b_gandalf_1, owning_team: blue}
-  # Gandalf survives the turn cap → Blue wins, the siege is broken.
+  # Gandalf survives the turn cap -> Blue wins, the siege is broken.
   - {type: protect_unit_survives, unit_id: u_b_gandalf_1, owning_team: blue}
-  # Red reaches the city gate → red wins, Minas Tirith falls.
+  # Red reaches the city gate -> red wins, Minas Tirith falls.
   - {type: reach_tile, team: red, pos: {x: 0, y: 4}}
   # Either side wins by total elimination.
   - {type: eliminate_all_enemy_units}
