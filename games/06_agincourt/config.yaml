@@ -17,10 +17,14 @@ description: |
   Inspired by the Battle of Agincourt (1415), Hundred Years' War.
 
 board:
-  width: 12
-  height: 10
+  width: 16
+  height: 14
   terrain:
-    # ── West forest (left wall of the corridor) ──
+    # ══════════════════════════════════════════════════
+    #  TRAMECOURT WOOD — west forest (x 0-3, all rows)
+    #  Dense, impassable oak and beech. Funnels the
+    #  battle into the central corridor (x 4-11).
+    # ══════════════════════════════════════════════════
     - {x: 0, y: 0, type: forest}
     - {x: 0, y: 1, type: forest}
     - {x: 0, y: 2, type: forest}
@@ -31,6 +35,10 @@ board:
     - {x: 0, y: 7, type: forest}
     - {x: 0, y: 8, type: forest}
     - {x: 0, y: 9, type: forest}
+    - {x: 0, y: 10, type: forest}
+    - {x: 0, y: 11, type: forest}
+    - {x: 0, y: 12, type: forest}
+    - {x: 0, y: 13, type: forest}
     - {x: 1, y: 0, type: forest}
     - {x: 1, y: 1, type: forest}
     - {x: 1, y: 2, type: forest}
@@ -41,79 +49,180 @@ board:
     - {x: 1, y: 7, type: forest}
     - {x: 1, y: 8, type: forest}
     - {x: 1, y: 9, type: forest}
-    # ── East forest (right wall of the corridor) ──
-    - {x: 10, y: 0, type: forest}
-    - {x: 10, y: 1, type: forest}
-    - {x: 10, y: 2, type: forest}
-    - {x: 10, y: 3, type: forest}
-    - {x: 10, y: 4, type: forest}
-    - {x: 10, y: 5, type: forest}
-    - {x: 10, y: 6, type: forest}
-    - {x: 10, y: 7, type: forest}
-    - {x: 10, y: 8, type: forest}
-    - {x: 10, y: 9, type: forest}
-    - {x: 11, y: 0, type: forest}
-    - {x: 11, y: 1, type: forest}
-    - {x: 11, y: 2, type: forest}
-    - {x: 11, y: 3, type: forest}
-    - {x: 11, y: 4, type: forest}
-    - {x: 11, y: 5, type: forest}
-    - {x: 11, y: 6, type: forest}
-    - {x: 11, y: 7, type: forest}
-    - {x: 11, y: 8, type: forest}
-    - {x: 11, y: 9, type: forest}
-    # ── Muddy field (rows 2–6) — the killing ground ──
-    # Five rows of freshly ploughed, rain-soaked earth the French
-    # must slog through under arrow fire. Move cost 3, DEF -2.
-    - {x: 2, y: 2, type: mud}
-    - {x: 3, y: 2, type: mud}
-    - {x: 4, y: 2, type: mud}
-    - {x: 5, y: 2, type: mud}
-    - {x: 6, y: 2, type: mud}
-    - {x: 7, y: 2, type: mud}
-    - {x: 8, y: 2, type: mud}
-    - {x: 9, y: 2, type: mud}
-    - {x: 2, y: 3, type: mud}
-    - {x: 3, y: 3, type: mud}
-    - {x: 4, y: 3, type: mud}
-    - {x: 5, y: 3, type: mud}
-    - {x: 6, y: 3, type: mud}
-    - {x: 7, y: 3, type: mud}
-    - {x: 8, y: 3, type: mud}
-    - {x: 9, y: 3, type: mud}
-    - {x: 2, y: 4, type: mud}
-    - {x: 3, y: 4, type: mud}
-    - {x: 4, y: 4, type: mud}
-    - {x: 5, y: 4, type: mud}
-    - {x: 6, y: 4, type: mud}
-    - {x: 7, y: 4, type: mud}
-    - {x: 8, y: 4, type: mud}
-    - {x: 9, y: 4, type: mud}
-    - {x: 2, y: 5, type: mud}
-    - {x: 3, y: 5, type: mud}
+    - {x: 1, y: 10, type: forest}
+    - {x: 1, y: 11, type: forest}
+    - {x: 1, y: 12, type: forest}
+    - {x: 1, y: 13, type: forest}
+    - {x: 2, y: 0, type: forest}
+    - {x: 2, y: 1, type: forest}
+    - {x: 2, y: 2, type: forest}
+    - {x: 2, y: 3, type: forest}
+    - {x: 2, y: 4, type: forest}
+    - {x: 2, y: 5, type: forest}
+    - {x: 2, y: 6, type: forest}
+    - {x: 2, y: 7, type: forest}
+    - {x: 2, y: 8, type: forest}
+    - {x: 2, y: 9, type: forest}
+    - {x: 2, y: 10, type: forest}
+    - {x: 2, y: 11, type: forest}
+    - {x: 2, y: 12, type: forest}
+    - {x: 2, y: 13, type: forest}
+    - {x: 3, y: 0, type: forest}
+    - {x: 3, y: 1, type: forest}
+    - {x: 3, y: 2, type: forest}
+    - {x: 3, y: 3, type: forest}
+    - {x: 3, y: 4, type: forest}
+    - {x: 3, y: 5, type: forest}
+    - {x: 3, y: 6, type: forest}
+    - {x: 3, y: 7, type: forest}
+    - {x: 3, y: 8, type: forest}
+    - {x: 3, y: 9, type: forest}
+    - {x: 3, y: 10, type: forest}
+    - {x: 3, y: 11, type: forest}
+    - {x: 3, y: 12, type: forest}
+    - {x: 3, y: 13, type: forest}
+    # ══════════════════════════════════════════════════
+    #  AGINCOURT WOOD — east forest (x 12-15, all rows)
+    # ══════════════════════════════════════════════════
+    - {x: 12, y: 0, type: forest}
+    - {x: 12, y: 1, type: forest}
+    - {x: 12, y: 2, type: forest}
+    - {x: 12, y: 3, type: forest}
+    - {x: 12, y: 4, type: forest}
+    - {x: 12, y: 5, type: forest}
+    - {x: 12, y: 6, type: forest}
+    - {x: 12, y: 7, type: forest}
+    - {x: 12, y: 8, type: forest}
+    - {x: 12, y: 9, type: forest}
+    - {x: 12, y: 10, type: forest}
+    - {x: 12, y: 11, type: forest}
+    - {x: 12, y: 12, type: forest}
+    - {x: 12, y: 13, type: forest}
+    - {x: 13, y: 0, type: forest}
+    - {x: 13, y: 1, type: forest}
+    - {x: 13, y: 2, type: forest}
+    - {x: 13, y: 3, type: forest}
+    - {x: 13, y: 4, type: forest}
+    - {x: 13, y: 5, type: forest}
+    - {x: 13, y: 6, type: forest}
+    - {x: 13, y: 7, type: forest}
+    - {x: 13, y: 8, type: forest}
+    - {x: 13, y: 9, type: forest}
+    - {x: 13, y: 10, type: forest}
+    - {x: 13, y: 11, type: forest}
+    - {x: 13, y: 12, type: forest}
+    - {x: 13, y: 13, type: forest}
+    - {x: 14, y: 0, type: forest}
+    - {x: 14, y: 1, type: forest}
+    - {x: 14, y: 2, type: forest}
+    - {x: 14, y: 3, type: forest}
+    - {x: 14, y: 4, type: forest}
+    - {x: 14, y: 5, type: forest}
+    - {x: 14, y: 6, type: forest}
+    - {x: 14, y: 7, type: forest}
+    - {x: 14, y: 8, type: forest}
+    - {x: 14, y: 9, type: forest}
+    - {x: 14, y: 10, type: forest}
+    - {x: 14, y: 11, type: forest}
+    - {x: 14, y: 12, type: forest}
+    - {x: 14, y: 13, type: forest}
+    - {x: 15, y: 0, type: forest}
+    - {x: 15, y: 1, type: forest}
+    - {x: 15, y: 2, type: forest}
+    - {x: 15, y: 3, type: forest}
+    - {x: 15, y: 4, type: forest}
+    - {x: 15, y: 5, type: forest}
+    - {x: 15, y: 6, type: forest}
+    - {x: 15, y: 7, type: forest}
+    - {x: 15, y: 8, type: forest}
+    - {x: 15, y: 9, type: forest}
+    - {x: 15, y: 10, type: forest}
+    - {x: 15, y: 11, type: forest}
+    - {x: 15, y: 12, type: forest}
+    - {x: 15, y: 13, type: forest}
+    # ══════════════════════════════════════════════════
+    #  ENGLISH CAMP — cover positions (y 0-1)
+    #  Hedgerows and wagon barricades where the English
+    #  set up camp. Archers fire from behind cover.
+    # ══════════════════════════════════════════════════
+    - {x: 5, y: 0, type: cover}
+    - {x: 8, y: 0, type: cover}
+    - {x: 10, y: 0, type: cover}
+    - {x: 6, y: 1, type: cover}
+    - {x: 9, y: 1, type: cover}
+    # ══════════════════════════════════════════════════
+    #  STAKE LINE (y=3) — sharpened oak stakes
+    #  Impassable barrier with three gaps. The gaps are
+    #  the only way through for the French assault.
+    #  Gaps at x=6, x=8, x=11 — each a killing ground.
+    # ══════════════════════════════════════════════════
+    - {x: 4, y: 3, type: stakes}
+    - {x: 5, y: 3, type: stakes}
+    # gap at x=6
+    - {x: 7, y: 3, type: stakes}
+    # gap at x=8
+    - {x: 9, y: 3, type: stakes}
+    - {x: 10, y: 3, type: stakes}
+    # gap at x=11
+    # ══════════════════════════════════════════════════
+    #  MUDDY FIELD (y 5-9) — the killing ground
+    #  Rain-soaked ploughed earth. Cost 2, DEF -1.
+    #  Three dry paths cut through where cart tracks
+    #  and footpaths kept the ground firm (cost 1).
+    #  These paths become the axes of the French advance.
+    # ══════════════════════════════════════════════════
+    #  --- Row y=5 ---
     - {x: 4, y: 5, type: mud}
     - {x: 5, y: 5, type: mud}
-    - {x: 6, y: 5, type: mud}
+    # dry path at x=6
     - {x: 7, y: 5, type: mud}
-    - {x: 8, y: 5, type: mud}
+    # dry path at x=8
     - {x: 9, y: 5, type: mud}
-    - {x: 2, y: 6, type: mud}
-    - {x: 3, y: 6, type: mud}
+    - {x: 10, y: 5, type: mud}
+    # dry path at x=11
+    #  --- Row y=6 ---
     - {x: 4, y: 6, type: mud}
     - {x: 5, y: 6, type: mud}
-    - {x: 6, y: 6, type: mud}
+    # dry path at x=6
     - {x: 7, y: 6, type: mud}
-    - {x: 8, y: 6, type: mud}
+    # dry path at x=8
     - {x: 9, y: 6, type: mud}
-    # ── English stakes (row 7) — impassable to cavalry ──
-    # Sharpened wooden stakes driven into the ground at an angle.
-    # Infantry can pick through; horses cannot.
-    - {x: 3, y: 7, type: stakes}
-    - {x: 4, y: 7, type: stakes}
-    - {x: 5, y: 7, type: stakes}
-    - {x: 6, y: 7, type: stakes}
-    - {x: 7, y: 7, type: stakes}
-    - {x: 8, y: 7, type: stakes}
+    - {x: 10, y: 6, type: mud}
+    # dry path at x=11
+    #  --- Row y=7 ---
+    - {x: 4, y: 7, type: mud}
+    - {x: 5, y: 7, type: mud}
+    - {x: 6, y: 7, type: mud}
+    - {x: 7, y: 7, type: mud}
+    # dry path at x=8
+    - {x: 9, y: 7, type: mud}
+    - {x: 10, y: 7, type: mud}
+    # dry path at x=11
+    #  --- Row y=8 ---
+    - {x: 4, y: 8, type: mud}
+    - {x: 5, y: 8, type: mud}
+    - {x: 6, y: 8, type: mud}
+    - {x: 7, y: 8, type: mud}
+    # dry path at x=8
+    - {x: 9, y: 8, type: mud}
+    - {x: 10, y: 8, type: mud}
+    - {x: 11, y: 8, type: mud}
+    #  --- Row y=9 ---
+    - {x: 4, y: 9, type: mud}
+    - {x: 5, y: 9, type: mud}
+    - {x: 6, y: 9, type: mud}
+    - {x: 7, y: 9, type: mud}
+    - {x: 8, y: 9, type: mud}
+    - {x: 9, y: 9, type: mud}
+    - {x: 10, y: 9, type: mud}
+    - {x: 11, y: 9, type: mud}
+    # ══════════════════════════════════════════════════
+    #  FRENCH CAMP — south edge (y=13)
+    #  The French baggage train. If the English reach
+    #  this line it represents a catastrophic rout.
+    # ══════════════════════════════════════════════════
+    - {x: 7, y: 13, type: camp}
+    - {x: 8, y: 13, type: camp}
   forts: []
 
 terrain_types:
@@ -121,10 +230,10 @@ terrain_types:
     display_name: Mud
     description: |
       Freshly ploughed, rain-soaked earth. Horses founder, armored
-      men sink to their knees. Costs 3 movement and exposes anyone
-      stuck in it (DEF -2).
-    move_cost: 3
-    defense_bonus: -2
+      men sink to their knees. Slows movement and leaves anyone
+      caught in the open dangerously exposed to arrow fire.
+    move_cost: 2
+    defense_bonus: -1
     glyph: ","
     color: bright_black
   stakes:
@@ -137,6 +246,25 @@ terrain_types:
     defense_bonus: 0
     glyph: "#"
     color: yellow
+  cover:
+    display_name: Cover
+    description: |
+      Hedgerows and overturned wagons providing concealment.
+      Good defensive ground for archers.
+    move_cost: 1
+    defense_bonus: 2
+    glyph: "~"
+    color: green
+  camp:
+    display_name: Camp
+    description: |
+      The French baggage camp — supply wagons, pavilions, and
+      tethered horses. Reaching this position means the enemy
+      line has been routed entirely.
+    move_cost: 1
+    defense_bonus: 1
+    glyph: "T"
+    color: bright_yellow
 
 unit_classes:
   # ═══════════════════════════════════════════════
@@ -404,40 +532,43 @@ unit_classes:
 
 armies:
   blue:
-    # English line at the south end (rows 8-9), between the forests.
-    # Henry in the center, Duke of York on the right, archers on
-    # the flanks behind the stake line.
-    - {class: henry_v, pos: {x: 5, y: 9}}
-    - {class: duke_of_york, pos: {x: 6, y: 9}}
-    - {class: thomas_erpingham, pos: {x: 3, y: 8}}
-    - {class: rapid_bowman, pos: {x: 8, y: 8}}
-    - {class: stakebow, pos: {x: 5, y: 8}}
-    - {class: stakebow, pos: {x: 7, y: 8}}
+    # English position — defending the north (y 0-2).
+    # Henry and York hold the line just behind the stakes (y=2).
+    # Archers positioned in camp cover (y=0-1) to fire over the
+    # stakes into the mud field. Each archer covers a gap.
+    - {class: henry_v, pos: {x: 7, y: 2}}
+    - {class: duke_of_york, pos: {x: 10, y: 2}}
+    - {class: thomas_erpingham, pos: {x: 5, y: 0}}     # long-range sniper, covers left gap
+    - {class: rapid_bowman, pos: {x: 8, y: 0}}          # rapid fire, covers center
+    - {class: stakebow, pos: {x: 6, y: 1}}              # behind left gap
+    - {class: stakebow, pos: {x: 9, y: 1}}              # between center and right gaps
   red:
-    # French mass at the north end (rows 0-1). Cavalry in the front,
-    # infantry behind, crossbows on the flanks.
-    - {class: constable_dalbret, pos: {x: 5, y: 1}}
-    - {class: duke_of_alencon, pos: {x: 4, y: 0}}
-    - {class: duke_of_orleans, pos: {x: 6, y: 1}}
-    - {class: count_of_nevers, pos: {x: 7, y: 0}}
-    - {class: duke_of_bar, pos: {x: 3, y: 0}}
-    - {class: lord_dampierre, pos: {x: 8, y: 1}}
-    - {class: french_men_at_arms_left, pos: {x: 3, y: 1}}
-    - {class: french_men_at_arms_right, pos: {x: 8, y: 0}}
+    # French host — massed at the south (y 11-13).
+    # First line: cavalry and leaders on firm ground (y=11),
+    # poised to charge up the dry paths through the mud.
+    # Second line: infantry and crossbows (y=12-13).
+    - {class: constable_dalbret, pos: {x: 7, y: 11}}    # center, leading the vanguard
+    - {class: duke_of_alencon, pos: {x: 8, y: 12}}      # mounted, ready to charge center path
+    - {class: duke_of_orleans, pos: {x: 6, y: 12}}      # vanguard, left-center
+    - {class: count_of_nevers, pos: {x: 10, y: 11}}     # cavalry, right flank
+    - {class: duke_of_bar, pos: {x: 5, y: 11}}          # cavalry, left flank
+    - {class: lord_dampierre, pos: {x: 9, y: 13}}       # crossbows, covering fire
+    - {class: french_men_at_arms_left, pos: {x: 5, y: 13}}   # Picard foot, left
+    - {class: french_men_at_arms_right, pos: {x: 11, y: 12}} # Norman foot, far right flank
 
 rules:
-  max_turns: 12
+  max_turns: 16
   fog_of_war: false
   first_player: blue
 
 win_conditions:
   # English lose instantly if Henry falls.
   - {type: protect_unit, unit_id: u_b_henry_v_1, owning_team: blue}
-  # French win by reaching the English camp line (y=9).
-  - {type: reach_goal_line, team: red, axis: y, value: 9}
+  # French win by reaching the English camp line (y=0).
+  - {type: reach_goal_line, team: red, axis: y, value: 0}
   # Either side can win by destroying all enemy units.
   - {type: eliminate_all_enemy_units}
-  # If Henry survives to turn 12, the English hold the field — Blue wins.
+  # If Henry survives to turn 16, the English hold the field — Blue wins.
   - {type: protect_unit_survives, unit_id: u_b_henry_v_1, owning_team: blue}
   - {type: max_turns_draw}
 
@@ -450,11 +581,11 @@ narrative:
   intro: |
     A cold rain fell all night. The field is a bog. Henry kneels with
     his men in the mud, stakes driven in front, forests tight on
-    either side. Across five hundred yards of ploughed earth, the
-    French host fills the horizon — banners of every great house in
-    France, armor glinting even under grey skies. They outnumber the
-    English four to one. They are certain of victory. They begin to
-    advance.
+    either side. Across the ploughed earth, the French host fills the
+    horizon — banners of every great house in France, armor glinting
+    even under grey skies. They outnumber the English four to one.
+    Three muddy paths wind through the mire toward gaps in the English
+    stakes. The French are certain of victory. They begin to advance.
   events:
     - trigger: on_turn_start
       turn: 1
@@ -462,22 +593,30 @@ narrative:
         Sir Thomas Erpingham hurls his baton into the air and roars
         "Now strike!" Ten thousand arrows rise from behind the stakes.
     - trigger: on_turn_start
-      turn: 3
+      turn: 4
       text: |
         The French vanguard is mired in the mud. Horses scream and
         fall. Dismounted knights sink to their knees, arrows hammering
-        into them from both flanks.
+        into them from both flanks. Those on the dry paths press
+        forward under withering fire.
     - trigger: on_turn_start
-      turn: 6
+      turn: 7
       text: |
         The field is a slaughterhouse. French dead are piled so thick
-        that later ranks climb over their own fallen. Those who reach
-        the stakes cannot pass.
+        that later ranks climb over their own fallen. But the mass of
+        armored men pushes ever closer to the stakes.
     - trigger: on_turn_start
-      turn: 9
+      turn: 10
       text: |
-        The Duke of Alen\u00e7on cuts his way toward Henry's banner.
-        The King fights hand-to-hand, a piece of his crown struck away.
+        The first French knights reach the stake gaps. Steel meets
+        steel. The Duke of Alen\u00e7on cuts toward Henry's banner —
+        the King fights hand-to-hand, a piece of his crown struck away.
+    - trigger: on_turn_start
+      turn: 13
+      text: |
+        The mud is churned red. Those French who broke through the
+        stakes fight in the English camp itself. Everything depends
+        on the next moments.
     - trigger: on_unit_killed
       unit_id: u_b_henry_v_1
       text: |
