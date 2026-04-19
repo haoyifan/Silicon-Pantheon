@@ -437,7 +437,11 @@ class LobbyScreen(Screen):
             padding=(0, 1),
         )
         tbl.add_column("#", justify="right", width=3, no_wrap=True)
-        tbl.add_column(t("leaderboard.col_model", lc), overflow="fold", no_wrap=False)
+        tbl.add_column(
+            t("leaderboard.col_model", lc),
+            overflow="ellipsis",
+            no_wrap=True,
+        )
         tbl.add_column(t("leaderboard.col_games", lc), justify="right", width=5)
         tbl.add_column("W-L-D", justify="center", width=8, no_wrap=True)
         tbl.add_column(t("leaderboard.col_win_pct", lc), justify="right", width=5)
