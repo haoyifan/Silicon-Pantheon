@@ -13,30 +13,238 @@ description: |
   Inspired by the Battle of the Astronomy Tower from Harry Potter by J.K. Rowling.
 
 board:
-  width: 12
-  height: 10
+  # 14 wide x 16 tall — vertical castle layout.
+  # North (y=0): Astronomy Tower.  South (y=15): Vanishing Cabinet.
+  #
+  # LEGEND (see terrain_types below)
+  #   #  stone_wall        (impassable)
+  #   ^  tower_parapet      (+3 DEF)
+  #   ~  moving_staircase   (cost 3, +0 DEF — slow but connects floors)
+  #   =  classroom          (+1 DEF, overturned desks)
+  #   |  library_shelves    (+2 DEF, cost 2 — heavy cover, slow)
+  #   .  secret_passage     (cost 1, +0 DEF — fast but exposed)
+  #   V  vanishing_cabinet  (cost 1, +0 DEF — red entry point)
+  #   ?  room_of_requirement (+1 DEF)
+  #
+  # Approximate map (# = wall, spaces = open floor):
+  #
+  #  y0   ######^^##__##        Astronomy Tower (parapet center)
+  #  y1   ####__####__##        Tower landing
+  #  y2   ###~~~~#__####        Staircase down from tower
+  #  y3   ##__..____####        Upper corridor + secret passage west
+  #  y4   ##__##__##||##        Corridor forks; library east
+  #  y5   #===#__###||##        West wing classroom; library continues
+  #  y6   #===____###..#        Classroom; secret passage east entry
+  #  y7   ##__##~~##__##        Moving staircase (mid-castle)
+  #  y8   ##____####__##        Grand corridor opens up
+  #  y9   #===#__####__#        West classroom 2
+  # y10   #===____##||##        Corridor; east library 2
+  # y11   ##__##__##||##        Lower corridor junction
+  # y12   ###__..____###        Lower secret passage segment
+  # y13   ####____######        Approach hall
+  # y14   ####??__######        Room of Requirement (cabinet room)
+  # y15   ####VV__######        Vanishing Cabinet — red spawn
+  #
+  width: 14
+  height: 16
   terrain:
-    # Tower top (Dumbledore's position)
-    - {x: 5, y: 0, type: tower_parapet}
+    # ── ASTRONOMY TOWER (y=0–1) ──────────────────────────────
+    # Parapet — Dumbledore's perch (+3 DEF)
     - {x: 6, y: 0, type: tower_parapet}
-    # Corridor walls creating chokepoints
-    - {x: 3, y: 2, type: stone_wall}
-    - {x: 3, y: 3, type: stone_wall}
-    - {x: 8, y: 2, type: stone_wall}
-    - {x: 8, y: 3, type: stone_wall}
-    # Central pillars
+    - {x: 7, y: 0, type: tower_parapet}
+    # Tower walls
+    - {x: 0, y: 0, type: stone_wall}
+    - {x: 1, y: 0, type: stone_wall}
+    - {x: 2, y: 0, type: stone_wall}
+    - {x: 3, y: 0, type: stone_wall}
+    - {x: 4, y: 0, type: stone_wall}
+    - {x: 5, y: 0, type: stone_wall}
+    - {x: 8, y: 0, type: stone_wall}
+    - {x: 9, y: 0, type: stone_wall}
+    - {x: 10, y: 0, type: stone_wall}
+    - {x: 11, y: 0, type: stone_wall}
+    - {x: 12, y: 0, type: stone_wall}
+    - {x: 13, y: 0, type: stone_wall}
+    # y=1 — tower landing
+    - {x: 0, y: 1, type: stone_wall}
+    - {x: 1, y: 1, type: stone_wall}
+    - {x: 2, y: 1, type: stone_wall}
+    - {x: 3, y: 1, type: stone_wall}
+    - {x: 8, y: 1, type: stone_wall}
+    - {x: 9, y: 1, type: stone_wall}
+    - {x: 10, y: 1, type: stone_wall}
+    - {x: 11, y: 1, type: stone_wall}
+    - {x: 12, y: 1, type: stone_wall}
+    - {x: 13, y: 1, type: stone_wall}
+
+    # ── TOWER STAIRCASE (y=2) ────────────────────────────────
+    - {x: 0, y: 2, type: stone_wall}
+    - {x: 1, y: 2, type: stone_wall}
+    - {x: 2, y: 2, type: stone_wall}
+    - {x: 4, y: 2, type: moving_staircase}
+    - {x: 5, y: 2, type: moving_staircase}
+    - {x: 7, y: 2, type: stone_wall}
+    - {x: 9, y: 2, type: stone_wall}
+    - {x: 10, y: 2, type: stone_wall}
+    - {x: 11, y: 2, type: stone_wall}
+    - {x: 12, y: 2, type: stone_wall}
+    - {x: 13, y: 2, type: stone_wall}
+
+    # ── UPPER CORRIDOR (y=3) — west secret passage begins ────
+    - {x: 0, y: 3, type: stone_wall}
+    - {x: 1, y: 3, type: stone_wall}
+    - {x: 3, y: 3, type: secret_passage}
+    - {x: 4, y: 3, type: secret_passage}
+    - {x: 10, y: 3, type: stone_wall}
+    - {x: 11, y: 3, type: stone_wall}
+    - {x: 12, y: 3, type: stone_wall}
+    - {x: 13, y: 3, type: stone_wall}
+
+    # ── CORRIDOR FORK (y=4) — library east wing begins ───────
+    - {x: 0, y: 4, type: stone_wall}
+    - {x: 1, y: 4, type: stone_wall}
+    - {x: 4, y: 4, type: stone_wall}
     - {x: 5, y: 4, type: stone_wall}
-    - {x: 6, y: 4, type: stone_wall}
-    # Room of Requirement (healing terrain, side room)
-    - {x: 0, y: 4, type: room_of_requirement}
-    - {x: 0, y: 5, type: room_of_requirement}
-    - {x: 1, y: 4, type: room_of_requirement}
-    # Lower corridor walls
-    - {x: 3, y: 6, type: stone_wall}
+    - {x: 8, y: 4, type: stone_wall}
+    - {x: 9, y: 4, type: stone_wall}
+    - {x: 10, y: 4, type: library_shelves}
+    - {x: 11, y: 4, type: library_shelves}
+    - {x: 12, y: 4, type: stone_wall}
+    - {x: 13, y: 4, type: stone_wall}
+
+    # ── WEST WING CLASSROOM 1 (y=5) ─────────────────────────
+    - {x: 0, y: 5, type: stone_wall}
+    - {x: 1, y: 5, type: classroom}
+    - {x: 2, y: 5, type: classroom}
+    - {x: 3, y: 5, type: classroom}
+    - {x: 4, y: 5, type: stone_wall}
+    - {x: 8, y: 5, type: stone_wall}
+    - {x: 9, y: 5, type: stone_wall}
+    - {x: 10, y: 5, type: library_shelves}
+    - {x: 11, y: 5, type: library_shelves}
+    - {x: 12, y: 5, type: stone_wall}
+    - {x: 13, y: 5, type: stone_wall}
+
+    # ── WEST CLASSROOM EXIT + EAST SECRET PASSAGE (y=6) ──────
+    - {x: 0, y: 6, type: stone_wall}
+    - {x: 1, y: 6, type: classroom}
+    - {x: 2, y: 6, type: classroom}
+    - {x: 7, y: 6, type: stone_wall}
     - {x: 8, y: 6, type: stone_wall}
-    # Vanishing Cabinet room (where Death Eaters enter)
-    - {x: 10, y: 8, type: vanishing_cabinet}
-    - {x: 11, y: 8, type: vanishing_cabinet}
+    - {x: 9, y: 6, type: stone_wall}
+    - {x: 11, y: 6, type: secret_passage}
+    - {x: 12, y: 6, type: secret_passage}
+    - {x: 13, y: 6, type: stone_wall}
+
+    # ── MID-CASTLE STAIRCASE (y=7) ──────────────────────────
+    - {x: 0, y: 7, type: stone_wall}
+    - {x: 1, y: 7, type: stone_wall}
+    - {x: 4, y: 7, type: stone_wall}
+    - {x: 5, y: 7, type: stone_wall}
+    - {x: 6, y: 7, type: moving_staircase}
+    - {x: 7, y: 7, type: moving_staircase}
+    - {x: 8, y: 7, type: stone_wall}
+    - {x: 9, y: 7, type: stone_wall}
+    - {x: 12, y: 7, type: stone_wall}
+    - {x: 13, y: 7, type: stone_wall}
+
+    # ── GRAND CORRIDOR (y=8) ────────────────────────────────
+    - {x: 0, y: 8, type: stone_wall}
+    - {x: 1, y: 8, type: stone_wall}
+    - {x: 7, y: 8, type: stone_wall}
+    - {x: 8, y: 8, type: stone_wall}
+    - {x: 9, y: 8, type: stone_wall}
+    - {x: 10, y: 8, type: stone_wall}
+    - {x: 12, y: 8, type: stone_wall}
+    - {x: 13, y: 8, type: stone_wall}
+
+    # ── WEST CLASSROOM 2 (y=9) ──────────────────────────────
+    - {x: 0, y: 9, type: stone_wall}
+    - {x: 1, y: 9, type: classroom}
+    - {x: 2, y: 9, type: classroom}
+    - {x: 3, y: 9, type: classroom}
+    - {x: 4, y: 9, type: stone_wall}
+    - {x: 8, y: 9, type: stone_wall}
+    - {x: 9, y: 9, type: stone_wall}
+    - {x: 10, y: 9, type: stone_wall}
+    - {x: 11, y: 9, type: stone_wall}
+    - {x: 12, y: 9, type: stone_wall}
+    - {x: 13, y: 9, type: stone_wall}
+
+    # ── CORRIDOR + EAST LIBRARY 2 (y=10) ────────────────────
+    - {x: 0, y: 10, type: stone_wall}
+    - {x: 1, y: 10, type: classroom}
+    - {x: 2, y: 10, type: classroom}
+    - {x: 7, y: 10, type: stone_wall}
+    - {x: 8, y: 10, type: stone_wall}
+    - {x: 9, y: 10, type: library_shelves}
+    - {x: 10, y: 10, type: library_shelves}
+    - {x: 11, y: 10, type: stone_wall}
+    - {x: 12, y: 10, type: stone_wall}
+    - {x: 13, y: 10, type: stone_wall}
+
+    # ── LOWER CORRIDOR JUNCTION (y=11) ──────────────────────
+    - {x: 0, y: 11, type: stone_wall}
+    - {x: 1, y: 11, type: stone_wall}
+    - {x: 4, y: 11, type: stone_wall}
+    - {x: 5, y: 11, type: stone_wall}
+    - {x: 8, y: 11, type: stone_wall}
+    - {x: 9, y: 11, type: library_shelves}
+    - {x: 10, y: 11, type: library_shelves}
+    - {x: 11, y: 11, type: stone_wall}
+    - {x: 12, y: 11, type: stone_wall}
+    - {x: 13, y: 11, type: stone_wall}
+
+    # ── LOWER SECRET PASSAGE (y=12) ─────────────────────────
+    - {x: 0, y: 12, type: stone_wall}
+    - {x: 1, y: 12, type: stone_wall}
+    - {x: 2, y: 12, type: stone_wall}
+    - {x: 4, y: 12, type: secret_passage}
+    - {x: 5, y: 12, type: secret_passage}
+    - {x: 10, y: 12, type: stone_wall}
+    - {x: 11, y: 12, type: stone_wall}
+    - {x: 12, y: 12, type: stone_wall}
+    - {x: 13, y: 12, type: stone_wall}
+
+    # ── APPROACH HALL (y=13) ────────────────────────────────
+    - {x: 0, y: 13, type: stone_wall}
+    - {x: 1, y: 13, type: stone_wall}
+    - {x: 2, y: 13, type: stone_wall}
+    - {x: 3, y: 13, type: stone_wall}
+    - {x: 9, y: 13, type: stone_wall}
+    - {x: 10, y: 13, type: stone_wall}
+    - {x: 11, y: 13, type: stone_wall}
+    - {x: 12, y: 13, type: stone_wall}
+    - {x: 13, y: 13, type: stone_wall}
+
+    # ── ROOM OF REQUIREMENT (y=14) ──────────────────────────
+    - {x: 0, y: 14, type: stone_wall}
+    - {x: 1, y: 14, type: stone_wall}
+    - {x: 2, y: 14, type: stone_wall}
+    - {x: 3, y: 14, type: stone_wall}
+    - {x: 4, y: 14, type: room_of_requirement}
+    - {x: 5, y: 14, type: room_of_requirement}
+    - {x: 8, y: 14, type: stone_wall}
+    - {x: 9, y: 14, type: stone_wall}
+    - {x: 10, y: 14, type: stone_wall}
+    - {x: 11, y: 14, type: stone_wall}
+    - {x: 12, y: 14, type: stone_wall}
+    - {x: 13, y: 14, type: stone_wall}
+
+    # ── VANISHING CABINET (y=15) — red spawn ────────────────
+    - {x: 0, y: 15, type: stone_wall}
+    - {x: 1, y: 15, type: stone_wall}
+    - {x: 2, y: 15, type: stone_wall}
+    - {x: 3, y: 15, type: stone_wall}
+    - {x: 4, y: 15, type: vanishing_cabinet}
+    - {x: 5, y: 15, type: vanishing_cabinet}
+    - {x: 8, y: 15, type: stone_wall}
+    - {x: 9, y: 15, type: stone_wall}
+    - {x: 10, y: 15, type: stone_wall}
+    - {x: 11, y: 15, type: stone_wall}
+    - {x: 12, y: 15, type: stone_wall}
+    - {x: 13, y: 15, type: stone_wall}
+
   forts: []
 
 terrain_types:
@@ -48,15 +256,57 @@ terrain_types:
     glyph: "#"
     color: white
     description: |
-      Hogwarts castle stone walls. Ancient and impassable.
+      Hogwarts castle stone — ancient, enchanted, and impassable.
+      A thousand years of magic hold these walls together.
   tower_parapet:
     display_name: Tower Parapet
     move_cost: 1
-    defense_bonus: 2
+    defense_bonus: 3
     glyph: "^"
     color: bright_cyan
     description: |
-      The top of the Astronomy Tower. Exposed but defensible.
+      The crenellated top of the Astronomy Tower. Stone
+      battlements provide excellent cover and a commanding view
+      of the grounds below.
+  moving_staircase:
+    display_name: Moving Staircase
+    move_cost: 3
+    defense_bonus: 0
+    glyph: "~"
+    color: bright_yellow
+    description: |
+      Hogwarts' enchanted staircases shift without warning.
+      Crossing takes time — they like to move while you're
+      on them.
+  classroom:
+    display_name: Classroom
+    move_cost: 1
+    defense_bonus: 1
+    glyph: "="
+    color: cyan
+    description: |
+      An abandoned classroom with overturned desks and scattered
+      chairs. Modest cover — good enough to duck behind.
+  library_shelves:
+    display_name: Library Shelves
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "|"
+    color: yellow
+    description: |
+      Towering bookshelves of the Hogwarts library. Heavy cover
+      but difficult to move through — the Restricted Section
+      books bite.
+  secret_passage:
+    display_name: Secret Passage
+    move_cost: 1
+    defense_bonus: 0
+    glyph: "."
+    color: dim
+    description: |
+      One of Hogwarts' hidden passages — fast to traverse but
+      narrow, offering no cover. Only those who know the castle
+      well can exploit these shortcuts.
   room_of_requirement:
     display_name: Room of Requirement
     move_cost: 1
@@ -64,8 +314,8 @@ terrain_types:
     glyph: "?"
     color: bright_magenta
     description: |
-      The Room of Requirement. Provides shelter and whatever
-      the occupant needs most.
+      The Room of Requirement. It becomes whatever the occupant
+      needs most — right now, it's become a breach point.
   vanishing_cabinet:
     display_name: Vanishing Cabinet
     move_cost: 1
@@ -73,8 +323,9 @@ terrain_types:
     glyph: "V"
     color: dim
     description: |
-      The Vanishing Cabinet in the Room of Requirement — the
-      Death Eaters' entry point into Hogwarts.
+      The Vanishing Cabinet in the Room of Requirement — twin
+      to the one in Borgin and Burkes. The Death Eaters' entry
+      point into Hogwarts.
 
 unit_classes:
   dumbledore:
@@ -310,29 +561,38 @@ unit_classes:
 
 armies:
   blue:
-    # Dumbledore atop the tower
-    - {class: dumbledore, pos: {x: 5, y: 0}}
-    # Harry hidden beside him
-    - {class: harry, pos: {x: 6, y: 0}}
-    # Snape in the corridors (double agent, fights for blue)
-    - {class: snape, pos: {x: 5, y: 3}}
-    # DA members patrolling
-    - {class: ginny, pos: {x: 4, y: 2}}
-    - {class: neville, pos: {x: 7, y: 2}}
-    - {class: luna, pos: {x: 1, y: 3}}
+    # Dumbledore on the Astronomy Tower parapet — the VIP
+    - {class: dumbledore, pos: {x: 6, y: 0}}
+    # Harry on the tower beside him (frozen under the cloak)
+    - {class: harry, pos: {x: 7, y: 0}}
+    # Snape on the tower landing — arrives last, climbs fast
+    - {class: snape, pos: {x: 5, y: 1}}
+    # Ginny guards the main corridor (mid-castle)
+    - {class: ginny, pos: {x: 5, y: 6}}
+    # Neville holds the grand corridor — the stubborn wall
+    - {class: neville, pos: {x: 3, y: 8}}
+    # Luna watches from the west classroom — ranged support
+    - {class: luna, pos: {x: 2, y: 5}}
 
   red:
-    # Death Eaters breaching from the south
-    - {class: draco, pos: {x: 5, y: 8}}
-    - {class: bellatrix, pos: {x: 6, y: 9}}
-    - {class: fenrir, pos: {x: 4, y: 9}}
-    - {class: amycus, pos: {x: 7, y: 7}}
-    - {class: alecto, pos: {x: 9, y: 8}}
-    - {class: yaxley, pos: {x: 3, y: 8}}
-    - {class: gibbon, pos: {x: 10, y: 9}}
+    # Death Eaters emerge from the Vanishing Cabinet (south)
+    # Draco leads — he must reach the tower
+    - {class: draco, pos: {x: 5, y: 14}}
+    # Bellatrix in the approach hall — main corridor assault
+    - {class: bellatrix, pos: {x: 6, y: 14}}
+    # Fenrir at the east edge — fast flanker via secret passage
+    - {class: fenrir, pos: {x: 7, y: 15}}
+    # Amycus pushing through the west wing
+    - {class: amycus, pos: {x: 4, y: 15}}
+    # Alecto alongside her brother
+    - {class: alecto, pos: {x: 5, y: 15}}
+    # Yaxley — bruiser up the main corridor
+    - {class: yaxley, pos: {x: 6, y: 15}}
+    # Gibbon — ranged support from the rear
+    - {class: gibbon, pos: {x: 7, y: 14}}
 
 rules:
-  max_turns: 14
+  max_turns: 20
   first_player: red
 
 win_conditions:
@@ -360,17 +620,25 @@ narrative:
     whose purpose?
   events:
     - trigger: on_turn_start
-      turn: 4
+      turn: 3
+      text: |
+        Boot-steps echo through the lower corridors. The Death
+        Eaters fan out — some heading west through the classrooms,
+        others east toward the library. Fenrir sniffs the air and
+        finds the secret passage.
+    - trigger: on_turn_start
+      turn: 6
       text: |
         Fenrir Greyback howls through the corridors. The sound
         of breaking stone echoes as curses blow holes in the
-        castle walls. Bellatrix's cackle rings out.
+        castle walls. Bellatrix's cackle rings out above the din.
     - trigger: on_turn_start
-      turn: 8
+      turn: 12
       text: |
         The fighting grows desperate. Luna's Patronus flashes
         silver through the smoke. Neville bleeds but refuses
-        to fall. The tower stairs are slick with spell-fire.
+        to fall. The moving staircases groan and shift, slowing
+        the assault on the tower.
     - trigger: on_unit_killed
       unit_id: u_b_dumbledore_1
       text: |
