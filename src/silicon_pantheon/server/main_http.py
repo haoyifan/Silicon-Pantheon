@@ -55,6 +55,7 @@ def _configure_server_logging(level: str, log_file: Path | None) -> Path:
         "silicon.lobby",
         "silicon.game",
         "silicon.engine",
+        "silicon.heartbeat",
         "silicon-serve",
         "uvicorn",
         "uvicorn.error",

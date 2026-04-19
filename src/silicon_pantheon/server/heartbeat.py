@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from silicon_pantheon.server.app import App
 from silicon_pantheon.shared.protocol import ConnectionState
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("silicon.heartbeat")
 
 # A client that misses ~4 heartbeats (10s interval) is dead.
 HEARTBEAT_DEAD_S = 45.0
