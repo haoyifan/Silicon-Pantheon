@@ -36,6 +36,7 @@ For each scenario, read the full `config.yaml` and the `locale/zh.yaml` (if it e
 
 ### 3. Glyph & ID Consistency
 - No two `unit_classes` share the same `glyph` within a scenario
+- No `color` is shared between any `unit_classes` entry and any `terrain_types` entry (MEDIUM severity when violated) — otherwise a unit parked on a same-color tile becomes visually indistinguishable from the terrain. Units should use team colors (`red`/`bright_red`, `cyan`/`bright_cyan`, `magenta` for accents); terrain should use environmental colors (`green`, `blue`, `yellow`, `white`, `bright_black`, `dim`). Fix by changing the terrain color to a nearby unused shade.
 - Win condition `unit_id` values must match actual units (format: `u_{b|r}_{class}_{N}`)
 - `reach_tile` positions must be within bounds and NOT on impassable tiles
 - `seize_enemy_fort` requires forts to exist
