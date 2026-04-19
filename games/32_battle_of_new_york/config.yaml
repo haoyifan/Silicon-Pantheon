@@ -299,11 +299,11 @@ unit_classes:
   chitauri_commander:
     display_name: Chitauri Commander
     description: |
-      Elite officers of the Chitauri invasion force. Armored and
-      aggressive, they lead assault squads through the streets.
+      Elite officers of the Chitauri invasion force. Heavily armored
+      and aggressive, they lead assault squads through the streets.
     hp_max: 25
     atk: 10
-    defense: 6
+    defense: 7
     res: 4
     spd: 5
     move: 4
@@ -344,6 +344,62 @@ unit_classes:
     glyph: "V"
     color: red
 
+  leviathan_spawn:
+    display_name: Leviathan Spawn
+    description: |
+      A young Chitauri Leviathan, still armored in chitinous plate
+      but small enough to squeeze between skyscrapers. Lumbering and
+      tough, it shrugs off rifle fire and crushes the front line.
+    hp_max: 32
+    atk: 9
+    defense: 8
+    res: 5
+    spd: 3
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    tags: [beast, armored]
+    glyph: "Y"
+    color: red
+
+  chitauri_skiff:
+    display_name: Chitauri Sky Skiff
+    description: |
+      A lean reconnaissance flyer piloted by a winged Chitauri
+      scout. Built for speed, it darts between rooftops to harry
+      the Avengers' flanks before they can bring fire to bear.
+    hp_max: 15
+    atk: 8
+    defense: 3
+    res: 3
+    spd: 8
+    move: 6
+    rng_min: 1
+    rng_max: 1
+    tags: [flying]
+    glyph: "k"
+    color: red
+
+  chitauri_bio_tech:
+    display_name: Chitauri Bio-Technician
+    description: |
+      A slender Chitauri specialist tethered to the hivemind. Emits
+      regenerative bio-pulses that knit Chitauri flesh back together,
+      keeping the invasion force moving despite casualties.
+    hp_max: 14
+    atk: 5
+    defense: 3
+    res: 6
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    can_heal: true
+    heal_amount: 6
+    tags: [support, hivemind]
+    glyph: "b"
+    color: red
+
 armies:
   # ── Blue: The Avengers — defending the perimeter ──
   blue:
@@ -366,15 +422,18 @@ armies:
   red:
     # Loki — commanding from Stark Tower, scepter in hand
     - {class: loki, pos: {x: 7, y: 1}}
+    # Chitauri Bio-Technician — healer tethered to Loki's command post
+    - {class: chitauri_bio_tech, pos: {x: 8, y: 2}}
     # Chitauri Commanders — leading the two prongs around the Leviathan
     - {class: chitauri_commander, pos: {x: 2, y: 2}}
     - {class: chitauri_commander, pos: {x: 13, y: 2}}
+    # Leviathan Spawn — armored bulldozer anchoring the east prong
+    - {class: leviathan_spawn, pos: {x: 11, y: 4}}
     # Chitauri Warriors — the swarm, spread across the north
     - {class: chitauri_warrior, pos: {x: 5, y: 1}}
     - {class: chitauri_warrior, pos: {x: 10, y: 1}}
-    - {class: chitauri_warrior, pos: {x: 4, y: 3}}
-    - {class: chitauri_warrior, pos: {x: 11, y: 3}}
-    - {class: chitauri_warrior, pos: {x: 9, y: 2}}
+    # Chitauri Sky Skiff — winged scout darting down Park Avenue
+    - {class: chitauri_skiff, pos: {x: 4, y: 3}}
     # Chitauri Chariots — fast flankers on the wings
     - {class: chitauri_chariot, pos: {x: 0, y: 0}}
     - {class: chitauri_chariot, pos: {x: 15, y: 0}}
