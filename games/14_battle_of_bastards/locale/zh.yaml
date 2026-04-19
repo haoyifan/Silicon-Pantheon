@@ -35,6 +35,23 @@ unit_classes:
     description: |
       忠于史塔克家族的北境旗手。比自由民装甲更好，
       训练有盾墙战术素养。
+  sansa:
+    display_name: 珊莎·史塔克
+    description: |
+      临冬城的女主人。她本人不是战士，但她的存在
+      鼓舞了北境事业。相邻盟友因知道为何而战
+      而愈加奋勇。通过士气和意志力治愈相邻单位。
+  davos:
+    display_name: 达沃斯·海沃斯
+    description: |
+      洋葱骑士。曾经的走私贩，现在是琼恩最信任的指挥官。
+      用弩和水手的务实精神在阵线后方指挥部队。
+      能纵观全局的远程攻击者。
+  lyanna_mormont:
+    display_name: 莱安娜·莫尔蒙
+    description: |
+      熊岛的十岁母熊。六十二个战士，每一个都顶十个
+      大陆人。勇猛但脆弱——毫不犹豫地冲锋，即使面对巨人。
   melisandre:
     display_name: 梅丽珊卓
     description: |
@@ -55,6 +72,41 @@ unit_classes:
     description: |
       拉姆塞的弓箭手，不分敌我地向混战中射箭——因为
       拉姆塞不在乎己方伤亡。
+  smalljon_umber:
+    display_name: 小琼恩·安柏
+    description: |
+      末炉城领主。魁梧、凶残、无所畏惧。背叛了史塔克家投靠
+      拉姆塞，战斗起来像个亡命之徒。狂战士——高攻击，鲁莽防御。
+  harald_karstark:
+    display_name: 哈拉尔德·卡史塔克
+    description: |
+      卡霍城领主。骑马随波顿骑兵在侧翼行动。快速骑手，
+      从两翼封闭包围圈。骑枪冲锋凶猛，下马后较弱。
+  shield_wall_captain:
+    display_name: 波顿盾墙队长
+    description: |
+      波顿长矛方阵的指挥官。全身重甲，训练有素的联锁盾牌
+      纪律。极难击杀，但缓慢且攻击力平庸。
+  pikeman_captain:
+    display_name: 波顿长矛队长
+    description: |
+      长矛线的老兵军士。保持盾墙齐步前进。比盾墙队长射程
+      更远，但护甲更薄。
+  archer_captain:
+    display_name: 波顿弓箭队长
+    description: |
+      指挥拉姆塞的弓箭手——不分敌我地向混战中射箭，
+      因为拉姆塞不在乎己方伤亡。
+  steelshanks:
+    display_name: 铁胫沃顿
+    description: |
+      波顿家的老牌武装步兵，因从不离身的钢胫甲而得名。
+      可靠、有纪律、冷酷高效。卢斯·波顿的老班底。
+  ben_bones:
+    display_name: 本·骨头
+    description: |
+      拉姆塞的犬夫。精瘦、伤疤累累、凶残——用一把长猎刀
+      战斗，带着深知拉姆塞如何处置失败者的亡命搏命之气。
   ramsay:
     display_name: 拉姆塞·波顿
     description: |

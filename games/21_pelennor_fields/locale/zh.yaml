@@ -105,6 +105,11 @@ unit_classes:
     description: |
       米那斯魔窟的兽人队长。凶残的好斗者，率领兽人先锋。
       在兽人中算快的，即使以兽人标准也算奸诈。
+  zagdûf:
+    display_name: 扎格杜夫
+    description: |
+      来自戈洛斯的兽人攻城队长。操纵格隆德和攻城塔。
+      他到之处，城墙必倒。
   shagrat:
     display_name: 沙格拉特
     description: |
@@ -146,6 +151,11 @@ terrain_types:
     description: |
       帕兰诺南部靠近哈隆德的泥沼地带。
       泥泞和积水减缓一切行动。
+  rammas_wall:
+    display_name: 拉马斯墙
+    description: |
+      帕兰诺平原的外墙——拉马斯·艾霍尔。摇摇欲坠
+      但仍然不可通行，除非在敌军已突破之处。
   river:
     display_name: 河流
     description: |

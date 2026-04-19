@@ -127,10 +127,15 @@ narrative:
         火烈国以集中御火术突破了外墙。士兵们从缺口涌入，
         御水术师拼命用冰封堵缺口。
     - trigger: on_turn_start
-      turn: 10
+      turn: 8
       text: |
         月亮变红了。灵泉绿洲出了什么问题。安昂感受到
         灵界的召唤——海洋之灵在池中躁动。
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        安昂感受到灵界的召唤。海洋之灵在池中涌动，
+        等待着神通。
     - trigger: on_unit_killed
       unit_id: u_r_zhao_1
       text: |

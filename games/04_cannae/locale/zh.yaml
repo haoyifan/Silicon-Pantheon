@@ -113,9 +113,13 @@ narrative:
       text: |
         高卢中军开始后退。瓦罗命令军团继续推进。
     - trigger: on_turn_start
+      turn: 5
+      text: |
+        两翼灌木丛中有动静——利比亚老兵正在向内旋转。
+    - trigger: on_turn_start
       turn: 8
       text: |
-        汉尼拔的利比亚老兵向内旋转。罗马人的侧翼缩短了。
+        灌木小道涌出全副武装的步兵。罗马两翼正在向内坍塌。
     - trigger: on_turn_start
       turn: 12
       text: |
@@ -125,6 +129,6 @@ narrative:
       text: |
         瓦罗倒下了。罗马防线四分五裂。
     - trigger: on_unit_killed
-      unit_id: u_a_hannibal_1
+      unit_id: u_b_hannibal_1
       text: |
-        汉尼拔被击杀！迦太基军队动摇了。
+        汉尼拔被击杀！迦太基包围战功亏一篑。

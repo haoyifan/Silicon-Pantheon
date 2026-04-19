@@ -84,6 +84,11 @@ terrain_types:
     display_name: 河流
     description: |
       湍急河流，大多数单位无法通行。
+  ford:
+    display_name: 浅滩
+    description: |
+      浅水渡口。水深齐腰，水流湍急，但可以涉水通过。
+      比桥慢但提供另一条过河路线。
   bridge:
     display_name: 桥梁
     description: |

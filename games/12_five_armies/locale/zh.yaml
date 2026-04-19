@@ -13,6 +13,12 @@ unit_classes:
     description: |
       山下之王。已夺回孤山。在哥布林逼迫他改变主意之前，
       不会让出一枚金币。小说以他的死亡结尾。
+  dwalin:
+    display_name: 德瓦林
+    description: |
+      索林最勇猛的战友，双手持斧"擒者"与"握者"。
+      比索林更快、护甲更轻，打击力如山崩。惩罚一切
+      突破前线的敌人的猛将。
   bilbo:
     display_name: 比尔博·巴金斯
     description: |

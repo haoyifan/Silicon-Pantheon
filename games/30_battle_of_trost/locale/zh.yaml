@@ -121,6 +121,11 @@ terrain_types:
     description: |
       巨人袭击后坍塌的建筑和碎石。困难地形，减缓移动
       但提供掩护。
+  wall_top:
+    display_name: 墙顶
+    description: |
+      罗塞之墙的顶部。高处射击阵地，为远程单位提供极佳
+      的缺口俯瞰视野。防御方的有利阵地。
   titan_wall:
     display_name: 巨人之墙
     description: |
@@ -137,18 +142,29 @@ narrative:
     巨人从缺口涌入，驻屯兵团紧急疏散平民，调查兵团投入战斗。
   events:
     - trigger: on_turn_start
-      turn: 4
+      turn: 3
       text: |
         巨人深入城区。它们穿过为人类设计的街道，建筑在
         十五米巨兽的冲击下纷纷崩塌。
     - trigger: on_turn_start
-      turn: 8
+      turn: 4
       text: |
         一道闪电劈入墙内。曾站着一名学员的位置，一个十五米
         高的巨人拔地而起——艾伦·耶格尔完成了巨人化变身。
         他搬起巨石。阿尔敏嘶声喊出计划："把它搬到缺口去！"
-    - trigger: on_unit_killed
-      unit_id: u_b_mikasa_1
+    - trigger: on_turn_start
+      turn: 7
       text: |
-        三笠被巨人击倒。第104期最强者——陨落了。没有她，
-        防线崩溃，撤退变成溃败。
+        艾伦的巨人形态在蒸汽和裂缝中挣扎前行。
+        缺口近在咫尺。
+    - trigger: on_turn_start
+      turn: 11
+      text: |
+        缺口近在咫尺。艾伦的巨人形态蒸汽缭绕、遍布裂纹，
+        但凭借纯粹的意志力仍在坚持。穿过巨人群的最后一击。
+    - trigger: on_unit_killed
+      unit_id: u_b_eren_1
+      text: |
+        艾伦的巨人形态轰然倒塌。巨石滚落一旁。
+        人类封堵缺口的唯一机会——没了。
+        巨人从缺口源源涌入。

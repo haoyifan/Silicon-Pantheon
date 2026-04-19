@@ -139,6 +139,10 @@ terrain_types:
     display_name: 雪原
     description: |
       霍斯无尽的白色雪原。没有掩体，没有温暖。
+  ice_ridge:
+    display_name: 冰脊
+    description: |
+      霍斯的天然冰脊。高处阵地，提供良好的防御加成。
   ice:
     display_name: 冰面
     description: |

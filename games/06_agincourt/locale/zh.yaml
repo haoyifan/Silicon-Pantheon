@@ -103,6 +103,15 @@ terrain_types:
     display_name: 森林
     description: |
       浓密的树林。不可通行，形成走廊的两壁。
+  cover:
+    display_name: 掩体
+    description: |
+      树篱和翻倒的马车提供的隐蔽。弓箭手的良好防御阵地。
+  camp:
+    display_name: 营地
+    description: |
+      法军辎重营——补给马车、帐篷和拴着的战马。
+      攻到这里意味着敌军已经全线溃败。
 
 narrative:
   title: 阿金库尔之战
@@ -129,10 +138,16 @@ narrative:
         后排士兵只能踩着自己人的尸体前进。
         到达木桩前的人无法通过。
     - trigger: on_turn_start
-      turn: 9
+      turn: 10
       text: |
-        阿朗松公爵杀向亨利的旗帜。国王近身肉搏，
+        第一批法国骑士杀到木桩缺口。钢铁碰撞。
+        阿朗松公爵砍向亨利的旗帜——国王近身肉搏，
         王冠被劈掉一角。
+    - trigger: on_turn_start
+      turn: 13
+      text: |
+        泥地被搅成了血浆。突破木桩的法军已经杀入英军
+        营地。一切取决于接下来的瞬间。
     - trigger: on_unit_killed
       unit_id: u_b_henry_v_1
       text: |

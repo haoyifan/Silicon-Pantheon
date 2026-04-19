@@ -129,6 +129,11 @@ terrain_types:
     description: |
       将码头与城市本体隔开的加固闸门。若机器突破此处，
       锡安的平民区将暴露无遗。最后一道防线。
+  breach_ceiling:
+    display_name: 天花板缺口
+    description: |
+      码头天花板被哨兵撞碎的地方。碎石从头顶落下，
+      机器从上方涌入——靠近此处的单位面临额外危险。
   defense_platform:
     display_name: 防御平台
     description: |
@@ -163,10 +168,16 @@ narrative:
         外围机甲的弹药带耗尽。哨兵源源不断涌来，如同无尽的
         金属潮水从头顶的缺口倾泻而下。
     - trigger: on_turn_start
-      turn: 10
+      turn: 6
       text: |
         钻掘机轰鸣前进，码头地板随之震颤。美富根对部下嘶声
         呼喊坚守防线——绝不能让那些机器到达核心。
+    - trigger: on_turn_start
+      turn: 9
+      text: |
+        蜂群越来越密。码头中每一个传感器都在尖叫。
+        但在高处某个遥远的地方，锤子号正在向锡安
+        全速驶来……
     - trigger: on_unit_killed
       unit_id: u_b_mifune_1
       text: |

@@ -86,6 +86,11 @@ terrain_types:
     description: |
       一座狭窄的木桥——唯一的渡河点。两格宽，
       决定战役胜负的咽喉要道。
+  ford:
+    display_name: 浅滩
+    description: |
+      福斯河上游的浅水段。齐胸深，危险莫测——可以涉渡，
+      但速度极慢且毫无遮蔽。在浅滩中被困的单位处于劣势。
   high_ground:
     display_name: 修道院山
     description: |

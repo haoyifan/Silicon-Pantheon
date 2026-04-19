@@ -107,6 +107,34 @@ terrain_types:
     display_name: 东风
     description: |
       借来的东风。站在此处的单位攻击力+2。
+  fire_ship:
+    display_name: 火攻区
+    description: |
+      黄盖的进攻路线。甲板浸透了油脂、堆满了引火物。
+      此处的单位暴露在火焰中。防御-2。
+  small_boat:
+    display_name: 舢板
+    description: |
+      小型江上舢板——勉强能站稳，只能单人通行。
+      移动消耗2点。毫无掩护。
+  palisade:
+    display_name: 栅栏
+    description: |
+      北岸的木栅栏工事。曹操后卫在此掩护。防御+2。
+  command_tent:
+    display_name: 中军大帐
+    description: |
+      曹操的中军大帐。魏旗飘扬。周围路障提供防御+1。
+  altar:
+    display_name: 七星坛
+    description: |
+      诸葛亮借东风的七星祭坛。石台上燃着火盆。
+      防御+1，攻击+1。
+  woods:
+    display_name: 岸边林地
+    description: |
+      南岸茂密的树林。吴军利用林木掩护集结突击。
+      防御+2，移动消耗2点。
 
 narrative:
   title: 赤壁之战

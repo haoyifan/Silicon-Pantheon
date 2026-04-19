@@ -79,6 +79,11 @@ terrain_types:
     display_name: 灌木丛
   scorched:
     display_name: 焦土
+  scorpion_position:
+    display_name: 蝎弩阵地
+    description: |
+      架设蝎弩弩炮的高地阵地。防御+2。
+      波隆若到达此格，可操作蝎弩射击。
   river:
     display_name: 黑水河
 
@@ -93,17 +98,34 @@ narrative:
     世界化为火海。
   events:
     - trigger: on_turn_start
+      turn: 2
+      text: |
+        卓耿俯冲。一道火线将纵队劈为两半。辎重车爆燃，
+        士兵四散奔逃，惨叫不断。
+    - trigger: on_turn_start
       turn: 3
-      text: "卓耿第一次俯冲将辎重车点燃。士兵四散奔逃，惨叫不断。"
+      text: |
+        多斯拉克骑手从山丘上涌来——一片骑手的海洋。
+        兰尼斯特盾墙在马蹄和弧刀下碎裂。
     - trigger: on_turn_start
-      turn: 6
-      text: "波隆冲到了蝎弩前。他转动绞盘装上弩箭，瞄准天空中的黑影。"
+      turn: 5
+      text: |
+        波隆在混乱中杀向蝎弩。"要是你不打，我来打。"
     - trigger: on_turn_start
-      turn: 10
-      text: "兰尼斯特阵线崩溃。多斯拉克骑手涌入缺口，砍杀逃跑的士兵。"
+      turn: 8
+      text: |
+        纵队已被击溃。零星的兰尼斯特抵抗困守在燃烧的
+        马车之间，但大势已去。
+    - trigger: on_turn_start
+      turn: 11
+      text: |
+        詹姆望着满目疮痍。他看到丹妮莉丝在地面上——
+        近在咫尺。他抓起一支骑枪。
     - trigger: on_unit_killed
       unit_id: u_r_jaime_1
-      text: "弑君者倒下了。狮子旗帜跌落泥中。"
+      text: |
+        弑君者倒下了。狮子旗帜跌落泥中。
     - trigger: on_unit_killed
       unit_id: u_b_daenerys_1
-      text: "丹妮莉丝被击落龙背。卓耿发出悲鸣。"
+      text: |
+        丹妮莉丝被击落龙背。卓耿发出悲鸣。

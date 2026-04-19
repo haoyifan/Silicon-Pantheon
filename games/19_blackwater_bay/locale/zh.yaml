@@ -123,6 +123,31 @@ terrain_types:
     description: |
       野火——炼金术士行会最可怕的武器。烧绿色、烧高温、
       烧一切。站在上面的单位每回合受到巨大伤害。
+  beach:
+    display_name: 海滩
+    description: |
+      黑水湾沿岸的沙滩。部队涉水上岸，在碎浪和砂砾中
+      艰难前行。缓慢但可通行。
+  wreckage:
+    display_name: 燃烧残骸
+    description: |
+      被野火引爆的船只残骸。阴燃的木材和扭曲的船体——
+      穿越危险但可充当掩护。
+  dock:
+    display_name: 码头
+    description: |
+      伸入海湾的木栈桥。远离燃烧中心的清晰登陆点——
+      一条侧翼迂回路线。
+  rubble:
+    display_name: 攻城废墟
+    description: |
+      投石机轰击留下的碎石和断木。困难地形但为推进中的
+      部队提供良好掩护。
+  battlement:
+    display_name: 城垛
+    description: |
+      城墙顶部的防御塔楼。视野开阔，为远程单位提供
+      极佳保护。波隆在此点燃了信号箭。
   city_wall:
     display_name: 城墙
     description: |

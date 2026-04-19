@@ -103,6 +103,26 @@ terrain_types:
     display_name: 有求必应屋
     description: |
       有求必应屋。为占据者提供庇护和最需要的一切。
+  moving_staircase:
+    display_name: 移动楼梯
+    description: |
+      霍格沃茨的魔法楼梯会毫无征兆地移动。
+      通过需要额外时间——它们喜欢在你走到一半时变向。
+  classroom:
+    display_name: 教室
+    description: |
+      废弃的教室，桌椅翻倒、杂物散落。
+      勉强可以躲藏——聊胜于无的掩护。
+  library_shelves:
+    display_name: 图书馆书架
+    description: |
+      霍格沃茨图书馆的高耸书架。厚重掩护但行动困难——
+      禁书区的书会咬人。
+  secret_passage:
+    display_name: 密道
+    description: |
+      霍格沃茨的一条暗道——通行迅速但狭窄，
+      毫无掩护。只有熟悉城堡的人才能使用。
   vanishing_cabinet:
     display_name: 消失柜
     description: |

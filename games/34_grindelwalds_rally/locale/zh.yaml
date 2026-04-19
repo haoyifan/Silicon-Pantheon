@@ -72,6 +72,32 @@ terrain_types:
     description: |
       地下圆形剧场的石质阶梯座位。提供少许掩护
       但阶梯减缓移动。
+  tier:
+    display_name: 剧场阶梯
+    description: |
+      环绕地下圆形剧场墙壁的同心石阶座位。
+      高处位置提供良好的防御加成。
+  podium:
+    display_name: 演讲台
+    description: |
+      格林德沃在圆形剧场顶端的演讲平台。
+      全场最高点——占据此处者掌控全局。
+  pillar:
+    display_name: 石柱
+    description: |
+      支撑圆形剧场穹顶的巨大石柱。完全不可通行。
+      阻断视线，形成掩护盲区。
+  stairway:
+    display_name: 阶梯
+    description: |
+      连接竞技场底层和高层的狭窄石阶。
+      仅容一人通过——任何攀登者的瓶颈。
+  protego_diabolica:
+    display_name: 守护恶魔
+    description: |
+      格林德沃召唤的诅咒蓝白火焰之墙。
+      忠于他的人可安然通过；其他人将被焚烧。
+      穿越代价极高。
   magical_barrier:
     display_name: 魔法屏障
     description: |
@@ -89,6 +115,11 @@ narrative:
     双臂高举，银舌编织巫师统治世界的愿景。暗影中，
     纽特·斯卡曼德紧握魔杖。是时候行动了。
   events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        双方在守护恶魔的缺口处交锋。蓝白火焰在他们
+        脚下翻涌，灼热的光芒照亮了地下剧场的穹顶。
     - trigger: on_turn_start
       turn: 4
       text: |

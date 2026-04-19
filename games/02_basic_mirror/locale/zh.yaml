@@ -4,6 +4,20 @@ description: |
   12x12地图，每方5个单位（2骑士、1弓箭手、1骑兵、1法师）。
   镜像对称军队。用于正式智能体对战的主要场景。
 
+terrain_types:
+  river:
+    display_name: 河流
+  bridge:
+    display_name: 石桥
+  ford:
+    display_name: 浅滩
+  hill:
+    display_name: 丘陵
+  forest:
+    display_name: 森林
+  rocks:
+    display_name: 乱石
+
 narrative:
   title: 基础对称战
   description: |
@@ -11,3 +25,20 @@ narrative:
   intro: |
     两支实力均等的军队在开阔地带对峙。森林和山脉
     分割着战场，考验着指挥官的战术智慧。
+  events:
+    - trigger: on_turn_start
+      turn: 2
+      text: |
+        晨雾散去。双方终于看清了彼此。
+        石桥横跨在两军之间——谁控制了它，
+        谁就控制了渡河点。
+    - trigger: on_turn_start
+      turn: 4
+      text: |
+        钢铁在石桥上碰撞。第一波交锋已经开始。
+        东面某处传来蹄声踏水的声响。
+    - trigger: on_turn_start
+      turn: 10
+      text: |
+        战斗仍在继续。石桥下的河水被染红。
+        时间不多了——发起进攻，否则将陷入僵局。

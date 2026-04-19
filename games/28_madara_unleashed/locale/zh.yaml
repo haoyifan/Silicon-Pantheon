@@ -140,10 +140,15 @@ narrative:
         斑从天空召唤了两颗陨石。五影勉强偏转——大野木在重压
         下背部咔咔作响。"就这点本事吗，大野木？"
     - trigger: on_turn_start
-      turn: 10
+      turn: 7
       text: |
-        斑激活了完成体须佐能乎。一个巨大的铠甲武士在他
-        周围具现化，巨刃横斩山脉。联军为之震撼。
+        凯开启第七门。绿色查克拉从体内喷涌而出。
+        "若不能以体术击败他，就没有人能。"
+    - trigger: on_turn_start
+      turn: 9
+      text: |
+        鸣人与佐助联合攻击——螺旋丸与天照融合为
+        旋转的烈焰风暴。连斑也退了半步。
     - trigger: on_unit_killed
       unit_id: u_b_naruto_1
       text: |

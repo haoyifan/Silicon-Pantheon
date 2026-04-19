@@ -74,6 +74,22 @@ terrain_types:
     description: |
       齐塔瑞攻击留下的碎混凝土和扭曲钢筋。
       在废墟中提供少许掩护。
+  leviathan:
+    display_name: 利维坦残骸
+    description: |
+      被浩克的铁拳和钢铁侠的导弹击落的齐塔瑞利维坦的
+      铠甲残骸。巨大的躯体阻挡街道，形成掩护。
+  grand_central:
+    display_name: 中央车站
+    description: |
+      布扎艺术风格的标志性建筑，现为平民疏散点。
+      厚重的大理石墙壁和拱形穹顶提供坚固掩护。
+      若齐塔瑞攻到此处，平民将无路可退。
+  rooftop:
+    display_name: 屋顶
+    description: |
+      曼哈顿的屋顶，视野开阔，俯瞰大街。
+      射手的理想阵地——高处提供极佳的防御加成。
   stark_tower:
     display_name: 斯塔克大厦
     description: |
@@ -92,16 +108,21 @@ narrative:
     之间唯一的屏障。
   events:
     - trigger: on_turn_start
-      turn: 5
+      turn: 3
       text: |
         建筑在齐塔瑞战车撞穿玻璃和钢铁时倒塌。
         钢铁侠在它们之间穿梭，斥力光束闪耀。
         雷神召唤闪电划过天际。
     - trigger: on_turn_start
-      turn: 10
+      turn: 8
       text: |
         世界安理会已向曼哈顿发射核弹。钢铁侠拦截：
         "我知道该把它送到哪里。"
+    - trigger: on_turn_start
+      turn: 14
+      text: |
+        传送门越来越宽。利维坦的影子遮蔽了半个
+        曼哈顿。时间不多了。
     - trigger: on_unit_killed
       unit_id: u_r_loki_1
       text: |

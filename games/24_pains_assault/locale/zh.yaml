@@ -107,6 +107,16 @@ terrain_types:
     display_name: 火影岩
     description: |
       雕刻着历代火影面孔的崖壁。不可通行地形。
+  training_grounds:
+    display_name: 训练场
+    description: |
+      木叶村南部的忍者训练场。开阔地带，练习用桩和土堤
+      提供少许掩护。
+  rubble:
+    display_name: 废墟
+    description: |
+      建筑之间坍塌的墙壁和碎石。通行缓慢但提供一定掩护——
+      穿越废墟的迂回小径。
   village_wall:
     display_name: 村墙
     description: |

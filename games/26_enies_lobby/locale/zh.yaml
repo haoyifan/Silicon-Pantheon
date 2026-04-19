@@ -111,6 +111,41 @@ terrain_types:
     display_name: 塔内
     description: |
       司法之塔内部。石柱提供一定掩护。
+  plaza:
+    display_name: 法院广场
+    description: |
+      司法岛法院的开阔庭院。铺石地面，毫无掩护。
+      草帽团在此集结发起突击。
+  collapsed:
+    display_name: 断桥
+    description: |
+      犹豫之桥被屠魔令轰击击断的桥段。不可通行——
+      迫使单位绕路。
+  tower_stairs:
+    display_name: 塔楼阶梯
+    description: |
+      连接司法之塔上下层的螺旋阶梯。通行缓慢（消耗3移动），
+      但是到达上层的唯一通道。
+  tunnel:
+    display_name: 水下隧道
+    description: |
+      瀑布下方的维护隧道。阴暗潮湿。比桥慢（消耗2移动）
+      但隐蔽——一条侧翼通道。
+  sniper_perch:
+    display_name: 狙击高台
+    description: |
+      法院屋顶——居高临下的射击阵地。极佳的防御掩护（+3防御）
+      和俯瞰桥面的视野。
+  courthouse_rubble:
+    display_name: 法院废墟
+    description: |
+      屠魔令轰击后的碎石瓦砾。减缓移动但为突击部队
+      提供有用的掩护。
+  fountain:
+    display_name: 喷泉
+    description: |
+      广场中央的世界政府装饰喷泉。不可通行——
+      迫使单位绕行。
   gates_of_justice:
     display_name: 正义之门
     description: |
@@ -127,15 +162,25 @@ narrative:
     说出了改变一切的话："说你想活下去！"
   events:
     - trigger: on_turn_start
-      turn: 4
+      turn: 3
       text: |
         路飞开启二档。蒸汽从他的身体升腾而起，血液以超人的
         速度泵动。犹豫之桥在他攻击的力量下颤抖。
     - trigger: on_turn_start
-      turn: 10
+      turn: 6
       text: |
-        战斗在桥上激烈进行。CP9倾尽全力，但草帽团拒绝倒下。
+        战斗在桥上和塔中同时激烈进行。索隆三刀流碰上卡库的
+        四刀流。山治在空中与加布拉交锋。
+    - trigger: on_turn_start
+      turn: 12
+      text: |
+        CP9倾尽全力，但草帽团拒绝倒下。
         每一个人都在为罗宾的自由而战。
+    - trigger: on_turn_start
+      turn: 16
+      text: |
+        战斗在塔中白热化。CP9殊死抵抗，但草帽团
+        不会停下。每个人都在为罗宾的自由而战。
     - trigger: on_unit_killed
       unit_id: u_r_lucci_1
       text: |

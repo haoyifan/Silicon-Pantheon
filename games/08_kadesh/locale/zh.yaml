@@ -113,6 +113,11 @@ terrain_types:
     display_name: 丘陵
     description: |
       高地岩石地形。防御+2。阻止骑兵冲锋。
+  dust_cloud:
+    display_name: 沙尘暴
+    description: |
+      战车车轮在东部干燥平原上掀起的漫天沙尘。
+      阻挡视线。身处其中的单位无法正常作战。
 
 narrative:
   title: 卡迭石之战

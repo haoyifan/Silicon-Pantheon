@@ -179,6 +179,10 @@ terrain_types:
     display_name: 铀浓缩掩体
     description: |
       强化浓缩铀掩体——极高防御加成。蓝方的目标地块。
+  damaged_wall:
+    display_name: 受损城墙
+    description: |
+      被轰炸损坏的要塞墙壁。可以通行但提供较少防御。
   sea_mine:
     display_name: 水雷
     description: |

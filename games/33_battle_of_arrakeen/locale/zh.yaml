@@ -85,6 +85,11 @@ terrain_types:
     description: |
       暴露的美琅脂矿藏。香料的治愈特性
       恢复驻留者的活力。
+  worm_zone:
+    display_name: 沙虫区
+    description: |
+      沙虫出没的区域。行军脚步的节律振动会引来沙胡鲁德。
+      穿越此处比岩石地快，但极度危险。
   palace:
     display_name: 阿拉基恩宫殿
     description: |

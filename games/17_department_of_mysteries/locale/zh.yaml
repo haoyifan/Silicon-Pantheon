@@ -11,6 +11,9 @@ terrain_types:
   stone_wall:
     display_name: "石墙"
     description: "魔法部最深层的黑色石墙。古老、冰冷，对大多数咒语免疫。"
+  veil:
+    display_name: 帷幕
+    description: "死亡帷幕——一道拱门中悬挂着永远飘动的帷幕。靠近它的人能听到低语。不可通行。"
   prophecy_shelf:
     display_name: "预言架"
     description: "高耸的玻璃球架，每个球中封存一段预言。发出淡蓝色的光，被流弹击中时会壮观地碎裂。+1防御，进入消耗2移动。"
