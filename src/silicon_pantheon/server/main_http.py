@@ -196,61 +196,38 @@ def main() -> int:
     _log_file_path = str(log_file)
 
     async def _reattach_handlers() -> None:
-        """Attach our file handler to every logger we care about, then
-        do it again periodically.
+        """Attach our file handler to every logger we care about
+        after uvicorn/mcp has finished its own logging setup.
 
-        Why periodic: we've observed silicon.game stop emitting to the
-        log file partway through a long-lived server process (see
-        the 08:57 → silence cutoff on pid 73101 in server logs).
-        Some mcp-sdk / uvicorn / httpx internal event appears to
-        detach our handler after initial wire-up — handler remains
-        attached to the logger object in memory, but its file
-        descriptor becomes a no-op. Periodic re-attach with a fresh
-        FileHandler reopens the FD and restores emission. Cheap
-        (one `open(..., 'a')` every 5 min) and robust against the
-        failure mode whatever its root cause is.
-        """
+        Runs once at T+3s. If we observe the file handler going
+        stale mid-process (silicon.game stops emitting despite the
+        logger still existing), the right response is to *investigate
+        the root cause*, not to periodically re-attach and mask it.
+        An earlier patch added a 5-minute re-attach loop; we reverted
+        that so a future failure stays visible as a real silence
+        rather than a rolling 5-minute recovery."""
+        await asyncio.sleep(3.0)
+        fmt = logging.Formatter(
+            "%(asctime)s %(levelname)s %(name)s %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        fh = logging.FileHandler(_log_file_path, mode="a", encoding="utf-8")
+        fh.setFormatter(fmt)
         target_loggers = (
             "silicon", "silicon.lobby", "silicon.game", "silicon.engine",
             "silicon-serve", "silicon.leaderboard", "silicon.host",
             "silicon.transport",
             "mcp", "mcp.server", "mcp.server.lowlevel.server",
         )
-        fmt = logging.Formatter(
-            "%(asctime)s %(levelname)s %(name)s %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-
-        def _attach_fresh() -> int:
-            """Create a new FileHandler and attach it to every target
-            logger. Returns the count of newly-attached handlers. Old
-            handlers are left in place on purpose — closing them can
-            race with in-flight log records; simply adding a fresh
-            one means new records always reach disk even if the old
-            FD has silently gone stale."""
-            fh = logging.FileHandler(_log_file_path, mode="a", encoding="utf-8")
-            fh.setFormatter(fmt)
-            for name in target_loggers:
-                lg = logging.getLogger(name)
-                lg.addHandler(fh)
-                lg.setLevel(logging.INFO)
-                lg.propagate = False
-            return len(target_loggers)
-
-        await asyncio.sleep(3.0)
-        n = _attach_fresh()
+        for name in target_loggers:
+            lg = logging.getLogger(name)
+            lg.addHandler(fh)
+            lg.setLevel(logging.INFO)
+            lg.propagate = False
         logging.getLogger("silicon-serve").info(
             "re-attached NEW FileHandler to %d loggers (file=%s)",
-            n, _log_file_path,
+            len(target_loggers), _log_file_path,
         )
-        # Keep doing it every 5 minutes so if the handler silently
-        # goes stale later we recover within 5 minutes.
-        while True:
-            await asyncio.sleep(300.0)
-            _attach_fresh()
-            logging.getLogger("silicon-serve").debug(
-                "periodic handler re-attach (file=%s)", _log_file_path,
-            )
 
     import asyncio  # for the reattach sleep
 
