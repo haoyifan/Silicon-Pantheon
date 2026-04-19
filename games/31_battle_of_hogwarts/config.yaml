@@ -1,0 +1,487 @@
+schema_version: 1
+license: fan_work
+fan_work_source: "Harry Potter (J.K. Rowling / Warner Bros.)"
+name: Battle of Hogwarts
+difficulty: 5
+description: |
+  Hogwarts, May 1998. The final battle. Voldemort's Death Eaters
+  assault the castle while Harry hunts the last Horcrux. The Order
+  of the Phoenix, Dumbledore's Army, and the Hogwarts professors
+  stand against the darkness. Nagini must die before Voldemort can
+  be killed. The fate of the wizarding world is decided tonight.
+  Inspired by the Battle of Hogwarts from Harry Potter by J.K. Rowling.
+
+board:
+  width: 10
+  height: 10
+  terrain:
+    # Castle walls — northern perimeter
+    - {x: 0, y: 0, type: castle_wall}
+    - {x: 1, y: 0, type: castle_wall}
+    - {x: 2, y: 0, type: castle_wall}
+    - {x: 7, y: 0, type: castle_wall}
+    - {x: 8, y: 0, type: castle_wall}
+    - {x: 9, y: 0, type: castle_wall}
+    # Castle walls — side walls
+    - {x: 0, y: 1, type: castle_wall}
+    - {x: 9, y: 1, type: castle_wall}
+    - {x: 0, y: 2, type: castle_wall}
+    - {x: 9, y: 2, type: castle_wall}
+    - {x: 0, y: 3, type: castle_wall}
+    - {x: 9, y: 3, type: castle_wall}
+    # Great Hall — interior, blue's stronghold
+    - {x: 3, y: 1, type: great_hall}
+    - {x: 4, y: 1, type: great_hall}
+    - {x: 5, y: 1, type: great_hall}
+    - {x: 6, y: 1, type: great_hall}
+    - {x: 3, y: 2, type: great_hall}
+    - {x: 4, y: 2, type: great_hall}
+    - {x: 5, y: 2, type: great_hall}
+    - {x: 6, y: 2, type: great_hall}
+    # Courtyard — open ground between castle and approach
+    - {x: 3, y: 4, type: courtyard}
+    - {x: 4, y: 4, type: courtyard}
+    - {x: 5, y: 4, type: courtyard}
+    - {x: 6, y: 4, type: courtyard}
+    - {x: 3, y: 5, type: courtyard}
+    - {x: 4, y: 5, type: courtyard}
+    - {x: 5, y: 5, type: courtyard}
+    - {x: 6, y: 5, type: courtyard}
+    # Covered bridge — narrow approach, defensive terrain
+    - {x: 4, y: 6, type: covered_bridge}
+    - {x: 5, y: 6, type: covered_bridge}
+    - {x: 4, y: 7, type: covered_bridge}
+    - {x: 5, y: 7, type: covered_bridge}
+    # Lake edge — difficult terrain on the flanks
+    - {x: 0, y: 7, type: lake_edge}
+    - {x: 1, y: 7, type: lake_edge}
+    - {x: 0, y: 8, type: lake_edge}
+    - {x: 1, y: 8, type: lake_edge}
+    - {x: 0, y: 9, type: lake_edge}
+    - {x: 8, y: 7, type: lake_edge}
+    - {x: 9, y: 7, type: lake_edge}
+    - {x: 8, y: 8, type: lake_edge}
+    - {x: 9, y: 8, type: lake_edge}
+    - {x: 9, y: 9, type: lake_edge}
+  forts:
+    # Great Hall — blue's defensive position
+    - {x: 4, y: 1, owner: blue}
+
+terrain_types:
+  castle_wall:
+    display_name: Castle Wall
+    move_cost: 99
+    passable: false
+    defense_bonus: 0
+    glyph: "#"
+    color: bright_black
+    description: |
+      Ancient enchanted stone walls of Hogwarts castle. A thousand
+      years of magic reinforces these stones. Impassable.
+
+  great_hall:
+    display_name: Great Hall
+    move_cost: 1
+    defense_bonus: 2
+    glyph: "H"
+    color: bright_yellow
+    description: |
+      The Great Hall of Hogwarts. Enchanted ceiling, long tables
+      overturned for cover. Strong defensive position for the
+      castle's defenders.
+
+  courtyard:
+    display_name: Courtyard
+    move_cost: 1
+    defense_bonus: 0
+    glyph: "."
+    color: white
+    description: |
+      Open stone courtyards between castle buildings. Exposed
+      ground with no cover — spells fly freely here.
+
+  covered_bridge:
+    display_name: Covered Bridge
+    move_cost: 1
+    defense_bonus: 1
+    glyph: "="
+    color: yellow
+    description: |
+      The covered wooden bridge leading to the castle grounds.
+      Narrow chokepoint offering some cover from its timber frame.
+
+  lake_edge:
+    display_name: Lake Edge
+    move_cost: 2
+    defense_bonus: -1
+    glyph: "~"
+    color: blue
+    description: |
+      Muddy shore of the Black Lake. Difficult footing and no
+      cover. The giant squid watches from the depths.
+
+unit_classes:
+  harry:
+    display_name: Harry Potter
+    description: |
+      The Chosen One. Seventeen years old, carrying the weight of
+      prophecy. Master of the Elder Wand by right of conquest,
+      though he does not yet know it. He must survive to end this.
+    hp_max: 26
+    atk: 11
+    defense: 4
+    res: 8
+    spd: 6
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "H"
+    color: bright_yellow
+
+  hermione:
+    display_name: Hermione Granger
+    description: |
+      The brightest witch of her age, hardened by a year on the
+      run. Basilisk fangs and Fiendfyre have destroyed Horcruxes
+      by her hand. She fights with precision and fury.
+    hp_max: 22
+    atk: 10
+    defense: 3
+    res: 8
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    can_heal: true
+    heal_amount: 5
+    glyph: "E"
+    color: bright_cyan
+
+  ron:
+    display_name: Ron Weasley
+    description: |
+      He came back. He always comes back. Ron fights beside Harry
+      with a borrowed wand and the reckless courage of a man
+      protecting everyone he loves.
+    hp_max: 22
+    atk: 9
+    defense: 5
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "R"
+    color: bright_red
+
+  neville:
+    display_name: Neville Longbottom
+    description: |
+      The other boy the prophecy could have chosen. Tonight he
+      stands defiant before Voldemort himself and draws the Sword
+      of Gryffindor from the Sorting Hat. Nagini's executioner.
+    hp_max: 28
+    atk: 9
+    defense: 7
+    res: 5
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    is_magic: true
+    glyph: "N"
+    color: green
+
+  mcgonagall:
+    display_name: Minerva McGonagall
+    description: |
+      Deputy Headmistress, Transfiguration master, and the iron
+      spine of Hogwarts. She duels Voldemort to a standstill and
+      commands the castle's enchanted suits of armor.
+    hp_max: 26
+    atk: 11
+    defense: 4
+    res: 7
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 3
+    is_magic: true
+    glyph: "M"
+    color: bright_green
+
+  kingsley:
+    display_name: Kingsley Shacklebolt
+    description: |
+      Auror, Order member, future Minister of Magic. His deep
+      voice booms across the battlefield as he coordinates the
+      defense with calm authority and devastating spellwork.
+    hp_max: 28
+    atk: 10
+    defense: 5
+    res: 6
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "K"
+    color: bright_blue
+
+  molly:
+    display_name: Molly Weasley
+    description: |
+      Mother of seven. Do not threaten her children. Her duel
+      with Bellatrix Lestrange ends with two words and a lifetime
+      of maternal rage. "NOT MY DAUGHTER, YOU BITCH!"
+    hp_max: 24
+    atk: 12
+    defense: 3
+    res: 6
+    spd: 4
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "W"
+    color: bright_red
+
+  voldemort:
+    display_name: Lord Voldemort
+    description: |
+      The Dark Lord. Tom Riddle, who tore his soul into seven
+      pieces to cheat death. He wields the Elder Wand with
+      terrible power, but the wand knows its true master — and
+      it is not him.
+    hp_max: 36
+    atk: 14
+    defense: 4
+    res: 9
+    spd: 6
+    move: 3
+    rng_min: 1
+    rng_max: 3
+    is_magic: true
+    glyph: "V"
+    color: bright_red
+
+  bellatrix:
+    display_name: Bellatrix Lestrange
+    description: |
+      Voldemort's most fanatical lieutenant. Mad, cackling, and
+      deadly. She duels three witches at once and laughs while
+      doing it. Her Cruciatus is second only to her master's.
+    hp_max: 24
+    atk: 12
+    defense: 3
+    res: 6
+    spd: 7
+    move: 4
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "B"
+    color: magenta
+
+  lucius:
+    display_name: Lucius Malfoy
+    description: |
+      Fallen from grace, wandless, fighting with a borrowed wand
+      and shattered pride. He is here only because Voldemort
+      demands it. His heart is elsewhere — with his son.
+    hp_max: 22
+    atk: 9
+    defense: 3
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "L"
+    color: bright_black
+
+  dolohov:
+    display_name: Antonin Dolohov
+    description: |
+      Veteran dark wizard and killer. His purple-flame curse
+      is lethal at range. Methodical and relentless, he has
+      survived two wars on Voldemort's side.
+    hp_max: 24
+    atk: 11
+    defense: 4
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "D"
+    color: bright_black
+
+  fenrir:
+    display_name: Fenrir Greyback
+    description: |
+      Werewolf savage who fights with claws and teeth even in
+      human form. He craves the taste of human flesh. Terrifying
+      in melee, but vulnerable to magic at range.
+    hp_max: 28
+    atk: 12
+    defense: 6
+    res: 2
+    spd: 6
+    move: 4
+    rng_min: 1
+    rng_max: 1
+    is_magic: false
+    glyph: "F"
+    color: red
+
+  nagini:
+    display_name: Nagini
+    description: |
+      The final Horcrux. A massive serpent bound to Voldemort's
+      soul. Fragile in body but protected by her master — she
+      must be destroyed before Voldemort can truly die.
+    hp_max: 12
+    atk: 8
+    defense: 2
+    res: 3
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 1
+    is_magic: false
+    glyph: "S"
+    color: bright_green
+
+  yaxley:
+    display_name: Yaxley
+    description: |
+      Head of Magical Law Enforcement under Voldemort's puppet
+      Ministry. A brutal enforcer who fights with the confidence
+      of a man who has held power through fear.
+    hp_max: 22
+    atk: 9
+    defense: 4
+    res: 5
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "Y"
+    color: bright_black
+
+  carrow:
+    display_name: Amycus Carrow
+    description: |
+      One of the Carrow siblings who tortured Hogwarts students
+      all year. Sadistic and cowardly — dangerous to the helpless,
+      less so against those who fight back.
+    hp_max: 20
+    atk: 8
+    defense: 3
+    res: 4
+    spd: 5
+    move: 3
+    rng_min: 1
+    rng_max: 2
+    is_magic: true
+    glyph: "C"
+    color: bright_black
+
+armies:
+  blue:
+    # Defenders in the Great Hall and courtyard
+    - {class: harry, pos: {x: 4, y: 3}}
+    - {class: hermione, pos: {x: 5, y: 3}}
+    - {class: ron, pos: {x: 6, y: 3}}
+    - {class: neville, pos: {x: 4, y: 2}}
+    - {class: mcgonagall, pos: {x: 5, y: 1}}
+    - {class: kingsley, pos: {x: 6, y: 2}}
+    - {class: molly, pos: {x: 3, y: 2}}
+
+  red:
+    # Death Eaters approaching from the south
+    - {class: voldemort, pos: {x: 5, y: 9}}
+    - {class: bellatrix, pos: {x: 4, y: 8}}
+    - {class: lucius, pos: {x: 6, y: 8}}
+    - {class: dolohov, pos: {x: 3, y: 9}}
+    - {class: fenrir, pos: {x: 7, y: 9}}
+    - {class: nagini, pos: {x: 5, y: 8}}
+    - {class: yaxley, pos: {x: 2, y: 9}}
+    - {class: carrow, pos: {x: 7, y: 8}}
+
+rules:
+  max_turns: 14
+  fog_of_war: false
+  first_player: red
+
+win_conditions:
+  # Voldemort AND Nagini both killed -> blue wins
+  - {type: protect_unit, unit_id: u_r_voldemort_1, owning_team: red}
+  - {type: protect_unit, unit_id: u_r_nagini_1, owning_team: red}
+  # Harry killed -> red wins
+  - {type: protect_unit, unit_id: u_b_harry_1, owning_team: blue}
+  # Harry survives the turn cap -> blue wins (dawn breaks, Voldemort's spell rebounds)
+  - {type: protect_unit_survives, unit_id: u_b_harry_1, owning_team: blue}
+  # Either side wins by total elimination
+  - {type: eliminate_all_enemy_units}
+  # Backstop
+  - {type: max_turns_draw}
+
+narrative:
+  title: Battle of Hogwarts
+  description: |
+    Hogwarts, May 1998. The final battle of the Second Wizarding
+    War. Voldemort's forces assault the castle. Harry must destroy
+    the last Horcrux — Nagini — and face the Dark Lord. The fate
+    of the wizarding world hangs in the balance.
+  intro: |
+    Midnight. Voldemort's voice echoes across the grounds: "Give
+    me Harry Potter, and none shall be harmed." Silence. Then
+    McGonagall's voice rings from the battlements: "Hogwarts is
+    threatened! Man the boundaries! Protect us!" The enchanted
+    suits of armor march to war.
+  events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        The covered bridge explodes in a shower of timber as
+        Neville's trap detonates. Giants and Death Eaters stumble
+        through the wreckage. The courtyard becomes a killing ground.
+    - trigger: on_turn_start
+      turn: 7
+      text: |
+        "I know that many of you will want to fight. Some of you
+        may even think that to fight is wise. But this is folly."
+        Voldemort's amplified voice offers another chance to
+        surrender. Nobody takes it.
+    - trigger: on_turn_start
+      turn: 11
+      text: |
+        Neville draws the Sword of Gryffindor from the burning
+        Sorting Hat. The blade gleams with basilisk venom. Nagini
+        must die.
+    - trigger: on_unit_killed
+      unit_id: u_r_nagini_1
+      text: |
+        The great serpent's head tumbles through the air. The last
+        Horcrux is destroyed. Voldemort screams — for the first
+        time in his life, he is truly mortal.
+    - trigger: on_unit_killed
+      unit_id: u_b_harry_1
+      text: |
+        Harry falls. The Elder Wand has spoken, and the Boy Who
+        Lived is no more. Voldemort's laughter echoes through the
+        shattered castle. The war is over.
+    - trigger: on_unit_killed
+      unit_id: u_r_voldemort_1
+      text: |
+        The Killing Curse rebounds. Tom Riddle's body crumples to
+        the ground, mortal, finished. The Elder Wand arcs through
+        the dawn light into Harry's outstretched hand. It is done.
