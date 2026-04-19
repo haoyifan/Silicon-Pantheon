@@ -14,53 +14,81 @@ description: |
   Inspired by the Battle of Thermopylae (480 BC), ancient Greece.
 
 board:
-  width: 10
-  height: 8
+  width: 14
+  height: 10
   terrain:
-    # Northern cliffs — impassable wall
-    - {x: 0, y: 0, type: cliff}
-    - {x: 1, y: 0, type: cliff}
-    - {x: 2, y: 0, type: cliff}
-    - {x: 3, y: 0, type: cliff}
-    - {x: 4, y: 0, type: cliff}
-    - {x: 5, y: 0, type: cliff}
-    - {x: 6, y: 0, type: cliff}
-    - {x: 7, y: 0, type: cliff}
-    - {x: 8, y: 0, type: cliff}
-    - {x: 9, y: 0, type: cliff}
-    # Southern cliffs — narrowing the pass, with a gap for the goat path
-    - {x: 0, y: 7, type: cliff}
-    - {x: 1, y: 7, type: cliff}
-    - {x: 2, y: 7, type: cliff}
-    - {x: 3, y: 7, type: cliff}
-    - {x: 4, y: 7, type: cliff}
-    - {x: 5, y: 7, type: cliff}
-    - {x: 6, y: 7, type: cliff}
-    - {x: 7, y: 7, type: cliff}
-    - {x: 8, y: 7, type: cliff}
-    - {x: 9, y: 7, type: cliff}
-    # Inner cliff walls — create the narrow Hot Gates pass (rows 2-4)
-    # Upper inner cliff
-    - {x: 3, y: 1, type: cliff}
-    - {x: 4, y: 1, type: cliff}
-    - {x: 5, y: 1, type: cliff}
-    - {x: 6, y: 1, type: cliff}
-    - {x: 7, y: 1, type: cliff}
-    # Lower inner cliff — with gap at (8,5) for the goat path
-    - {x: 3, y: 5, type: cliff}
-    - {x: 4, y: 5, type: cliff}
-    - {x: 5, y: 5, type: cliff}
-    - {x: 6, y: 5, type: cliff}
-    - {x: 7, y: 5, type: cliff}
-    # The Hot Gates pass is rows 2-4 between the inner cliffs
-    # Phocian Wall — defensive fortification in the pass
-    - {x: 4, y: 2, type: phocian_wall}
-    - {x: 4, y: 3, type: phocian_wall}
-    - {x: 4, y: 4, type: phocian_wall}
-    # Goat path — the mountain flanking route (row 6, between southern cliffs)
-    - {x: 7, y: 6, type: goat_path}
-    - {x: 8, y: 6, type: goat_path}
-    - {x: 9, y: 6, type: goat_path}
+    # ── Northern cliffs — impassable wall across y=0 ──
+    - {x: 0,  y: 0, type: cliff}
+    - {x: 1,  y: 0, type: cliff}
+    - {x: 2,  y: 0, type: cliff}
+    - {x: 3,  y: 0, type: cliff}
+    - {x: 4,  y: 0, type: cliff}
+    - {x: 5,  y: 0, type: cliff}
+    - {x: 6,  y: 0, type: cliff}
+    - {x: 7,  y: 0, type: cliff}
+    - {x: 8,  y: 0, type: cliff}
+    - {x: 9,  y: 0, type: cliff}
+    - {x: 10, y: 0, type: cliff}
+    - {x: 11, y: 0, type: cliff}
+    - {x: 12, y: 0, type: cliff}
+    - {x: 13, y: 0, type: cliff}
+    # ── Upper inner cliff — narrows the pass at y=1 ──
+    # Leaves open tiles at x=0-2 (west pocket) and x=12-13 (east pocket).
+    - {x: 3,  y: 1, type: cliff}
+    - {x: 4,  y: 1, type: cliff}
+    - {x: 5,  y: 1, type: cliff}
+    - {x: 6,  y: 1, type: cliff}
+    - {x: 7,  y: 1, type: cliff}
+    - {x: 8,  y: 1, type: cliff}
+    - {x: 9,  y: 1, type: cliff}
+    - {x: 10, y: 1, type: cliff}
+    - {x: 11, y: 1, type: cliff}
+    # ── The Hot Gates pass (rows 2-5, full width open) ──
+    # Phocian Wall blocks x=6 across y=2..5 — the anchor of Greek defense.
+    - {x: 6, y: 2, type: phocian_wall}
+    - {x: 6, y: 3, type: phocian_wall}
+    - {x: 6, y: 4, type: phocian_wall}
+    - {x: 6, y: 5, type: phocian_wall}
+    # ── Lower inner cliff — narrows at y=6, with a gap at x=11-12 for
+    # goat-path access from the pass down into the southern flank.
+    - {x: 3,  y: 6, type: cliff}
+    - {x: 4,  y: 6, type: cliff}
+    - {x: 5,  y: 6, type: cliff}
+    - {x: 6,  y: 6, type: cliff}
+    - {x: 7,  y: 6, type: cliff}
+    - {x: 8,  y: 6, type: cliff}
+    - {x: 9,  y: 6, type: cliff}
+    - {x: 10, y: 6, type: cliff}
+    # ── Goat path — the mountain flanking route. y=7 carries the
+    # path eastward into the southern mountains; y=8 lets flankers
+    # turn west and approach the Greek rear.
+    - {x: 9,  y: 7, type: goat_path}
+    - {x: 10, y: 7, type: goat_path}
+    - {x: 11, y: 7, type: goat_path}
+    - {x: 12, y: 7, type: goat_path}
+    - {x: 13, y: 7, type: goat_path}
+    - {x: 2,  y: 8, type: goat_path}
+    - {x: 3,  y: 8, type: goat_path}
+    - {x: 4,  y: 8, type: goat_path}
+    - {x: 5,  y: 8, type: goat_path}
+    - {x: 6,  y: 8, type: goat_path}
+    - {x: 7,  y: 8, type: goat_path}
+    - {x: 8,  y: 8, type: goat_path}
+    # ── Southern cliffs — bottom wall at y=9 ──
+    - {x: 0,  y: 9, type: cliff}
+    - {x: 1,  y: 9, type: cliff}
+    - {x: 2,  y: 9, type: cliff}
+    - {x: 3,  y: 9, type: cliff}
+    - {x: 4,  y: 9, type: cliff}
+    - {x: 5,  y: 9, type: cliff}
+    - {x: 6,  y: 9, type: cliff}
+    - {x: 7,  y: 9, type: cliff}
+    - {x: 8,  y: 9, type: cliff}
+    - {x: 9,  y: 9, type: cliff}
+    - {x: 10, y: 9, type: cliff}
+    - {x: 11, y: 9, type: cliff}
+    - {x: 12, y: 9, type: cliff}
+    - {x: 13, y: 9, type: cliff}
   forts: []
 
 terrain_types:
@@ -338,29 +366,36 @@ unit_classes:
 
 armies:
   blue:
-    # Greeks hold the pass behind the Phocian Wall
-    - {class: leonidas, pos: {x: 3, y: 3}}
-    - {class: dienekes, pos: {x: 3, y: 2}}
-    - {class: demophilus, pos: {x: 3, y: 4}}
-    - {class: spartan_captain, pos: {x: 2, y: 3}}
-    - {class: greek_archer, pos: {x: 2, y: 2}}
+    # ── Greeks hold the pass behind the Phocian Wall at x=6 ──
+    # Leonidas anchors the center.
+    - {class: leonidas,        pos: {x: 5, y: 3}}
+    # Dienekes to the north flank.
+    - {class: dienekes,        pos: {x: 5, y: 2}}
+    # Demophilus (Thespians) to the south flank.
+    - {class: demophilus,      pos: {x: 5, y: 4}}
+    # Spartan captain slightly deeper, ready to plug breaches.
+    - {class: spartan_captain, pos: {x: 4, y: 3}}
+    # Greek archer screens from atop the wall.
+    - {class: greek_archer,    pos: {x: 4, y: 5}}
 
   red:
-    # Persians massed in the eastern end of the pass
-    # Xerxes stays far back
-    - {class: xerxes, pos: {x: 9, y: 3}}
-    # Hydarnes near the goat path for flanking
-    - {class: hydarnes, pos: {x: 9, y: 4}}
-    # Mardonius leading the frontal press
-    - {class: mardonius, pos: {x: 8, y: 3}}
-    # Persian archer for ranged volleys
-    - {class: persian_archer, pos: {x: 9, y: 2}}
-    # Immortal Champion — elite assault
-    - {class: immortal_champion, pos: {x: 8, y: 2}}
-    # Three named commanders
-    - {class: artaphrenes, pos: {x: 8, y: 4}}
-    - {class: datis, pos: {x: 7, y: 3}}
-    - {class: megabyzus, pos: {x: 7, y: 2}}
+    # ── Persians massed east of the pass, ~8 tiles from the Greek line ──
+    # Xerxes stays far back behind the line.
+    - {class: xerxes,            pos: {x: 13, y: 3}}
+    # Persian archer volleys from distance.
+    - {class: persian_archer,    pos: {x: 12, y: 2}}
+    # Mardonius leads the frontal press.
+    - {class: mardonius,         pos: {x: 11, y: 3}}
+    # Immortal Champion — elite assault at the north.
+    - {class: immortal_champion, pos: {x: 11, y: 2}}
+    # Hydarnes deploys south, angling toward the goat-path flank.
+    - {class: hydarnes,          pos: {x: 12, y: 4}}
+    # Artaphrenes frontline at the south.
+    - {class: artaphrenes,       pos: {x: 11, y: 4}}
+    # Datis holds a reserve position.
+    - {class: datis,             pos: {x: 13, y: 2}}
+    # Megabyzus harries the northern approach.
+    - {class: megabyzus,         pos: {x: 13, y: 4}}
 
 rules:
   max_turns: 10
