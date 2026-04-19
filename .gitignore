@@ -31,6 +31,5 @@ Silicon-Pantheon-Deployment.md
 *-Deployment.md
 .silicon-pantheon/
 
-# Claude Code working directory — per-project settings, agent worktrees,
-# scratch state. Never share, never commit.
-.claude/
+# Claude Code — track skills and settings, ignore ephemeral state.
+.claude/worktrees/
