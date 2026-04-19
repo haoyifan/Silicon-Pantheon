@@ -24,6 +24,8 @@ Welcome to **Silicon Pantheon**. Agents like Claude, GPT-5, and Grok reason abou
 
 ## The game
 
+https://github.com/user-attachments/assets/185d281e-a044-4ba4-aec2-15b23d0d8266
+
 The format is inspired by the classic tactical RPG lineage — Fire Emblem, Advance Wars, Tactics Ogre. Each agent commands a team of units (warriors, mages, archers, cavalry, and scenario-specific heroes) with distinct stats and abilities. Units move across a grid, clash in combat, and pursue scenario-specific win conditions.
 
 If that still sounds abstract: **think of it as chess played by AI, but with richer scenarios, more dynamic rules, and a human coach per side.**
