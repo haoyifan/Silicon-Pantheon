@@ -579,8 +579,8 @@ armies:
     - {class: dolohov, pos: {x: 8, y: 14}}
     - {class: yaxley, pos: {x: 13, y: 15}}
     # West bridge assault — Bellatrix leading
-    - {class: bellatrix, pos: {x: 0, y: 12}}
-    - {class: fenrir, pos: {x: 1, y: 13}}
+    - {class: bellatrix, pos: {x: 1, y: 12}}
+    - {class: fenrir, pos: {x: 2, y: 13}}
     # East lake approach — Lucius and Carrow
     - {class: lucius, pos: {x: 17, y: 13}}
     - {class: carrow, pos: {x: 18, y: 12}}

@@ -1,10 +1,15 @@
-"""Battle of Trost — Eren Titan reinforcement at turn 8.
+"""Battle of Trost — Eren reinforcement at turn 4.
 
-Turn 8: Eren transforms into the Attack Titan and spawns at (7, 9),
-one tile inside the wall breach. He must move to (7, 10) to seal it.
+Turn 4: Eren transforms into the Attack Titan and spawns just inside
+the breach. He must move to the breach tile at y=10 to seal Wall Rose.
 
-Guarded by a once-only flag so repeated on_turn_start invocations
-are idempotent.
+Spawns a unit of class ``eren`` (matches the class defined in
+``config.yaml``) with UID ``u_b_eren_1`` — this UID is referenced by
+the ``reach_tile``/``protect_unit`` win conditions and by the
+``on_unit_killed`` narrative event.
+
+Guarded by a once-only flag so repeated on_turn_start invocations are
+idempotent.
 """
 
 from __future__ import annotations
@@ -18,44 +23,47 @@ from silicon_pantheon.server.engine.state import (
 from silicon_pantheon.server.engine.scenarios import build_unit_stats, find_spawn_pos
 
 
-_EREN_TITAN_SPEC = {
-    "display_name": "Eren (Attack Titan)",
+# Mirrors `unit_classes.eren` in config.yaml so the spawned titan has
+# the same combat profile as the declared class.
+_EREN_SPEC = {
+    "display_name": "Eren Yeager (Attack Titan)",
     "description": (
-        "Eren Yeager in Attack Titan form. Fifteen meters of rage and "
-        "hardened fists. He must carry the boulder to the breach and "
-        "seal Wall Rose — humanity's only hope."
+        "Eren in Attack Titan form. Fifteen meters of rage and "
+        "hardened fists. VIP — he must carry the boulder to the "
+        "breach at y=10 and seal Wall Rose."
     ),
-    "hp_max": 50,
-    "atk": 14,
-    "defense": 8,
-    "res": 2,
+    "hp_max": 40,
+    "atk": 13,
+    "defense": 7,
+    "res": 3,
     "spd": 4,
     "move": 3,
     "rng_min": 1,
     "rng_max": 1,
+    "tags": ["vip"],
     "glyph": "E",
     "color": "bright_yellow",
 }
 
-_EREN_SPAWN = (7, 2)
+_EREN_SPAWN = (5, 2)
+_EREN_TURN = 4
 
 
 def eren_reinforcement(state, turn: int, team: str, **_):
-    """Called every on_turn_start. Spawns Eren Titan on turn 8
-    (one-shot)."""
-    if turn != 8 or state.__dict__.get("_eren_arrived"):
+    """Called every on_turn_start. Spawns Eren on turn 4 (one-shot)."""
+    if turn != _EREN_TURN or state.__dict__.get("_eren_arrived"):
         return
     state.__dict__["_eren_arrived"] = True
-    uid = "u_b_eren_titan_1"
+    uid = "u_b_eren_1"
     if uid in state.units:
         return
     x, y = _EREN_SPAWN
-    stats = build_unit_stats("eren_titan", _EREN_TITAN_SPEC)
+    stats = build_unit_stats("eren", _EREN_SPEC)
     spawn_pos = find_spawn_pos(state, Pos(x, y))
     state.units[uid] = Unit(
         id=uid,
         owner=Team.BLUE,
-        class_="eren_titan",
+        class_="eren",
         pos=spawn_pos,
         hp=stats.hp_max,
         status=UnitStatus.READY,

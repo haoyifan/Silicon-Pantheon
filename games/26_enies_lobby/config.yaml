@@ -805,8 +805,10 @@ rules:
   first_player: blue
 
 win_conditions:
-  # A Straw Hat reaches the Gates of Justice -> rescue!
-  - {type: reach_tile, team: blue, pos: {x: 19, y: 7}}
+  # Luffy reaches Robin at the Gates of Justice -> rescue!
+  - {type: reach_tile, team: blue, pos: {x: 18, y: 7}, unit_id: u_b_luffy_1}
+  - {type: reach_tile, team: blue, pos: {x: 19, y: 6}, unit_id: u_b_luffy_1}
+  - {type: reach_tile, team: blue, pos: {x: 19, y: 8}, unit_id: u_b_luffy_1}
   # Luffy dies -> blue loses
   - {type: protect_unit, unit_id: u_b_luffy_1, owning_team: blue}
   # Either side wins by total elimination
