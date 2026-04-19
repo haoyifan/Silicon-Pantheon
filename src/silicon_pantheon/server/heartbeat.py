@@ -137,7 +137,15 @@ def run_sweep_once(app: App, now: float | None = None) -> None:
                 room_id, session.state.active_player.value,
                 elapsed, limit,
             )
-            _force_end_turn(app, room_id, session, reason="turn_time_limit_exceeded")
+            # Pass limit so _force_end_turn can re-check inside the
+            # session lock — a concurrent client end_turn may have
+            # already advanced the turn between the outer check and
+            # lock acquisition.
+            _force_end_turn(
+                app, room_id, session,
+                reason="turn_time_limit_exceeded",
+                limit_s=limit,
+            )
 
 
 def _vacate_room(app: App, cid: str) -> None:
@@ -192,6 +200,7 @@ def _auto_concede(app: App, cid: str) -> None:
 
 def _force_end_turn(
     app: App, room_id: str, session, reason: str = "turn_timeout",
+    limit_s: float | None = None,
 ) -> None:
     """Force the active player's turn to end, bypassing the usual
     'pending unit actions' guard.
@@ -213,6 +222,20 @@ def _force_end_turn(
     (e.g. max_turns_draw, reach_tile from the other side on their
     previous turn), that's picked up by the engine's normal check
     in apply(EndTurnAction) and _note_game_over_if_needed fires.
+
+    ── Concurrency ──
+    Tool handlers (game_tools._dispatch at line 284) serialize on
+    `session.lock` — a threading.Lock, because FastMCP runs sync
+    tool handlers in a threadpool. The sweep runs on the asyncio
+    event loop thread, distinct from the threadpool workers that
+    execute tools. Without taking the lock, a concurrent client
+    `end_turn` and this force path can both call `apply(EndTurnAction)`
+    back-to-back, double-flipping `active_player` and corrupting
+    the turn counter. We use non-blocking acquire: if the lock is
+    held by a tool handler, we skip and retry on the next sweep
+    tick (~1s later). This avoids blocking the event loop on a
+    slow tool handler, and the timeout has 1800s of margin by
+    default — missing one tick is harmless.
     """
     import time as _time
     from silicon_pantheon.server.engine.state import (
@@ -221,59 +244,98 @@ def _force_end_turn(
     )
     from silicon_pantheon.server.engine.rules import EndTurnAction, apply
 
-    if session.state.status == GameStatus.GAME_OVER:
-        return  # already over — nothing to force
-
-    active = session.state.active_player
-
-    # Step 1: force-complete any MOVED (pending) units so apply()
-    # doesn't reject the EndTurnAction. Completed and READY units
-    # stay as they are.
-    for u in session.state.units_of(active):
-        if u.status is UnitStatus.MOVED:
-            u.status = UnitStatus.DONE
-
-    # Step 2: record the truncated turn duration for telemetry so
-    # /leaderboard stats show this turn's actual elapsed time, not
-    # zero.
-    if session.turn_start_time > 0:
-        dt = _time.monotonic() - session.turn_start_time
-        session.turn_times_by_team.setdefault(active, []).append(dt)
-
-    # Step 3: apply the EndTurnAction. The engine runs end-of-turn
-    # effects (terrain heal/damage, win conditions, turn counter
-    # advance, active_player flip).
-    try:
-        result = apply(session.state, EndTurnAction())
-    except Exception:
-        log.exception(
-            "force_end_turn: apply() raised for room=%s team=%s",
-            room_id, active.value,
+    # Non-blocking lock acquire — see "Concurrency" note above.
+    if not session.lock.acquire(blocking=False):
+        log.debug(
+            "force_end_turn: lock busy for room=%s, retry next sweep",
+            room_id,
         )
         return
-
-    # Step 4: replicate the bookkeeping that mutations.end_turn does
-    # on a cooperative end_turn — history append, coach queue clear,
-    # action hooks fired, new turn timer reset. We do NOT call the
-    # _record_action helper in tools/mutations.py directly because
-    # that module imports heartbeat (circular), so we inline the
-    # relevant two lines.
-    session.state.last_action = result
-    session.state.history.append(result)
-    session.coach_queues[active] = []
-    session.turn_start_time = _time.monotonic()
-    session.log("turn_timeout_forfeit", {"team": active.value, "reason": reason})
     try:
-        session.notify_action(result)
-    except Exception:
-        log.exception("force_end_turn: notify_action failed")
+        if session.state.status == GameStatus.GAME_OVER:
+            return  # already over — nothing to force
 
-    # Step 5: if the turn-end triggered a win condition (max_turns_draw,
-    # a reach_tile that was satisfied the previous turn, etc), the
-    # engine will have set session.state.status = GAME_OVER. Wire
-    # that through to the post-game-over hook so leaderboard /
-    # replay / room cleanup runs.
-    if session.state.status == GameStatus.GAME_OVER:
+        # Re-check elapsed inside the lock. A concurrent client
+        # `end_turn` may have landed between the outer sweep's
+        # `elapsed > limit` check and our lock acquisition; in that
+        # case session.turn_start_time was just reset and we must
+        # NOT force-end a turn the client already ended cleanly.
+        if limit_s is not None and session.turn_start_time > 0:
+            elapsed = _time.monotonic() - session.turn_start_time
+            if elapsed <= limit_s:
+                log.info(
+                    "force_end_turn: race resolved — client ended turn "
+                    "between sweep check and lock acquire (room=%s elapsed=%.1fs)",
+                    room_id, elapsed,
+                )
+                return
+
+        active = session.state.active_player
+
+        # Step 1: force-complete any MOVED (pending) units so apply()
+        # doesn't reject the EndTurnAction. Completed and READY units
+        # stay as they are — the engine's end-of-turn hook resets the
+        # incoming player's units to READY anyway.
+        for u in session.state.units_of(active):
+            if u.status is UnitStatus.MOVED:
+                u.status = UnitStatus.DONE
+
+        # Step 2: record the truncated turn duration for telemetry so
+        # /leaderboard stats show this turn's actual elapsed time, not
+        # zero.
+        if session.turn_start_time > 0:
+            dt = _time.monotonic() - session.turn_start_time
+            session.turn_times_by_team.setdefault(active, []).append(dt)
+
+        # Step 3: apply the EndTurnAction. The engine runs end-of-turn
+        # effects (terrain heal/damage, win conditions, turn counter
+        # advance, active_player flip).
+        try:
+            result = apply(session.state, EndTurnAction())
+        except Exception:
+            log.exception(
+                "force_end_turn: apply() raised for room=%s team=%s",
+                room_id, active.value,
+            )
+            return
+
+        # Step 4: replicate the bookkeeping that mutations._record_action
+        # does on a cooperative end_turn — history append, narrative
+        # drain, coach queue clear, action hooks fired, new turn timer
+        # reset. We do NOT call _record_action directly because
+        # tools/mutations.py imports us transitively (circular).
+        session.state.last_action = result
+        session.state.history.append(result)
+        # Drain narrative events emitted by apply() (terrain deaths,
+        # on_turn_start hooks) so they land in the replay instead of
+        # accumulating silently on the state until the next cooperative
+        # action eventually drains them.
+        nlog = getattr(session.state, "_narrative_log", None)
+        if nlog:
+            for entry in nlog:
+                session.log("narrative_event", entry)
+            nlog.clear()
+        session.coach_queues[active] = []
+        session.turn_start_time = _time.monotonic()
+        session.log("turn_timeout_forfeit", {"team": active.value, "reason": reason})
+        try:
+            session.notify_action(result)
+        except Exception:
+            log.exception("force_end_turn: notify_action failed")
+
+        # Step 5: if the turn-end triggered a win condition (max_turns_draw,
+        # a reach_tile that was satisfied the previous turn, etc), the
+        # engine will have set session.state.status = GAME_OVER. Wire
+        # that through to the post-game-over hook so leaderboard /
+        # replay / room cleanup runs.
+        game_over = session.state.status == GameStatus.GAME_OVER
+    finally:
+        session.lock.release()
+
+    # _note_game_over_if_needed touches rooms + leaderboard which
+    # have their own locking — call it outside the session lock to
+    # avoid any chance of lock-order inversion.
+    if game_over:
         from silicon_pantheon.server.game_tools import _note_game_over_if_needed
         _note_game_over_if_needed(app, room_id)
 
