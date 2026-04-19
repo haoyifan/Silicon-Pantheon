@@ -117,7 +117,15 @@ class LobbyScreen(Screen):
         lc = self.app.state.locale
         rooms = self.app.state.last_rooms
 
-        header = Text(f"{t('lobby_title', lc)} — {self.app.state.display_name}", style="bold yellow")
+        header = Text(
+            f"{t('lobby_title', lc)} — {self.app.state.display_name}",
+            style="bold yellow",
+        )
+        # Tag the header with the active model so the user can see at
+        # a glance which agent they've authorized for this session
+        # — handy when juggling multiple providers / keys.
+        if self.app.state.model:
+            header.append(f"  ({self.app.state.model})", style="cyan")
         subtitle = Text(f"{len(rooms)} {t('lobby_table.room', lc)} {t('lobby_table.open', lc)}", style="dim")
         view_bar = self._render_view_bar(lc)
 
