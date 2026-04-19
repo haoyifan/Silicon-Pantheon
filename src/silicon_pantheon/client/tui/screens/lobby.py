@@ -137,6 +137,7 @@ class LobbyScreen(Screen):
         now = time.time()
         if now - self._last_poll >= POLL_INTERVAL_S:
             await self._refresh_rooms()
+            await self._refresh_leaderboard()
 
     async def handle_key(self, key: str) -> Screen | None:
         # Confirmation modal wins over everything.
