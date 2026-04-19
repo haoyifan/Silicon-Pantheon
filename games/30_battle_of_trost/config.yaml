@@ -5,12 +5,14 @@ name: Battle of Trost
 difficulty: 3
 description: |
   Trost District, Wall Rose. The Colossal Titan has kicked a hole
-  in the wall and titans pour through the breach. Eren (VIP, titan
-  shifter) must survive and fight his way to the breach to seal it
-  with the boulder. Mikasa is the fastest blade, Levi the strongest
-  soldier, Armin the tactical mind, with Jean and Connie supporting.
-  They face the Armored Titan (super tank vulnerable to Armin's magic)
-  and five unique named titans, each with different combat roles.
+  in the wall and titans pour through the breach. Blue must hold the
+  line for three turns until Eren transforms into his Attack Titan
+  form (he spawns as a reinforcement at turn 4), then escort him to
+  the breach at y=10 so he can seal it with the boulder. Mikasa is
+  the fastest blade, Levi the strongest soldier, Armin the tactical
+  mind, with Jean and Connie supporting. They face the Armored Titan
+  (super tank vulnerable to Armin's magic) and five unique named
+  titans, each with different combat roles.
   Inspired by the Battle of Trost from Attack on Titan by Hajime Isayama.
 
 board:
@@ -339,7 +341,7 @@ unit_classes:
 
 armies:
   blue:
-    - {class: eren, pos: {x: 5, y: 2}}
+    # Eren spawns at turn 4 via eren_reinforcement plugin hook
     - {class: mikasa, pos: {x: 6, y: 1}}
     - {class: armin, pos: {x: 4, y: 3}}
     - {class: levi, pos: {x: 3, y: 1}}
@@ -368,24 +370,38 @@ win_conditions:
   # Backstop
   - {type: max_turns_draw}
 
+plugin_hooks:
+  on_turn_start:
+    - eren_reinforcement
+
 narrative:
   title: Battle of Trost
   description: |
     Trost District — the first battle where humanity fights back.
-    Eren in titan form must reach the breach in Wall Rose and seal
-    it with the boulder while his comrades defend him.
+    Hold the line for three turns until Eren transforms into the
+    Attack Titan at turn 4, then escort him to the breach in Wall
+    Rose so he can seal it with the boulder.
   intro: |
-    Lightning splits the sky inside Trost. Where a desperate cadet
-    stood, a fifteen-meter titan rises — Eren Yeager has transformed.
-    He picks up the boulder. Armin screams the plan: "CARRY IT TO
-    THE BREACH! Everyone else — protect Eren at all costs!"
+    The Colossal Titan's kick shatters the gate. Titans flood into
+    Trost. Cadets die in waves. Mikasa, Levi, Armin, Jean, and
+    Connie rally at the rooftops — they must buy time. Somewhere
+    in the chaos, Eren Yeager is about to awaken a power he doesn't
+    yet understand.
   events:
     - trigger: on_turn_start
       turn: 3
       text: |
         The titans push deeper into the district. Buildings crumble
         as they wade through streets designed for humans. The Armored
-        Titan's footsteps shake the ground like earthquakes.
+        Titan's footsteps shake the ground like earthquakes. Where
+        is Eren? The cadets can't hold much longer.
+    - trigger: on_turn_start
+      turn: 4
+      text: |
+        Lightning strikes the rooftops. A blinding flash — and a
+        fifteen-meter titan rises from the steam. Eren Yeager has
+        transformed. He picks up the boulder. Armin screams the
+        plan: "CARRY IT TO THE BREACH! Everyone — protect Eren!"
     - trigger: on_turn_start
       turn: 7
       text: |

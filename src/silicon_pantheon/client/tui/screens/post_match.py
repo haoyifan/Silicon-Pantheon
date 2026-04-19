@@ -117,30 +117,39 @@ class PostMatchScreen(Screen):
             or "?"
         )
 
-        # Player names from room state.
+        # Player names + models from room state.
         rs = self.app.state.last_room_state or {}
         seats = rs.get("seats") or {}
         host_team = rs.get("host_team", "blue")
         blue_player = ""
         red_player = ""
+        blue_model = ""
+        red_model = ""
         for slot_id, seat in seats.items():
             player = (seat.get("player") or {})
             name = player.get("display_name") or ""
+            model = player.get("model") or ""
             seat_team = host_team if slot_id == "a" else (
                 "red" if host_team == "blue" else "blue"
             )
             if seat_team == "blue":
                 blue_player = name
+                blue_model = model
             else:
                 red_player = name
+                red_model = model
 
         summary = Text()
         summary.append(f"{t('post_match_summary.scenario', lc)}: ", style="dim")
         summary.append(scenario_name, style="yellow")
         if blue_player or red_player:
             summary.append(f"\n{blue_player or '?'}", style="cyan")
+            if blue_model:
+                summary.append(f" ({blue_model})", style="dim cyan")
             summary.append(" vs ", style="dim")
             summary.append(f"{red_player or '?'}", style="red")
+            if red_model:
+                summary.append(f" ({red_model})", style="dim red")
         summary.append(
             f"\n{t('post_match_summary.turns', lc)}: {gs.get('turn', '?')} / {gs.get('max_turns', '?')}\n"
             f"{t('post_match_summary.blue', lc)}: {sum(1 for u in gs.get('units', []) if u.get('owner') == 'blue')}  "

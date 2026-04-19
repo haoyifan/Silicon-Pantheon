@@ -74,13 +74,25 @@ class LobbyScreen(Screen):
                 host_name = r.get("host_name", "")
                 joiner_player = seats.get("b", {}).get("player") or {}
                 joiner_name = joiner_player.get("display_name", "") if joiner_player else ""
+                # Status with color coding
+                status_raw = r.get("status", "unknown")
+                status_text = t(f"lobby_val.status_{status_raw}", lc)
+                _status_colors = {
+                    "waiting_for_players": "green",
+                    "waiting_ready": "yellow",
+                    "counting_down": "yellow",
+                    "in_game": "red",
+                    "finished": "dim",
+                }
+                status_style = _status_colors.get(status_raw, "white")
+                status_display = Text(status_text, style=status_style)
                 table.add_row(
                     marker,
                     room_id_short,
                     host_name,
                     joiner_name or "—",
                     scenario_display,
-                    t(f"lobby_val.status_{r.get('status', 'unknown')}", lc),
+                    status_display,
                     style="bold" if i == self._selected else None,
                 )
 

@@ -439,6 +439,8 @@ win_conditions:
   - {type: eliminate_all_enemy_units}
   # Survive 12 turns → dawn comes, blue wins.
   - {type: protect_unit_survives, unit_id: u_b_jon_snow_1, owning_team: blue}
+  # Backstop — if Jon falls but blue still has units at turn cap.
+  - {type: max_turns_draw}
 
 narrative:
   title: The Long Night
