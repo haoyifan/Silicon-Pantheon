@@ -789,6 +789,18 @@ leaderboard:
   hint_active: "j/k select · Enter for details · Tab back to rooms"
   hint_inactive: "Tab to focus · Enter drills into a model"
 
+# Info card (right of the scoreboard in the lobby)
+info_card:
+  title: "ℹ️  About"
+  feedback_label: "Feedback"
+  feedback_email: "evan.yifan.hao@gmail.com"
+  discord_label: "Discord"
+  discord_url: "https://discord.gg/siliconpantheon"  # TODO: replace with real invite URL
+  github_label: "GitHub"
+  github_url: "github.com/haoyifan/Silicon-Pantheon"
+  tip_label: "Tip"
+  tip_text: "Press 'p' on a room to preview the scenario before joining."
+
 # Lobby sub-views
 lobby_views:
   rooms: "Rooms"

@@ -22,21 +22,22 @@ from rich.text import Text
 from silicon_pantheon.client.locale import t
 from silicon_pantheon.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
 
-# Viewport sizes. The ranking board sits as a compact scoreboard
-# widget at the top (centered, ~50% width, fixed-height box).
-# Rooms panel gets full width + the remaining vertical space.
+# Viewport sizes. The top band holds two side-by-side cards: the
+# scoreboard (left) and the info/disclaimer card (right). The
+# rooms panel takes the remaining vertical space.
 #
 # LEADERBOARD_VISIBLE_ROWS must match what actually renders inside
 # RANKING_BAND_HEIGHT, otherwise Rich silently truncates rows at
-# the bottom and the cursor vanishes when it scrolls there. Budget:
+# the bottom and the cursor vanishes when it scrolls there. With
+# the disclaimer moved to the info card, the scoreboard panel fits:
 #   band height = 2 (panel borders) + 1 (subtitle) + 1 (hint)
-#                 + 2 (disclaimer, wraps) + table height
+#                 + table height
 #   table height = 2*N + 3  (box top/bottom + header + separators
 #                             between the N data rows)
-#   → N = (RANKING_BAND_HEIGHT - 9) / 2
+#   → N = (RANKING_BAND_HEIGHT - 7) / 2
 ROOMS_VISIBLE_ROWS = 12
 RANKING_BAND_HEIGHT = 18
-LEADERBOARD_VISIBLE_ROWS = 4
+LEADERBOARD_VISIBLE_ROWS = 5
 
 
 class LobbyScreen(Screen):
@@ -190,6 +191,7 @@ class LobbyScreen(Screen):
 
         rooms_border = "green" if self._active_view == "rooms" else "dim"
         ranking_border = "cyan" if self._active_view == "ranking" else "dim"
+        info_panel = self._render_info_card(lc)
         subtitle_line = Text(
             f"{len(rooms)} {t('lobby_table.room', lc)} {t('lobby_table.open', lc)}  {rooms_more}",
             style="dim",
@@ -200,23 +202,20 @@ class LobbyScreen(Screen):
 
         from rich.layout import Layout
 
-        # Ranking sits as a compact centered scoreboard at the TOP
-        # (fixed short band), rooms below gets full width and the
-        # rest of the vertical space. The side-spacers recede to dim
-        # so the scoreboard reads as a focal widget.
+        # Top band: scoreboard (left, 3/5 width) + info/about card
+        # (right, 2/5 width). Rooms below takes full width and the
+        # rest of the vertical space.
         main = Layout()
         main.split_column(
             Layout(name="ranking_band", size=RANKING_BAND_HEIGHT),
             Layout(name="rooms", ratio=1),
         )
         main["ranking_band"].split_row(
-            Layout(name="lb_spacer_l", ratio=1),
-            Layout(name="leaderboard", ratio=2),
-            Layout(name="lb_spacer_r", ratio=1),
+            Layout(name="leaderboard", ratio=3),
+            Layout(name="info", ratio=2),
         )
         main["ranking_band"]["leaderboard"].update(lb_panel)
-        main["ranking_band"]["lb_spacer_l"].update(Text(""))
-        main["ranking_band"]["lb_spacer_r"].update(Text(""))
+        main["ranking_band"]["info"].update(info_panel)
         main["rooms"].update(room_panel)
 
         if self._confirm is not None:
@@ -498,17 +497,47 @@ class LobbyScreen(Screen):
             else t("leaderboard.hint_inactive", lc)
         )
         hint = Text(hint_text, style="dim italic", justify="center")
-        disclaimer = Text(
-            t("leaderboard.disclaimer", lc),
-            style="dim italic",
-            justify="center",
-        )
-        body = Group(tbl, subtitle, hint, disclaimer)
+        body = Group(tbl, subtitle, hint)
         return Panel(
             body,
             border_style=border_style,
             title=f"🏆 {t('leaderboard.title', lc)}",
             box=box.DOUBLE,
+            padding=(0, 1),
+        )
+
+    def _render_info_card(self, lc: str) -> RenderableType:
+        """About / feedback / community links, plus the ranking
+        disclaimer. Sits to the right of the scoreboard."""
+        lines: list[Text] = []
+
+        disclaimer = Text(
+            t("leaderboard.disclaimer", lc),
+            style="dim italic",
+        )
+        lines.append(disclaimer)
+        lines.append(Text(""))
+
+        def kv(label_key: str, value: str, value_style: str = "cyan") -> Text:
+            t_line = Text()
+            t_line.append(f"{t(label_key, lc)}: ", style="bold")
+            t_line.append(value, style=value_style)
+            return t_line
+
+        lines.append(kv("info_card.feedback_label", t("info_card.feedback_email", lc)))
+        lines.append(kv("info_card.discord_label", t("info_card.discord_url", lc)))
+        lines.append(kv("info_card.github_label", t("info_card.github_url", lc)))
+        lines.append(Text(""))
+        tip = Text()
+        tip.append(f"{t('info_card.tip_label', lc)}: ", style="bold yellow")
+        tip.append(t("info_card.tip_text", lc), style="dim italic")
+        lines.append(tip)
+
+        return Panel(
+            Group(*lines),
+            border_style="magenta",
+            title=t("info_card.title", lc),
+            box=box.ROUNDED,
             padding=(0, 1),
         )
 

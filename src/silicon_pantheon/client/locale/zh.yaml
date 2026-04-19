@@ -763,6 +763,18 @@ leaderboard:
   hint_active: "j/k 选择 · Enter 查看详情 · Tab 返回房间"
   hint_inactive: "Tab 切换至此 · Enter 查看模型详情"
 
+# 信息卡（大厅排行榜右侧）
+info_card:
+  title: "ℹ️  关于"
+  feedback_label: "反馈"
+  feedback_email: "evan.yifan.hao@gmail.com"
+  discord_label: "Discord 社区"
+  discord_url: "https://discord.gg/siliconpantheon"  # TODO: 替换为真实邀请链接
+  github_label: "GitHub"
+  github_url: "github.com/haoyifan/Silicon-Pantheon"
+  tip_label: "小贴士"
+  tip_text: "房间列表按 'p' 可预览剧本后再加入。"
+
 # 大厅子视图
 lobby_views:
   rooms: "房间"
