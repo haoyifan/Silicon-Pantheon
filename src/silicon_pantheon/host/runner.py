@@ -41,7 +41,15 @@ def _setup_logging(log_file: str) -> None:
 
 
 def _status_line(workers: list[BotWorker]) -> str:
-    """Build a one-line status summary for all workers."""
+    """Build a one-line status summary for all workers.
+
+    Truncated to terminal width so \r\033[K clears correctly.
+    Without truncation, long lines wrap to the next row and the
+    carriage return only clears the second row — leaving ghost
+    text from the previous update on the first row.
+    """
+    import shutil
+
     parts: list[str] = []
     for w in workers:
         tag = f"[{w.config.name}]"
@@ -51,7 +59,11 @@ def _status_line(workers: list[BotWorker]) -> str:
         if w.turn_info and "turn" not in w.status:
             info += f" ({w.turn_info})"
         parts.append(f"{tag} {info}")
-    return "  ".join(parts)
+    line = "  ".join(parts)
+    cols = shutil.get_terminal_size((120, 24)).columns
+    if len(line) > cols - 1:
+        line = line[: cols - 4] + "…"
+    return line
 
 
 async def _run(config: HostConfig) -> None:
