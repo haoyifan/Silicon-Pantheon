@@ -127,16 +127,29 @@ class BotWorker:
             except Exception as e:
                 from silicon_pantheon.client.providers.errors import ProviderError
                 if isinstance(e, ProviderError):
+                    # The provider error may have left the server with
+                    # the connection still IN_GAME/IN_ROOM from the
+                    # aborted match; resuming _one_game() would then
+                    # trip create_room's `requires state=in_lobby`
+                    # guard. Bubble up so run_forever() does a clean
+                    # reconnect — PROVIDER_RETRY_S pause gives the
+                    # upstream API time to settle first.
                     log.warning(
-                        "worker %s provider error: %s — retrying in %.0fs",
+                        "worker %s provider error: %s — reconnecting in %.0fs",
                         self.config.name, e, PROVIDER_RETRY_S,
                     )
-                    self.status = f"provider error, retry in {PROVIDER_RETRY_S:.0f}s"
+                    self.status = f"provider error, reconnect in {PROVIDER_RETRY_S:.0f}s"
                     await asyncio.sleep(PROVIDER_RETRY_S)
-                else:
                     raise
+                raise
 
     async def _one_game(self) -> None:
+        # Any exception below skips the cleanup at the bottom; reset
+        # per-game transient state upfront so the status line doesn't
+        # leak stale opponent/turn_info from the previous iteration.
+        self.opponent = None
+        self.turn_info = ""
+
         client = self._client
         assert client is not None
         cfg = self.config
@@ -198,7 +211,14 @@ class BotWorker:
         # ---- play ----
         log.info("worker %s game started scenario=%s", cfg.name, scenario)
         self.status = "playing"
-        await self._play_game(room_id, scenario)
+        try:
+            await self._play_game(room_id, scenario)
+        finally:
+            # Clear display state no matter how _play_game exits so a
+            # subsequent provider-error / state-desync reconnect
+            # doesn't show stale "vs X (turn Y)" on the status line.
+            self.opponent = None
+            self.turn_info = ""
 
         # ---- leave room ----
         self.status = "leaving room"
@@ -206,8 +226,6 @@ class BotWorker:
             await client.call("leave_room")
         except Exception:
             log.exception("worker %s leave_room failed", cfg.name)
-        self.opponent = None
-        self.turn_info = ""
         log.info("worker %s game finished, looping", cfg.name)
 
     # ---- gameplay ----
@@ -265,7 +283,35 @@ class BotWorker:
                 self.turn_info = f"turn {turn}/{max_turns}"
                 if active == viewer.value:
                     self.status = f"thinking ({self.turn_info})"
-                    await agent.play_turn(viewer, max_turns=max_turns)
+                    # Hard cap on a single turn so a hung provider /
+                    # stuck MCP response can't turn into a silent
+                    # multi-hour zombie. 1.5x the server-side turn
+                    # limit gives the in-agent budget room to shut
+                    # down gracefully before we abort.
+                    turn_deadline = float(cfg.turn_time_limit_s) * 1.5
+                    try:
+                        await asyncio.wait_for(
+                            agent.play_turn(viewer, max_turns=max_turns),
+                            timeout=turn_deadline,
+                        )
+                    except asyncio.TimeoutError:
+                        log.error(
+                            "worker %s turn timed out after %.0fs at "
+                            "turn %s — conceding to unblock the room",
+                            cfg.name, turn_deadline, turn,
+                        )
+                        try:
+                            await asyncio.wait_for(
+                                client.call("concede"), timeout=5.0,
+                            )
+                        except Exception:
+                            log.exception(
+                                "worker %s concede failed after turn timeout",
+                                cfg.name,
+                            )
+                        # Break the inner play loop — the next
+                        # get_state will report game_over.
+                        break
                 else:
                     self.status = f"opponent's turn ({self.turn_info})"
                     await asyncio.sleep(POLL_INTERVAL_S)
