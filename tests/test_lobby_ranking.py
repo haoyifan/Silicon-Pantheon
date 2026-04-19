@@ -120,6 +120,34 @@ def test_model_details_renders_empty_state():
     assert "Head-to-Head" in out or "Opponent" in out
 
 
+def test_lobby_ranking_cursor_stays_visible_when_scrolling():
+    """Regression: LEADERBOARD_VISIBLE_ROWS must match what actually
+    fits in RANKING_BAND_HEIGHT — otherwise Rich silently truncates
+    the last rows of the table and the cursor disappears when it
+    reaches the bottom of the viewport."""
+    from silicon_pantheon.client.tui.screens.lobby import LEADERBOARD_VISIBLE_ROWS
+    app = _FakeApp()
+    app.state.display_name = "alice"
+    app.state.last_leaderboard = [
+        {"model": f"mdl{i:02d}", "provider": "p", "games": 5, "wins": 3,
+         "losses": 2, "draws": 0, "avg_think_time_s": 1.0}
+        for i in range(LEADERBOARD_VISIBLE_ROWS * 3)
+    ]
+    screen = LobbyScreen(app)
+    asyncio.run(screen.handle_key("\t"))
+    for step in range(len(app.state.last_leaderboard)):
+        screen._ranking_selected = step
+        out = _render(screen, width=160)
+        expected = f"mdl{step:02d}"
+        cursor_on_sel = any(
+            "➤" in line and expected in line for line in out.splitlines()
+        )
+        assert cursor_on_sel, (
+            f"cursor missing from selected row at step={step}, "
+            f"scroll={screen._ranking_scroll}"
+        )
+
+
 def test_lobby_ranking_scrolls_when_selection_goes_past_viewport():
     """Selecting row N (N > viewport size) should advance the scroll
     offset so the row stays visible when render slices the window."""

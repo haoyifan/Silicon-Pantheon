@@ -23,12 +23,20 @@ from silicon_pantheon.client.locale import t
 from silicon_pantheon.client.tui.app import POLL_INTERVAL_S, Screen, TUIApp
 
 # Viewport sizes. The ranking board sits as a compact scoreboard
-# widget at the top (centered, ~50% width, fixed 14-row box).
+# widget at the top (centered, ~50% width, fixed-height box).
 # Rooms panel gets full width + the remaining vertical space.
+#
+# LEADERBOARD_VISIBLE_ROWS must match what actually renders inside
+# RANKING_BAND_HEIGHT, otherwise Rich silently truncates rows at
+# the bottom and the cursor vanishes when it scrolls there. Budget:
+#   band height = 2 (panel borders) + 1 (subtitle) + 1 (hint)
+#                 + 2 (disclaimer, wraps) + table height
+#   table height = 2*N + 3  (box top/bottom + header + separators
+#                             between the N data rows)
+#   → N = (RANKING_BAND_HEIGHT - 9) / 2
 ROOMS_VISIBLE_ROWS = 12
-LEADERBOARD_VISIBLE_ROWS = 6
-# Height of the ranking-row band that holds the centered scoreboard.
-RANKING_BAND_HEIGHT = 14
+RANKING_BAND_HEIGHT = 18
+LEADERBOARD_VISIBLE_ROWS = 4
 
 
 class LobbyScreen(Screen):
