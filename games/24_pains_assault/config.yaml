@@ -5,11 +5,12 @@ name: "Pain's Assault on Konoha — Naruto"
 difficulty: 4
 description: |
   The Hidden Leaf Village. The Six Paths of Pain -- puppets controlled
-  by Nagato -- descend upon Konoha with godlike power. Naruto, in
-  Sage Mode, leads the defense alongside Kakashi, Tsunade, Shikamaru,
-  Hinata, Sakura, and Konohamaru. The Deva Path controls gravity
-  itself. The village must destroy all six Paths to win, or protect
-  Naruto until the turn cap when he can locate Nagato's true body.
+  by Nagato -- descend upon Konoha with godlike power. Kakashi,
+  Tsunade, Shikamaru, Hinata, Sakura, and Konohamaru must hold the
+  line for one desperate turn until Naruto arrives from Mount Myoboku
+  in Sage Mode. The Deva Path controls gravity itself. The village
+  must destroy all six Paths to win, or protect Naruto until the turn
+  cap when he can locate Nagato's true body.
   Inspired by Pain's Assault on Konoha from Naruto Shippuden by Masashi Kishimoto.
 
 board:
@@ -333,9 +334,7 @@ unit_classes:
 
 armies:
   blue:
-    # Naruto at the village center
-    - {class: naruto, pos: {x: 7, y: 8}}
-    # Kakashi on the front line
+    # Kakashi on the front line -- holds the village until Naruto returns
     - {class: kakashi, pos: {x: 6, y: 7}}
     # Tsunade behind the lines
     - {class: tsunade, pos: {x: 7, y: 10}}
@@ -379,11 +378,17 @@ narrative:
     Rinnegan descend from the sky. Pain has come for the Nine-Tails.
   intro: |
     Explosions tear through the village. The Six Paths of Pain
-    drop from the sky like gods of destruction. But this time,
-    Naruto is already here -- standing in Sage Mode atop the
-    great toad Gamabunta. "I am the Fourth Hokage's legacy.
-    I won't let you destroy my home."
+    drop from the sky like gods of destruction. Kakashi rallies
+    the defenders -- Naruto is still at Mount Myoboku finishing
+    his Sage Mode training. Hold the line. He's almost here.
   events:
+    - trigger: on_turn_start
+      turn: 2
+      text: |
+        A thunderous croak shakes the village gate. Naruto arrives
+        atop the great toad Gamabunta, Sage Mode's pigmented eyes
+        blazing. "I am the Fourth Hokage's legacy. I won't let you
+        destroy my home."
     - trigger: on_turn_start
       turn: 4
       text: |
