@@ -202,7 +202,9 @@ def _format_lessons(lessons: list[Lesson]) -> str:
 
 
 def _format_win_conditions(
-    win_conditions: list[dict], scenario_description: dict | None
+    win_conditions: list[dict],
+    scenario_description: dict | None,
+    locale: str = "en",
 ) -> str:
     """Prose list of win rules side-explicitly. Reuses the same
     translator the TUI uses so the agent and the human see the same
@@ -217,7 +219,7 @@ def _format_win_conditions(
     if not win_conditions:
         return "(scenario did not declare any — defaults: seize fort / eliminate / draw at turn cap)"
     lines = [
-        f"- {_describe_win_condition(wc, scenario_description)}"
+        f"- {_describe_win_condition(wc, scenario_description, locale=locale)}"
         for wc in _filter_win_conditions(win_conditions)
     ]
     return "\n".join(lines)
@@ -425,7 +427,9 @@ def build_system_prompt(
         f"> {story}\n" if story else "(no scenario description provided)\n"
     )
     win_conds = _format_win_conditions(
-        scenario_description.get("win_conditions") or [], scenario_description
+        scenario_description.get("win_conditions") or [],
+        scenario_description,
+        locale=locale,
     )
     class_catalog = _format_class_catalog(armies, unit_classes)
     terrain_catalog = _format_terrain_catalog(terrain_types)
