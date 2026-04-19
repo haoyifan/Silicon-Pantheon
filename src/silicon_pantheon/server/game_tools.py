@@ -194,6 +194,14 @@ def _note_game_over_if_needed(app: App, room_id: str) -> None:
         return
     log.info("room %s transitioning IN_GAME -> FINISHED (game_over)", room_id)
     session.log_match_end()
+    # Record match result to leaderboard DB.
+    try:
+        from silicon_pantheon.server.leaderboard import record_match
+
+        slot_to_team = app.slot_to_team.get(room_id, {})
+        record_match(session, room, slot_to_team)
+    except Exception:
+        log.exception("leaderboard record_match failed for room %s", room_id)
     room.status = RoomStatus.FINISHED
 
 

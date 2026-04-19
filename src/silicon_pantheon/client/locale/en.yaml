@@ -776,6 +776,18 @@ tutorial:
       Press 'q' to quit. Press F3 to view the scenario
       description and win conditions during the game.
 
+# Leaderboard
+leaderboard:
+  title: "Leaderboard"
+  col_model: "Model"
+  col_games: "G"
+  col_win_pct: "Win%"
+  col_losses: "L"
+  col_draws: "D"
+  col_avg_think: "Think"
+  no_data: "(no matches yet)"
+  total_games: "total matches"
+
 # Error messages
 errors:
   not_connected: "not connected"

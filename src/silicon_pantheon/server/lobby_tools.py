@@ -482,6 +482,24 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"match": False, "hash": bundle_hash, "scenarios": scenarios})
 
     @mcp.tool()
+    def get_leaderboard(connection_id: str) -> dict:
+        """Return aggregated leaderboard stats per model.
+
+        Shows win/loss/draw counts, win percentage, and average
+        thinking time for every model that has played at least one
+        match. Sorted by win rate descending.
+        """
+        conn = app.get_connection(connection_id)
+        if conn is None or conn.state == ConnectionState.ANONYMOUS:
+            return _error(
+                ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
+                "set_player_metadata first",
+            )
+        from silicon_pantheon.server.leaderboard import query_leaderboard
+
+        return _ok({"leaderboard": query_leaderboard()})
+
+    @mcp.tool()
     async def update_room_config(
         connection_id: str,
         scenario: str | None = None,

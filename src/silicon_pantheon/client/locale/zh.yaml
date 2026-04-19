@@ -754,6 +754,18 @@ tutorial:
       按 'q' 退出。按 F3 在比赛中查看剧本
       描述和胜利条件。
 
+# 排行榜
+leaderboard:
+  title: "排行榜"
+  col_model: "模型"
+  col_games: "场"
+  col_win_pct: "胜率"
+  col_losses: "负"
+  col_draws: "平"
+  col_avg_think: "思考"
+  no_data: "（暂无比赛记录）"
+  total_games: "总场次"
+
 # 错误消息
 errors:
   not_connected: "未连接"

@@ -34,8 +34,8 @@ class LobbyScreen(Screen):
         # Immediate refresh on entry so the table is populated before the
         # first tick.
         await self._refresh_rooms()
+        await self._refresh_leaderboard()
         # Scenario cache is populated at login via get_scenario_bundle.
-        # No background prefetch needed here.
         # Tutorial: show on first visit or when replay is requested.
         self._maybe_start_tutorial()
 
@@ -87,20 +87,31 @@ class LobbyScreen(Screen):
             status.append(self.app.state.status_message, style="green")
 
         body = Group(header, subtitle, Text(""), table, Text(""), keys, status)
-        base = Panel(Align.center(body, vertical="top"), border_style="green", title=t("lobby_title", lc))
+        room_panel = Panel(body, border_style="green", title=t("lobby_title", lc))
+        lb_panel = self._render_leaderboard(lc)
+
+        from rich.layout import Layout
+
+        main = Layout()
+        main.split_row(
+            Layout(name="rooms", ratio=2),
+            Layout(name="leaderboard", ratio=1),
+        )
+        main["rooms"].update(room_panel)
+        main["leaderboard"].update(lb_panel)
+
         if self._confirm is not None:
             return self._confirm.render()
         if self._tutorial is not None and not self._tutorial.is_done:
-            from rich.layout import Layout
             root = Layout()
             root.split_column(
                 Layout(name="bg", ratio=1),
                 Layout(name="tutorial", size=14),
             )
-            root["bg"].update(base)
+            root["bg"].update(main)
             root["tutorial"].update(self._tutorial.render())
             return root
-        return base
+        return main
 
     async def tick(self) -> None:
         import time
@@ -147,6 +158,7 @@ class LobbyScreen(Screen):
         if key == "r":
             self.app.state.status_message = t("lobby_actions.refreshing", self.app.state.locale)
             await self._refresh_rooms()
+            await self._refresh_leaderboard()
             self.app.state.status_message = ""
             return None
         if key == "n":
@@ -252,6 +264,57 @@ class LobbyScreen(Screen):
             locale=self.app.state.locale,
             on_complete=_on_done,
         )
+
+    async def _refresh_leaderboard(self) -> None:
+        if self.app.client is None:
+            return
+        try:
+            r = await self.app.client.call("get_leaderboard")
+        except Exception:
+            return
+        if r.get("ok"):
+            result = r.get("result") or r
+            self.app.state.last_leaderboard = result.get("leaderboard", [])
+
+    def _render_leaderboard(self, lc: str) -> RenderableType:
+        lb = self.app.state.last_leaderboard
+
+        tbl = Table(expand=True, show_lines=False, header_style="bold")
+        tbl.add_column(t("leaderboard.col_model", lc), overflow="fold", ratio=2)
+        tbl.add_column(t("leaderboard.col_games", lc), justify="right", width=3)
+        tbl.add_column(t("leaderboard.col_win_pct", lc), justify="right", width=4)
+        tbl.add_column(t("leaderboard.col_losses", lc), justify="right", width=2)
+        tbl.add_column(t("leaderboard.col_draws", lc), justify="right", width=2)
+        tbl.add_column(t("leaderboard.col_avg_think", lc), justify="right", width=5)
+
+        if not lb:
+            tbl.add_row(t("leaderboard.no_data", lc), "", "", "", "", "")
+        else:
+            for entry in lb:
+                games = entry.get("games", 0)
+                wins = entry.get("wins", 0)
+                win_pct = f"{wins / games * 100:.0f}%" if games else "—"
+                model = entry.get("model", "?")
+                # Shorten common prefixes for display
+                for prefix in ("claude-", "gpt-"):
+                    if model.startswith(prefix):
+                        break
+                tbl.add_row(
+                    model,
+                    str(games),
+                    win_pct,
+                    str(entry.get("losses", 0)),
+                    str(entry.get("draws", 0)),
+                    f"{entry.get('avg_think_time_s', 0):.0f}s",
+                )
+
+        total = sum(e.get("games", 0) for e in lb) // 2 if lb else 0
+        subtitle = Text(
+            f"{total} {t('leaderboard.total_games', lc)}",
+            style="dim",
+        )
+        body = Group(subtitle, Text(""), tbl)
+        return Panel(body, border_style="cyan", title=t("leaderboard.title", lc))
 
     async def _create_room(self) -> Screen | None:
         if self.app.client is None:
