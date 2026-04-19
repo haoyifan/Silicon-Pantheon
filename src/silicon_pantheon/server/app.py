@@ -16,6 +16,28 @@ connection via `get_connection()` and reject unknown IDs with a
 NOT_REGISTERED error. `heartbeat` tolerates unknown IDs (returns
 server_time without creating state) so it cannot be used as a
 registration backdoor.
+
+Threading / synchronisation model
+---------------------------------
+
+See docs/THREADING.md for the full policy. Short version:
+
+* `App._state_lock` is a `threading.RLock` that guards every mutable
+  field on App, every Room field (via `app.rooms._rooms`), and every
+  field on a Connection EXCEPT `last_heartbeat_at` (a single float
+  store, GIL-atomic, deliberately lock-free so the heartbeat tool is
+  ~free).
+* `Session.lock` is a `threading.Lock` that guards all per-match game
+  state and telemetry.
+* `ReplayWriter._lock` and `ThoughtsLogWriter._lock` are leaves.
+* Acquisition order (strict): `_state_lock` → `session.lock` →
+  writer locks. Never reverse. Never hold a lower lock while
+  acquiring a higher one.
+* Never `await` anything while holding a lock — the lock is a
+  `threading.Lock`/`RLock`, which would block the asyncio event loop.
+* Never call user-registered hooks with `_state_lock` held. Hooks
+  fire under `session.lock` (documented) and MUST NOT acquire any
+  other server lock.
 """
 
 from __future__ import annotations
@@ -25,7 +47,7 @@ import re
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from threading import Lock
+from threading import RLock
 
 _CONNECTION_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,128}$")
 
@@ -75,32 +97,62 @@ class Connection:
 
 class App:
     """Root application state. Pass one instance around; MCP tool
-    handlers look up connections, rooms, and tokens through it."""
+    handlers look up connections, rooms, and tokens through it.
+
+    All mutable fields below are guarded by `self._state_lock`
+    (a `threading.RLock`). Multi-step operations on these fields
+    (e.g. `leave_room` touching `conn_to_room`, `sessions`, and
+    `rooms` atomically) should wrap the whole sequence in
+    `with app.state_lock():`. Single-op accesses can use the
+    convenience methods below (`get_session`, `pop_session`, …),
+    each of which takes the lock briefly.
+
+    `last_heartbeat_at` on Connection is the deliberate exception —
+    a single-float store, GIL-atomic, so the heartbeat tool doesn't
+    pay lock contention on every ping.
+    """
 
     def __init__(self) -> None:
-        self.tokens = TokenRegistry()
+        # ── state_lock: guards every field under this divider ──
+        # RLock so convenience methods can nest inside user-held
+        # `with app.state_lock():` blocks.
+        self._state_lock = RLock()
         self.rooms = RoomRegistry()
-        # Per-room authoritative game session, once the match has started.
         self.sessions: dict[str, Session] = {}
-        # Per-room slot → team mapping, pinned at game-start time
-        # (deterministic for fixed assignment, coin-flip for random).
         self.slot_to_team: dict[str, dict[Slot, Team]] = {}
-        # Reverse index: which room + slot each connection is in.
-        # Populated by lobby / dev-game tools; read by game tools to
-        # resolve the viewer for an incoming call.
         self.conn_to_room: dict[str, tuple[str, Slot]] = {}
-        # Autostart countdown state per room.
         self.autostart_tasks: dict[str, asyncio.Task] = {}
         self.autostart_deadlines: dict[str, float] = {}
-        # Hook fired by the lobby when a countdown completes; the
-        # game_tools layer installs its "promote room to IN_GAME" callback.
-        self.on_countdown_complete: Callable[[str], None] | None = None
+        self._connections: dict[str, Connection] = {}
         # Per-connection heartbeat bookkeeping (soft-disconnect timers).
         # Keyed by connection_id; the type is imported lazily in the
         # heartbeat module to avoid a circular import.
         self.heartbeat_state: dict[str, object] = {}
-        self._connections: dict[str, Connection] = {}
-        self._conn_lock = Lock()
+        # ── not guarded by state_lock ──
+        # TokenRegistry has its own internal lock. Safe to call
+        # without holding state_lock.
+        self.tokens = TokenRegistry()
+        # on_countdown_complete is set once at build_mcp_server time
+        # and never mutated afterwards; no lock needed for reads.
+        self.on_countdown_complete: Callable[[str], None] | None = None
+
+    # ---- state_lock context manager ----
+
+    def state_lock(self) -> RLock:
+        """Context manager for multi-step atomic operations on App state.
+
+        Use this when a handler needs to read/mutate multiple App
+        fields as one atomic unit (e.g. ``leave_room`` pops
+        ``conn_to_room``, mutates a ``Room``, pops ``sessions``,
+        all under one lock). For single-shot reads/writes prefer
+        the convenience methods (``get_connection``,
+        ``get_session``, etc.) which each take the lock briefly.
+
+        Returns the underlying RLock. Recursive acquisition from the
+        same thread is legal (so a convenience method called from
+        within a `with app.state_lock():` block doesn't deadlock).
+        """
+        return self._state_lock
 
     # ---- connection bookkeeping ----
 
@@ -114,7 +166,7 @@ class App:
             raise ValueError(
                 "connection_id must match [a-zA-Z0-9_-]{1,128}"
             )
-        with self._conn_lock:
+        with self._state_lock:
             conn = self._connections.get(connection_id)
             if conn is None:
                 if len(self._connections) >= MAX_CONNECTIONS:
@@ -126,16 +178,73 @@ class App:
             return conn
 
     def get_connection(self, connection_id: str) -> Connection | None:
-        with self._conn_lock:
+        with self._state_lock:
             return self._connections.get(connection_id)
 
     def drop_connection(self, connection_id: str) -> None:
-        with self._conn_lock:
+        with self._state_lock:
             self._connections.pop(connection_id, None)
 
     def connection_count(self) -> int:
-        with self._conn_lock:
+        with self._state_lock:
             return len(self._connections)
+
+    # ---- session / room mapping helpers ----
+    #
+    # These are convenience wrappers for one-shot reads/writes. For
+    # multi-step sequences that must be atomic, callers should open
+    # a `with app.state_lock():` block and use the raw dicts directly
+    # — the RLock means re-entering through these methods is fine.
+
+    def get_session(self, room_id: str) -> Session | None:
+        with self._state_lock:
+            return self.sessions.get(room_id)
+
+    def set_session(self, room_id: str, session: Session) -> None:
+        with self._state_lock:
+            self.sessions[room_id] = session
+
+    def pop_session(self, room_id: str) -> Session | None:
+        with self._state_lock:
+            return self.sessions.pop(room_id, None)
+
+    def get_room_for_conn(self, cid: str) -> tuple[str, Slot] | None:
+        with self._state_lock:
+            return self.conn_to_room.get(cid)
+
+    def set_room_for_conn(self, cid: str, room_id: str, slot: Slot) -> None:
+        with self._state_lock:
+            self.conn_to_room[cid] = (room_id, slot)
+
+    def pop_room_for_conn(self, cid: str) -> tuple[str, Slot] | None:
+        with self._state_lock:
+            return self.conn_to_room.pop(cid, None)
+
+    def get_slot_to_team(self, room_id: str) -> dict[Slot, Team] | None:
+        with self._state_lock:
+            return self.slot_to_team.get(room_id)
+
+    def set_slot_to_team(
+        self, room_id: str, mapping: dict[Slot, Team]
+    ) -> None:
+        with self._state_lock:
+            self.slot_to_team[room_id] = mapping
+
+    def pop_slot_to_team(self, room_id: str) -> dict[Slot, Team] | None:
+        with self._state_lock:
+            return self.slot_to_team.pop(room_id, None)
+
+    def get_heartbeat_state(self, cid: str) -> object | None:
+        with self._state_lock:
+            return self.heartbeat_state.get(cid)
+
+    def set_heartbeat_state(self, cid: str, state: object) -> None:
+        with self._state_lock:
+            self.heartbeat_state[cid] = state
+
+    def pop_heartbeat_state(self, cid: str) -> object | None:
+        with self._state_lock:
+            return self.heartbeat_state.pop(cid, None)
 
 
 # ---- helpers used by tool handlers ----

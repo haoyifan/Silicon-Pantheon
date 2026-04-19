@@ -2,8 +2,21 @@
 
 A Room holds the configuration for one match (scenario, team
 assignment rules, fog mode, turn time limit) plus the two seats,
-each player's readiness, and the room's lifecycle status. Mutations
-go through RoomRegistry for locking.
+each player's readiness, and the room's lifecycle status.
+
+Locking
+-------
+
+RoomRegistry is **lockless**. Callers MUST hold ``App._state_lock``
+for every access, including reads. See docs/THREADING.md. The old
+per-registry lock was removed to collapse three app-level locks
+down to two — every RoomRegistry operation already happens inside
+a broader lobby/game-tool critical section that holds state_lock,
+so a second lock added no safety and created ordering questions.
+
+Same applies to direct field mutations on ``Room`` (``status``,
+``config.*``, ``seats[…].ready``). The registry does not police
+them — callers must hold ``app._state_lock``.
 """
 
 from __future__ import annotations
@@ -12,7 +25,6 @@ import secrets
 import time
 from dataclasses import dataclass, field
 from enum import Enum
-from threading import Lock
 from typing import Literal
 
 from silicon_pantheon.shared.player_metadata import PlayerMetadata
@@ -122,10 +134,16 @@ class Room:
 
 
 class RoomRegistry:
-    """Thread-safe registry of in-memory rooms. One RoomRegistry per server."""
+    """Lockless registry of in-memory rooms. One RoomRegistry per server.
+
+    ── Locking ──
+    All methods on this class assume the caller holds
+    ``App._state_lock``. No internal lock is used (see module
+    docstring). Calling these from outside a state_lock critical
+    section is a bug.
+    """
 
     def __init__(self) -> None:
-        self._lock = Lock()
         self._rooms: dict[str, Room] = {}
 
     @staticmethod
@@ -140,8 +158,13 @@ class RoomRegistry:
     ) -> tuple[Room, Slot]:
         """Create an empty two-slot room, seat the host in slot A.
 
-        Raises ValueError if the server-wide room limit has been reached.
+        Caller must hold ``App._state_lock``. Raises ValueError if
+        the server-wide room limit has been reached.
         """
+        if len(self._rooms) >= MAX_ROOMS:
+            raise ValueError(
+                f"server room limit ({MAX_ROOMS}) reached"
+            )
         room_id = self._new_id()
         room = Room(
             id=room_id,
@@ -152,61 +175,55 @@ class RoomRegistry:
                 Slot.B: Seat(slot=Slot.B, player=None),
             },
         )
-        with self._lock:
-            if len(self._rooms) >= MAX_ROOMS:
-                raise ValueError(
-                    f"server room limit ({MAX_ROOMS}) reached"
-                )
-            self._rooms[room_id] = room
+        self._rooms[room_id] = room
         return room, Slot.A
 
     def get(self, room_id: str) -> Room | None:
-        with self._lock:
-            return self._rooms.get(room_id)
+        """Caller must hold ``App._state_lock``."""
+        return self._rooms.get(room_id)
 
     def list(self) -> list[Room]:
-        with self._lock:
-            return list(self._rooms.values())
+        """Caller must hold ``App._state_lock``."""
+        return list(self._rooms.values())
 
     def join(self, room_id: str, player: PlayerMetadata) -> tuple[Room, Slot] | None:
-        """Seat player in the first empty slot. Returns None if room missing
-        or full."""
-        with self._lock:
-            room = self._rooms.get(room_id)
-            if room is None:
-                return None
-            for slot_id in (Slot.A, Slot.B):
-                seat = room.seats[slot_id]
-                if seat.player is None:
-                    seat.player = player
-                    room.recompute_status()
-                    return room, slot_id
+        """Seat player in the first empty slot. Returns None if room
+        missing or full. Caller must hold ``App._state_lock``."""
+        room = self._rooms.get(room_id)
+        if room is None:
             return None
+        for slot_id in (Slot.A, Slot.B):
+            seat = room.seats[slot_id]
+            if seat.player is None:
+                seat.player = player
+                room.recompute_status()
+                return room, slot_id
+        return None
 
     def leave(self, room_id: str, slot: Slot) -> bool:
-        """Vacate a slot. Returns True if the seat was occupied."""
-        with self._lock:
-            room = self._rooms.get(room_id)
-            if room is None:
-                return False
-            seat = room.seats.get(slot)
-            if seat is None or seat.player is None:
-                return False
-            seat.player = None
-            seat.ready = False
-            room.recompute_status()
-            # Drop entirely if now empty and no live game is running. A
-            # FINISHED room with nobody seated is rubble — the downloads
-            # are cached client-side already.
-            if not room.occupied_slots() and room.status in (
-                RoomStatus.WAITING_FOR_PLAYERS,
-                RoomStatus.WAITING_READY,
-                RoomStatus.COUNTING_DOWN,
-                RoomStatus.FINISHED,
-            ):
-                self._rooms.pop(room_id, None)
-            return True
+        """Vacate a slot. Returns True if the seat was occupied.
+        Caller must hold ``App._state_lock``."""
+        room = self._rooms.get(room_id)
+        if room is None:
+            return False
+        seat = room.seats.get(slot)
+        if seat is None or seat.player is None:
+            return False
+        seat.player = None
+        seat.ready = False
+        room.recompute_status()
+        # Drop entirely if now empty and no live game is running. A
+        # FINISHED room with nobody seated is rubble — the downloads
+        # are cached client-side already.
+        if not room.occupied_slots() and room.status in (
+            RoomStatus.WAITING_FOR_PLAYERS,
+            RoomStatus.WAITING_READY,
+            RoomStatus.COUNTING_DOWN,
+            RoomStatus.FINISHED,
+        ):
+            self._rooms.pop(room_id, None)
+        return True
 
     def delete(self, room_id: str) -> bool:
-        with self._lock:
-            return self._rooms.pop(room_id, None) is not None
+        """Caller must hold ``App._state_lock``."""
+        return self._rooms.pop(room_id, None) is not None

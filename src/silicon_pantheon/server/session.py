@@ -26,23 +26,30 @@ class ThoughtsLogWriter:
     thought per line, whitespace collapsed, tagged with turn + team so
     each line is self-describing. `flush()` after every write so the
     pager sees updates with no buffering lag.
+
+    Thread-safe: `write()` and `close()` are serialised via an internal
+    lock. Leaf in the server's lock hierarchy — see docs/THREADING.md.
     """
 
     def __init__(self, path: Path | str):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._fh: TextIO = open(self.path, "a", encoding="utf-8", buffering=1)
+        self._lock = threading.Lock()
 
     def write(self, thought: "AgentThought") -> None:
         collapsed = " ".join(thought.text.split())
-        self._fh.write(f"[T{thought.turn} {thought.team.value}] {collapsed}\n")
-        self._fh.flush()
+        line = f"[T{thought.turn} {thought.team.value}] {collapsed}\n"
+        with self._lock:
+            self._fh.write(line)
+            self._fh.flush()
 
     def close(self) -> None:
-        try:
-            self._fh.close()
-        except Exception:
-            pass
+        with self._lock:
+            try:
+                self._fh.close()
+            except Exception:
+                pass
 
 
 @dataclass
