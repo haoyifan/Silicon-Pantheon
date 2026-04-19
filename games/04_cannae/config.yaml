@@ -14,38 +14,98 @@ description: |
   Inspired by the Battle of Cannae (216 BC), Second Punic War, ancient Rome.
 
 board:
-  width: 12
-  height: 8
+  width: 16
+  height: 12
   terrain:
-    # River along the north edge — impassable flank anchor
-    - {x: 0, y: 0, type: river}
-    - {x: 1, y: 0, type: river}
-    - {x: 2, y: 0, type: river}
-    - {x: 3, y: 0, type: river}
-    - {x: 4, y: 0, type: river}
-    - {x: 5, y: 0, type: river}
-    - {x: 6, y: 0, type: river}
-    - {x: 7, y: 0, type: river}
-    - {x: 8, y: 0, type: river}
-    - {x: 9, y: 0, type: river}
+    # ── AUFIDUS RIVER — full north edge, impassable flank anchor ──
+    - {x: 0,  y: 0, type: river}
+    - {x: 1,  y: 0, type: river}
+    - {x: 2,  y: 0, type: river}
+    - {x: 3,  y: 0, type: river}
+    - {x: 4,  y: 0, type: river}
+    - {x: 5,  y: 0, type: river}
+    - {x: 6,  y: 0, type: river}
+    - {x: 7,  y: 0, type: river}
+    - {x: 8,  y: 0, type: river}
+    - {x: 9,  y: 0, type: river}
     - {x: 10, y: 0, type: river}
     - {x: 11, y: 0, type: river}
-    # Hills along the south edge — blocks cavalry, gives defense
-    - {x: 0, y: 7, type: hill}
-    - {x: 1, y: 7, type: hill}
-    - {x: 2, y: 7, type: hill}
-    - {x: 3, y: 7, type: hill}
-    - {x: 10, y: 7, type: hill}
-    - {x: 11, y: 7, type: hill}
-    # Scrubland on flanks — half cover for flanking maneuvers
-    - {x: 0, y: 2, type: scrubland}
-    - {x: 0, y: 3, type: scrubland}
-    - {x: 1, y: 2, type: scrubland}
-    - {x: 11, y: 2, type: scrubland}
-    - {x: 11, y: 3, type: scrubland}
-    - {x: 10, y: 2, type: scrubland}
-    # Open center (no terrain) becomes the killing ground
-  forts: []
+    - {x: 12, y: 0, type: river}
+    - {x: 13, y: 0, type: river}
+    - {x: 14, y: 0, type: river}
+    - {x: 15, y: 0, type: river}
+    # River bends down on the NW corner — tightens the pocket
+    - {x: 0,  y: 1, type: river}
+    - {x: 1,  y: 1, type: river}
+    # ── WEST SCRUBLAND CORRIDOR — Libyan/Numidian flanking lane ──
+    # Dense brush columns 0-3, rows 2-8. Libyans hide here and
+    # wheel inward; cost 2 slows Romans who try to contest.
+    - {x: 0,  y: 2, type: scrubland}
+    - {x: 1,  y: 2, type: scrubland}
+    - {x: 2,  y: 2, type: scrubland}
+    - {x: 0,  y: 3, type: scrubland}
+    - {x: 1,  y: 3, type: scrubland}
+    - {x: 2,  y: 3, type: scrubland}
+    - {x: 3,  y: 3, type: scrubland}
+    - {x: 0,  y: 4, type: scrubland}
+    - {x: 1,  y: 4, type: scrubland}
+    - {x: 2,  y: 4, type: scrubland}
+    - {x: 3,  y: 4, type: scrubland}
+    - {x: 0,  y: 5, type: scrubland}
+    - {x: 1,  y: 5, type: scrubland}
+    - {x: 2,  y: 5, type: scrubland}
+    - {x: 3,  y: 5, type: scrubland}
+    - {x: 0,  y: 6, type: scrubland}
+    - {x: 1,  y: 6, type: scrubland}
+    - {x: 2,  y: 6, type: scrubland}
+    - {x: 0,  y: 7, type: scrubland}
+    - {x: 1,  y: 7, type: scrubland}
+    - {x: 2,  y: 7, type: scrubland}
+    - {x: 0,  y: 8, type: scrubland}
+    - {x: 1,  y: 8, type: scrubland}
+    # ── EAST SCRUBLAND CORRIDOR — mirror flanking lane ──
+    - {x: 13, y: 2, type: scrubland}
+    - {x: 14, y: 2, type: scrubland}
+    - {x: 15, y: 2, type: scrubland}
+    - {x: 12, y: 3, type: scrubland}
+    - {x: 13, y: 3, type: scrubland}
+    - {x: 14, y: 3, type: scrubland}
+    - {x: 15, y: 3, type: scrubland}
+    - {x: 12, y: 4, type: scrubland}
+    - {x: 13, y: 4, type: scrubland}
+    - {x: 14, y: 4, type: scrubland}
+    - {x: 15, y: 4, type: scrubland}
+    - {x: 12, y: 5, type: scrubland}
+    - {x: 13, y: 5, type: scrubland}
+    - {x: 14, y: 5, type: scrubland}
+    - {x: 15, y: 5, type: scrubland}
+    - {x: 13, y: 6, type: scrubland}
+    - {x: 14, y: 6, type: scrubland}
+    - {x: 15, y: 6, type: scrubland}
+    - {x: 13, y: 7, type: scrubland}
+    - {x: 14, y: 7, type: scrubland}
+    - {x: 15, y: 7, type: scrubland}
+    - {x: 14, y: 8, type: scrubland}
+    - {x: 15, y: 8, type: scrubland}
+    # ── SCATTERED BRUSH — narrows the open mouth of the pocket ──
+    # A few scrub tiles pinch columns 3-4 and 11-12 at rows 6-7,
+    # funneling Romans into the center and making late escape hard.
+    - {x: 3,  y: 7, type: scrubland}
+    - {x: 3,  y: 8, type: scrubland}
+    - {x: 12, y: 7, type: scrubland}
+    - {x: 12, y: 8, type: scrubland}
+    # ── HILL — slight rise south-center, the Roman camp sits here ──
+    - {x: 6,  y: 11, type: hill}
+    - {x: 7,  y: 11, type: hill}
+    - {x: 8,  y: 11, type: hill}
+    - {x: 9,  y: 11, type: hill}
+    # Open center (columns 4-11, rows 2-8) is the killing field —
+    # no terrain, no cover, no escape once the pocket closes.
+  forts:
+    # Roman baggage camp — south-center behind the legions.
+    # If Carthage seizes it, the encirclement is complete.
+    - {x: 7, y: 11, owner: red}
+    - {x: 8, y: 11, owner: red}
 
 terrain_types:
   river:
@@ -65,8 +125,8 @@ terrain_types:
     color: yellow
   scrubland:
     display_name: Scrubland
-    description: Low brush and dry grass. Half cover (+1 DEF).
-    move_cost: 1
+    description: Dense brush and dry grass. Slows movement, offers cover (+1 DEF).
+    move_cost: 2
     defense_bonus: 1
     glyph: "%"
     color: green
@@ -335,29 +395,42 @@ unit_classes:
 
 armies:
   blue:
-    # Carthage crescent formation — wide and curved, cavalry on flanks
-    #   Balearic behind center, Celtic bait in front-center,
-    #   Hanno and Libyan on the wings, Maharbal and Numidian on far flanks,
-    #   Hannibal commanding from behind.
-    - {class: hannibal,         pos: {x: 9, y: 4}}
-    - {class: maharbal,         pos: {x: 10, y: 1}}
-    - {class: numidian_scout,   pos: {x: 10, y: 6}}
-    - {class: hanno,            pos: {x: 8, y: 4}}
-    - {class: libyan_veteran,   pos: {x: 9, y: 2}}
-    - {class: balearic_slinger, pos: {x: 8, y: 3}}
-    - {class: celtic_chieftain, pos: {x: 7, y: 4}}
+    # ── Carthage — Hannibal's crescent ──
+    # Hannibal commands from row 1, just south of the river.
+    - {class: hannibal,         pos: {x: 8,  y: 1}}
+    # Celtic chieftain: the bait. Center-north, bulging toward Romans.
+    # He stands in open ground to lure the legions forward.
+    - {class: celtic_chieftain, pos: {x: 7,  y: 3}}
+    # Hanno holds the center line behind the Celts.
+    - {class: hanno,            pos: {x: 8,  y: 2}}
+    # Balearic slinger screens from behind the crescent.
+    - {class: balearic_slinger, pos: {x: 9,  y: 2}}
+    # Libyan veterans — hidden in the scrubland corridors, the hinge
+    # of the envelopment. West wing and east wing.
+    - {class: libyan_veteran,   pos: {x: 3,  y: 3}}   # west scrub
+    - {class: libyan_veteran,   pos: {x: 12, y: 3}}   # east scrub
+    # Numidian scouts — far flanks, fastest units on the field.
+    # They sweep wide through the scrub to close the pocket behind.
+    - {class: numidian_scout,   pos: {x: 1,  y: 2}}   # far west
+    - {class: numidian_scout,   pos: {x: 14, y: 2}}   # far east
+    # Maharbal's cavalry — starts near the river on the east flank,
+    # ready to ride the long arc around to the Roman rear.
+    - {class: maharbal,         pos: {x: 13, y: 1}}
   red:
-    # Rome tight block formation — dense infantry center, cavalry on edge
-    #   Varro commanding from rear, Paullus in the center block,
-    #   Tribune and Centurion holding the line, Velites screening front,
-    #   Roman Cavalry on the open flank, Triarii in reserve.
-    - {class: consul_varro,            pos: {x: 2, y: 4}}
-    - {class: consul_paullus,          pos: {x: 3, y: 4}}
-    - {class: tribune_marcus,          pos: {x: 3, y: 3}}
-    - {class: centurion_primus,        pos: {x: 3, y: 5}}
-    - {class: roman_cavalry_commander, pos: {x: 1, y: 6}}
-    - {class: velites_captain,         pos: {x: 4, y: 4}}
-    - {class: triarii_veteran,         pos: {x: 2, y: 3}}
+    # ── Rome — tight infantry block, center-south ──
+    # Varro commands from the rear, near the baggage camp.
+    - {class: consul_varro,            pos: {x: 7,  y: 10}}
+    # Paullus in the heart of the infantry mass.
+    - {class: consul_paullus,          pos: {x: 8,  y: 8}}
+    # Tribune and Centurion hold the front ranks.
+    - {class: tribune_marcus,          pos: {x: 7,  y: 7}}
+    - {class: centurion_primus,        pos: {x: 8,  y: 7}}
+    # Velites screen ahead of the main line.
+    - {class: velites_captain,         pos: {x: 7,  y: 6}}
+    # Triarii reserve — kneeling behind the block until the crisis.
+    - {class: triarii_veteran,         pos: {x: 8,  y: 9}}
+    # Roman cavalry on the west flank — outnumbered, doomed.
+    - {class: roman_cavalry_commander, pos: {x: 4,  y: 8}}
 
 rules:
   max_turns: 30
@@ -365,10 +438,10 @@ rules:
   first_player: red
 
 win_conditions:
-  # Blue (Carthage) loses if Hannibal falls
+  # Carthage wins by seizing the Roman baggage camp (encirclement complete)
+  - {type: seize_enemy_fort}
+  # Rome wins by killing Hannibal — the army disintegrates without him
   - {type: protect_unit, unit_id: u_a_hannibal_1, owning_team: blue}
-  # Red (Rome) loses if Varro falls
-  - {type: protect_unit, unit_id: u_b_consul_varro_1, owning_team: red}
   # Either side can win by total elimination
   - {type: eliminate_all_enemy_units}
   # Turn cap reached — draw (Rome held off the envelopment)
@@ -378,27 +451,37 @@ narrative:
   title: Cannae
   description: |
     The textbook double envelopment. Hannibal invites the Romans
-    into a pocket and seals it behind them.
+    into a pocket and seals it behind them. The Aufidus River pins
+    the north; dense scrubland corridors channel the flanking forces;
+    the open center is a killing field. Seize the Roman camp to
+    complete the encirclement — or kill Hannibal to shatter it.
   intro: |
-    Morning on the plain. Varro has seniority today; he rejected
-    his colleague's advice to starve the Carthaginians out. The
-    legions draw up in a dense block. Across the field, Hannibal's
-    crescent waits — cavalry wide on the flanks, the Celtic center
-    bulging forward like bait. The river guards one flank, hills
-    the other. The open center is a killing ground.
+    Morning on the Apulian plain. Varro has seniority today; he
+    rejected his colleague's advice to starve the Carthaginians
+    out. The legions draw up in a dense block south of center,
+    their baggage camp on the hill behind them.
+    Across the open ground, Hannibal's crescent waits — Celtic
+    warriors bulging forward as bait, Libyan veterans concealed
+    in the scrubland on both flanks, Numidian riders lurking at
+    the edges. The river Aufidus seals the north. The brush
+    thickens on east and west, leaving only the bare center
+    open. It is a funnel, and Rome is walking into it.
   events:
     - trigger: on_turn_start
       turn: 3
-      text: "The Celtic center bends back. Varro orders the legions forward."
+      text: "The Celtic center gives ground. Varro smells blood and orders the legions deeper into the pocket."
+    - trigger: on_turn_start
+      turn: 5
+      text: "Movement in the scrub on both flanks — the Libyan veterans are wheeling inward."
     - trigger: on_turn_start
       turn: 8
-      text: "Hannibal's Libyan veteran wheels inward. The Roman flanks shorten."
+      text: "The brush corridors disgorge armored infantry. The Roman flanks are collapsing inward."
     - trigger: on_turn_start
       turn: 12
-      text: "Dust on the Roman rear — Maharbal's cavalry has closed the pocket."
+      text: "Hoofbeats behind the Roman line — Maharbal's cavalry has closed the pocket. The camp is in danger."
     - trigger: on_unit_killed
       unit_id: u_b_consul_varro_1
-      text: "Varro falls. Rome's line breaks apart."
+      text: "Varro falls in the press. Roman morale shatters."
     - trigger: on_unit_killed
       unit_id: u_a_hannibal_1
-      text: "Hannibal is struck down! The Carthaginian army falters."
+      text: "Hannibal is struck down! The Carthaginian envelopment unravels."

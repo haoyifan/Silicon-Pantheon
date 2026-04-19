@@ -15,78 +15,321 @@ board:
   width: 16
   height: 12
   terrain:
-    # Yangtze River -- wide channel y=4 through y=6
+    # ================================================================
+    #  NORTH BANK — Cao Cao's camp (y=0..1)
+    # ================================================================
+    # Palisade fortifications along the waterfront
+    - {x: 4, y: 0, type: palisade}
+    - {x: 5, y: 0, type: palisade}
+    - {x: 10, y: 0, type: palisade}
+    - {x: 11, y: 0, type: palisade}
+    # Command tent — Cao Cao's HQ
+    - {x: 7, y: 0, type: command_tent}
+    - {x: 8, y: 0, type: command_tent}
+
+    # ================================================================
+    #  YANGTZE RIVER — impassable water (y=2..3, y=8..9)
+    #  The river dominates the map. Everything between the two banks
+    #  is water unless a ship, boat, or fire_ship tile sits on it.
+    # ================================================================
+    # -- North river (y=2): full width except fleet docking at x=4..12
+    - {x: 0, y: 2, type: river}
+    - {x: 1, y: 2, type: river}
+    - {x: 2, y: 2, type: river}
+    - {x: 3, y: 2, type: river}
+    - {x: 13, y: 2, type: river}
+    - {x: 14, y: 2, type: river}
+    - {x: 15, y: 2, type: river}
+    # -- y=3: river with small boat crossings at far flanks
+    - {x: 0, y: 3, type: river}
+    - {x: 2, y: 3, type: river}
+    - {x: 3, y: 3, type: river}
+    - {x: 13, y: 3, type: river}
+    - {x: 14, y: 3, type: river}
+    - {x: 15, y: 3, type: river}
+    # -- y=4: river flanking the fleet
     - {x: 0, y: 4, type: river}
     - {x: 1, y: 4, type: river}
     - {x: 2, y: 4, type: river}
-    - {x: 3, y: 4, type: river}
-    - {x: 4, y: 4, type: river}
-    - {x: 5, y: 4, type: river}
-    - {x: 6, y: 4, type: river}
     - {x: 13, y: 4, type: river}
     - {x: 14, y: 4, type: river}
     - {x: 15, y: 4, type: river}
+    # -- y=5: river flanking the fleet
+    - {x: 0, y: 5, type: river}
+    - {x: 1, y: 5, type: river}
+    - {x: 2, y: 5, type: river}
+    - {x: 13, y: 5, type: river}
+    - {x: 14, y: 5, type: river}
+    - {x: 15, y: 5, type: river}
+    # -- y=6: river flanking the fleet
     - {x: 0, y: 6, type: river}
     - {x: 1, y: 6, type: river}
     - {x: 2, y: 6, type: river}
-    - {x: 3, y: 6, type: river}
-    - {x: 4, y: 6, type: river}
-    - {x: 5, y: 6, type: river}
-    - {x: 6, y: 6, type: river}
     - {x: 13, y: 6, type: river}
     - {x: 14, y: 6, type: river}
     - {x: 15, y: 6, type: river}
-    # Cao Cao's chained fleet -- ship tiles spanning the crossing
+    # -- y=7: river flanking the fleet
+    - {x: 0, y: 7, type: river}
+    - {x: 1, y: 7, type: river}
+    - {x: 2, y: 7, type: river}
+    - {x: 13, y: 7, type: river}
+    - {x: 14, y: 7, type: river}
+    - {x: 15, y: 7, type: river}
+    # -- y=8: river with small boat crossings at far flanks
+    - {x: 0, y: 8, type: river}
+    - {x: 2, y: 8, type: river}
+    - {x: 3, y: 8, type: river}
+    - {x: 4, y: 8, type: river}
+    - {x: 5, y: 8, type: river}
+    - {x: 6, y: 8, type: river}
+    - {x: 7, y: 8, type: river}
+    - {x: 8, y: 8, type: river}
+    - {x: 9, y: 8, type: river}
+    - {x: 10, y: 8, type: river}
+    - {x: 11, y: 8, type: river}
+    - {x: 12, y: 8, type: river}
+    - {x: 13, y: 8, type: river}
+    - {x: 15, y: 8, type: river}
+    # -- y=9: south river approach
+    - {x: 0, y: 9, type: river}
+    - {x: 1, y: 9, type: river}
+    - {x: 2, y: 9, type: river}
+    - {x: 3, y: 9, type: river}
+    - {x: 4, y: 9, type: river}
+    - {x: 5, y: 9, type: river}
+    - {x: 6, y: 9, type: river}
+
+    # ================================================================
+    #  SMALL BOATS — risky single-file alternative crossings
+    #  One tile wide, cost 2, no defense. Fall in and you drown.
+    # ================================================================
+    # West flank sampan chain (x=1)
+    - {x: 1, y: 3, type: small_boat}
+    - {x: 1, y: 8, type: small_boat}
+    # East flank sampan (x=14)
+    - {x: 14, y: 8, type: small_boat}
+
+    # ================================================================
+    #  CAO CAO'S CHAINED FLEET — the central gauntlet (x=3..12, y=4..7)
+    #  Warships chained gunwale-to-gunwale. Gangways (river gaps)
+    #  between ship clusters create chokepoints on the fleet itself.
+    # ================================================================
+    #
+    #  Fleet layout (x=3..12, y=2..7):
+    #
+    #  y=2:  [dock][dock][dock] gap [dock][dock][dock] gap [dock]
+    #  y=3:  [====== river except boats at flanks ======]
+    #        the fleet proper starts from northern docking:
+    #
+    #  Legend:  S=ship  F=fire_ship  ~=gangway(river)  .=river
+    #
+    #  y=2:   S  S  S  S  S  S  S  S  S  S       (docking row)
+    #  y=3:   .  .  S  S  S  ~  S  S  S  .  .    (approach, gaps)
+    #  y=4:   S  S  S  ~  S  S  ~  S  S  S  S    (main deck north)
+    #  y=5:   S  S  ~  S  S  F  F  S  ~  S  S    (center + fire lane)
+    #  y=6:   S  S  S  ~  S  F  F  ~  S  S  S    (center + fire lane)
+    #  y=7:   S  S  S  S  ~  F  F  S  S  S  S    (south deck + fire)
+    #
+    # -- y=2 docking row: fleet connects to north bank
+    - {x: 4, y: 2, type: ship}
+    - {x: 5, y: 2, type: ship}
+    - {x: 6, y: 2, type: ship}
+    - {x: 7, y: 2, type: ship}
+    - {x: 8, y: 2, type: ship}
+    - {x: 9, y: 2, type: ship}
+    - {x: 10, y: 2, type: ship}
+    - {x: 11, y: 2, type: ship}
+    - {x: 12, y: 2, type: ship}
+
+    # -- y=3 approach row with gangway gaps
+    - {x: 4, y: 3, type: river}  # gap west
+    - {x: 5, y: 3, type: ship}
+    - {x: 6, y: 3, type: ship}
+    - {x: 7, y: 3, type: ship}
+    - {x: 8, y: 3, type: river}  # gangway
+    - {x: 9, y: 3, type: ship}
+    - {x: 10, y: 3, type: ship}
+    - {x: 11, y: 3, type: ship}
+    - {x: 12, y: 3, type: river}  # gap east
+
+    # -- y=4 main deck north — two gangway breaks
+    - {x: 3, y: 4, type: ship}
+    - {x: 4, y: 4, type: ship}
+    - {x: 5, y: 4, type: ship}
+    - {x: 6, y: 4, type: river}  # gangway
     - {x: 7, y: 4, type: ship}
     - {x: 8, y: 4, type: ship}
-    - {x: 9, y: 4, type: ship}
+    - {x: 9, y: 4, type: river}  # gangway
     - {x: 10, y: 4, type: ship}
     - {x: 11, y: 4, type: ship}
     - {x: 12, y: 4, type: ship}
+
+    # -- y=5 center row — fire ship lane through the middle
+    - {x: 3, y: 5, type: ship}
+    - {x: 4, y: 5, type: ship}
+    - {x: 5, y: 5, type: river}  # gangway
+    - {x: 6, y: 5, type: ship}
     - {x: 7, y: 5, type: ship}
-    - {x: 8, y: 5, type: ship}
-    - {x: 9, y: 5, type: ship}
+    - {x: 8, y: 5, type: fire_ship}
+    - {x: 9, y: 5, type: fire_ship}
     - {x: 10, y: 5, type: ship}
-    - {x: 11, y: 5, type: ship}
+    - {x: 11, y: 5, type: river}  # gangway
     - {x: 12, y: 5, type: ship}
+
+    # -- y=6 center row south — fire lane continues
+    - {x: 3, y: 6, type: ship}
+    - {x: 4, y: 6, type: ship}
+    - {x: 5, y: 6, type: ship}
+    - {x: 6, y: 6, type: river}  # gangway
     - {x: 7, y: 6, type: ship}
-    - {x: 8, y: 6, type: ship}
-    - {x: 9, y: 6, type: ship}
-    - {x: 10, y: 6, type: ship}
+    - {x: 8, y: 6, type: fire_ship}
+    - {x: 9, y: 6, type: fire_ship}
+    - {x: 10, y: 6, type: river}  # gangway
     - {x: 11, y: 6, type: ship}
     - {x: 12, y: 6, type: ship}
-    # Wind terrain on southern bank -- boosts fire attack
-    - {x: 6, y: 8, type: wind}
-    - {x: 7, y: 8, type: wind}
-    - {x: 8, y: 8, type: wind}
+
+    # -- y=7 south deck — fire lane exit, gangway break
+    - {x: 3, y: 7, type: ship}
+    - {x: 4, y: 7, type: ship}
+    - {x: 5, y: 7, type: ship}
+    - {x: 6, y: 7, type: ship}
+    - {x: 7, y: 7, type: river}  # gangway
+    - {x: 8, y: 7, type: fire_ship}
+    - {x: 9, y: 7, type: fire_ship}
+    - {x: 10, y: 7, type: ship}
+    - {x: 11, y: 7, type: ship}
+    - {x: 12, y: 7, type: ship}
+
+    # ================================================================
+    #  WIND ZONE — southeast river approach (y=9..10)
+    #  The borrowed east wind funnels fire ships into the fleet.
+    #  Huang Gai launches from here.
+    # ================================================================
+    - {x: 10, y: 9, type: wind}
+    - {x: 11, y: 9, type: wind}
+    - {x: 12, y: 9, type: wind}
+    - {x: 13, y: 9, type: wind}
+    - {x: 14, y: 9, type: wind}
+    - {x: 15, y: 9, type: wind}
+    - {x: 12, y: 10, type: wind}
+    - {x: 13, y: 10, type: wind}
+    - {x: 14, y: 10, type: wind}
+    - {x: 15, y: 10, type: wind}
+
+    # ================================================================
+    #  SOUTH BANK — Wu/Alliance camp (y=10..11)
+    # ================================================================
+    # Zhuge Liang's altar — the wind-summoning platform
+    - {x: 14, y: 11, type: altar}
+    - {x: 15, y: 11, type: altar}
+    # Wooded cover along the south bank
+    - {x: 2, y: 10, type: woods}
+    - {x: 3, y: 10, type: woods}
+    - {x: 4, y: 10, type: woods}
+    - {x: 7, y: 9, type: woods}
+    - {x: 8, y: 9, type: woods}
+    - {x: 9, y: 9, type: woods}
+
   forts: []
 
 terrain_types:
   river:
     display_name: Yangtze River
-    description: Impassable river -- deep and swift.
+    description: |
+      The great river. Deep, wide, and swift. Impassable without a
+      vessel. Men who fall in drown in their armor.
     move_cost: 99
     passable: false
     glyph: "~"
     color: blue
+
   ship:
-    display_name: Chained Ship
+    display_name: Chained Warship
     description: |
-      Cao Cao's ships chained together to prevent seasickness.
-      Walkable terrain. Vulnerable to fire.
+      Cao Cao's warships chained gunwale-to-gunwale so his northern
+      troops can fight without seasickness. Stable footing but the
+      chains mean no ship can break free. +1 DEF from the bulwarks.
+      Vulnerable to fire.
     move_cost: 1
-    passable: true
+    defense_bonus: 1
     glyph: "M"
     color: yellow
+
+  fire_ship:
+    display_name: Fire Attack Zone
+    description: |
+      Huang Gai's approach vector. These decks are soaked in oil and
+      packed with kindling. Units here fight exposed among the flames.
+      -2 DEF. Fire_lighter units deal bonus damage from wind tiles
+      adjacent to this zone. The chains guarantee the fire spreads.
+    move_cost: 1
+    defense_bonus: -2
+    glyph: "#"
+    color: bright_red
+
+  small_boat:
+    display_name: Sampan
+    description: |
+      A tiny river sampan -- barely stable, single file only.
+      Costs 2 movement to cross. No cover whatsoever. One wrong
+      step and you are in the Yangtze.
+    move_cost: 2
+    defense_bonus: 0
+    glyph: "o"
+    color: bright_yellow
+
   wind:
     display_name: East Wind
     description: |
-      The borrowed east wind. Units here gain +2 ATK from the
-      favorable conditions.
+      The borrowed east wind. Zhuge Liang summoned it from his altar
+      and it drives fire ships northwest into the chained fleet.
+      Units here gain +2 ATK from the howling gale at their backs.
     move_cost: 1
     attack_bonus: 2
     glyph: ">"
     color: bright_cyan
+
+  palisade:
+    display_name: Palisade
+    description: |
+      Wooden palisade fortification along the north bank. Cao Cao's
+      rearguard shelters behind these walls. +2 DEF.
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "#"
+    color: bright_white
+
+  command_tent:
+    display_name: Command Tent
+    description: |
+      Cao Cao's field headquarters on the north bank. Banners of Wei
+      fly overhead. +1 DEF from the barricades around it.
+    move_cost: 1
+    defense_bonus: 1
+    glyph: "T"
+    color: bright_red
+
+  altar:
+    display_name: Wind Altar
+    description: |
+      Zhuge Liang's seven-star altar where he performed the ritual
+      to borrow the east wind. Elevated stone platform with braziers.
+      +1 DEF, +1 ATK from the mystic wind.
+    move_cost: 1
+    defense_bonus: 1
+    attack_bonus: 1
+    glyph: "A"
+    color: bright_magenta
+
+  woods:
+    display_name: Wooded Bank
+    description: |
+      Dense trees along the south bank. Wu forces use the cover to
+      marshal before the assault. +2 DEF, costs 2 movement.
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "T"
+    color: green
 
 unit_classes:
   zhou_yu:
@@ -338,22 +581,37 @@ unit_classes:
 
 armies:
   blue:
-    # Alliance on the south bank
-    - {class: zhou_yu, pos: {x: 7, y: 9}}
-    - {class: zhuge_liang, pos: {x: 8, y: 10}}
-    - {class: huang_gai, pos: {x: 9, y: 8}}
-    - {class: lu_su, pos: {x: 8, y: 9}}
-    - {class: gan_ning, pos: {x: 6, y: 9}}
-    - {class: cheng_pu, pos: {x: 7, y: 10}}
+    # ── Wu / Alliance — south bank ──
+    # Zhou Yu commanding from the wooded staging area
+    - {class: zhou_yu,     pos: {x: 8, y: 10}}
+    # Zhuge Liang at his wind altar in the southeast
+    - {class: zhuge_liang, pos: {x: 14, y: 11}}
+    # Huang Gai in the wind zone — ready to sail fire ships north
+    - {class: huang_gai,   pos: {x: 11, y: 9}}
+    # Lu Su supporting from the south bank center
+    - {class: lu_su,       pos: {x: 7, y: 10}}
+    # Gan Ning the pirate — positioned for the west sampan crossing
+    - {class: gan_ning,    pos: {x: 2, y: 11}}
+    # Cheng Pu holding the wooded bank
+    - {class: cheng_pu,    pos: {x: 4, y: 10}}
+
   red:
-    # Cao Cao's command on the north bank
-    - {class: cao_cao, pos: {x: 10, y: 1}}
-    - {class: xiahou_dun, pos: {x: 9, y: 2}}
-    - {class: zhang_liao, pos: {x: 11, y: 2}}
-    - {class: cao_ren, pos: {x: 8, y: 1}}
-    - {class: xu_huang, pos: {x: 12, y: 1}}
-    - {class: cai_mao, pos: {x: 10, y: 3}}
-    - {class: northern_archer, pos: {x: 9, y: 3}}
+    # ── Wei / Cao Cao's forces — north bank and fleet ──
+    # Cao Cao in his command tent on the north bank
+    - {class: cao_cao,         pos: {x: 7, y: 0}}
+    # Cao Ren guarding the north bank palisade
+    - {class: cao_ren,         pos: {x: 5, y: 0}}
+    # Xiahou Dun forward on the fleet's north row
+    - {class: xiahou_dun,      pos: {x: 5, y: 3}}
+    # Zhang Liao patrolling the fleet center
+    - {class: zhang_liao,      pos: {x: 10, y: 4}}
+    # Xu Huang holding the west side of the fleet
+    - {class: xu_huang,        pos: {x: 4, y: 5}}
+    # Cai Mao commanding from the fleet's south deck
+    - {class: cai_mao,         pos: {x: 7, y: 6}}
+    # Northern archers on the chained warships — firing lanes
+    - {class: northern_archer, pos: {x: 7, y: 3}}
+    - {class: northern_archer, pos: {x: 12, y: 5}}
 
 rules:
   max_turns: 25
@@ -371,19 +629,39 @@ narrative:
     The fire attack at Chibi. The night the Yangtze burned and the
     Three Kingdoms era began.
   intro: |
-    Dusk on the Yangtze. The wind has been blowing west for weeks;
-    Cao Cao's chained fleet rocks in the chop. Zhuge Liang lights
-    an incense stick and waits. Huang Gai's signal flag goes up.
+    Dusk on the Yangtze. Cao Cao's chained fleet stretches across the
+    river like a floating fortress — warships lashed together, decks
+    level as a road. His northern troops finally stand without swaying.
+    On the south bank, Zhuge Liang ascends his seven-star altar. Incense
+    smoke twists east. Huang Gai's fire ships creak at their moorings,
+    hulls packed with dry reeds and fish oil. Zhou Yu watches the pennants.
+    They still hang limp. He waits.
   events:
     - trigger: on_turn_start
+      turn: 3
+      text: |
+        The pennants stir. A gust from the southeast. Zhuge Liang opens
+        his eyes on the altar: "The wind has turned." Zhou Yu draws his
+        sword: "Signal Huang Gai. All ships -- advance."
+    - trigger: on_turn_start
       turn: 5
-      text: "The wind turns east. Zhuge Liang smiles: 'It is time.'"
+      text: |
+        The east wind howls. Huang Gai's fire ships surge forward under
+        full sail, flames already licking the prows. Cao Cao's lookouts
+        scream warnings but the chained fleet cannot scatter.
     - trigger: on_turn_start
       turn: 8
-      text: "Huang Gai's fire ships ram the chain. Flames leap from deck to deck. The river burns."
+      text: |
+        Huang Gai's ships ram the chain. Fire leaps from deck to deck
+        along the iron links. The Yangtze itself seems to burn. Men jump
+        into the black water and drown in their armor.
     - trigger: on_turn_start
       turn: 14
-      text: "The river is bright as noon. Cao Cao's army screams in the smoke."
+      text: |
+        The river is bright as noon. Cao Cao's army screams in the smoke.
+        The chained fleet -- his greatest innovation -- is now his pyre.
     - trigger: on_unit_killed
       unit_id: u_r_cao_cao_1
-      text: "Cao Cao falls. The north shatters. The Three Kingdoms are born."
+      text: |
+        Cao Cao falls on the burning deck. The chancellor who united the
+        north dies on the Yangtze. The Three Kingdoms are born.

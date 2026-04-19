@@ -12,67 +12,178 @@ description: |
   power. Defeat Grindelwald to end the rally.
   Inspired by Fantastic Beasts: The Crimes of Grindelwald by J.K. Rowling.
 
+# ─────────────────────────────────────────────────────────────────
+#  MAP LAYOUT (14 x 12)
+#
+#  Legend:  = tier   P podium   ~ fire   . floor   # pillar
+#           S stairway          (gap) crossing point in fire
+#
+#  y0  = = = # . . . . . . # = = =      north perimeter tiers
+#  y1  = . . . . . P P . . . . . =      podium row
+#  y2  = . . . . . . . . . . . . =      north arena floor
+#  y3  = S . # . . . . . . # . S =      pillars + stairways
+#  y4  = . . . . . . . . . . . . =      approach zone
+#  y5  # . ~ ~ ~ . . ~ ~ ~ ~ . . #      PROTEGO DIABOLICA (3 gaps)
+#  y6  # . . ~ ~ ~ . . ~ ~ . ~ . #      fire line continued
+#  y7  = . . . . . . . . . . . . =      south approach
+#  y8  = S . # . . . . . . # . S =      pillars + stairways
+#  y9  = . . . . . . . . . . . . =      south arena floor
+#  y10 = . . . . . . . . . . . . =      deployment row
+#  y11 = = = # . . . . . . # = = =      south perimeter tiers
+#
+#  Fire gaps:  x=1 (west gap),  x=6 (center gap),  x=12 (east gap)
+#  on y5–y6.  These are the three contested crossing points.
+# ─────────────────────────────────────────────────────────────────
+
 board:
-  width: 10
-  height: 10
+  width: 14
+  height: 12
   terrain:
-    # Amphitheatre seating — outer ring
-    - {x: 0, y: 0, type: amphitheatre_seat}
-    - {x: 1, y: 0, type: amphitheatre_seat}
-    - {x: 2, y: 0, type: amphitheatre_seat}
-    - {x: 7, y: 0, type: amphitheatre_seat}
-    - {x: 8, y: 0, type: amphitheatre_seat}
-    - {x: 9, y: 0, type: amphitheatre_seat}
-    - {x: 0, y: 1, type: amphitheatre_seat}
-    - {x: 9, y: 1, type: amphitheatre_seat}
-    - {x: 0, y: 2, type: amphitheatre_seat}
-    - {x: 9, y: 2, type: amphitheatre_seat}
-    - {x: 0, y: 7, type: amphitheatre_seat}
-    - {x: 9, y: 7, type: amphitheatre_seat}
-    - {x: 0, y: 8, type: amphitheatre_seat}
-    - {x: 9, y: 8, type: amphitheatre_seat}
-    - {x: 0, y: 9, type: amphitheatre_seat}
-    - {x: 1, y: 9, type: amphitheatre_seat}
-    - {x: 2, y: 9, type: amphitheatre_seat}
-    - {x: 7, y: 9, type: amphitheatre_seat}
-    - {x: 8, y: 9, type: amphitheatre_seat}
-    - {x: 9, y: 9, type: amphitheatre_seat}
-    # Magical barriers — channeling movement
-    - {x: 3, y: 0, type: magical_barrier}
-    - {x: 6, y: 0, type: magical_barrier}
-    - {x: 3, y: 9, type: magical_barrier}
-    - {x: 6, y: 9, type: magical_barrier}
-    - {x: 0, y: 4, type: magical_barrier}
-    - {x: 0, y: 5, type: magical_barrier}
-    - {x: 9, y: 4, type: magical_barrier}
-    - {x: 9, y: 5, type: magical_barrier}
-    # Inner seating
-    - {x: 2, y: 2, type: amphitheatre_seat}
-    - {x: 7, y: 2, type: amphitheatre_seat}
-    - {x: 2, y: 7, type: amphitheatre_seat}
-    - {x: 7, y: 7, type: amphitheatre_seat}
+    # ── AMPHITHEATRE TIERS (outer perimeter, oval) ──────────────
+    # North wall tiers (y=0)
+    - {x: 0, y: 0, type: tier}
+    - {x: 1, y: 0, type: tier}
+    - {x: 2, y: 0, type: tier}
+    - {x: 11, y: 0, type: tier}
+    - {x: 12, y: 0, type: tier}
+    - {x: 13, y: 0, type: tier}
+    # South wall tiers (y=11)
+    - {x: 0, y: 11, type: tier}
+    - {x: 1, y: 11, type: tier}
+    - {x: 2, y: 11, type: tier}
+    - {x: 11, y: 11, type: tier}
+    - {x: 12, y: 11, type: tier}
+    - {x: 13, y: 11, type: tier}
+    # West wall tiers (x=0)
+    - {x: 0, y: 1, type: tier}
+    - {x: 0, y: 2, type: tier}
+    - {x: 0, y: 3, type: tier}
+    - {x: 0, y: 4, type: tier}
+    - {x: 0, y: 7, type: tier}
+    - {x: 0, y: 8, type: tier}
+    - {x: 0, y: 9, type: tier}
+    - {x: 0, y: 10, type: tier}
+    # East wall tiers (x=13)
+    - {x: 13, y: 1, type: tier}
+    - {x: 13, y: 2, type: tier}
+    - {x: 13, y: 3, type: tier}
+    - {x: 13, y: 4, type: tier}
+    - {x: 13, y: 7, type: tier}
+    - {x: 13, y: 8, type: tier}
+    - {x: 13, y: 9, type: tier}
+    - {x: 13, y: 10, type: tier}
+
+    # ── PODIUM (Grindelwald's stage, north center) ─────────────
+    - {x: 6, y: 1, type: podium}
+    - {x: 7, y: 1, type: podium}
+
+    # ── PILLARS (impassable columns) ───────────────────────────
+    # North corners (y=0 gaps in tier)
+    - {x: 3, y: 0, type: pillar}
+    - {x: 10, y: 0, type: pillar}
+    # South corners (y=11 gaps in tier)
+    - {x: 3, y: 11, type: pillar}
+    - {x: 10, y: 11, type: pillar}
+    # Inner north pillars
+    - {x: 3, y: 3, type: pillar}
+    - {x: 10, y: 3, type: pillar}
+    # Inner south pillars
+    - {x: 3, y: 8, type: pillar}
+    - {x: 10, y: 8, type: pillar}
+    # Fire-line end pillars (seal the edges of the barrier)
+    - {x: 0, y: 5, type: pillar}
+    - {x: 13, y: 5, type: pillar}
+    - {x: 0, y: 6, type: pillar}
+    - {x: 13, y: 6, type: pillar}
+
+    # ── STAIRWAYS (tier-to-floor connections, 1 tile wide) ─────
+    # North stairways
+    - {x: 1, y: 3, type: stairway}
+    - {x: 12, y: 3, type: stairway}
+    # South stairways
+    - {x: 1, y: 8, type: stairway}
+    - {x: 12, y: 8, type: stairway}
+
+    # ── PROTEGO DIABOLICA (blue fire barrier, y=5 and y=6) ─────
+    # The fire runs east-west in a ragged double line with 3 gaps.
+    #
+    # Row y=5:  gap at x=1, fire x=2-5, gap at x=6, fire x=7-10, gap at x=11-12
+    - {x: 2, y: 5, type: protego_diabolica}
+    - {x: 3, y: 5, type: protego_diabolica}
+    - {x: 4, y: 5, type: protego_diabolica}
+    - {x: 5, y: 5, type: protego_diabolica}
+    - {x: 7, y: 5, type: protego_diabolica}
+    - {x: 8, y: 5, type: protego_diabolica}
+    - {x: 9, y: 5, type: protego_diabolica}
+    - {x: 10, y: 5, type: protego_diabolica}
+    # Row y=6:  fire x=3-5, gap at x=6-7, fire x=8-9, gap at x=10, fire x=11
+    - {x: 3, y: 6, type: protego_diabolica}
+    - {x: 4, y: 6, type: protego_diabolica}
+    - {x: 5, y: 6, type: protego_diabolica}
+    - {x: 8, y: 6, type: protego_diabolica}
+    - {x: 9, y: 6, type: protego_diabolica}
+    - {x: 11, y: 6, type: protego_diabolica}
   forts: []
 
 terrain_types:
-  amphitheatre_seat:
-    display_name: Amphitheatre Seat
+  tier:
+    display_name: Amphitheatre Tier
+    description: |
+      Concentric stone seating carved into the walls of the underground
+      amphitheatre. Elevated position grants excellent defensive
+      advantage and sightlines, but the stepped rows slow movement.
     move_cost: 2
-    defense_bonus: 1
+    defense_bonus: 2
     glyph: "="
     color: dim
+
+  podium:
+    display_name: Stage Podium
     description: |
-      Stone seating tiers of the underground amphitheatre. Provides
-      minor cover but slows movement over the stepped rows.
-  magical_barrier:
-    display_name: Magical Barrier
+      Grindelwald's raised speaking platform at the head of the
+      amphitheatre. The highest point in the arena — whoever holds
+      this ground commands the battlefield.
+    move_cost: 2
+    defense_bonus: 3
+    glyph: "P"
+    color: bright_yellow
+
+  pillar:
+    display_name: Stone Pillar
+    description: |
+      Massive columns supporting the amphitheatre vault. Completely
+      impassable. They break sightlines and create pockets of cover
+      on adjacent tiles.
     move_cost: 99
-    defense_bonus: 0
     passable: false
+    blocks_sight: true
     glyph: "#"
-    color: bright_magenta
+    color: bright_black
+
+  stairway:
+    display_name: Stairway
     description: |
-      Shimmering walls of protective enchantment. Impassable barriers
-      of blue-white flame that channel the flow of battle.
+      Narrow stone steps connecting the arena floor to the elevated
+      tiers. Only one unit wide — a bottleneck for anyone trying to
+      reach the high ground. Costs extra movement to climb.
+    move_cost: 2
+    defense_bonus: 0
+    glyph: "/"
+    color: white
+
+  protego_diabolica:
+    display_name: Protego Diabolica
+    description: |
+      A wall of cursed blue-white flame conjured by Grindelwald.
+      Those loyal to him pass unharmed; all others burn. Crossing
+      the fire costs extra movement and sears HP from any unit that
+      steps through. The defining hazard of the battlefield — go
+      around through the gaps, or pay the price in blood.
+    move_cost: 2
+    defense_bonus: -2
+    heals: -5
+    glyph: "~"
+    color: bright_blue
 
 unit_classes:
   newt:
@@ -272,24 +383,49 @@ unit_classes:
     glyph: "a"
     color: red
 
-armies:
-  blue:
-    - {class: newt, pos: {x: 4, y: 1}}
-    - {class: tina, pos: {x: 5, y: 1}}
-    - {class: theseus, pos: {x: 3, y: 2}}
-    - {class: jacob, pos: {x: 6, y: 2}}
-    - {class: yusuf, pos: {x: 1, y: 1}}
-    - {class: auror, pos: {x: 8, y: 1}}
-    - {class: auror, pos: {x: 1, y: 2}}
+# ─────────────────────────────────────────────────────────────────
+#  DEPLOYMENT
+#
+#  Red (Grindelwald's forces) — north half
+#    Grindelwald on his podium, Credence nearby, lieutenants on
+#    the northern tiers, acolytes spread across the north arena.
+#
+#  Blue (Dumbledore's agents) — south half
+#    Newt and Tina on the south arena floor ready to push toward
+#    the center gap. Theseus anchors one flank, Yusuf the other.
+#    Aurors hold the south tiers for ranged overwatch. Jacob is
+#    near the SE stairway — he needs to pick his route carefully.
+# ─────────────────────────────────────────────────────────────────
 
+armies:
   red:
-    - {class: grindelwald, pos: {x: 5, y: 8}}
-    - {class: credence, pos: {x: 4, y: 7}}
-    - {class: queenie, pos: {x: 6, y: 7}}
-    - {class: vinda, pos: {x: 3, y: 8}}
-    - {class: acolyte, pos: {x: 4, y: 9}}
-    - {class: acolyte, pos: {x: 5, y: 9}}
-    - {class: acolyte, pos: {x: 7, y: 8}}
+    # Grindelwald on the podium
+    - {class: grindelwald, pos: {x: 6, y: 1}}
+    # Credence lurking near the podium
+    - {class: credence, pos: {x: 5, y: 2}}
+    # Queenie on the north floor, near the west gap
+    - {class: queenie, pos: {x: 4, y: 2}}
+    # Vinda on the north floor, near the east gap
+    - {class: vinda, pos: {x: 9, y: 2}}
+    # Acolytes spread across northern tiers and floor
+    - {class: acolyte, pos: {x: 1, y: 0}}
+    - {class: acolyte, pos: {x: 12, y: 0}}
+    - {class: acolyte, pos: {x: 7, y: 3}}
+
+  blue:
+    # Newt center-south, aiming for the center fire gap
+    - {class: newt, pos: {x: 6, y: 9}}
+    # Tina beside Newt
+    - {class: tina, pos: {x: 7, y: 9}}
+    # Theseus anchoring the west approach toward the west fire gap
+    - {class: theseus, pos: {x: 2, y: 9}}
+    # Yusuf on the east approach
+    - {class: yusuf, pos: {x: 11, y: 9}}
+    # Aurors on the south tiers for ranged overwatch
+    - {class: auror, pos: {x: 1, y: 11}}
+    - {class: auror, pos: {x: 12, y: 11}}
+    # Jacob near the SE stairway — must navigate terrain carefully
+    - {class: jacob, pos: {x: 11, y: 8}}
 
 rules:
   max_turns: 16
@@ -308,11 +444,23 @@ narrative:
     amphitheatre. Newt Scamander and allies must stop him before
     his dark flames spread across Europe.
   intro: |
-    Blue-white flames rise in a circle around the amphitheatre.
-    Grindelwald stands at the center, arms raised, his silver tongue
-    weaving visions of a world where wizards rule. In the shadows,
-    Newt Scamander grips his wand. It is time to act.
+    The Pere Lachaise amphitheatre stretches out in concentric stone
+    tiers, torch-lit and thrumming with dark magic. At the north end,
+    Grindelwald stands upon his podium, the Elder Wand raised, his
+    voice carrying visions of wizarding supremacy to the enraptured
+    crowd. Then the Protego Diabolica erupts — a curtain of blue-
+    white fire splitting the arena in two, its unnatural flames
+    licking at the ancient stone. Three narrow gaps shimmer in the
+    barrier. In the southern shadows, Newt Scamander and Dumbledore's
+    agents grip their wands. To reach Grindelwald, they must cross
+    the fire.
   events:
+    - trigger: on_turn_start
+      turn: 3
+      text: |
+        The two sides converge on the gaps in the Protego Diabolica.
+        Blue-white flames roar higher as bodies press close. The air
+        smells of ozone and scorched stone.
     - trigger: on_turn_start
       turn: 4
       text: |

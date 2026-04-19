@@ -12,48 +12,137 @@ description: |
   Inspired by The Avengers (2012) by Marvel Studios.
 
 board:
-  width: 12
-  height: 10
+  # ── 16 x 14 — Manhattan, Midtown East ──
+  #
+  #       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
+  # y=0   . . . . . . . S S . . . . . . .   Stark Tower / Portal
+  # y=1   . . . . . . . S S . . . . . . .
+  # y=2   . B . . . . . ~ ~ . . . B . . B   Northern blocks + portal rubble
+  # y=3   B . . . . B . . . . B . . . . B   Scattered buildings
+  # y=4   . . B . . . . . . . . . B . . .   Mid-north buildings
+  # y=5   . . . W W W W . . . . . . . B .   Crashed Leviathan (west)
+  # y=6   . . ~ W W W W . . ~ . B . . . .   Leviathan tail + rubble
+  # y=7   . . . . . . . . . . . . . . . .   Park Avenue (open road)
+  # y=8   . B . . ~ . . . . . . . ~ . B .   South blocks + battle rubble
+  # y=9   B . . . . R . . . . R . . . . B   Rooftop vantage points
+  # y=10  . . B . . . . . . . . . B . . .   Perimeter buildings
+  # y=11  . . . . . . ~ . . ~ . . . . . .   Rubble near Grand Central
+  # y=12  . . . . . . G G G G . . . . . .   Grand Central Station
+  # y=13  . . . . . . G G G G . . . . . .
+  #
+  width: 16
+  height: 14
   terrain:
-    # Buildings scattered across the city grid
-    - {x: 1, y: 1, type: building}
-    - {x: 2, y: 1, type: building}
-    - {x: 5, y: 1, type: building}
-    - {x: 6, y: 1, type: building}
-    - {x: 9, y: 1, type: building}
-    - {x: 10, y: 1, type: building}
+    # ── Stark Tower (x=7-8, y=0-1) — portal origin ──
+    - {x: 7, y: 0, type: stark_tower}
+    - {x: 8, y: 0, type: stark_tower}
+    - {x: 7, y: 1, type: stark_tower}
+    - {x: 8, y: 1, type: stark_tower}
+
+    # ── Crashed Leviathan (x=3-6, y=5-6) — impassable wreckage ──
+    - {x: 3, y: 5, type: leviathan}
+    - {x: 4, y: 5, type: leviathan}
+    - {x: 5, y: 5, type: leviathan}
+    - {x: 6, y: 5, type: leviathan}
+    - {x: 3, y: 6, type: leviathan}
+    - {x: 4, y: 6, type: leviathan}
+    - {x: 5, y: 6, type: leviathan}
+    - {x: 6, y: 6, type: leviathan}
+
+    # ── Grand Central Station (x=6-9, y=12-13) — blue objective ──
+    - {x: 6, y: 12, type: grand_central}
+    - {x: 7, y: 12, type: grand_central}
+    - {x: 8, y: 12, type: grand_central}
+    - {x: 9, y: 12, type: grand_central}
+    - {x: 6, y: 13, type: grand_central}
+    - {x: 7, y: 13, type: grand_central}
+    - {x: 8, y: 13, type: grand_central}
+    - {x: 9, y: 13, type: grand_central}
+
+    # ── Park Avenue (y=7, full width) — open road, no terrain ──
+    #    (Left as default / open ground — fast movement corridor)
+
+    # ── Rooftop positions — elevated sniper nests ──
+    - {x: 5, y: 9, type: rooftop}
+    - {x: 10, y: 9, type: rooftop}
+
+    # ── Northern city blocks (y=2-4) ──
+    - {x: 1, y: 2, type: building}
+    - {x: 12, y: 2, type: building}
+    - {x: 15, y: 2, type: building}
     - {x: 0, y: 3, type: building}
-    - {x: 1, y: 3, type: building}
-    - {x: 4, y: 3, type: building}
-    - {x: 7, y: 3, type: building}
-    - {x: 8, y: 3, type: building}
-    - {x: 11, y: 3, type: building}
-    - {x: 0, y: 5, type: building}
-    - {x: 3, y: 5, type: building}
-    - {x: 4, y: 5, type: building}
-    - {x: 8, y: 5, type: building}
-    - {x: 11, y: 5, type: building}
-    - {x: 1, y: 7, type: building}
-    - {x: 2, y: 7, type: building}
-    - {x: 5, y: 7, type: building}
-    - {x: 9, y: 7, type: building}
-    - {x: 10, y: 7, type: building}
-    # Rubble from the invasion
-    - {x: 3, y: 2, type: rubble}
+    - {x: 5, y: 3, type: building}
+    - {x: 10, y: 3, type: building}
+    - {x: 15, y: 3, type: building}
+    - {x: 2, y: 4, type: building}
+    - {x: 12, y: 4, type: building}
+
+    # ── Mid-map buildings flanking the Leviathan ──
+    - {x: 14, y: 5, type: building}
+    - {x: 11, y: 6, type: building}
+
+    # ── Southern city blocks (y=8-10) ──
+    - {x: 1, y: 8, type: building}
+    - {x: 14, y: 8, type: building}
+    - {x: 0, y: 9, type: building}
+    - {x: 15, y: 9, type: building}
+    - {x: 2, y: 10, type: building}
+    - {x: 12, y: 10, type: building}
+
+    # ── Rubble — Leviathan crash zone ──
     - {x: 7, y: 2, type: rubble}
-    - {x: 2, y: 4, type: rubble}
-    - {x: 9, y: 4, type: rubble}
-    - {x: 6, y: 6, type: rubble}
-    - {x: 3, y: 8, type: rubble}
-    - {x: 8, y: 8, type: rubble}
-    # Stark Tower at the top center
-    - {x: 5, y: 0, type: stark_tower}
-    - {x: 6, y: 0, type: stark_tower}
-  forts:
-    - {x: 5, y: 0, owner: blue}
-    - {x: 6, y: 0, owner: blue}
+    - {x: 8, y: 2, type: rubble}
+    - {x: 2, y: 6, type: rubble}
+    - {x: 9, y: 6, type: rubble}
+
+    # ── Rubble — southern battle damage ──
+    - {x: 4, y: 8, type: rubble}
+    - {x: 12, y: 8, type: rubble}
+    - {x: 6, y: 11, type: rubble}
+    - {x: 9, y: 11, type: rubble}
 
 terrain_types:
+  stark_tower:
+    display_name: Stark Tower
+    move_cost: 1
+    defense_bonus: 3
+    glyph: "S"
+    color: bright_cyan
+    description: |
+      Ground zero. The Chitauri portal blazes above the penthouse,
+      raining alien soldiers onto the streets below. Fortified
+      Stark Industries architecture provides excellent cover.
+  leviathan:
+    display_name: Crashed Leviathan
+    move_cost: 99
+    passable: false
+    defense_bonus: 0
+    glyph: "W"
+    color: bright_red
+    description: |
+      The armored carcass of a Chitauri Leviathan, brought down by
+      the Hulk's fists and Iron Man's missiles. Its massive bulk
+      blocks the western approach, forcing attackers to go around.
+  grand_central:
+    display_name: Grand Central Station
+    move_cost: 2
+    defense_bonus: 2
+    glyph: "G"
+    color: bright_yellow
+    description: |
+      The Beaux-Arts landmark is the civilian evacuation point.
+      Thick marble walls and vaulted ceilings offer solid cover.
+      If the Chitauri reach it, the evacuation is lost.
+  rooftop:
+    display_name: Rooftop
+    move_cost: 2
+    defense_bonus: 3
+    glyph: "R"
+    color: bright_magenta
+    description: |
+      A Manhattan rooftop with clear sightlines over the avenues.
+      Perfect for a marksman — elevated position grants excellent
+      cover and unobstructed fields of fire.
   building:
     display_name: Building
     move_cost: 2
@@ -62,25 +151,16 @@ terrain_types:
     color: white
     description: |
       Manhattan skyscrapers and office buildings. Provide solid cover
-      but slow movement through rubble-strewn corridors.
+      but slow movement through rubble-strewn corridors and lobbies.
   rubble:
     display_name: Rubble
-    move_cost: 1
+    move_cost: 2
     defense_bonus: 1
     glyph: "~"
     color: dim
     description: |
-      Shattered concrete and twisted steel from the Chitauri assault.
-      Offers minor cover amid the devastation.
-  stark_tower:
-    display_name: Stark Tower
-    move_cost: 1
-    defense_bonus: 3
-    glyph: "S"
-    color: bright_cyan
-    description: |
-      The gleaming headquarters of Tony Stark, now ground zero for
-      the Chitauri portal. A fortified position for the Avengers.
+      Shattered concrete, twisted rebar, and overturned taxis.
+      The debris of an alien invasion — minor cover, rough footing.
 
 unit_classes:
   iron_man:
@@ -265,60 +345,101 @@ unit_classes:
     color: red
 
 armies:
+  # ── Blue: The Avengers — defending the perimeter ──
   blue:
-    - {class: iron_man, pos: {x: 5, y: 6}}
-    - {class: thor, pos: {x: 6, y: 6}}
-    - {class: captain_america, pos: {x: 5, y: 7}}
-    - {class: hulk, pos: {x: 6, y: 7}}
-    - {class: black_widow, pos: {x: 3, y: 8}}
-    - {class: hawkeye, pos: {x: 9, y: 7}}
-    - {class: nick_fury, pos: {x: 5, y: 9}}
+    # Iron Man — mobile reserve, patrolling east of the Leviathan
+    - {class: iron_man, pos: {x: 9, y: 6}}
+    # Thor — chokepoint west of the Leviathan, blocking the alley
+    - {class: thor, pos: {x: 1, y: 5}}
+    # Captain America — commanding the Grand Central defense
+    - {class: captain_america, pos: {x: 7, y: 12}}
+    # Hulk — brawling on Park Avenue, daring them to come south
+    - {class: hulk, pos: {x: 8, y: 7}}
+    # Black Widow — fast flanker near the eastern approach
+    - {class: black_widow, pos: {x: 13, y: 8}}
+    # Hawkeye — elevated on a rooftop with clear sightlines
+    - {class: hawkeye, pos: {x: 10, y: 9}}
+    # Nick Fury — rear command post behind Grand Central
+    - {class: nick_fury, pos: {x: 7, y: 13}}
 
+  # ── Red: Loki and the Chitauri invasion force ──
   red:
-    - {class: loki, pos: {x: 5, y: 0}}
-    - {class: chitauri_commander, pos: {x: 3, y: 1}}
-    - {class: chitauri_commander, pos: {x: 8, y: 1}}
-    - {class: chitauri_warrior, pos: {x: 4, y: 2}}
-    - {class: chitauri_warrior, pos: {x: 7, y: 2}}
-    - {class: chitauri_warrior, pos: {x: 6, y: 1}}
-    - {class: chitauri_chariot, pos: {x: 2, y: 0}}
-    - {class: chitauri_chariot, pos: {x: 10, y: 0}}
+    # Loki — commanding from Stark Tower, scepter in hand
+    - {class: loki, pos: {x: 7, y: 1}}
+    # Chitauri Commanders — leading the two prongs around the Leviathan
+    - {class: chitauri_commander, pos: {x: 2, y: 2}}
+    - {class: chitauri_commander, pos: {x: 13, y: 2}}
+    # Chitauri Warriors — the swarm, spread across the north
+    - {class: chitauri_warrior, pos: {x: 5, y: 1}}
+    - {class: chitauri_warrior, pos: {x: 10, y: 1}}
+    - {class: chitauri_warrior, pos: {x: 4, y: 3}}
+    - {class: chitauri_warrior, pos: {x: 11, y: 3}}
+    - {class: chitauri_warrior, pos: {x: 9, y: 2}}
+    # Chitauri Chariots — fast flankers on the wings
+    - {class: chitauri_chariot, pos: {x: 0, y: 0}}
+    - {class: chitauri_chariot, pos: {x: 15, y: 0}}
 
 rules:
-  max_turns: 18
-  first_player: blue
+  max_turns: 20
+  first_player: red
 
 win_conditions:
+  # Blue wins by killing Loki (closes the portal)
   - {type: protect_unit, unit_id: u_r_loki_1, owning_team: red}
+  # Red wins if any Chitauri unit reaches Grand Central
+  - {type: reach_tile, team: red, pos: {x: 6, y: 12}}
+  - {type: reach_tile, team: red, pos: {x: 7, y: 12}}
+  - {type: reach_tile, team: red, pos: {x: 8, y: 12}}
+  - {type: reach_tile, team: red, pos: {x: 9, y: 12}}
+  - {type: reach_tile, team: red, pos: {x: 6, y: 13}}
+  - {type: reach_tile, team: red, pos: {x: 7, y: 13}}
+  - {type: reach_tile, team: red, pos: {x: 8, y: 13}}
+  - {type: reach_tile, team: red, pos: {x: 9, y: 13}}
+  # Fallback
   - {type: eliminate_all_enemy_units}
-  - {type: protect_unit_survives, unit_id: u_r_loki_1, owning_team: red}
   - {type: max_turns_draw}
 
 narrative:
   title: Battle of New York
   description: |
-    Manhattan, 2012. A portal tears open above Stark Tower, and the
-    Chitauri swarm through. The Avengers must hold the line and
-    defeat Loki to close the portal before the city is overrun.
+    Manhattan, 2012. A portal blazes above Stark Tower and the
+    Chitauri pour through in waves. The Avengers must hold a
+    defensive perimeter around Grand Central Station — where
+    thousands of civilians are evacuating — while finding a way
+    to reach Loki at the tower and close the portal for good.
   intro: |
-    The sky splits open with alien light. Chitauri chariots streak
-    between skyscrapers as warriors pour onto the streets. Six heroes
-    and one spy-master are all that stand between Earth and conquest.
+    The sky tears open. A column of blue light erupts from the
+    penthouse of Stark Tower, and through it pour rank upon rank
+    of alien soldiers. A Leviathan has already fallen, its
+    armored carcass blocking four lanes of traffic on the west
+    side. Park Avenue stretches open and exposed between the two
+    forces. From a rooftop, Hawkeye counts the hostiles and
+    reports: "It's gonna be an ugly fight." Captain America
+    tightens the strap on his shield. "Then we hold the line."
   events:
     - trigger: on_turn_start
-      turn: 5
+      turn: 3
       text: |
-        Buildings crumble as Chitauri chariots crash through glass
-        and steel. Iron Man weaves between them, repulsors blazing.
-        Thor summons a bolt of lightning that arcs across the sky.
+        The first wave of Chitauri reaches Park Avenue. Thor
+        channels lightning through Mjolnir as the Hulk cracks
+        his knuckles. "Now we fight," says Captain America.
     - trigger: on_turn_start
-      turn: 10
+      turn: 8
       text: |
-        The World Security Council has launched a nuclear missile at
-        Manhattan. Iron Man intercepts: "I know just where to put it."
+        Buildings crumble under sustained Chitauri fire. Chariots
+        strafe the avenue as warriors swarm through every alley.
+        Iron Man banks hard between skyscrapers, repulsors blazing.
+    - trigger: on_turn_start
+      turn: 14
+      text: |
+        The World Security Council has launched a nuclear missile
+        at Manhattan. Iron Man intercepts it on the comms:
+        "I know just where to put it." Time is running out.
     - trigger: on_unit_killed
       unit_id: u_r_loki_1
       text: |
-        Loki falls. The Chitauri Scepter clatters to the ground. One
-        by one, the alien soldiers collapse as the hivemind link
-        severs. The portal begins to close. The Avengers have won.
+        Loki falls. The scepter clatters across broken concrete.
+        One by one the Chitauri soldiers collapse as the hivemind
+        link severs. The portal shudders, contracts, and winks
+        shut. Silence settles over a ruined Manhattan. The
+        Avengers stand amid the wreckage — battered, but together.
