@@ -56,6 +56,8 @@ class ErrorCode(str, Enum):
 
     # Version handshake
     VERSION_MISMATCH = "version_mismatch"
+    CLIENT_TOO_OLD = "client_too_old"
+    SERVER_TOO_OLD = "server_too_old"
 
 
 # The MCP tool-namespace prefix used by the server when registering tools.
@@ -65,4 +67,28 @@ TOOL_NAMESPACE = "silicon"
 # Wire-protocol version negotiated at connect time. Bumped on
 # incompatible changes to tool shapes / response structure so the
 # server can refuse mismatched clients with a clear error.
+#
+# See docs/versioning.md for what counts as a breaking change and
+# the rollout checklist.
 PROTOCOL_VERSION = 1
+
+# Oldest client-side PROTOCOL_VERSION that this codebase (running as
+# a server) will still serve. Clients below this get CLIENT_TOO_OLD
+# on set_player_metadata and must upgrade. Raise this when a breaking
+# change lands AND enough time has passed for the typical deploy
+# cadence that every active player has had a chance to upgrade.
+MINIMUM_CLIENT_PROTOCOL_VERSION = 1
+
+# Oldest server-side PROTOCOL_VERSION that this codebase (running as
+# a client) will still talk to. Servers below this get rejected
+# client-side with SERVER_TOO_OLD, prompting the user to ask their
+# server operator to update. Raise this only when the client hard-
+# depends on a tool or field that older servers don't provide.
+MINIMUM_SERVER_PROTOCOL_VERSION = 1
+
+# Shown to the user when they need to upgrade. Kept here so both
+# server responses and client-side screens use the same string.
+UPGRADE_COMMAND_HINT = (
+    "Run: `git pull && uv sync` in the Silicon-Pantheon checkout, "
+    "or `uv tool install --force silicon-pantheon` if you installed as a tool."
+)

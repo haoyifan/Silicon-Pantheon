@@ -39,7 +39,9 @@ from silicon_pantheon.server.rooms import RoomRegistry, Slot
 from silicon_pantheon.server.session import Session
 from silicon_pantheon.shared.player_metadata import PlayerMetadata
 from silicon_pantheon.shared.protocol import (
+    MINIMUM_CLIENT_PROTOCOL_VERSION,
     PROTOCOL_VERSION,
+    UPGRADE_COMMAND_HINT,
     ConnectionState,
     ErrorCode,
 )
@@ -132,8 +134,11 @@ class App:
 # ---- helpers used by tool handlers ----
 
 
-def _error(code: ErrorCode, message: str) -> dict:
-    return {"ok": False, "error": {"code": code.value, "message": message}}
+def _error(code: ErrorCode, message: str, data: dict | None = None) -> dict:
+    err: dict = {"code": code.value, "message": message}
+    if data:
+        err["data"] = data
+    return {"ok": False, "error": err}
 
 
 def _ok(payload: dict | None = None) -> dict:
@@ -171,15 +176,31 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
         """Declare who you are. Required before lobby operations.
 
         The optional `client_protocol_version` argument lets the server
-        refuse to talk to a client whose wire format diverges from
-        ours. Older clients (which don't send the argument) are tolerated
-        during the v1 → v1 baseline; as soon as we bump to v2, omitting
-        the argument will be equivalent to a mismatch.
+        refuse to talk to a client whose wire format is too old to
+        understand our responses. Clients above the server's own
+        version are accepted (newer-client-on-older-server is the
+        usual deploy order and the client is responsible for skipping
+        features the server doesn't advertise) — only clients BELOW
+        MINIMUM_CLIENT_PROTOCOL_VERSION get rejected with a clear
+        upgrade prompt. See docs/versioning.md.
         """
-        if client_protocol_version is not None and client_protocol_version != PROTOCOL_VERSION:
+        if (
+            client_protocol_version is not None
+            and client_protocol_version < MINIMUM_CLIENT_PROTOCOL_VERSION
+        ):
             return _error(
-                ErrorCode.VERSION_MISMATCH,
-                f"client protocol v{client_protocol_version} incompatible with server v{PROTOCOL_VERSION}; upgrade the side running the older version",
+                ErrorCode.CLIENT_TOO_OLD,
+                (
+                    f"client protocol v{client_protocol_version} is below "
+                    f"this server's minimum supported v{MINIMUM_CLIENT_PROTOCOL_VERSION}. "
+                    f"Please upgrade the client. {UPGRADE_COMMAND_HINT}"
+                ),
+                {
+                    "client_protocol_version": client_protocol_version,
+                    "server_protocol_version": PROTOCOL_VERSION,
+                    "minimum_client_protocol_version": MINIMUM_CLIENT_PROTOCOL_VERSION,
+                    "upgrade_command": UPGRADE_COMMAND_HINT,
+                },
             )
         try:
             meta = PlayerMetadata.from_dict(
@@ -206,6 +227,7 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
                 "state": conn.state.value,
                 "player": meta.to_dict(),
                 "server_protocol_version": PROTOCOL_VERSION,
+                "minimum_client_protocol_version": MINIMUM_CLIENT_PROTOCOL_VERSION,
             }
         )
 
