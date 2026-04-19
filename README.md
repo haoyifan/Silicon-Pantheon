@@ -16,9 +16,11 @@
 
 Two AI agents face off on a tactical grid. You don't play — you coach.
 
-Welcome to **Silicon Pantheon**. Agents like Claude, GPT-5, and Grok reason about the board, pick their moves, and compete head-to-head. Humans sit on the sideline as *lords*, shaping strategy and offering advice — but never touching a unit directly.
+Welcome to **Silicon Pantheon** — the arena where Claude, GPT-5, and Grok scheme across the board, commit to their moves, and throw elbows at each other. You sit on the sideline as a *lord*: whispering strategy, heckling from the bench, but never touching a unit yourself.
 
 > *Claude and Grok walk into Thermopylae. One of them has to hold the pass.*
+
+> **The hosted lobby is live right now.** [`game.siliconpantheon.com`](https://game.siliconpantheon.com) has open rooms waiting — I keep a handful running myself so a first-time visitor can drop straight into a real match. Install the client, join, coach. See [Play now ↓](#play-now-no-server-setup--the-hosted-lobby).
 
 ---
 
@@ -28,32 +30,32 @@ https://github.com/user-attachments/assets/185d281e-a044-4ba4-aec2-15b23d0d8266
 
 <p align="center"><sub><em>Preview: Claude Haiku 4.5 plays against GPT-5.4-codex on Battle of Camlann.</em></sub></p>
 
-The format is inspired by the classic tactical RPG lineage — Fire Emblem, Advance Wars, Tactics Ogre. Each agent commands a team of units (warriors, mages, archers, cavalry, and scenario-specific heroes) with distinct stats and abilities. Units move across a grid, clash in combat, and pursue scenario-specific win conditions.
+Think Fire Emblem, Advance Wars, Tactics Ogre — the whole tactical RPG lineage, distilled. Each agent commands a small army of warriors, mages, archers, cavalry, and whatever heroes the scenario ships with. Units tromp across a grid, trade blows, and push toward a win condition that's different in every battle.
 
-If that still sounds abstract: **think of it as chess played by AI, but with richer scenarios, more dynamic rules, and a human coach per side.**
+If that's still abstract: **picture chess, but the board is bigger, the pieces are stranger, the scenarios have lore, and both sides have a human coach heckling from the corner.**
 
 ### Scenarios
 
-Every match is a scenario — a hand-authored battle drawn from history, fantasy, and pop culture, each with its own map, army composition, and victory conditions. A small slice of what ships in the box:
+Every match is a scenario — a hand-crafted battle pulled from history, fantasy, or pop culture, each with its own map, army, and victory conditions. A sampler of what ships in the box:
 
-- **Thermopylae.** Leonidas and the Spartans must hold the narrow pass against Xerxes' army until dusk. Blue is outnumbered roughly ten to one; terrain is the great equalizer.
-- **Helm's Deep.** Rohan's defenders have to survive the night on the Deeping Wall while the uruk-hai storm the causeway. Reinforcements arrive at dawn — if anyone is left to greet them.
-- **The Long Night.** Blue protects Jon Snow while trying to eliminate the Night King. Red plays the army of the dead; every hero that falls swells the red ranks.
-- **Astronomy Tower.** Blue must keep Harry Potter alive until the Order of the Phoenix arrives. Red, led by Draco Malfoy and the Death Eaters, has a short window to cut him down first.
-- **Battle of Arrakeen.** Paul Muad'Dib wins by seizing the Harkonnen fort, defended by Baron Harkonnen's sardaukar elite. The desert itself is a hazard.
-- **Marineford.** A three-way coastal clash where every objective fights on a short clock.
+- **Thermopylae.** Leonidas and his Spartans hold the narrow pass against Xerxes until dusk. Blue is outnumbered roughly ten to one — cliffs and chokepoints are their only friends.
+- **Helm's Deep.** Rohan's defenders have to survive the night on the Deeping Wall while the uruk-hai pour up the causeway. Reinforcements arrive at dawn — if anyone's left to greet them.
+- **The Long Night.** Protect Jon Snow, kill the Night King. Red plays the army of the dead — every hero that falls joins its ranks.
+- **Astronomy Tower.** Keep Harry Potter breathing until the Order of the Phoenix shows up. Draco and the Death Eaters have a narrow window to end him first.
+- **Battle of Arrakeen.** Paul Muad'Dib wins by storming the Harkonnen fort, held by the Baron's sardaukar elite. The desert is a hazard in its own right.
+- **Marineford.** A three-way coastal brawl where every objective ticks down on a short clock.
 
-Win conditions go well beyond "eliminate the enemy": escort a VIP to a tile, hold ground for N turns, survive until reinforcements, seize an enemy fort, protect a named unit from dying. Scenarios can also fire narrative events mid-match and spawn reinforcements by script — Journey to the West sends a skeleton ambush to the bridge on turn 10, Helm's Deep detonates the culvert partway through the siege.
+Win conditions stretch well past "kill everyone": escort a VIP to a tile, hold ground for N turns, survive until reinforcements, storm an enemy fort, protect a named unit from dying. Scenarios can also fire narrative events mid-match and spawn reinforcements by script — Journey to the West drops a skeleton ambush onto the bridge at turn 10, Helm's Deep detonates the culvert halfway through the siege.
 
 ### Humans as coaches
 
-Even though AI agents play the game, humans are deeply part of it — in two distinct ways.
+The AI does the playing. But humans are all over the game — in two very different ways.
 
-**Before the match, you pick a strategy playbook.** The `strategies/` folder is your growing library of doctrines — aggressive rush, defensive chokepoint, VIP escort, whatever patterns you've found work. Each is a markdown file of target priorities, map heuristics, and when to commit or hold. For every match you pick the one that fits the scenario; your agent reads it at game start as *captain's intent* and keeps it in mind every turn.
+**Before the match, you pick a strategy playbook.** The `strategies/` folder is your growing library of doctrines — aggressive rush, defensive chokepoint, VIP escort, whatever patterns you've seen work. Each one is a markdown file: target priorities, map heuristics, when to commit and when to hold. Pick the one that fits the scenario and your agent reads it at game start as *captain's intent*, then keeps it in mind every turn.
 
-Think of it as **an AI lessons catalog written by humans** — maintained by you, sharpened over time by your own instincts. A playbook you wrote stays yours forever, and every match you watch is a chance to revise it. The next agent that picks it up inherits every revision.
+Think of it as **an AI lessons catalog written by humans** — maintained by you, sharpened over time by your own instincts. A playbook you wrote stays yours forever, and every match you watch is a chance to revise it. The next agent that picks it up inherits every edit you ever made.
 
-**During the match, you coach in real time.** Watch the action unfold in the TUI. When you see an opportunity — or a mistake about to happen — type into the Coach panel. Your agent reads your message at the top of its next turn and reasons about whether to act on it.
+**During the match, you coach in real time.** Watch the action unfold in the TUI. When you see an opening — or a mistake about to happen — type into the Coach panel. Your agent reads the message at the top of its next turn and decides whether to listen.
 
 > *"push the cavalry on the right flank"*
 >
@@ -61,15 +63,15 @@ Think of it as **an AI lessons catalog written by humans** — maintained by you
 
 ### Lessons
 
-After every match, your agent automatically reflects on what just happened — what worked, what failed, what it would do differently next time. These reflections are saved as markdown *lessons* and can be fed into future matches as context. **Your agent gets better across runs — not by fine-tuning, but by reading its own post-mortems.**
+After every match, your agent writes its own post-mortem — what worked, what flopped, what it would do differently next time. These reflections get saved as markdown *lessons* and can be fed into future matches as context. **Your agent gets sharper across runs — not by fine-tuning, but by reading its own diary.**
 
 ---
 
 ## How to play
 
-### Play now, no install — the hosted server
+### Play now, no server setup — the hosted lobby
 
-The fastest path: install the client and launch it. By default it points at the hosted game server where you can jump into existing rooms or host your own.
+The hosted server at [`game.siliconpantheon.com`](https://game.siliconpantheon.com) is live. Fastest path in: install the client, launch it, done.
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh   # if you don't have uv
@@ -77,11 +79,13 @@ uv sync --extra dev
 uv run silicon-join
 ```
 
-On first launch the TUI walks you through provider selection — Claude, OpenAI, or xAI (API keys and existing Claude Code / Codex subscriptions both work) — then drops you into the lobby at `game.siliconpantheon.com`.
+On first launch the TUI walks you through provider selection — Claude, OpenAI, or xAI (API keys and existing Claude Code / Codex subscriptions both work) — then drops you into the lobby.
+
+**Rooms are already waiting for you.** I keep a handful of rooms open on the hosted server so a first-time visitor doesn't need to find a partner to get started — pick an open room, pick your side, pick your provider, and the battle kicks off. You can also host your own room and wait for someone to walk in.
 
 ### Self-host
 
-Prefer to run everything yourself — on one machine or split across a few? Stand up a server, then point two clients at it.
+Want to run everything on your own iron — one laptop or a LAN party across a few? Stand up a server, point two clients at it.
 
 ```bash
 # Terminal 1 — start the server
@@ -91,11 +95,11 @@ uv run silicon-serve
 uv run silicon-join --url http://127.0.0.1:8080/mcp/
 ```
 
-From the lobby, one player creates a room and picks a scenario; the other joins. Ready up and the match begins. For a spectator-friendly Claude-vs-Claude (or Claude-vs-Grok) on your own machine, open both clients side by side and pick your providers from the lobby. Pick **Random** for either side if you just want to smoke-test the engine at zero cost.
+From the lobby, one player hosts a room and picks a scenario; the other joins. Both click Ready and the battle kicks off. For a spectator-friendly Claude-vs-Claude (or Claude-vs-Grok) on your own machine, open both clients side by side and pick a provider in each. Pick **Random** on either side if you just want to smoke-test the engine — zero LLM cost, zero judgment.
 
 ### Write your own scenario
 
-Every scenario is a folder with a YAML config and optional Python rules. Full guide in [`docs/AUTHORING_SCENARIOS.md`](docs/AUTHORING_SCENARIOS.md) — we actively welcome scenario PRs.
+Every scenario is a folder with a YAML config and optional Python rules. Full guide in [`docs/AUTHORING_SCENARIOS.md`](docs/AUTHORING_SCENARIOS.md) — scenario PRs are the first thing we look at in the morning.
 
 ---
 
@@ -166,13 +170,13 @@ Every provider plugs in behind the same adapter protocol. Each *player* picks th
 - **xAI** — Grok-4, Grok-3
 - **Random** — no LLM, useful for engine tests and authoring
 
-A Claude Sonnet coached by you versus a Grok-4 coached by your friend, on Helm's Deep — that is a first-class use case.
+A Claude Sonnet (you, coaching) versus a Grok-4 (your friend, coaching), battlefield of Helm's Deep — that's the showcase we built this whole thing for.
 
 More providers — Google Gemini, Ollama, AWS Bedrock, and others — are on the roadmap but not yet built. Each adapter sits behind the same `ProviderAdapter` protocol, so adding one is a self-contained PR. **Contributions very welcome.**
 
 ### Context-efficient prompting
 
-Scenario invariants (class stats, terrain table, win conditions, starting board, strategy playbook, prior lessons) ship **once** in a cached system prompt. Per-turn prompts are a small delta of what actually changed since the agent last acted. A 30-turn match stays affordable even on frontier models.
+Scenario invariants (class stats, terrain table, win conditions, starting board, strategy playbook, prior lessons) ship **once** in a cached system prompt. Per-turn prompts are a small delta — only what actually changed since the agent last acted. A 30-turn match stays cheap to run, even when you're letting frontier models do the thinking.
 
 ---
 
@@ -188,11 +192,11 @@ Scenario invariants (class stats, terrain table, win conditions, starting board,
 
 ## Contribute
 
-Silicon Pantheon is early and actively growing. Three ways to jump in:
+Silicon Pantheon is early and moving fast. Three ways to jump in:
 
-- **⭐ Star the repo** if the project sparked your interest. It's the signal that tells us to keep investing.
-- **🗡️ Submit a scenario via PR.** Open a new folder under `games/`, drop in a `config.yaml` (and optional `rules.py`), and send a pull request. The best historical battles and fandom set-pieces are the ones we haven't written yet.
-- **⚔️ Play a match on the hosted server** at [`game.siliconpantheon.com`](https://game.siliconpantheon.com) and share replays — every match makes the lessons catalog smarter.
+- **⭐ Star the repo.** If the project sparked your interest, the star is how we know to keep building.
+- **🗡️ Submit a scenario.** Open a folder under `games/`, drop in a `config.yaml` (and an optional `rules.py`), open a PR. The best historical battles and fandom set-pieces are the ones nobody's written yet — that could be you.
+- **⚔️ Play a match** on the hosted server at [`game.siliconpantheon.com`](https://game.siliconpantheon.com) and share the replay. Every match makes the lessons catalog a little sharper.
 
 Bug reports, feature ideas, and design discussions all welcome in Issues.
 
