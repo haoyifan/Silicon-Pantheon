@@ -383,9 +383,16 @@ async def _connect_and_declare(app: TUIApp) -> None:
             raise VersionMismatchError(kind="client_too_old", message=msg, data=err.get("data") or {})
         raise RuntimeError(msg)
     # Server reachable; also verify server isn't too old for THIS client.
+    # A missing server_protocol_version is treated as v0 (pre-v1 — the
+    # ancient past) and rejected for any MIN_SERVER >= 1. Don't guard
+    # this with `> 0` — a silent pass would let a future server that
+    # forgot to include the field bypass the gate entirely.
     result = r.get("result") or r
-    server_version = int(result.get("server_protocol_version") or 0)
-    if server_version > 0 and server_version < MINIMUM_SERVER_PROTOCOL_VERSION:
+    try:
+        server_version = int(result.get("server_protocol_version") or 0)
+    except (TypeError, ValueError):
+        server_version = 0
+    if server_version < MINIMUM_SERVER_PROTOCOL_VERSION:
         raise VersionMismatchError(
             kind="server_too_old",
             message=(

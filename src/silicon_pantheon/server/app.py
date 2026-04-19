@@ -238,7 +238,15 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
         except ValueError as e:
             return _error(ErrorCode.BAD_INPUT, str(e))
         conn.player = meta
-        conn.client_protocol_version = effective_version
+        # Only update the recorded version when the caller actually
+        # supplied one. An explicit re-call that omits the arg (e.g.
+        # a future compat shim or a re-auth path) falls to the v1
+        # baseline for the MIN check above, but mustn't REGRESS the
+        # version stamp on the connection — a handler branching on
+        # `conn.client_protocol_version >= 2` would then emit the
+        # old-shape response to a client that's actually on v2.
+        if client_protocol_version is not None:
+            conn.client_protocol_version = effective_version
         if conn.state == ConnectionState.ANONYMOUS:
             conn.state = ConnectionState.IN_LOBBY
         conn.last_heartbeat_at = time.time()

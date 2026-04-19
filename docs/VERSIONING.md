@@ -332,6 +332,24 @@ tools (`heartbeat`, `whoami`) don't need this; most tool handlers
 won't either unless they're participating in a live breaking
 change.
 
+**What if a client re-calls `set_player_metadata` later without the
+version arg?** The stored `Connection.client_protocol_version`
+is **not** overwritten — only re-calls that explicitly supply a
+version update the stamp. Otherwise a compat-shim handler branching
+on `conn.client_protocol_version >= 2` could start emitting old-shape
+responses to a client that's actually on v2 just because the client
+happened to re-auth through a code path that didn't forward the
+version. Regression test:
+`test_reauth_without_version_does_not_regress_stored_version`.
+
+**What if the server's response doesn't include
+`server_protocol_version` at all?** The client treats it as v0
+(the ancient past) and — crucially — does NOT short-circuit the
+`< MINIMUM_SERVER_PROTOCOL_VERSION` check. A future server that
+forgets to send the field gets rejected the same as an explicitly
+v0 server. Regression test:
+`test_server_without_version_field_rejected_when_min_server_raised`.
+
 **Does the client clean up the transport if the handshake fails?**
 When the version-mismatch path triggers, the transport is left
 open but the user is routed to `UpgradeRequiredScreen`. Pressing

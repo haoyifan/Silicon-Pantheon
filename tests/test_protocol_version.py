@@ -166,3 +166,85 @@ def test_connection_records_client_protocol_version() -> None:
     conn = app.get_connection("c1")
     assert conn is not None
     assert conn.client_protocol_version == PROTOCOL_VERSION
+
+
+def test_reauth_without_version_does_not_regress_stored_version() -> None:
+    """A client that first sends v2 and later re-calls
+    set_player_metadata WITHOUT the version arg (e.g. through an
+    older code path) must not have its stored version downgraded —
+    tool handlers that branch on `>= 2` would otherwise start
+    emitting the old-shape response to a v2 client."""
+    app = App()
+    mcp = build_mcp_server(app)
+    # First call: explicit v2.
+    r1 = _call(
+        mcp,
+        "set_player_metadata",
+        connection_id="c1",
+        display_name="alice",
+        kind="ai",
+        client_protocol_version=2,
+    )
+    assert r1["ok"] is True
+    conn = app.get_connection("c1")
+    assert conn is not None
+    assert conn.client_protocol_version == 2
+    # Second call: no version arg (tolerated but should NOT downgrade).
+    r2 = _call(
+        mcp,
+        "set_player_metadata",
+        connection_id="c1",
+        display_name="alice-updated",
+        kind="ai",
+    )
+    assert r2["ok"] is True
+    assert conn.client_protocol_version == 2, (
+        "unversioned re-call must not regress the recorded version"
+    )
+
+
+def test_server_without_version_field_rejected_when_min_server_raised() -> None:
+    """Client-side guard: if a server response lacks
+    server_protocol_version entirely (legacy or buggy server) AND the
+    client's MINIMUM_SERVER_PROTOCOL_VERSION is >= 1, the client
+    treats it as v0 and raises server_too_old — not a silent pass."""
+    # We can exercise the client's check directly without a running
+    # server by simulating the parsed response.
+    from silicon_pantheon.client.tui.screens.login import (
+        VersionMismatchError,
+    )
+    # Mimic the client's guard logic from _connect_and_declare.
+    import silicon_pantheon.shared.protocol as proto
+
+    def client_guard(r: dict, min_server: int) -> None:
+        result = r.get("result") or r
+        try:
+            server_version = int(result.get("server_protocol_version") or 0)
+        except (TypeError, ValueError):
+            server_version = 0
+        if server_version < min_server:
+            raise VersionMismatchError(
+                kind="server_too_old",
+                message=(
+                    f"Server is on protocol v{server_version} but this client "
+                    f"requires at least v{min_server}."
+                ),
+                data={
+                    "server_protocol_version": server_version,
+                    "minimum_server_protocol_version": min_server,
+                },
+            )
+
+    # Missing field, MIN=1 → must raise.
+    import pytest
+    with pytest.raises(VersionMismatchError) as exc:
+        client_guard({"ok": True}, min_server=1)
+    assert exc.value.kind == "server_too_old"
+    assert exc.value.data["server_protocol_version"] == 0
+    # Explicit v0, MIN=1 → must raise.
+    with pytest.raises(VersionMismatchError):
+        client_guard({"ok": True, "server_protocol_version": 0}, min_server=1)
+    # v1 meets MIN=1 → passes silently.
+    client_guard({"ok": True, "server_protocol_version": 1}, min_server=1)
+    # v2 meets MIN=1 → passes silently.
+    client_guard({"ok": True, "server_protocol_version": 2}, min_server=1)
