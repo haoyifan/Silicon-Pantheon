@@ -26,11 +26,29 @@ class LobbyScreen(Screen):
     def __init__(self, app: TUIApp):
         self.app = app
         self._selected = 0
-        self._ranking_selected = 0
-        self._active_view = "rooms"  # "rooms" | "ranking"
         self._last_poll = 0.0
         self._tutorial = None  # TutorialOverlay | None
         self._confirm = None  # ConfirmModal | None
+
+    # View state is stored on SharedState so model-details round-trips
+    # preserve which panel the user was focused on + which row was
+    # selected. Bare attribute access would re-init per LobbyScreen
+    # construction, wiping the selection.
+    @property
+    def _active_view(self) -> str:
+        return self.app.state.lobby_active_view
+
+    @_active_view.setter
+    def _active_view(self, value: str) -> None:
+        self.app.state.lobby_active_view = value
+
+    @property
+    def _ranking_selected(self) -> int:
+        return self.app.state.lobby_ranking_selected
+
+    @_ranking_selected.setter
+    def _ranking_selected(self, value: int) -> None:
+        self.app.state.lobby_ranking_selected = value
 
     async def on_enter(self, app: TUIApp) -> None:
         # Immediate refresh on entry so the table is populated before the
