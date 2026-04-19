@@ -705,6 +705,8 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
     @mcp.tool()
     def join_room(connection_id: str, room_id: str) -> dict:
         """Take the open seat in an existing room."""
+        if not room_id or len(room_id) > 128:
+            return _error(ErrorCode.BAD_INPUT, "invalid room_id")
         conn = app.get_connection(connection_id)
         if conn is None or conn.state != ConnectionState.IN_LOBBY:
             return _error(

@@ -113,9 +113,9 @@ def _games_root() -> Path:
 
 def _is_safe_scenario_name(name: str) -> bool:
     """Names must be a single path component — no slashes, no dot-only,
-    no leading dot. Prevents path traversal when name comes from a
-    network request (e.g. describe_scenario)."""
-    if not name or name in (".", ".."):
+    no leading dot, max 128 chars. Prevents path traversal when name
+    comes from a network request (e.g. describe_scenario)."""
+    if not name or len(name) > 128 or name in (".", ".."):
         return False
     if "/" in name or "\\" in name:
         return False
