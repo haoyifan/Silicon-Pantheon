@@ -51,6 +51,9 @@ board:
     - {x: 7, y: 7, type: water}
     - {x: 8, y: 7, type: water}
     - {x: 9, y: 7, type: water}
+    # Water west of the bridge (x=0–1 at bridge rows)
+    - {x: 0, y: 5, type: water}
+    - {x: 0, y: 6, type: water}
     # Tower of Justice (east side)
     - {x: 10, y: 3, type: tower_wall}
     - {x: 10, y: 4, type: tower_wall}
@@ -366,8 +369,8 @@ armies:
     - {class: luffy, pos: {x: 1, y: 5}}
     - {class: zoro, pos: {x: 2, y: 6}}
     - {class: sanji, pos: {x: 1, y: 6}}
-    - {class: nami, pos: {x: 0, y: 5}}
-    - {class: usopp, pos: {x: 0, y: 6}}
+    - {class: nami, pos: {x: 3, y: 5}}
+    - {class: usopp, pos: {x: 4, y: 6}}
     - {class: robin, pos: {x: 0, y: 2}}
     - {class: franky, pos: {x: 0, y: 9}}
 

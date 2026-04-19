@@ -54,9 +54,8 @@ board:
     - {x: 11, y: 2, type: city_wall}
     - {x: 10, y: 3, type: city_wall}
     - {x: 11, y: 3, type: city_wall}
-    - {x: 10, y: 4, type: city_wall}
     - {x: 11, y: 4, type: city_wall}
-    # (10, 5) is the Mud Gate — passable
+    # (10, 4) and (10, 5) form the Mud Gate — passable, 2 tiles wide
     - {x: 11, y: 5, type: city_wall}
     - {x: 10, y: 6, type: city_wall}
     - {x: 11, y: 6, type: city_wall}
@@ -370,7 +369,7 @@ armies:
     # Davos — beside Stannis
     - {class: davos, pos: {x: 5, y: 5}}
     # Salladhor Saan — ranged support from the flank
-    - {class: salladhor_saan, pos: {x: 2, y: 8}}
+    - {class: salladhor_saan, pos: {x: 3, y: 8}}
     # Melisandre — magical fire from the rear
     - {class: melisandre, pos: {x: 2, y: 2}}
     # Three named knights — beach assault wave
@@ -404,6 +403,7 @@ win_conditions:
   # Tyrion dies -> red loses
   - {type: protect_unit, unit_id: u_r_tyrion_1, owning_team: red}
   # Blue reaches the Mud Gate -> blue wins (city falls)
+  - {type: reach_tile, team: blue, pos: {x: 10, y: 4}}
   - {type: reach_tile, team: blue, pos: {x: 10, y: 5}}
   # Tyrion survives the turn cap -> Tywin arrives in force, red wins
   - {type: protect_unit_survives, unit_id: u_r_tyrion_1, owning_team: red}

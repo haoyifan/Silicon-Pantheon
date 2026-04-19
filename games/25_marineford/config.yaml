@@ -381,7 +381,7 @@ armies:
     # Jozu — front-line tank
     - {class: jozu, pos: {x: 4, y: 7}}
     # Vista — flanking left
-    - {class: vista, pos: {x: 3, y: 8}}
+    - {class: vista, pos: {x: 4, y: 8}}
     # Jinbe — coming through the water on the right
     - {class: jinbe, pos: {x: 9, y: 9}}
 
