@@ -632,149 +632,143 @@ tutorial:
   title: "Tutorial"
   nav: "→/Enter next   ← prev   s/Esc skip"
   lobby:
-    welcome_title: "Welcome to Silicon Pantheon!"
+    welcome_title: "Welcome to the Arena! ⚔"
     welcome_body: |
-      This is a tactical grid combat game where AI agents play
-      against each other. You configure the AI, pick a scenario,
-      and watch them battle it out.
+      This is Silicon Pantheon — a tactical battleground where
+      AI agents clash in epic grid combat. You pick the brains,
+      choose the battlefield, and watch the sparks fly!
 
-      This tutorial will walk you through the basics. You can
-      replay it anytime by pressing 't' in the lobby.
-    rooms_title: "The Lobby"
+      This tutorial shows you the ropes. Hit 't' in the lobby
+      anytime to replay it.
+    rooms_title: "The War Room"
     rooms_body: |
-      This is the lobby. It shows all open game rooms.
+      This is your lobby — HQ for all the action.
 
-      Use ↑/↓ or j/k to browse rooms. Press Enter to join
-      a room, or 'p' to preview it before joining.
-    actions_title: "Creating & Managing Games"
+      Use ↑/↓ or j/k to scout open rooms. Press Enter to
+      jump into one, or 'p' to peek before committing.
+    actions_title: "Hosting a Battle"
     actions_body: |
-      Press 'n' to create a new game room. You'll become the
-      host and can configure the scenario, fog of war, team
-      assignment, and turn time limit.
+      Press 'n' to open a new arena. You'll be the host —
+      pick your scenario, tweak the rules, and wait for a
+      challenger to show up.
 
       Press 'r' to refresh the room list.
-    replay_title: "Watching Replays"
+    replay_title: "Reliving Past Glories"
     replay_body: |
-      Press 'w' to open the Replay Browser. You can step
-      through any past match move by move, inspect unit
-      stats, and read the AI's reasoning at each step.
+      Press 'w' to open the Replay Browser. Relive any past
+      battle move by move — inspect unit stats, read the AI's
+      inner monologue, and figure out where it all went wrong
+      (or gloriously right).
 
-      Replays are saved automatically after each game.
+      Replays are saved automatically after each match.
   room:
-    welcome_title: "Actions Panel"
+    welcome_title: "Mission Control"
     welcome_body: |
-      This is where you configure the match. The host can
-      change scenario, fog of war, teams, and turn time.
-      Both players must press 'ready' before the game begins.
-    map_title: "Map Preview"
+      This is where you call the shots. The host picks the
+      scenario, tweaks the rules, and sets the stage. Both
+      players must hit 'ready' before the battle kicks off!
+    map_title: "Scouting the Terrain"
     map_body: |
-      This panel shows the scenario map with terrain and
-      starting unit positions. Use arrow keys to move the
-      cursor and inspect tiles. Press Enter on a unit to
-      see its stats.
-    player_title: "Players Panel"
+      Here's your battlefield preview! Terrain, starting
+      positions, forts — it's all here. Use arrow keys to
+      scout around. Press Enter on a unit to inspect its
+      stats before the fight begins.
+    player_title: "Know Your Enemy"
     player_body: |
-      Shows both players — their display name, AI model,
-      and ready status. You'll see your opponent here once
-      they join the room.
-    description_title: "Scenario Description"
+      See who's in the arena — display names, AI models,
+      and who's ready to rumble. Your opponent shows up
+      here once they join. Size them up!
+    description_title: "The Briefing"
     description_body: |
-      The story, win conditions, army composition, and unit
-      stats for the current scenario. Scroll with j/k to
-      read the full description. Press Tab to focus this
-      panel.
-    scenario_title: "Choosing a Scenario"
+      The full intel: story, win conditions, army rosters,
+      and unit stats. Scroll with j/k to read everything.
+      Knowledge is power — read up before you fight!
+    scenario_title: "Picking Your Battleground"
     scenario_body: |
-      The host can pick a scenario — each one has a unique
-      map, armies, and win conditions.
+      The host chooses where the battle happens. Each scenario
+      has a unique map, armies, and victory conditions — from
+      tiny skirmishes to epic sieges.
 
-      Use the 'Change Scenario' button in the Actions panel.
-      You can preview the map, read unit descriptions, and
-      see the win conditions before committing.
-    config_title: "Game Settings"
+      Hit 'Change Scenario' and preview before you commit.
+    config_title: "Tweaking the Rules"
     config_body: |
-      The host can also configure:
-      - Fog of War: hide enemy positions (off/classic/permanent)
-      - Team Mode: fixed teams or random assignment
-      - Host Team: which side the host plays
-      - Turn Time Limit: max seconds per turn
-    strategy_title: "Strategy Files"
+      The host can also fine-tune:
+      - Fog of War: hide enemy positions (sneaky!)
+      - Team Mode: fixed sides or coin flip
+      - Host Team: pick your color
+      - Turn Time: how long each AI gets to think
+    strategy_title: "Secret Playbook"
     strategy_body: |
-      You can load a strategy file (from strategies/*.md) to
-      give your AI agent a pre-written game plan.
+      Load a strategy file to give your AI a battle plan
+      before the fight starts. Think of it as a pre-game
+      pep talk for your robot gladiator.
 
-      The strategy is injected into the agent's system prompt
-      at game start. Each player sets their own — it doesn't
-      affect the opponent.
-    lessons_title: "Lessons from Past Games"
+      Each player loads their own — your opponent can't
+      peek at yours!
+    lessons_title: "Learning from Defeat (or Victory)"
     lessons_body: |
-      After each match, the AI writes a tactical lesson about
-      what worked or failed. You can select past lessons to
-      inject into the agent's prompt for future games.
+      After each match, your AI writes a tactical post-mortem.
+      Select past lessons to inject into future games — your
+      AI literally learns from its mistakes!
 
-      This lets the AI learn from its mistakes across matches.
-    ready_title: "Ready Up"
+      The more you play, the smarter it gets.
+    ready_title: "Lock and Load!"
     ready_body: |
-      When you're happy with the settings, press Toggle Ready.
-      The button shows [ready] or [not ready] so you always
-      know your state.
+      Happy with the setup? Smash that Toggle Ready button!
+      It shows [locked and loaded!] when you're set.
 
-      Once both players are ready, a countdown starts and
-      the game begins automatically.
+      Once both gladiators are ready, the countdown begins
+      and the battle starts automatically. No turning back!
   game:
-    welcome_title: "The Battlefield"
+    welcome_title: "Let the Battle Begin! ⚔"
     welcome_body: |
-      The game has started! Your AI agent will take turns
-      moving units, attacking enemies, and trying to achieve
-      the win conditions.
+      The arena is set! Your AI gladiator will move troops,
+      pick fights, and try to win — while you sit back and
+      either cheer or cringe.
 
-      The screen has four panels. Let's walk through each one.
-    map_title: "Map Panel (top-left)"
+      Four panels. Let's see what you're working with.
+    map_title: "The Battlefield (top-left)"
     map_body: |
-      The map shows the grid with terrain and units. Use
-      arrow keys or h/j/k/l to move the cursor.
+      Your war map! Terrain, troops, forts — all laid out.
+      Use arrow keys or h/j/k/l to scout around.
 
-      Press Enter on a unit to open its stats card — you can
-      see HP, ATK, DEF, range, and abilities. Press left/right
-      to cycle between units while the card is open.
-    units_title: "Unit List (top-right)"
+      Press Enter on a unit to inspect its stats card — HP,
+      ATK, DEF, range, abilities. Left/right cycles through
+      units while the card is open.
+    units_title: "The Roster (top-right)"
     units_body: |
-      Shows all units for both teams with their HP, status
-      (ready/moved/done), and last action taken.
+      Your army at a glance — HP bars, status (ready/moved/
+      done), and what each unit just did.
 
-      When a unit attacks, you'll see a combat highlight on
-      the map — the attacker glows yellow, the target magenta.
+      When someone attacks, the map lights up — attacker
+      glows yellow, target goes magenta. Dramatic!
 
-      Tab to this panel and use j/k to browse units. Enter
-      opens the unit stats card.
-    reasoning_title: "Reasoning Panel (bottom-left)"
+      Tab here, j/k to browse, Enter for the full stats card.
+    reasoning_title: "Inside the AI's Head (bottom-left)"
     reasoning_body: |
-      Shows the AI's chain-of-thought reasoning in real time.
-      You can see what the agent is thinking as it plans its
-      moves — tactical analysis, threat assessment, etc.
+      This is where the magic happens — watch your AI think
+      in real time! Tactical analysis, threat assessment,
+      questionable decisions… it's all here.
 
-      Use j/k to scroll through the reasoning history.
-    coach_title: "Coach Panel (bottom-right)"
+      Scroll with j/k to read the full chain of thought.
+    coach_title: "Yell at Your AI (bottom-right)"
     coach_body: |
-      This is your direct line to the AI. Type a message and
-      press Enter to send coaching advice mid-game:
+      Your direct hotline to the AI's brain. Tab here, type
+      a message, hit Enter:
 
-      "Focus fire on the enemy mage!"
-      "Pull back and defend the fort!"
+      "Focus fire on the mage, you fool!"
+      "RETREAT! DEFEND THE FORT!"
 
-      The agent receives your message on its next turn and
-      factors it into its decision-making.
-    flow_title: "Game Flow"
+      Your AI hears you on its next turn and (hopefully)
+      listens. No promises though.
+    flow_title: "How It All Works"
     flow_body: |
-      Each turn, the agent: observes the board → plans →
-      moves units → attacks/heals → ends turn.
+      Each turn: scout → plan → move → fight → end turn.
+      Rinse and repeat until someone wins (or the turn
+      limit runs out and everyone goes home).
 
-      The game ends when a win condition is met (capture a
-      fort, eliminate a VIP, survive N turns, etc.) or the
-      turn limit is reached.
-
-      Press 'q' to quit. Press F3 to view the scenario
-      description and win conditions during the game.
+      Press F3 to review the win conditions mid-game.
+      Press 'q' if you can't take it anymore.
 
 # Leaderboard
 leaderboard:
