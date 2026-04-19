@@ -2,10 +2,9 @@
 name: 锡安码头之战 — 黑客帝国
 description: |
   锡安，人类最后的城市。机器大军突破了码头顶部，成千上万的
-  哨兵蜂拥而入。机甲驾驶员操纵外骨骼沿防线排列，向蜂群
-  倾泻弹药。美富根船长指挥防御，而奈奥比穿越混战赶往电力
-  终端以恢复城市的EMP防御网。两台巨型钻掘机向锡安核心
-  推进——哪怕只有一台到达，城市就将陷落。
+  哨兵蜂拥而入。美富根船长指挥机甲防线，奈奥比作为VIP必须
+  存活下来为尼奥传递信号。尼奥正在机器城市为锡安争取时间——
+  只要坚持十回合，战争就会结束。
 
 unit_classes:
   mifune:
@@ -134,6 +133,21 @@ terrain_types:
     description: |
       码头天花板被哨兵撞碎的地方。碎石从头顶落下，
       机器从上方涌入——靠近此处的单位面临额外危险。
+  cavern_wall:
+    display_name: 岩壁
+    description: |
+      码头洞穴的坚固岩壁。天然石壁无法通行，将通道
+      引导至开阔的大厅。
+  loading_crane:
+    display_name: 装卸吊车
+    description: |
+      用于装载气垫船的巨型工业吊车。钢铁骨架提供坚实
+      掩护但通行不便。
+  ammo_platform:
+    display_name: 弹药平台
+    description: |
+      堆满弹药箱的补给平台。良好的掩护，持续为机甲
+      提供火力。
   defense_platform:
     display_name: 防御平台
     description: |
@@ -163,7 +177,7 @@ narrative:
     扭动——哨兵到了。机甲驾驶员启动外骨骼，开火射击。
   events:
     - trigger: on_turn_start
-      turn: 5
+      turn: 3
       text: |
         外围机甲的弹药带耗尽。哨兵源源不断涌来，如同无尽的
         金属潮水从头顶的缺口倾泻而下。

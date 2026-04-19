@@ -90,6 +90,11 @@ terrain_types:
     description: |
       沙虫出没的区域。行军脚步的节律振动会引来沙胡鲁德。
       穿越此处比岩石地快，但极度危险。
+  shield_wall:
+    display_name: 屏蔽墙
+    description: |
+      保护阿拉基恩免受深沙漠侵袭的巨型天然岩石屏障。
+      除了被原子弹炸开的缺口外，无法通行。
   palace:
     display_name: 阿拉基恩宫殿
     description: |

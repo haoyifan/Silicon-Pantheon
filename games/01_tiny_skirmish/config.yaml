@@ -1,5 +1,6 @@
+schema_version: 1
 license: original
-name: Tiny Skirmish
+name: "Tiny Skirmish — Original"
 difficulty: 1
 description: |
   6x6 map, 2 units per side (knight + archer). Smallest viable game;

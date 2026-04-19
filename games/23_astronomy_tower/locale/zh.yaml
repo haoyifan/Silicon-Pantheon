@@ -139,20 +139,22 @@ narrative:
     德拉科的魔杖手在颤抖。
   events:
     - trigger: on_turn_start
-      turn: 4
+      turn: 3
+      text: |
+        靴声在下层走廊回荡。食死徒散开——有的向西
+        穿过教室，有的向东前往图书馆。芬里尔嗅着空气，
+        找到了密道。
+    - trigger: on_turn_start
+      turn: 6
       text: |
         芬里尔·格雷伯克在走廊中嗥叫。碎石声回荡着，
         咒语在城堡墙上轰出窟窿。贝拉特里克斯的狂笑回荡。
     - trigger: on_turn_start
-      turn: 8
+      turn: 12
       text: |
         战斗愈发绝望。卢娜的守护神在浓烟中闪耀银光。
-        纳威浴血但拒绝倒下。塔楼阶梯被咒语的火光浸湿。
-    - trigger: on_turn_start
-      turn: 10
-      text: |
-        战斗愈发绝望。凤凰社成员向塔楼阶梯撤退，
-        为争取时间而战。
+        纳威浴血但拒绝倒下。移动楼梯呻吟变换，
+        减缓了对塔楼的攻势。
     - trigger: on_unit_killed
       unit_id: u_b_dumbledore_1
       text: |

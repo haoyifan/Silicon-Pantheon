@@ -129,8 +129,8 @@ narrative:
     - trigger: on_turn_start
       turn: 8
       text: |
-        月亮变红了。灵泉绿洲出了什么问题。安昂感受到
-        灵界的召唤——海洋之灵在池中躁动。
+        月亮变红了。灵泉绿洲出了什么问题——赵快到了。
+        艾洛警告："你对那个灵做什么，我都会十倍报复于你。"
     - trigger: on_turn_start
       turn: 12
       text: |

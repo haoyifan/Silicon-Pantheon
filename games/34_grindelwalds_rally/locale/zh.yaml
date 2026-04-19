@@ -67,11 +67,6 @@ unit_classes:
       狂热但训练不足。
 
 terrain_types:
-  amphitheatre_seat:
-    display_name: 剧场座位
-    description: |
-      地下圆形剧场的石质阶梯座位。提供少许掩护
-      但阶梯减缓移动。
   tier:
     display_name: 剧场阶梯
     description: |
@@ -98,11 +93,6 @@ terrain_types:
       格林德沃召唤的诅咒蓝白火焰之墙。
       忠于他的人可安然通过；其他人将被焚烧。
       穿越代价极高。
-  magical_barrier:
-    display_name: 魔法屏障
-    description: |
-      闪烁的保护结界之墙。不可逾越的蓝白火焰
-      屏障引导战斗走向。
 
 narrative:
   title: 格林德沃的集会

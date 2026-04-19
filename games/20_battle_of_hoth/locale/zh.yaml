@@ -165,12 +165,12 @@ narrative:
         "到能量发生器的距离？""一七，点二八。"
         AT-AT发射第一轮齐射。一座炮台爆炸。
     - trigger: on_turn_start
-      turn: 7
+      turn: 6
       text: |
         游侠二号用牵引缆缠住了AT-AT的腿。步行机
         像被砍倒的树一样轰然倒塌，砸入雪中。
     - trigger: on_turn_start
-      turn: 12
+      turn: 10
       text: |
         "开始撤退！"最后的运输船正在装载。离子炮开火，
         在头顶的歼星舰中清出一条通道。再多一点时间。

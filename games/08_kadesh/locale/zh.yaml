@@ -15,31 +15,11 @@ unit_classes:
     description: |
       埃及法老，第十九王朝第三代。卡迭石之战时年仅二十五岁，
       亲自收拢溃兵反击。此后在位六十六年，成为"拉美西斯大帝"。
-  egyptian_chariot:
-    display_name: 埃及战车
-    description: |
-      双人轻型战车——车夫和一名复合弓手。比赫梯战车
-      更快更灵活，但装甲更轻。不能进入森林或山地。
-  egyptian_infantry:
-    display_name: 埃及步兵
-    description: |
-      舍尔登雇佣兵和埃及征召兵。青铜斧，牛皮盾。
-      可靠的战线士兵。
-  egyptian_archer:
-    display_name: 埃及弓箭手
-    description: |
-      战车屏障后的复合弓手。射程超过赫梯枪兵，
-      但近战就完了。
   muwatalli:
     display_name: 穆瓦塔利二世
     description: |
       赫梯之王。将预备队留在东岸，让附庸战车发动伏击。
       耐心、精于算计。
-  hittite_chariot:
-    display_name: 赫梯战车
-    description: |
-      三人重型战车——车夫、持盾者、枪兵。比埃及战车
-      更慢更容易陷坑，但近战冲锋毁灭性极强。不能进入森林。
   amenmesse:
     display_name: 阿蒙摩斯将军
     description: |
@@ -95,10 +75,6 @@ unit_classes:
     description: |
       快速的叙利亚附庸步兵。轻装侧翼骚扰手，
       擅长高速游击。
-  hittite_spearman:
-    display_name: 赫梯枪兵
-    description: |
-      安纳托利亚步兵。青铜矛，皮甲。占领战车夺取的阵地。
 
 terrain_types:
   river:

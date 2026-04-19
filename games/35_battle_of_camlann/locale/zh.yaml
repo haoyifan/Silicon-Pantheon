@@ -43,11 +43,6 @@ unit_classes:
     description: |
       在城堡城垛上训练的长弓手。箭矢以致命精准度飞越
       战场，但近战中十分脆弱。
-  round_table_knight:
-    display_name: 圆桌骑士
-    description: |
-      卡美洛的效忠骑士。每一位都已证明配坐
-      圆桌——勇敢、技艺精湛、忠贞不渝。
   mordred:
     display_name: 莫德雷德
     description: |
@@ -70,11 +65,6 @@ unit_classes:
     description: |
       来自海外的异教战士，为掠夺而与莫德雷德结盟。
       先投掷标枪，再以战斧近身收割，远近皆可骚扰敌军。
-  saxon_warrior:
-    display_name: 撒克逊战士
-    description: |
-      来自海外的异教战士，为掠夺而与莫德雷德结盟。
-      凶猛的斧手，几乎不畏死亡。
   dark_knight:
     display_name: 黑暗骑士
     description: |

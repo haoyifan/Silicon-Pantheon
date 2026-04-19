@@ -25,16 +25,6 @@ unit_classes:
     description: |
       绝境长城以南最后一个巨人。比战场上所有人都高出一截，
       挥舞着一根树干。几乎不可杀死——但行动缓慢。
-  free_folk:
-    display_name: 自由民战士
-    description: |
-      野人战士——凶猛、快速、轻甲。他们在纪律上的不足
-      用凶猛来弥补。
-  stark_infantry:
-    display_name: 史塔克步兵
-    description: |
-      忠于史塔克家族的北境旗手。比自由民装甲更好，
-      训练有盾墙战术素养。
   sansa:
     display_name: 珊莎·史塔克
     description: |
@@ -57,21 +47,6 @@ unit_classes:
     description: |
       红袍女巫。光之王拉赫洛的女祭司，将琼恩·雪诺从死亡中
       唤醒。她的火焰魔法既能治愈盟友也能灼伤敌人。
-  bolton_cavalry:
-    display_name: 波顿骑兵
-    description: |
-      打着剥皮人旗帜的骑枪手。快速侧翼部队，
-      包围史塔克军并封闭陷阱。
-  bolton_pikeman:
-    display_name: 波顿长矛兵
-    description: |
-      手持长矛和联锁盾牌的重步兵。他们组成碾压琼恩部下的
-      盾墙。缓慢但极难突破。
-  bolton_archer:
-    display_name: 波顿弓箭手
-    description: |
-      拉姆塞的弓箭手，不分敌我地向混战中射箭——因为
-      拉姆塞不在乎己方伤亡。
   smalljon_umber:
     display_name: 小琼恩·安柏
     description: |

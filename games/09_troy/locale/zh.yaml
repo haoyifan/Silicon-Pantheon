@@ -1,11 +1,13 @@
 # 特洛伊之战 — 中文本地化
 name: 特洛伊之战 — 青铜时代，特洛伊战争
 description: |
-  围城第九年。阿喀琉斯因阿伽门农的冒犯赌气留在帐中数周
-  不肯出战。赫克托尔已将希腊人逼回海边的搁浅战船。当赫克托尔
-  杀死帕特罗克洛斯——阿喀琉斯最亲密的挚友，身穿阿喀琉斯
-  借来的铠甲作战——阿喀琉斯重返战场。九年来彼此回避的
-  两位最伟大战士，终于在斯凯安门前相遇。
+  围城第九年。阿喀琉斯因赫克托尔杀死帕特罗克洛斯
+  而悲愤交加，重返战场，身披赫菲斯托斯为他打造的
+  神铠。希腊大军跟随他们的英雄奋勇向前。赫克托尔
+  率特洛伊最精锐的战士列阵斯凯安门前。斯卡曼德罗斯河
+  横亘平原之间。埃阿斯稳住希腊战线，奥德修斯和狄俄墨得斯
+  寻找侧翼突破口。帕里斯在城墙上张弓以待——那支箭，
+  终将找到阿喀琉斯的脚踵。
 
 unit_classes:
   achilles:
@@ -30,11 +32,6 @@ unit_classes:
     description: |
       忒拉蒙之子。持巨塔盾，防御如磐石。曾独力
       挡住特洛伊人焚烧希腊战船。
-  myrmidon:
-    display_name: 弥尔弥冬战士
-    description: |
-      阿喀琉斯的精锐亲卫——弗提亚的"蚁人"。
-      随首领重返战场。
   hector:
     display_name: 赫克托尔
     description: |
@@ -82,11 +79,6 @@ unit_classes:
     description: |
       吕基亚弓手，射伤墨涅拉俄斯破坏了休战。
       从特洛伊战线后方提供精准远程打击。
-  trojan_guard:
-    display_name: 特洛伊卫兵
-    description: |
-      普里阿摩斯的家臣和九年来一直在城墙上和街道中
-      保卫城市的特洛伊市民。持矛有射程。
 
 terrain_types:
   troy_wall:
@@ -97,10 +89,6 @@ terrain_types:
     display_name: 斯卡曼德罗斯河
     description: |
       克珊托斯/斯卡曼德罗斯河——不可通行，除浅滩外无法渡过。
-  xanthus:
-    display_name: 克珊托斯河
-    description: |
-      克珊托斯河——不可通行，将地图南北分隔。
   ford:
     display_name: 浅滩
     description: |
@@ -116,18 +104,14 @@ narrative:
     终结《伊利亚特》的决斗。两位伟大的战士，
     克珊托斯河横亘其间，特洛伊城墙为背景。
   intro: |
-    斯凯安门前的黎明。帕特罗克洛斯已死。阿喀琉斯
-    从母亲手中获得了新铠甲。赫克托尔在父亲的城池前
-    等待。冰冷的克珊托斯河在他们之间流淌。
+    斯凯安门前的黎明。帕特罗克洛斯尚存一息，但还能撑多久？
+    阿喀琉斯身披神铠大步走出。赫克托尔在父亲的城池前
+    等待。冰冷的斯卡曼德罗斯河在他们之间流淌。
   events:
     - trigger: on_turn_start
       turn: 3
       text: |
         阿喀琉斯大步走向浅滩。希腊人让开了道路。
-    - trigger: on_turn_start
-      turn: 6
-      text: |
-        赫克托尔和阿喀琉斯隔河相望。
     - trigger: on_turn_start
       turn: 7
       text: |
@@ -139,7 +123,7 @@ narrative:
     - trigger: on_unit_killed
       unit_id: u_r_hector_1
       text: |
-        赫克托尔倒下了。安德洛玛克从城墙上发出悲鸣。
+        赫克托尔倒下了。安德洛玛克从城墙上发出悲鸣。特洛伊大势已去。
     - trigger: on_unit_killed
       unit_id: u_b_achilles_1
       text: |

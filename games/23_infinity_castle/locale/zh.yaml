@@ -1,14 +1,14 @@
 # 无限城 — 中文本地化
 name: 无限城 — 鬼灭之刃
 description: |
-  无限城——由琵琶鬼�的�的鬼·�的·操控的不断变幻的迷宫。鬼杀队
+  无限城——由琵琶鬼鸣女操控的不断变幻的迷宫。鬼杀队
   发起对鬼舞辻无惨和残存上弦之鬼的最终突袭。炭治郎、
   善逸、伊之助和柱们在鬼的领地中战斗。
   必须在黎明前消灭无惨，否则他将永远逃入黑暗。
 
 unit_classes:
   tanjiro:
-    display_name: 的门炭治郎
+    display_name: 灶门炭治郎
     description: |
       火之神神乐的继承者。背负着灭杀无惨的使命，
       手持日轮刀追寻姐姐祢豆子的治愈之法。
@@ -33,7 +33,7 @@ unit_classes:
       霞柱。年仅十四岁的天才剑士。霞之呼吸朦胧如雾，
       剑锋却锐利无比。
   gyomei:
-    display_name: �的明寺行冥
+    display_name: 悲鸣屿行冥
     description: |
       岩柱，鬼杀队最强之人。双目失明却以锁链铁球
       和手斧横扫一切。
@@ -45,13 +45,13 @@ unit_classes:
   kokushibo:
     display_name: 黑死牟
     description: |
-      上弦之壹。继国�的的一化身为鬼的剑客，
+      上弦之壹。继国严胜化身为鬼的剑客，
       月之呼吸的创始人。六眼的恐怖。
   akaza:
     display_name: 猗窝座
     description: |
       上弦之参。纯粹的武斗派，只尊重强者。
-      拳法凌厉，破�的阵式足以粉碎一切防御。
+      拳法凌厉，破坏杀阵式足以粉碎一切防御。
   doma:
     display_name: 童磨
     description: |

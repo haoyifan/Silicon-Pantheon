@@ -100,6 +100,8 @@ terrain_types:
     display_name: 有盖桥
   lake_edge:
     display_name: 湖岸
+  whomping_willow:
+    display_name: 打人柳
 
 narrative:
   title: 霍格沃茨之战

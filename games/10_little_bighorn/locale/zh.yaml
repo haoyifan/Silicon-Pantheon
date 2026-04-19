@@ -13,15 +13,6 @@ unit_classes:
     description: |
       美国第七骑兵团中校。金发、张扬、勇敢到轻率。
       决定不等另外两个营就发起攻击。
-  trooper:
-    display_name: 骑兵
-    description: |
-      单发春田卡宾枪、柯尔特左轮、很少使用的军刀。
-      内战老兵或新兵；无论如何，今天都寡不敌众。
-  cav_sharpshooter:
-    display_name: 骑兵神射手
-    description: |
-      骑马侦察射手，持夏普斯步枪。远程打击，近战脆弱。
   sitting_bull:
     display_name: 坐牛
     description: |
@@ -32,17 +23,6 @@ unit_classes:
     description: |
       奥格拉拉拉科塔族战争酋长。率领冲锋突破骑兵防线。
       据说不可能被伤到——全场最高战斗属性。
-  lakota_warrior:
-    display_name: 拉科塔战士
-    description: |
-      骑马、持矛与弓，熟悉这里每一寸地形。
-      在速度和机动性上全面碾压骑兵。
-  cheyenne_warrior:
-    display_name: 夏延战士
-    description: |
-      北夏延族战士，战争彩绘上身。快速、凶猛，
-      八年前沃希塔屠杀的仇恨仍在燃烧——那正是
-      卡斯特干的。
   reno:
     display_name: 里诺少校
     description: |
@@ -101,11 +81,6 @@ unit_classes:
       奥格拉拉拉科塔族战争首领。与疯马并肩从北翼
       发起侧翼攻击。曾说骑兵冲锋来时"像受惊的
       野牛群"。
-  native_archer:
-    display_name: 原住民弓手
-    description: |
-      快射弓手，骑马全速射击精准无比。被射的士兵
-      根本分不清箭从哪里飞来。
 
 terrain_types:
   river:
