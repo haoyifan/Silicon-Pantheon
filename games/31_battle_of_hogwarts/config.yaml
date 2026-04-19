@@ -183,15 +183,17 @@ unit_classes:
       The other boy the prophecy could have chosen. Tonight he
       stands defiant before Voldemort himself and draws the Sword
       of Gryffindor from the Sorting Hat. Nagini's executioner.
+      Physical attacker — the Sword of Gryffindor cuts through
+      magical defenses.
     hp_max: 28
-    atk: 9
+    atk: 10
     defense: 7
     res: 5
     spd: 4
     move: 3
     rng_min: 1
     rng_max: 1
-    is_magic: true
+    is_magic: false
     glyph: "N"
     color: green
 

@@ -331,7 +331,7 @@ plugin_hooks:
     - naruto_reinforcement
 
 rules:
-  max_turns: 20
+  max_turns: 14
   first_player: red
 
 win_conditions:

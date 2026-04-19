@@ -14,32 +14,9 @@ description: |
   Inspired by the Loot Train Attack from Game of Thrones.
 
 board:
-  width: 16
-  height: 14
+  width: 12
+  height: 10
   terrain:
-    # The Roseroad runs east-west through the south
-    - {x: 0, y: 9, type: road}
-    - {x: 1, y: 9, type: road}
-    - {x: 2, y: 9, type: road}
-    - {x: 3, y: 9, type: road}
-    - {x: 4, y: 9, type: road}
-    - {x: 5, y: 9, type: road}
-    - {x: 6, y: 9, type: road}
-    - {x: 7, y: 9, type: road}
-    - {x: 8, y: 9, type: road}
-    - {x: 9, y: 9, type: road}
-    - {x: 10, y: 9, type: road}
-    - {x: 11, y: 9, type: road}
-    - {x: 12, y: 9, type: road}
-    - {x: 13, y: 9, type: road}
-    - {x: 14, y: 9, type: road}
-    - {x: 15, y: 9, type: road}
-    # Loot train wagons along the road -- cover for Lannisters
-    - {x: 10, y: 8, type: wagon}
-    - {x: 12, y: 8, type: wagon}
-    - {x: 14, y: 8, type: wagon}
-    - {x: 11, y: 10, type: wagon}
-    - {x: 13, y: 10, type: wagon}
     # Hillside to the north -- Dothraki charge from here
     - {x: 0, y: 0, type: hill}
     - {x: 1, y: 0, type: hill}
@@ -47,23 +24,48 @@ board:
     - {x: 3, y: 0, type: hill}
     - {x: 4, y: 0, type: hill}
     - {x: 5, y: 0, type: hill}
+    # Scattered brush -- cover in the open field
+    - {x: 2, y: 3, type: brush}
+    - {x: 5, y: 2, type: brush}
+    - {x: 8, y: 3, type: brush}
+    - {x: 10, y: 2, type: brush}
+    # Scorched ground from dragonfire
+    - {x: 4, y: 4, type: scorched}
+    - {x: 5, y: 4, type: scorched}
+    - {x: 6, y: 4, type: scorched}
+    - {x: 7, y: 4, type: scorched}
+    # The Roseroad runs east-west
+    - {x: 0, y: 7, type: road}
+    - {x: 1, y: 7, type: road}
+    - {x: 2, y: 7, type: road}
+    - {x: 3, y: 7, type: road}
+    - {x: 4, y: 7, type: road}
+    - {x: 5, y: 7, type: road}
+    - {x: 6, y: 7, type: road}
+    - {x: 7, y: 7, type: road}
+    - {x: 8, y: 7, type: road}
+    - {x: 9, y: 7, type: road}
+    - {x: 10, y: 7, type: road}
+    - {x: 11, y: 7, type: road}
+    # Loot train wagons along the road -- cover for Lannisters
+    - {x: 7, y: 6, type: wagon}
+    - {x: 9, y: 6, type: wagon}
+    - {x: 11, y: 6, type: wagon}
+    - {x: 8, y: 8, type: wagon}
+    - {x: 10, y: 8, type: wagon}
     # Blackwater Rush along the south edge
-    - {x: 0, y: 13, type: river}
-    - {x: 1, y: 13, type: river}
-    - {x: 2, y: 13, type: river}
-    - {x: 3, y: 13, type: river}
-    - {x: 4, y: 13, type: river}
-    - {x: 5, y: 13, type: river}
-    - {x: 6, y: 13, type: river}
-    - {x: 7, y: 13, type: river}
-    - {x: 8, y: 13, type: river}
-    - {x: 9, y: 13, type: river}
-    - {x: 10, y: 13, type: river}
-    - {x: 11, y: 13, type: river}
-    - {x: 12, y: 13, type: river}
-    - {x: 13, y: 13, type: river}
-    - {x: 14, y: 13, type: river}
-    - {x: 15, y: 13, type: river}
+    - {x: 0, y: 9, type: river}
+    - {x: 1, y: 9, type: river}
+    - {x: 2, y: 9, type: river}
+    - {x: 3, y: 9, type: river}
+    - {x: 4, y: 9, type: river}
+    - {x: 5, y: 9, type: river}
+    - {x: 6, y: 9, type: river}
+    - {x: 7, y: 9, type: river}
+    - {x: 8, y: 9, type: river}
+    - {x: 9, y: 9, type: river}
+    - {x: 10, y: 9, type: river}
+    - {x: 11, y: 9, type: river}
   forts: []
 
 terrain_types:
@@ -87,6 +89,20 @@ terrain_types:
     defense_bonus: 2
     glyph: "^"
     color: green
+  brush:
+    display_name: Brush
+    description: Scrubland and tall grass. Light cover. +1 DEF, costs 2 movement.
+    move_cost: 2
+    defense_bonus: 1
+    glyph: ","
+    color: green
+  scorched:
+    display_name: Scorched Earth
+    description: Ground blackened by dragonfire. No cover, costs 2 movement.
+    move_cost: 2
+    defense_bonus: 0
+    glyph: "x"
+    color: bright_black
   river:
     display_name: Blackwater Rush
     description: Impassable river along the south.
@@ -129,7 +145,7 @@ unit_classes:
     spd: 7
     rng_min: 2
     rng_max: 4
-    move: 6
+    move: 5
     is_magic: true
     tags: [dragon, flying]
     sight: 6
@@ -322,25 +338,25 @@ unit_classes:
 
 armies:
   blue:
-    # Daenerys and Drogon approaching from the north
+    # Daenerys and Drogon approaching from the hills
     - {class: daenerys, pos: {x: 3, y: 1}}
     - {class: drogon, pos: {x: 4, y: 0}}
     # Dothraki charging from the hills
-    - {class: qhono, pos: {x: 2, y: 2}}
+    - {class: qhono, pos: {x: 1, y: 1}}
     - {class: aggo, pos: {x: 5, y: 1}}
-    - {class: kovarro, pos: {x: 1, y: 2}}
+    - {class: kovarro, pos: {x: 0, y: 1}}
   red:
-    # Lannister column along the road (y=8-10)
-    - {class: jaime, pos: {x: 11, y: 9}}
-    - {class: bronn, pos: {x: 13, y: 9}}
-    - {class: randyll_tarly, pos: {x: 9, y: 9}}
-    - {class: dickon_tarly, pos: {x: 10, y: 9}}
-    - {class: lannister_captain, pos: {x: 14, y: 9}}
-    - {class: lannister_archer, pos: {x: 12, y: 8}}
-    - {class: lannister_spearman, pos: {x: 10, y: 8}}
+    # Lannister column along the road
+    - {class: jaime, pos: {x: 8, y: 7}}
+    - {class: bronn, pos: {x: 10, y: 7}}
+    - {class: randyll_tarly, pos: {x: 6, y: 7}}
+    - {class: dickon_tarly, pos: {x: 7, y: 6}}
+    - {class: lannister_captain, pos: {x: 11, y: 7}}
+    - {class: lannister_archer, pos: {x: 9, y: 6}}
+    - {class: lannister_spearman, pos: {x: 7, y: 8}}
 
 rules:
-  max_turns: 20
+  max_turns: 14
   fog_of_war: false
   first_player: blue
 
