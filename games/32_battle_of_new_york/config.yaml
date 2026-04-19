@@ -266,23 +266,23 @@ unit_classes:
 
 armies:
   blue:
-    - {class: iron_man, pos: {x: 5, y: 1}}
-    - {class: thor, pos: {x: 6, y: 2}}
-    - {class: captain_america, pos: {x: 5, y: 4}}
-    - {class: hulk, pos: {x: 6, y: 4}}
-    - {class: black_widow, pos: {x: 4, y: 3}}
-    - {class: hawkeye, pos: {x: 6, y: 1}}
-    - {class: nick_fury, pos: {x: 5, y: 6}}
+    - {class: iron_man, pos: {x: 5, y: 6}}
+    - {class: thor, pos: {x: 6, y: 6}}
+    - {class: captain_america, pos: {x: 5, y: 7}}
+    - {class: hulk, pos: {x: 6, y: 7}}
+    - {class: black_widow, pos: {x: 3, y: 8}}
+    - {class: hawkeye, pos: {x: 9, y: 7}}
+    - {class: nick_fury, pos: {x: 5, y: 9}}
 
   red:
     - {class: loki, pos: {x: 5, y: 0}}
-    - {class: chitauri_commander, pos: {x: 3, y: 7}}
-    - {class: chitauri_commander, pos: {x: 8, y: 7}}
-    - {class: chitauri_warrior, pos: {x: 4, y: 8}}
-    - {class: chitauri_warrior, pos: {x: 6, y: 8}}
-    - {class: chitauri_warrior, pos: {x: 7, y: 8}}
-    - {class: chitauri_chariot, pos: {x: 2, y: 9}}
-    - {class: chitauri_chariot, pos: {x: 10, y: 9}}
+    - {class: chitauri_commander, pos: {x: 3, y: 1}}
+    - {class: chitauri_commander, pos: {x: 8, y: 1}}
+    - {class: chitauri_warrior, pos: {x: 4, y: 2}}
+    - {class: chitauri_warrior, pos: {x: 7, y: 2}}
+    - {class: chitauri_warrior, pos: {x: 6, y: 1}}
+    - {class: chitauri_chariot, pos: {x: 2, y: 0}}
+    - {class: chitauri_chariot, pos: {x: 10, y: 0}}
 
 rules:
   max_turns: 18

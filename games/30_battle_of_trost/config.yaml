@@ -19,18 +19,27 @@ board:
   terrain:
     # Rooftops — ODM gear anchor points, urban terrain
     - {x: 2, y: 2, type: rooftop}
-    - {x: 5, y: 2, type: rooftop}
     - {x: 9, y: 2, type: rooftop}
     - {x: 1, y: 4, type: rooftop}
     - {x: 4, y: 4, type: rooftop}
     - {x: 7, y: 4, type: rooftop}
     - {x: 10, y: 4, type: rooftop}
-    - {x: 3, y: 6, type: rooftop}
     - {x: 6, y: 6, type: rooftop}
     - {x: 9, y: 6, type: rooftop}
+    # Buildings — urban structures providing cover
+    - {x: 0, y: 3, type: building}
+    - {x: 6, y: 3, type: building}
+    - {x: 11, y: 3, type: building}
+    - {x: 1, y: 7, type: building}
+    - {x: 8, y: 8, type: building}
+    - {x: 4, y: 9, type: building}
+    # Rubble — collapsed structures from titan assault
+    - {x: 5, y: 5, type: rubble}
+    - {x: 8, y: 6, type: rubble}
+    - {x: 3, y: 8, type: rubble}
+    - {x: 6, y: 9, type: rubble}
     # Streets (open ground, no bonus)
     - {x: 2, y: 5, type: street}
-    - {x: 5, y: 5, type: street}
     - {x: 8, y: 5, type: street}
     - {x: 11, y: 5, type: street}
     # Wall Rose at y=10-11 — impassable except the breach
@@ -75,6 +84,24 @@ terrain_types:
     color: yellow
     description: |
       Open streets of Trost. No cover from titan attacks.
+  building:
+    display_name: Building
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "W"
+    color: dim
+    description: |
+      Trost district buildings. Partially intact structures that
+      slow movement but provide some cover from titan attacks.
+  rubble:
+    display_name: Rubble
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "%"
+    color: yellow
+    description: |
+      Collapsed buildings and debris from the titan assault.
+      Difficult terrain that slows movement but offers cover.
   titan_wall:
     display_name: Titan Wall
     move_cost: 99
@@ -297,20 +324,20 @@ unit_classes:
 
 armies:
   blue:
-    - {class: eren, pos: {x: 5, y: 8}}
-    - {class: mikasa, pos: {x: 6, y: 7}}
-    - {class: armin, pos: {x: 4, y: 9}}
-    - {class: levi, pos: {x: 3, y: 7}}
-    - {class: jean, pos: {x: 8, y: 8}}
-    - {class: connie, pos: {x: 7, y: 9}}
+    - {class: eren, pos: {x: 5, y: 2}}
+    - {class: mikasa, pos: {x: 6, y: 1}}
+    - {class: armin, pos: {x: 4, y: 3}}
+    - {class: levi, pos: {x: 3, y: 1}}
+    - {class: jean, pos: {x: 8, y: 2}}
+    - {class: connie, pos: {x: 7, y: 3}}
 
   red:
-    - {class: armored_titan, pos: {x: 5, y: 1}}
-    - {class: titan_crusher, pos: {x: 2, y: 0}}
-    - {class: titan_sprinter, pos: {x: 9, y: 0}}
-    - {class: titan_spitter, pos: {x: 7, y: 1}}
-    - {class: titan_ambusher, pos: {x: 11, y: 2}}
-    - {class: titan_siege, pos: {x: 3, y: 2}}
+    - {class: armored_titan, pos: {x: 5, y: 6}}
+    - {class: titan_crusher, pos: {x: 3, y: 5}}
+    - {class: titan_sprinter, pos: {x: 9, y: 5}}
+    - {class: titan_spitter, pos: {x: 7, y: 7}}
+    - {class: titan_ambusher, pos: {x: 10, y: 8}}
+    - {class: titan_siege, pos: {x: 2, y: 7}}
 
 rules:
   max_turns: 14

@@ -15,44 +15,87 @@ description: |
   Inspired by the Fourth Shinobi World War from Naruto Shippuden by Masashi Kishimoto.
 
 board:
-  width: 14
-  height: 12
+  width: 10
+  height: 8
   terrain:
-    # Rocky outcroppings from previous jutsu impacts
-    - {x: 3, y: 3, type: rock}
-    - {x: 10, y: 3, type: rock}
-    - {x: 6, y: 4, type: rock}
-    - {x: 8, y: 4, type: rock}
-    - {x: 2, y: 6, type: rock}
-    - {x: 11, y: 6, type: rock}
-    - {x: 5, y: 7, type: rock}
-    - {x: 9, y: 7, type: rock}
-    # Crater from meteor impact (rough terrain, no DEF bonus)
-    - {x: 6, y: 2, type: crater}
-    - {x: 7, y: 2, type: crater}
-    - {x: 8, y: 2, type: crater}
-    - {x: 7, y: 3, type: crater}
+    # --- Northern zone: Ten-Tails devastation ---
+    # Bijuu bomb crater cluster (center-north)
+    - {x: 4, y: 1, type: crater}
+    - {x: 5, y: 1, type: crater}
+    - {x: 5, y: 2, type: crater}
+    # Scorched earth flanking the craters
+    - {x: 3, y: 1, type: scorched}
+    - {x: 6, y: 1, type: scorched}
+    - {x: 3, y: 2, type: scorched}
+    - {x: 6, y: 2, type: scorched}
+
+    # --- West chokepoint: rock wall with gap ---
+    - {x: 1, y: 2, type: rock}
+    - {x: 1, y: 3, type: rock}
+    - {x: 1, y: 4, type: rock}  # gap at y=5
+    - {x: 2, y: 3, type: forest}
+
+    # --- East chokepoint: rock wall with gap ---
+    - {x: 8, y: 2, type: rock}
+    - {x: 8, y: 3, type: rock}
+    - {x: 8, y: 4, type: rock}  # gap at y=5
+    - {x: 7, y: 3, type: forest}
+
+    # --- Central corridor: defensible rubble ---
+    - {x: 4, y: 3, type: rock}   # impassable pillar
+    - {x: 5, y: 3, type: rock}   # impassable pillar (forces split around center)
+    - {x: 3, y: 4, type: crater}
+    - {x: 6, y: 4, type: crater}
+
+    # --- Southern zone: Alliance staging area ---
+    # Forest cover for blue's back line
+    - {x: 2, y: 5, type: forest}
+    - {x: 3, y: 5, type: forest}
+    - {x: 6, y: 5, type: forest}
+    - {x: 7, y: 5, type: forest}
+    # Scorched no-man's-land in mid-south
+    - {x: 4, y: 5, type: scorched}
+    - {x: 5, y: 5, type: scorched}
   forts: []
 
 terrain_types:
   rock:
-    display_name: Rock
-    move_cost: 2
-    defense_bonus: 2
-    glyph: "^"
+    display_name: Rock Formation
+    move_cost: 99
+    passable: false
+    defense_bonus: 0
+    glyph: "#"
     color: bright_black
     description: |
-      Jagged rock formations thrust up by jutsu impacts.
-      Hard to cross but decent cover.
+      Massive rock slabs thrust up by Doton jutsu. Completely
+      impassable — use them as cover and to funnel enemies.
   crater:
-    display_name: Crater
+    display_name: Bijuu Bomb Crater
     move_cost: 2
-    defense_bonus: 0
+    defense_bonus: 1
     glyph: "o"
     color: dim
     description: |
-      Meteor impact crater. Rough terrain with no defensive
-      value — just scorched earth.
+      Crater blasted by a Tailed Beast Bomb. The depression
+      provides slight cover but slows movement.
+  scorched:
+    display_name: Scorched Earth
+    move_cost: 2
+    defense_bonus: 0
+    glyph: "~"
+    color: red
+    description: |
+      Ground charred by Amaterasu or Bijuu chakra. Rough footing
+      with no defensive value.
+  forest:
+    display_name: Forest Patch
+    move_cost: 2
+    defense_bonus: 1
+    glyph: "T"
+    color: green
+    description: |
+      Surviving trees at the battlefield's edge. Slows movement
+      but provides concealment and a defensive advantage.
 
 unit_classes:
   naruto:
@@ -277,33 +320,33 @@ unit_classes:
 
 armies:
   blue:
-    - {class: naruto, pos: {x: 7, y: 9}}
-    - {class: sasuke, pos: {x: 5, y: 9}}
-    - {class: kakashi, pos: {x: 9, y: 9}}
-    - {class: guy, pos: {x: 3, y: 10}}
-    - {class: gaara, pos: {x: 6, y: 10}}
-    - {class: tsunade, pos: {x: 8, y: 10}}
-    - {class: minato, pos: {x: 11, y: 10}}
+    - {class: naruto, pos: {x: 5, y: 7}}
+    - {class: sasuke, pos: {x: 4, y: 7}}
+    - {class: kakashi, pos: {x: 6, y: 7}}
+    - {class: guy, pos: {x: 2, y: 7}}
+    - {class: gaara, pos: {x: 3, y: 6}}
+    - {class: tsunade, pos: {x: 5, y: 6}}
+    - {class: minato, pos: {x: 7, y: 6}}
 
   red:
-    - {class: madara, pos: {x: 7, y: 1}}
-    - {class: obito, pos: {x: 5, y: 1}}
+    - {class: madara, pos: {x: 5, y: 0}}
+    - {class: obito, pos: {x: 4, y: 0}}
     - {class: tentails_head, pos: {x: 7, y: 0}}
-    - {class: tentails_arm, pos: {x: 4, y: 0}}
-    - {class: tentails_maw, pos: {x: 10, y: 0}}
+    - {class: tentails_arm, pos: {x: 2, y: 0}}
+    - {class: tentails_maw, pos: {x: 9, y: 0}}
 
 rules:
-  max_turns: 14
+  max_turns: 10
   first_player: red
 
 win_conditions:
-  # Naruto dies -> sealing jutsu fails, blue loses
+  # Blue wins by killing Madara (VIP)
+  - {type: protect_unit, unit_id: u_r_madara_1, owning_team: red}
+  # Red wins by killing Naruto (sealing jutsu fails)
   - {type: protect_unit, unit_id: u_b_naruto_1, owning_team: blue}
-  # Naruto survives to turn cap -> sealing jutsu prepared, blue wins
-  - {type: protect_unit_survives, unit_id: u_b_naruto_1, owning_team: blue}
   # Either side wins by total elimination
   - {type: eliminate_all_enemy_units}
-  # Backstop
+  # If time runs out, draw (both VIPs alive means stalemate)
   - {type: max_turns_draw}
 
 narrative:
@@ -332,7 +375,7 @@ narrative:
         body. "If I cannot defeat him with taijutsu, then I have
         no right to call myself a shinobi!" The Eighth Gate beckons.
     - trigger: on_turn_start
-      turn: 11
+      turn: 9
       text: |
         Naruto and Sasuke combine attacks — Rasengan and Amaterasu
         fuse into a spiraling inferno. Even Madara is forced to
