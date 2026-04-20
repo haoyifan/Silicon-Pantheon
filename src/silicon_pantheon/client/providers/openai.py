@@ -604,6 +604,8 @@ class OpenAIAdapter:
                     [t.function.name for t in executed],
                     [t.function.name for t in dropped],
                 )
+            from silicon_pantheon.shared.match_errors import is_terminal_tool_error
+            terminal_reached = False
             for tc in executed:
                 try:
                     args = json.loads(tc.function.arguments or "{}")
@@ -615,7 +617,23 @@ class OpenAIAdapter:
                     result_text = json.dumps(result, default=str)
                 except Exception as e:
                     self.total_errors += 1
-                    result_text = json.dumps({"error": str(e)})
+                    result = {"error": str(e)}
+                    result_text = json.dumps(result)
+                # Detect "game is already over" / similar terminal-match
+                # errors. grok-3-mini has been observed in production
+                # apologizing and re-calling end_turn on a loop for 30+
+                # minutes while the server keeps replying "game is
+                # already over"; break the iteration loop ourselves so
+                # the worker's outer game-loop can re-check state and
+                # exit cleanly.
+                if is_terminal_tool_error(result):
+                    terminal_reached = True
+                    log.info(
+                        "loop exit (terminal): tool %s returned a "
+                        "game-over error — breaking iteration so the "
+                        "outer loop can detect game_over",
+                        tc.function.name,
+                    )
                 # Cap individual tool-result size. Tightened from
                 # 8KB → 4KB. After our _slim_tool_response strips
                 # board.tiles, get_state typically lands around
@@ -683,6 +701,14 @@ class OpenAIAdapter:
                         "content": json.dumps(err),
                     }
                 )
+            # If a tool result this iteration was a terminal-match error,
+            # exit the loop AFTER writing all tool results (executed +
+            # dropped) so the OpenAI message buffer stays consistent
+            # (every assistant.tool_calls[i] has a matching tool
+            # message, required for any subsequent adapter use such as
+            # summarize_match).
+            if terminal_reached:
+                break
 
     async def summarize_match(
         self,
