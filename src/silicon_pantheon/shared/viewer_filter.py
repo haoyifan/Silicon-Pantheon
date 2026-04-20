@@ -54,42 +54,59 @@ def _filtered_unit_dict(unit_dict: dict[str, Any]) -> dict[str, Any]:
 
 def _action_is_visible(ev: dict, state: GameState, ctx: ViewerContext) -> bool:
     """Check if an action event should be visible under fog-of-war.
-    
+
     Returns True if action should be shown, False if it should be redacted.
     - Own-team actions always show
-    - Position-free events (end_turn) always show
-    - Enemy actions show only if actor is currently visible OR destination tile is visible
+    - Position-free end_turn events show — UNLESS the payload carries
+      a "unit" field (win-condition details like reach_tile /
+      reach_goal_line splice {"unit": <winning enemy id>, "pos": ...}
+      in via rules._apply_end_turn -> payload.update(result.details)).
+      In that case apply the normal enemy-visibility check.
+    - Other enemy actions show only if actor is currently visible OR
+      destination tile is visible.
     """
     if not isinstance(ev, dict):
         return True
-    
+
     t = ev.get("type")
-    # Own actions always surface.
-    actor_id = ev.get("unit_id") or ev.get("by")
     team_char = ctx.team.value[0]  # 'b' for blue, 'r' for red
-    
+
+    # Own-team actions always surface. Check every id-shaped field the
+    # event might carry — attack uses unit_id+target_id, reach_tile
+    # details splice "unit".
+    actor_id = ev.get("unit_id") or ev.get("unit")
+
     if isinstance(actor_id, str) and actor_id.startswith(f"u_{team_char}_"):
         return True
     if ev.get("by") == ctx.team.value:
         return True
-    # Position-free events (end_turn, etc.) pass through.
-    if t == "end_turn":
+
+    # end_turn: if the payload carries no unit reference at all, it's
+    # position-free (a plain turn handover) and always visible. If it
+    # carries a "unit" (win-condition details), fall through to the
+    # enemy-visibility check below so a hidden enemy winning by
+    # reach_tile / reach_goal_line doesn't reveal its id via
+    # last_action.unit.
+    if t == "end_turn" and not isinstance(actor_id, str):
         return True
-    # Enemy action: show only if actor currently visible OR the
-    # referenced tile is visible. "Currently visible" is a proxy
-    # for "the player saw this happen"; imperfect but doesn't
-    # leak fresh intel.
+
+    # Enemy action (or enemy-win end_turn): show only if actor
+    # currently visible OR the referenced tile is visible.
+    # "Currently visible" is a proxy for "the player saw this
+    # happen"; imperfect but doesn't leak fresh intel.
     visible = currently_visible(state, ctx)
     enemy_ids_currently_visible = {
         u.id for u in state.units_of(ctx.team.other()) if u.pos in visible
     }
-    
+
     if isinstance(actor_id, str) and actor_id in enemy_ids_currently_visible:
         return True
-    dest = ev.get("dest")
-    if isinstance(dest, dict):
+    # Tile-referencing field: "dest" for move/attack, "pos" for
+    # reach_tile / reach_goal_line details.
+    ref_pos = ev.get("dest") or ev.get("pos")
+    if isinstance(ref_pos, dict):
         from silicon_pantheon.server.engine.state import Pos as _Pos
-        if _Pos(int(dest.get("x", -1)), int(dest.get("y", -1))) in visible:
+        if _Pos(int(ref_pos.get("x", -1)), int(ref_pos.get("y", -1))) in visible:
             return True
     return False
 

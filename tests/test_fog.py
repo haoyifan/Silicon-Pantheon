@@ -421,3 +421,48 @@ def test_filter_state_redacts_last_action_of_hidden_enemy() -> None:
         "own-team last_action should not be redacted"
     )
     assert filtered["last_action"]["unit_id"] == blue.id
+
+
+def test_filter_state_redacts_end_turn_with_hidden_win_unit() -> None:
+    """Regression (thermopylae / cannae): when a win-condition fires
+    on end_turn, engine.rules._apply_end_turn splices result.details
+    into the end_turn payload via payload.update(). reach_tile /
+    reach_goal_line details carry {"unit": <winning_id>, "pos": ...},
+    so last_action becomes
+
+        {"type": "end_turn", "by": "red", "winner": "red",
+         "reason": "reach_goal_line",
+         "unit": "u_r_mardonius_1",
+         "pos": {"x": 1, "y": 7}}
+
+    If the winning unit is currently fog-hidden from the loser, that
+    id leaks through last_action.unit. Pre-fix _action_is_visible
+    returned True unconditionally for t=="end_turn" so the redaction
+    never fired; the audit caught it in production (thermopylae log
+    showed 518 `fog leak in get_state` errors on blue's polling)."""
+    state = load_scenario("01_tiny_skirmish")
+    _spread_out(state)
+    ctx = _ctx(Team.BLUE, "classic")
+    red = next(iter(state.units_of(Team.RED)))
+
+    state.last_action = {
+        "type": "end_turn",
+        "by": "red",
+        "winner": "red",
+        "reason": "reach_goal_line",
+        "unit": red.id,
+        "pos": {
+            "x": state.board.width - 1,
+            "y": state.board.height - 1,
+        },
+    }
+    filtered = filter_state(state, ctx)
+    assert filtered["last_action"] is None, (
+        f"end_turn payload with hidden winning unit {red.id} was not "
+        f"redacted; got {filtered['last_action']}"
+    )
+
+    # Sanity: a plain end_turn with no unit field still passes through.
+    state.last_action = {"type": "end_turn", "by": "red"}
+    filtered = filter_state(state, ctx)
+    assert filtered["last_action"] == {"type": "end_turn", "by": "red"}
