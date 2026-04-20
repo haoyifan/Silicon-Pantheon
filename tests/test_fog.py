@@ -378,3 +378,46 @@ def test_attack_allowed_under_no_fog_baseline() -> None:
         assert "not visible" not in msg, (
             f"fog check fired under fog=none: {msg}"
         )
+
+
+def test_filter_state_redacts_last_action_of_hidden_enemy() -> None:
+    """Regression: get_state response included last_action field from
+    state_to_dict, but filter_state did not redact it. This leaked
+    enemy unit IDs and destination tiles to viewers even when the unit
+    was fog-hidden. The fix: extract action-visibility logic into
+    _action_is_visible helper and apply it to both filter_state and
+    filter_history."""
+    state = load_scenario("01_tiny_skirmish")
+    _spread_out(state)
+    ctx = _ctx(Team.BLUE, "classic")
+    red = next(iter(state.units_of(Team.RED)))
+    
+    # Synthesize a state where last_action is a hidden enemy's move.
+    state.last_action = {
+        "type": "move",
+        "unit_id": red.id,  # hidden under fog for blue
+        "dest": {"x": state.board.width - 1, "y": state.board.height - 1}
+    }
+    
+    # Before the fix, filter_state would pass last_action through verbatim,
+    # leaking the hidden enemy's ID.
+    filtered = filter_state(state, ctx)
+    
+    # After the fix, last_action should be redacted (set to None).
+    assert filtered["last_action"] is None, (
+        f"last_action containing hidden enemy {red.id} was not redacted; "
+        f"got {filtered['last_action']}"
+    )
+    
+    # Sanity check: own-team last_action should pass through.
+    blue = next(iter(state.units_of(Team.BLUE)))
+    state.last_action = {
+        "type": "move",
+        "unit_id": blue.id,
+        "dest": {"x": 0, "y": 0}
+    }
+    filtered = filter_state(state, ctx)
+    assert filtered["last_action"] is not None, (
+        "own-team last_action should not be redacted"
+    )
+    assert filtered["last_action"]["unit_id"] == blue.id

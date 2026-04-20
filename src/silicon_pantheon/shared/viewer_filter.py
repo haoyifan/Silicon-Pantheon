@@ -52,6 +52,48 @@ def _filtered_unit_dict(unit_dict: dict[str, Any]) -> dict[str, Any]:
     return unit_dict
 
 
+def _action_is_visible(ev: dict, state: GameState, ctx: ViewerContext) -> bool:
+    """Check if an action event should be visible under fog-of-war.
+    
+    Returns True if action should be shown, False if it should be redacted.
+    - Own-team actions always show
+    - Position-free events (end_turn) always show
+    - Enemy actions show only if actor is currently visible OR destination tile is visible
+    """
+    if not isinstance(ev, dict):
+        return True
+    
+    t = ev.get("type")
+    # Own actions always surface.
+    actor_id = ev.get("unit_id") or ev.get("by")
+    team_char = ctx.team.value[0]  # 'b' for blue, 'r' for red
+    
+    if isinstance(actor_id, str) and actor_id.startswith(f"u_{team_char}_"):
+        return True
+    if ev.get("by") == ctx.team.value:
+        return True
+    # Position-free events (end_turn, etc.) pass through.
+    if t == "end_turn":
+        return True
+    # Enemy action: show only if actor currently visible OR the
+    # referenced tile is visible. "Currently visible" is a proxy
+    # for "the player saw this happen"; imperfect but doesn't
+    # leak fresh intel.
+    visible = currently_visible(state, ctx)
+    enemy_ids_currently_visible = {
+        u.id for u in state.units_of(ctx.team.other()) if u.pos in visible
+    }
+    
+    if isinstance(actor_id, str) and actor_id in enemy_ids_currently_visible:
+        return True
+    dest = ev.get("dest")
+    if isinstance(dest, dict):
+        from silicon_pantheon.server.engine.state import Pos as _Pos
+        if _Pos(int(dest.get("x", -1)), int(dest.get("y", -1))) in visible:
+            return True
+    return False
+
+
 def filter_state(state: GameState, ctx: ViewerContext) -> dict[str, Any]:
     """Return state_to_dict filtered for `ctx.team` under `ctx.fog_mode`."""
     raw = state_to_dict(state, viewer=ctx.team)
@@ -107,6 +149,12 @@ def filter_state(state: GameState, ctx: ViewerContext) -> dict[str, Any]:
     raw["_visible_tiles"] = sorted(
         (p.x, p.y) for p in visible
     )
+    
+    # Redact last_action if it references a hidden enemy.
+    la = raw.get("last_action")
+    if isinstance(la, dict) and not _action_is_visible(la, state, ctx):
+        raw["last_action"] = None
+    
     return raw
 
 
@@ -149,44 +197,12 @@ def filter_history(
     if ctx.fog_mode == "none":
         return history_result
 
-    visible = currently_visible(state, ctx)
-    team = ctx.team.value
-    enemy_ids_currently_visible = {
-        u.id for u in state.units_of(ctx.team.other()) if u.pos in visible
-    }
-
-    def _event_visible(ev: dict) -> bool:
-        if not isinstance(ev, dict):
-            return True
-        t = ev.get("type")
-        # Own actions always surface.
-        actor_id = ev.get("unit_id") or ev.get("by")
-        if isinstance(actor_id, str) and actor_id.startswith(f"u_{team[0]}_"):
-            return True
-        if ev.get("by") == team:
-            return True
-        # Position-free events (end_turn, etc.) pass through.
-        if t == "end_turn":
-            return True
-        # Enemy action: show only if actor currently visible OR the
-        # referenced tile is visible. "Currently visible" is a proxy
-        # for "the player saw this happen"; imperfect but doesn't
-        # leak fresh intel.
-        if isinstance(actor_id, str) and actor_id in enemy_ids_currently_visible:
-            return True
-        dest = ev.get("dest")
-        if isinstance(dest, dict):
-            from silicon_pantheon.server.engine.state import Pos as _Pos
-            if _Pos(int(dest.get("x", -1)), int(dest.get("y", -1))) in visible:
-                return True
-        return False
-
-    filtered = [ev for ev in (history_result.get("history") or []) if _event_visible(ev)]
+    filtered = [ev for ev in (history_result.get("history") or []) if _action_is_visible(ev, state, ctx)]
     out = dict(history_result)
     out["history"] = filtered
     # last_action: redact if not visible under the same rule.
     la = out.get("last_action")
-    if isinstance(la, dict) and not _event_visible(la):
+    if isinstance(la, dict) and not _action_is_visible(la, state, ctx):
         out["last_action"] = None
     return out
 
