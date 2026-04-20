@@ -114,7 +114,21 @@ def main() -> None:
         default=None,
         help="Log file path (overrides config).",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help=(
+            "Debug mode: invariant violations crash instead of being "
+            "swallowed. Equivalent to SILICON_DEBUG=1. Use for "
+            "reproducing bugs; do not run as a default."
+        ),
+    )
     args = parser.parse_args()
+
+    if args.debug:
+        import os as _os
+        _os.environ["SILICON_DEBUG"] = "1"
+        print("DEBUG MODE: invariant violations will crash the bot.")
 
     config = load_config(args.config)
     log_file = args.log or config.log_file
