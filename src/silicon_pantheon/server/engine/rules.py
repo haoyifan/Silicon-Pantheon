@@ -174,7 +174,12 @@ def apply(state: GameState, action: Action) -> dict:
 
     # All non-end-turn actions target a unit that must belong to active player.
     actor_id = getattr(action, "unit_id", None) or getattr(action, "healer_id", None)
-    assert actor_id is not None
+    if actor_id is None:
+        # Upstream tool dispatch should have already validated unit_id;
+        # hitting this means an action dataclass missed a field or a
+        # new action type forgot to expose one. raise so the bad path
+        # is loud, regardless of -O.
+        raise IllegalAction(f"action has no unit_id or healer_id: {action!r}")
     actor = state.units.get(actor_id)
     if actor is None or not actor.alive:
         raise IllegalAction(f"unit {actor_id} does not exist or is dead")

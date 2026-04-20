@@ -463,6 +463,12 @@ def _force_end_turn(
         try:
             result = apply(session.state, EndTurnAction())
         except Exception:
+            from silicon_pantheon.shared.debug import reraise_in_debug
+            reraise_in_debug(
+                log,
+                f"force_end_turn: apply() raised for room={room_id} "
+                f"team={active.value}",
+            )
             log.exception(
                 "force_end_turn: apply() raised for room=%s team=%s",
                 room_id, active.value,
@@ -491,6 +497,8 @@ def _force_end_turn(
         try:
             session.notify_action(result)
         except Exception:
+            from silicon_pantheon.shared.debug import reraise_in_debug
+            reraise_in_debug(log, "force_end_turn: notify_action failed")
             log.exception("force_end_turn: notify_action failed")
 
         # Step 5: if the turn-end triggered a win condition (max_turns_draw,

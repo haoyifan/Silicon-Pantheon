@@ -270,7 +270,13 @@ def get_tactical_summary(session: Session, viewer: Team) -> dict:
             # Don't let one misbehaving rule take down the whole
             # tactical summary -- skip it and log so we know.
             import logging as _logging
-            _logging.getLogger("silicon.engine").exception(
+            from silicon_pantheon.shared.debug import reraise_in_debug
+            _log = _logging.getLogger("silicon.engine")
+            reraise_in_debug(
+                _log,
+                f"win_condition {type(wc).__name__!r} describe_progress raised",
+            )
+            _log.exception(
                 "win condition %r describe_progress raised; skipping",
                 type(wc).__name__,
             )

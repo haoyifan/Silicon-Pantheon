@@ -228,6 +228,18 @@ def _note_game_over_if_needed(app: App, room_id: str) -> None:
 
     session = app.get_session(room_id)
     if session is None:
+        from silicon_pantheon.shared.debug import invariant
+        # _note_game_over_if_needed runs after a tool call that
+        # dispatched against a live session; it vanishing here means
+        # either a race with room deletion or a cache-eviction bug
+        # during a live match. In production we tolerate it (the
+        # game will be cleaned up eventually); in debug we want to
+        # see the stack at the moment of the race.
+        invariant(
+            session is not None,
+            f"session vanished before game_over check for room={room_id}",
+            logger=log,
+        )
         return
 
     # Phase 1: read session.state.status under session.lock.
@@ -256,14 +268,19 @@ def _note_game_over_if_needed(app: App, room_id: str) -> None:
     # Phase 3: slow I/O outside all app locks. Only the winner of the
     # FINISHED-transition race performs the writes.
     if won_race:
+        from silicon_pantheon.shared.debug import reraise_in_debug
         try:
             session.log_match_end()
         except Exception:
+            reraise_in_debug(log, f"log_match_end failed for room {room_id}")
             log.exception("log_match_end failed for room %s", room_id)
         try:
             from silicon_pantheon.server.leaderboard import record_match
             record_match(session, room_snap, slot_to_team_snap)
         except Exception:
+            reraise_in_debug(
+                log, f"leaderboard record_match failed for room {room_id}"
+            )
             log.exception("leaderboard record_match failed for room %s", room_id)
 
 

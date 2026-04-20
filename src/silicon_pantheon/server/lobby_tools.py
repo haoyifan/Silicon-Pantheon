@@ -1177,6 +1177,12 @@ def _start_countdown(app: App, room_id: str) -> None:
         # immediately. Safe under state_lock.
         task = asyncio.create_task(_run_countdown(app, room_id))
     except Exception as e:
+        from silicon_pantheon.shared.debug import reraise_in_debug
+        # create_task only fails when there's no running loop — i.e.
+        # the server event loop has died. That's fatal; in debug we
+        # want the crash. In production we log and return so the
+        # room stays in LOBBY instead of crashing the whole process.
+        reraise_in_debug(log, f"start_countdown: create_task failed: {e}")
         log.exception("start_countdown: create_task failed: %s", e)
         return
     app.autostart_tasks[room_id] = task
