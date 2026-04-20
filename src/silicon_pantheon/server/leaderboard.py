@@ -24,6 +24,7 @@ _SCHEMA = """
 CREATE TABLE IF NOT EXISTS match_results (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     match_id         TEXT,
+    display_name     TEXT,
     model            TEXT NOT NULL,
     provider         TEXT NOT NULL,
     scenario         TEXT NOT NULL,
@@ -57,6 +58,11 @@ _MIGRATIONS = [
     ("damage_taken", "INTEGER"),
     ("thoughts_count", "INTEGER"),
     ("match_duration_s", "REAL"),
+    # display_name lets queries tell "Alexander" from "Napoleon" when
+    # both are running the same model/provider — the lobby uses it
+    # everywhere else, but record_match previously only kept model
+    # and provider so every grok-3-mini bot collapsed into one row.
+    ("display_name", "TEXT"),
 ]
 
 
@@ -147,6 +153,7 @@ def record_match(
 
             model = seat.player.model or "unknown"
             provider = seat.player.provider or "unknown"
+            display_name = getattr(seat.player, "display_name", None)
 
             if winner is None:
                 outcome = "draw"
@@ -163,15 +170,17 @@ def record_match(
 
             db.execute(
                 """INSERT INTO match_results
-                   (match_id, model, provider, scenario, team, outcome,
+                   (match_id, display_name, model, provider,
+                    scenario, team, outcome,
                     turns_played, avg_think_time_s, max_think_time_s,
                     total_tokens, tool_calls, errors,
                     units_killed, units_lost,
                     damage_dealt, damage_taken,
                     thoughts_count, match_duration_s, timestamp)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     match_id,
+                    display_name,
                     model,
                     provider,
                     scenario or "?",

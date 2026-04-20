@@ -17,9 +17,17 @@ from silicon_pantheon.server.engine.state import Team
 
 
 class _FakeSeat:
-    def __init__(self, slot: str, model: str, provider: str):
+    def __init__(
+        self,
+        slot: str,
+        model: str,
+        provider: str,
+        display_name: str | None = None,
+    ):
         self.slot = slot
-        self.player = SimpleNamespace(model=model, provider=provider)
+        self.player = SimpleNamespace(
+            model=model, provider=provider, display_name=display_name,
+        )
 
 
 class _FakeRoom:
@@ -87,8 +95,59 @@ def test_migration_adds_new_columns(tmp_path, monkeypatch):
         for col in (
             "match_id", "max_think_time_s", "units_killed", "units_lost",
             "damage_dealt", "damage_taken", "thoughts_count", "match_duration_s",
+            "display_name",
         ):
             assert col in cols, f"missing column {col}"
+    finally:
+        db.close()
+
+
+def test_record_match_persists_display_name(tmp_path, monkeypatch):
+    """Two bots on the same model/provider must remain distinguishable
+    via display_name — this is the whole point of adding the column.
+    Regression for pre-fix DBs where Alexander and Napoleon (both
+    grok-3-mini/xai) collapsed into one set of rows."""
+    _fresh_db(tmp_path, monkeypatch)
+    session = _fake_session(winner=Team.BLUE)
+    seats = {
+        "a": _FakeSeat("a", "grok-3-mini", "xai", display_name="Alexander"),
+        "b": _FakeSeat("b", "grok-3-mini", "xai", display_name="Napoleon"),
+    }
+    slot_to_team = {"a": Team.BLUE, "b": Team.RED}
+    leaderboard.record_match(session, _FakeRoom(seats), slot_to_team)
+
+    db = leaderboard._get_db()
+    try:
+        rows = db.execute(
+            "SELECT display_name, team, outcome FROM match_results "
+            "ORDER BY team"
+        ).fetchall()
+        assert rows == [
+            ("Alexander", "blue", "win"),
+            ("Napoleon", "red", "loss"),
+        ]
+    finally:
+        db.close()
+
+
+def test_record_match_display_name_optional(tmp_path, monkeypatch):
+    """Legacy seats without a display_name (Player has no attribute,
+    or None) must still record cleanly — display_name stays NULL."""
+    _fresh_db(tmp_path, monkeypatch)
+    session = _fake_session(winner=Team.BLUE)
+    seats = {
+        "a": _FakeSeat("a", "claude-opus-4-7", "anthropic"),  # no display_name
+        "b": _FakeSeat("b", "gpt-5", "openai"),
+    }
+    slot_to_team = {"a": Team.BLUE, "b": Team.RED}
+    leaderboard.record_match(session, _FakeRoom(seats), slot_to_team)
+
+    db = leaderboard._get_db()
+    try:
+        names = [r[0] for r in db.execute(
+            "SELECT display_name FROM match_results"
+        ).fetchall()]
+        assert names == [None, None]
     finally:
         db.close()
 
