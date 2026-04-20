@@ -51,3 +51,41 @@ def _visible_enemies(session: Session, viewer: Team) -> list:
     )
     visible = currently_visible(session.state, ctx)
     return [u for u in enemies if u.pos in visible]
+
+
+def _require_target_visible(
+    session: Session, viewer: Team, target_id: str
+) -> None:
+    """Raise ToolError if the target enemy is currently hidden by fog.
+
+    Safety-in-depth: ``filter_state`` hides enemy units from the
+    agent's view under fog, but scenario prompts, historical
+    replays, and the initial declaration of units mean an agent
+    can still KNOW an enemy's ID even when it's invisible. Without
+    this check, an agent could attack a currently-hidden enemy by
+    ID alone, turning fog into a one-way information filter that
+    offense bypasses.
+
+    Own-team units and dead enemies are always OK — this check
+    only fires on alive enemy units under classic / line_of_sight
+    fog. Under fog=none it's a no-op.
+    """
+    if session.fog_of_war == "none":
+        return
+    target = session.state.units.get(target_id)
+    if target is None:
+        # The engine will raise its own "does not exist" error;
+        # we don't want to leak existence by rejecting first.
+        return
+    if target.owner is viewer:
+        return
+    if not target.alive:
+        # Dead enemies are known history — no fog leak.
+        return
+    visible = _visible_enemies(session, viewer)
+    if target not in visible:
+        raise ToolError(
+            f"target {target_id} is not visible to your team under "
+            f"fog of war. You can only target enemies currently in "
+            f"sight."
+        )

@@ -197,3 +197,70 @@ def test_filter_history_passes_through_when_fog_none() -> None:
         "last_action": None,
     }
     assert filter_history(history, state, ctx) is history
+
+
+# ---- attack-path fog enforcement ----
+
+
+def test_attack_blocked_against_fog_hidden_enemy() -> None:
+    """Under fog=classic, an agent that has memorised an enemy's unit ID
+    (from the scenario prompt, an earlier state snapshot before fog,
+    history, etc.) must NOT be able to attack it by ID alone when it's
+    currently out of sight. Without this enforcement, fog would be a
+    one-way filter that offense bypasses.
+
+    Regression guard for the 20_battle_of_hoth report: red attacked
+    "韦奇·安蒂列斯" even though the user expected fog to hide it.
+    """
+    from silicon_pantheon.server.session import new_session
+    from silicon_pantheon.server.tools.mutations import attack
+    from silicon_pantheon.server.tools._common import ToolError
+
+    state = load_scenario("01_tiny_skirmish")
+    _spread_out(state)  # blue corner, red opposite corner
+    state.active_player = Team.BLUE
+    session = new_session(state, fog_of_war="classic")
+    # Force a blue unit into a position where the FIRST red unit is
+    # guaranteed not in sight. _spread_out already handles this.
+    any_red = next(iter(state.units_of(Team.RED)))
+    any_blue = next(iter(u for u in state.units_of(Team.BLUE) if u.alive))
+    # Force statuses so _require_active / _require_own_unit pass.
+    from silicon_pantheon.server.engine.state import UnitStatus
+    any_blue.status = UnitStatus.READY
+
+    try:
+        attack(session, Team.BLUE, any_blue.id, any_red.id)
+    except ToolError as e:
+        assert "not visible" in str(e), f"unexpected ToolError: {e}"
+    else:
+        raise AssertionError(
+            "attack on fog-hidden enemy should have been rejected with ToolError"
+        )
+
+
+def test_attack_allowed_under_no_fog_baseline() -> None:
+    """Baseline: under fog=none, the visibility gate is a no-op and
+    a valid attack proceeds (or fails only for normal rules like
+    out-of-range). This confirms _require_target_visible doesn't
+    over-reject."""
+    from silicon_pantheon.server.session import new_session
+    from silicon_pantheon.server.tools.mutations import attack
+    from silicon_pantheon.server.tools._common import ToolError
+
+    state = load_scenario("01_tiny_skirmish")
+    _spread_out(state)
+    state.active_player = Team.BLUE
+    session = new_session(state, fog_of_war="none")
+    any_red = next(iter(state.units_of(Team.RED)))
+    any_blue = next(iter(u for u in state.units_of(Team.BLUE) if u.alive))
+    from silicon_pantheon.server.engine.state import UnitStatus
+    any_blue.status = UnitStatus.READY
+
+    try:
+        attack(session, Team.BLUE, any_blue.id, any_red.id)
+    except ToolError as e:
+        # Expected: out-of-range (not the fog rejection we'd get under fog).
+        msg = str(e)
+        assert "not visible" not in msg, (
+            f"fog check fired under fog=none: {msg}"
+        )

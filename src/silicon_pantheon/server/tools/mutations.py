@@ -14,7 +14,13 @@ from ..engine.rules import (
 )
 from ..engine.state import GameState, Pos, Team, UnitStatus
 from ..session import Session
-from ._common import ToolError, _require_active, _require_own_unit, _visible_enemies
+from ._common import (
+    ToolError,
+    _require_active,
+    _require_own_unit,
+    _require_target_visible,
+    _visible_enemies,
+)
 
 
 def _record_action(session: Session, result: dict) -> None:
@@ -148,6 +154,11 @@ def _enrich_move_error(
 def attack(session: Session, viewer: Team, unit_id: str, target_id: str) -> dict:
     _require_active(session, viewer)
     _require_own_unit(session.state, unit_id, viewer)
+    # Fog-of-war target check: under classic / line_of_sight, an
+    # agent that knows an enemy's ID (from the scenario prompt or
+    # historical state) could otherwise bypass fog by attacking
+    # a currently-hidden unit. See _require_target_visible.
+    _require_target_visible(session, viewer, target_id)
     try:
         result = apply(session.state, AttackAction(unit_id=unit_id, target_id=target_id))
     except IllegalAction as e:
