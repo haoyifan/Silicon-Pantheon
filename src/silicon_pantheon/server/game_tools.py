@@ -521,7 +521,7 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
                 return _error(ErrorCode.ROOM_FULL, "dev game is full")
             _, slot = result
             app.conn_to_room[connection_id] = (room.id, slot)
-            scenario_name = room.scenario
+            scenario_name = room.config.scenario
             room_id = room.id
 
         # Phase 2: scenario load outside state_lock (slow YAML I/O).

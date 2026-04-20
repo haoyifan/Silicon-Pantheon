@@ -97,11 +97,6 @@ class Room:
     status: RoomStatus = RoomStatus.WAITING_FOR_PLAYERS
     created_at: float = field(default_factory=time.time)
 
-    # Convenience passthrough for legacy callers; remove after full migration.
-    @property
-    def scenario(self) -> str:
-        return self.config.scenario
-
     def occupied_slots(self) -> list[Slot]:
         return [s for s, seat in self.seats.items() if seat.player is not None]
 
