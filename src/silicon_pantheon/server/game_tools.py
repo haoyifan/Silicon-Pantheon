@@ -761,8 +761,13 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
              ``~/.silicon-pantheon/debug-reports/YYYYMMDD.jsonl``.
 
         `category` must be one of: bug, confusion, rules_unclear,
-        scenario_issue, suggestion. Any other value is rejected so
-        `grep -c` on the file gives meaningful counts.
+        scenario_issue, imbalance, suggestion. Any other value is
+        rejected so `grep -c` on the file gives meaningful counts.
+        Use ``imbalance`` specifically for "this scenario feels
+        lopsided" observations (one team has structural advantage
+        that makes the match trivial / unwinnable) — separate from
+        ``scenario_issue`` (broken placement / wrong unit / unreachable
+        tile) so balance-tuning reviews can be filtered cleanly.
 
         Always available (no SILICON_DEBUG gate) — whether a player
         reports depends on whether the prompt tells them to, which IS
@@ -776,7 +781,7 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         """
         allowed = (
             "bug", "confusion", "rules_unclear",
-            "scenario_issue", "suggestion",
+            "scenario_issue", "imbalance", "suggestion",
         )
         if category not in allowed:
             return _error(

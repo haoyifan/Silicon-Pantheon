@@ -182,13 +182,22 @@ contradict itself, a scenario constraint that doesn't match what's
 actually on the board, a tool result that disagrees with a prior
 one, an enemy unit that vanished without your spotter moving, a win
 condition you can't make sense of, narrative text that claims
-something the state doesn't show — **do not silently assume you're
-wrong and the game is right**. Call the `report_issue` tool:
+something the state doesn't show, OR the scenario feels grossly
+imbalanced (one side has a structural advantage that makes the
+match trivial / unwinnable and it isn't the intended design) —
+**do not silently assume you're wrong and the game is right**.
+Call the `report_issue` tool:
 
   `report_issue(category, summary, details=None)`
 
   - `category` ∈ {"bug", "confusion", "rules_unclear",
-    "scenario_issue", "suggestion"}
+    "scenario_issue", "imbalance", "suggestion"}
+    - Use ``imbalance`` specifically when the matchup itself feels
+      off — e.g. "red has 3× blue's firepower and blue has no
+      answer to it", "blue's VIP is one-shot by the enemy's opening
+      move with no counterplay". Keep ``scenario_issue`` for
+      concrete errors (wrong placement, missing unit, unreachable
+      tile); ``imbalance`` is for the shape of the matchup.
   - `summary` — one sentence, <500 chars, what surprised you
   - `details` — optional longer context (quote the relevant state /
     tool result, give turn number and unit ids)
@@ -210,13 +219,19 @@ DEBUG_NOTICE_ZH = """
 
 如果比赛中有任何感觉不对的地方——规则自相矛盾、剧本设定与棋盘实际
 不符、工具结果与之前的不一致、敌方单位在你没有移走观察者的情况下
-消失、胜利条件让你困惑、叙述文本声称的事情在状态中看不到——
-**不要默认自己错了、游戏对了**。调用`report_issue`工具：
+消失、胜利条件让你困惑、叙述文本声称的事情在状态中看不到，或者
+剧本整体失衡（某一方有让比赛变得毫无悬念的结构性优势，而这不是
+原作者的本意）——**不要默认自己错了、游戏对了**。调用`report_issue`工具：
 
   `report_issue(category, summary, details=None)`
 
   - `category` ∈ {"bug", "confusion", "rules_unclear",
-    "scenario_issue", "suggestion"}
+    "scenario_issue", "imbalance", "suggestion"}
+    - 使用`imbalance`专门针对对局整体失衡——例如"红方火力
+      是蓝方3倍且蓝方无解"、"蓝方VIP在敌方第一步就被秒杀且
+      毫无反制"。`scenario_issue`保留给具体的剧本错误（放置
+      错误、缺失单位、无法到达的格子）；`imbalance`是关于
+      对局形态的反馈。
   - `summary` —— 一句话，<500字符，令你惊讶的是什么
   - `details` —— 可选的详细上下文（引用相关状态/工具结果，
     给出回合号与单位id）
