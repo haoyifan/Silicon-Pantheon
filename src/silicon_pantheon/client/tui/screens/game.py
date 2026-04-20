@@ -1095,9 +1095,9 @@ class GameScreen(Screen):
             _logging.getLogger("silicon.agent.thoughts").info(
                 "[%s team=%s] %s", ts, team, stripped
             )
-            # Push to the server's replay so silicon-play renders the
-            # reasoning alongside the actions. Fire-and-forget — a
-            # transport hiccup must not block the agent loop. The
+            # Push to the server's replay so the TUI replayer renders
+            # the reasoning alongside the actions. Fire-and-forget —
+            # a transport hiccup must not block the agent loop. The
             # server pins this thought to the connection's team, so
             # we don't need to send team/turn explicitly.
             #

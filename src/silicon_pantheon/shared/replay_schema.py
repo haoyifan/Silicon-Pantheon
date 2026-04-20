@@ -190,7 +190,7 @@ def action_from_payload(payload: dict[str, Any]) -> Action:
         # Engine records heal results with the healer's id under
         # `unit_id` (rules.py:_apply_heal). The earlier `healer_id`
         # lookup never matched any real payload — every heal in
-        # every replay file crashed silicon-play with KeyError.
+        # every replay file crashed the replayer with KeyError.
         # Fall back through both for any defensive symmetry with
         # hand-written tests.
         healer_id = payload.get("unit_id") or payload.get("healer_id")

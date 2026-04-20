@@ -32,7 +32,6 @@ dev = [
 [project.scripts]
 silicon-match = "silicon_pantheon.match.run_match:main"
 silicon-server = "silicon_pantheon.server.main:main"
-silicon-play = "silicon_pantheon.match.interactive_replay:main"
 silicon-serve = "silicon_pantheon.server.main_http:main"
 silicon-join = "silicon_pantheon.client.main:main"
 silicon-host = "silicon_pantheon.host.runner:main"

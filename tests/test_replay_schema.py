@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from silicon_pantheon.match.replay_schema import (
+from silicon_pantheon.shared.replay_schema import (
     AgentThought,
     CoachMessage,
     ErrorPayload,
@@ -145,7 +145,7 @@ def test_action_from_payload_rejects_unknown() -> None:
 
 
 def test_heal_payload_uses_unit_id_not_healer_id():
-    """Regression: silicon-play crashed on every replay containing a
+    """Regression: the replayer crashed on every replay containing a
     heal because the engine records heal results with the healer's id
     under `unit_id` (rules.py:_apply_heal), not `healer_id`. The
     parser was unconditionally reading `payload["healer_id"]` and
@@ -179,10 +179,10 @@ def test_heal_payload_uses_unit_id_not_healer_id():
 
 def test_agent_thought_roundtrip_through_session_log(tmp_path):
     """Pin the full path: Session.add_thought writes an `agent_thought`
-    event to the replay file, and interactive_replay's parser reads
-    it back as a renderable AgentThought. This is the new
-    networked-replay reasoning capture path — see record_thought
-    tool in server/game_tools.py."""
+    event to the replay file, and the replay-schema parser reads it
+    back as a renderable AgentThought. This is the networked-replay
+    reasoning capture path — see record_thought tool in
+    server/game_tools.py."""
     from silicon_pantheon.server.engine.scenarios import load_scenario
     from silicon_pantheon.server.engine.state import Team
     from silicon_pantheon.server.session import new_session

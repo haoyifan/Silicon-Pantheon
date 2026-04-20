@@ -30,13 +30,13 @@ from silicon_pantheon.client.tui.screens.game import (
     ReasoningPanel,
     UnitCard,
 )
-from silicon_pantheon.match.replay_schema import (
+from silicon_pantheon.shared.replay_schema import (
     AgentThought,
     MatchStart,
     ReplayEvent,
+    UnreconstructibleAction,
     action_from_payload,
     parse_event,
-    UnreconstructibleAction,
 )
 from silicon_pantheon.server.engine.rules import IllegalAction, apply
 from silicon_pantheon.server.engine.scenarios import load_scenario

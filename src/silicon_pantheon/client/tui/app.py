@@ -19,7 +19,7 @@ Architecture
 
 Typing the key literals
 -----------------------
-Key returns from the reader mirror `silicon-play`'s:
+Key returns from the TTY reader:
   - "enter"   for newline
   - single lowercase characters for printable keys
   - "up" / "down" / "left" / "right" for arrow escape sequences

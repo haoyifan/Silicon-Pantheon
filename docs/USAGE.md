@@ -4,10 +4,10 @@ A hands-on reference for the CLIs shipped with this repo. Two modes
 of play:
 
 - **Local** (single process): `silicon-match` runs both agents in one
-  Python process; `silicon-play` replays the result.
+  Python process and writes a replay to disk.
 - **Networked** (backend + clients): `silicon-serve` hosts matches;
   `silicon-join` connects a TUI client. Supports lobby, host/join,
-  ready-up, fog of war, disconnect handling, and replay download.
+  ready-up, fog of war, disconnect handling, and replay viewing.
 
 Sections:
 
@@ -16,7 +16,7 @@ Sections:
 - [Lessons](#lessons)
 - [Real-time reasoning](#real-time-reasoning)
 - [Coaching during a match](#coaching-during-a-match)
-- [`silicon-play` — interactive step-through replayer](#silicon-play--interactive-step-through-replayer)
+- [Match replays](#match-replays)
 - [**Networked play: `silicon-serve` + `silicon-join`**](#networked-play-silicon-serve--silicon-join)
 - [Complete example workflows](#complete-example-workflows)
 
@@ -243,9 +243,10 @@ Three ways to watch the agent think:
    #   Ctrl-C in less to pause following; / to search; q to quit.
    ```
 
-3. **`silicon-play`** (post-match). Interactive step-through visual
-   replayer — see the section below for a full walkthrough of the board
-   alongside each thought and action.
+3. **TUI replayer** (post-match). `silicon-join` → lobby → `w` opens
+   a replay picker; the replay renders with the same live-game UI
+   (board, unit cards, reasoning panel) so you can scroll through
+   thoughts and actions together. See the "Match replays" section.
 
 ---
 
@@ -270,47 +271,30 @@ echo "fall back to the fort, they're breaking through" >> coach_blue.txt
 ```
 
 The agent calls `get_coach_messages` at the start of each turn and
-drains the queue. Messages logged to the replay as `coach_message`
-events (visible in `silicon-play`).
+drains the queue. Messages are logged to the replay as `coach_message`
+events (visible in the TUI replayer).
 
 Tip: create the coach files before starting the match (`touch
 coach_blue.txt`) so the watcher has something to follow from turn one.
 
 ---
 
-## `silicon-play` — interactive step-through replayer
+## Match replays
 
-```
-silicon-play [run_dir] [--replay PATH]
-```
-
-Reconstructs the match visually, one event at a time. The board starts
-at the scenario's initial state and updates as you step through actions.
-Agent reasoning appears in a side panel *before* the paired action
-updates the board — you see what the agent thought, then what it did.
-
-**Controls** (single keypress — no Enter required on an interactive TTY;
-non-TTY/piped stdin falls back to line input):
-
-| Key | Action |
-|---|---|
-| `Enter` or `k` | advance one step |
-| `j` | go back one step |
-| `s` | skip forward to the next action event (past any thoughts) |
-| `q` | quit |
-| `Ctrl-C` | abort |
-
-Backward navigation is O(1): on launch the replayer precomputes a
-`GameState` snapshot for every step, so rewinding is as cheap as
-advancing. Feel free to wander back and forth freely.
+Every match writes a JSONL replay under `runs/<timestamp>_<scenario>/replay.jsonl`
+(in-process matches via `silicon-match`) or under the server's
+`runs-server/` directory (networked matches). To watch a replay, use
+the TUI replayer built into `silicon-join`:
 
 ```bash
-uv run silicon-play runs/20260412T143022_01_tiny_skirmish
+silicon-join          # log in
+# then from the lobby press `w` to open the replay picker, pick a
+# run, and step through it with the same controls as live play.
 ```
 
-If the replay is older than the `match_start` metadata event
-(commit `1deb07a`, 2026-04-12), the replayer will refuse with a clear
-error — re-record the match to get the metadata.
+The TUI replayer renders the full game screen (unit cards, HP bars,
+combat highlights, reasoning panel) identical to an in-progress game,
+so replays and live matches feel the same.
 
 ---
 
@@ -431,13 +415,10 @@ See the [Lessons](#lessons) section above for the file format.
 ### Replay download
 
 On the post-match screen, `d` calls the `download_replay` tool and
-saves the result to
-`~/.silicon-pantheon/replays/<room_id>.jsonl`. Feed it to `silicon-play`
-locally to scroll through the match:
-
-```bash
-uv run silicon-play --replay ~/.silicon-pantheon/replays/<room_id>.jsonl
-```
+saves the result to `~/.silicon-pantheon/replays/<room_id>.jsonl`.
+The TUI replay picker (`silicon-join` → lobby → `w`) finds both
+locally-run matches (`runs/`) and downloaded networked ones
+(`~/.silicon-pantheon/replays/`).
 
 The post-match token is valid for about a minute after `game_over`;
 download before leaving the screen.
@@ -502,8 +483,9 @@ files print once saved:
 ### 2. Replay that match as a human
 
 ```bash
-# Interactive step-through (keys: Enter/k=next, j=prev, s=skip, q=quit).
-uv run silicon-play runs/20260412T143022_02_basic_mirror
+# Launch the TUI, press `w` from the lobby to open the replay picker,
+# then pick the run from the list.
+uv run silicon-join
 ```
 
 ### 3. Iterate on prompts without polluting the lessons corpus

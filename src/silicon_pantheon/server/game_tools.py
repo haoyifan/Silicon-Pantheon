@@ -644,9 +644,10 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
 
         Side-channel for networked clients to push their LLM's
         chain-of-thought to the server so the post-match replay file
-        captures it (silicon-play renders the agent_thought events).
-        Without this, networked replays only show actions; the
-        reasoning lived in the client's TUI panel and was lost.
+        captures it (the TUI replayer renders agent_thought events
+        alongside actions). Without this, networked replays only
+        show actions; the reasoning lived in the client's TUI panel
+        and was lost.
 
         NOT exposed in the LLM-facing GAME_TOOLS list — the model
         shouldn't call this itself; the NetworkedAgent's on_thought
