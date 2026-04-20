@@ -700,13 +700,23 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def get_match_telemetry(connection_id: str) -> dict:
-        """Get server-tracked telemetry for both teams."""
+        """Get server-tracked telemetry for both teams.
+
+        ── Locking ──
+        Telemetry iterates ``session.turn_times_by_team`` (a list
+        that's appended to under session.lock by end_turn /
+        force_end_turn). Concurrent iteration without session.lock
+        can raise ``RuntimeError: list changed size`` — take
+        session.lock around the read.
+        """
         resolved = _viewer_for_any_state(app, connection_id)
         if resolved is None:
             return _error(ErrorCode.GAME_NOT_STARTED, "no game session")
         session, _viewer = resolved
         from silicon_pantheon.server.tools import get_match_telemetry as _get_telemetry
-        return _ok({"result": _get_telemetry(session, _viewer)})
+        with session.lock:
+            result = _get_telemetry(session, _viewer)
+        return _ok({"result": result})
 
     @mcp.tool()
     def download_replay(connection_id: str) -> dict:

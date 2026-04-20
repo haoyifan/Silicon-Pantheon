@@ -83,24 +83,57 @@ def record_match(
 
     Called from _note_game_over_if_needed after the game ends.
     Non-fatal: exceptions are caught by the caller.
+
+    ── Locking ──
+    Acquires ``session.lock`` briefly to snapshot every field we'll
+    write, then releases before SQLite I/O. Rationale: even after
+    GAME_OVER, a handful of paths keep mutating session state —
+    specifically ``report_tokens`` (increments tokens_by_team under
+    session.lock), ``call_tool`` (increments tool_calls_by_team),
+    and ``add_thought`` (appends to thoughts deque under session.lock
+    as of this commit). Iterating those collections unlocked can
+    raise ``RuntimeError`` on concurrent modification or return
+    inconsistent counts. Snapshotting avoids both.
     """
     from silicon_pantheon.server.rooms import Slot  # noqa: F401
+    from silicon_pantheon.server.engine.state import Team
 
+    # ── Snapshot under session.lock ──
+    with session.lock:
+        match_start_time = session.match_start_time
+        scenario = session.scenario
+        winner = session.state.winner
+        turn = session.state.turn
+        fallen = dict(getattr(session.state, "fallen_units", {}) or {})
+        # Copy units dict (shallow: Unit objects are mutated under
+        # session.lock only, and once GAME_OVER is set apply()
+        # rejects further mutations, so shallow is safe).
+        units = list(session.state.units.values())
+        turn_times = {
+            t: list(session.turn_times_by_team.get(t, []))
+            for t in (Team.BLUE, Team.RED)
+        }
+        tokens_by_team = dict(session.tokens_by_team)
+        tool_calls_by_team = dict(session.tool_calls_by_team)
+        tool_errors_by_team = dict(session.tool_errors_by_team)
+        kills_by_team = dict(session.kills_by_team)
+        damage_dealt_by_team = dict(session.damage_dealt_by_team)
+        damage_taken_by_team = dict(session.damage_taken_by_team)
+        thoughts_by_team: dict = {Team.BLUE: 0, Team.RED: 0}
+        for th in session.thoughts:
+            thoughts_by_team[th.team] = thoughts_by_team.get(th.team, 0) + 1
+
+    # ── SQLite I/O outside session.lock ──
     db = _get_db()
     try:
         match_id = uuid.uuid4().hex
         now = time.time()
-        duration = now - session.match_start_time if session.match_start_time > 0 else 0.0
+        duration = now - match_start_time if match_start_time > 0 else 0.0
 
-        # Starting unit counts per team = alive + fallen. State keeps
-        # fallen units in state.fallen_units for replay; summing with
-        # live units gives the starting roster.
-        fallen = getattr(session.state, "fallen_units", {}) or {}
-        from silicon_pantheon.server.engine.state import Team
         start_counts: dict = {}
         end_alive: dict = {}
         for team in (Team.BLUE, Team.RED):
-            alive = sum(1 for u in session.state.units.values() if u.owner == team and u.alive)
+            alive = sum(1 for u in units if u.owner == team and u.alive)
             dead = sum(1 for u in fallen.values() if u.owner == team)
             start_counts[team] = alive + dead
             end_alive[team] = alive
@@ -115,23 +148,18 @@ def record_match(
             model = seat.player.model or "unknown"
             provider = seat.player.provider or "unknown"
 
-            if session.state.winner is None:
+            if winner is None:
                 outcome = "draw"
-            elif session.state.winner == team:
+            elif winner == team:
                 outcome = "win"
             else:
                 outcome = "loss"
 
-            times = session.turn_times_by_team.get(team, [])
+            times = turn_times.get(team, [])
             avg_think = sum(times) / len(times) if times else 0.0
             max_think = max(times) if times else 0.0
 
-            thoughts_count = sum(1 for th in session.thoughts if th.team == team)
-
             units_lost = start_counts.get(team, 0) - end_alive.get(team, 0)
-            units_killed = session.kills_by_team.get(team, 0)
-            damage_dealt = session.damage_dealt_by_team.get(team, 0)
-            damage_taken = session.damage_taken_by_team.get(team, 0)
 
             db.execute(
                 """INSERT INTO match_results
@@ -146,20 +174,20 @@ def record_match(
                     match_id,
                     model,
                     provider,
-                    session.scenario or "?",
+                    scenario or "?",
                     team.value,
                     outcome,
-                    session.state.turn,
+                    turn,
                     round(avg_think, 2),
                     round(max_think, 2),
-                    session.tokens_by_team.get(team, 0),
-                    session.tool_calls_by_team.get(team, 0),
-                    session.tool_errors_by_team.get(team, 0),
-                    units_killed,
+                    tokens_by_team.get(team, 0),
+                    tool_calls_by_team.get(team, 0),
+                    tool_errors_by_team.get(team, 0),
+                    kills_by_team.get(team, 0),
                     units_lost,
-                    damage_dealt,
-                    damage_taken,
-                    thoughts_count,
+                    damage_dealt_by_team.get(team, 0),
+                    damage_taken_by_team.get(team, 0),
+                    thoughts_by_team.get(team, 0),
                     round(duration, 2),
                     now,
                 ),
@@ -167,8 +195,8 @@ def record_match(
         db.commit()
         log.info(
             "leaderboard: recorded match scenario=%s winner=%s match_id=%s",
-            session.scenario,
-            session.state.winner.value if session.state.winner else "draw",
+            scenario,
+            winner.value if winner else "draw",
             match_id,
         )
     finally:

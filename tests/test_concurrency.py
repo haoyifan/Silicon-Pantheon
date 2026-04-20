@@ -492,6 +492,67 @@ def test_replay_writer_concurrent_writes_are_atomic(tmp_path):
 # Token registry stress (pre-existing internal lock)
 # ──────────────────────────────────────────────────────────────
 
+def test_add_thought_is_thread_safe():
+    """Many threads calling Session.add_thought concurrently must
+    not corrupt the deque, the replay file, or fire hooks with
+    torn turn-number reads. add_thought acquires session.lock
+    internally; callers must NOT already hold it (Session.lock
+    is non-reentrant)."""
+    app = App()
+    room_id, session = _setup_in_game(app)
+
+    # Attach a hook that records every firing — used to detect any
+    # torn-read scenario where the captured turn number is wrong.
+    captured: list[tuple[int, str]] = []
+    cap_lock = threading.Lock()
+
+    def hook(sess, result):
+        if result.get("kind") == "agent_thought":
+            with cap_lock:
+                # Read session.state.turn under session.lock — we're
+                # inside the hook which fires under session.lock per
+                # THREADING.md.
+                captured.append((sess.state.turn, result["team"]))
+
+    session.action_hooks.append(hook)
+
+    NUM_THREADS = 8
+    PER_THREAD = 50
+
+    def worker(tid: int) -> None:
+        for i in range(PER_THREAD):
+            team = Team.BLUE if (tid + i) % 2 == 0 else Team.RED
+            session.add_thought(team, f"t{tid}-i{i}")
+
+    def run() -> None:
+        threads = [
+            threading.Thread(target=worker, args=(i,), daemon=True)
+            for i in range(NUM_THREADS)
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=10.0)
+            if t.is_alive():
+                raise AssertionError("worker deadlocked")
+
+        # deque accumulated every thought (up to its maxlen).
+        # THOUGHT_BUFFER_SIZE = 100, so we'll see the last 100.
+        from silicon_pantheon.server.session import THOUGHT_BUFFER_SIZE
+        expected_fires = NUM_THREADS * PER_THREAD
+        assert len(captured) == expected_fires, (
+            f"expected {expected_fires} hook fires, got {len(captured)}"
+        )
+        # Deque has at most THOUGHT_BUFFER_SIZE; all recent entries
+        # should be valid AgentThought instances (no partial writes).
+        assert len(session.thoughts) <= THOUGHT_BUFFER_SIZE
+        for th in session.thoughts:
+            assert th.team in (Team.BLUE, Team.RED)
+            assert th.text.startswith("t")
+
+    _deadlock_watchdog(run, timeout=15.0)
+
+
 def test_concurrent_concede_is_idempotent():
     """Two players racing to concede the same match: the first flip
     wins, the second sees state.status == GAME_OVER and must no-op

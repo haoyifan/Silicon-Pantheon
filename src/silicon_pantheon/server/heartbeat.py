@@ -102,16 +102,30 @@ def run_sweep_once(app: App, now: float | None = None) -> None:
         # ---- Rule 1: no heartbeat = dead ----
         if idle >= HEARTBEAT_DEAD_S:
             # Re-read the connection under state_lock to confirm
-            # it still exists in the same state — a concurrent
-            # leave_room / drop_connection may have raced ahead.
+            # it still exists AND is still dead. A concurrent
+            # heartbeat tool could have updated last_heartbeat_at
+            # between our snapshot and re-check, in which case
+            # we must NOT evict a client that just reconnected.
+            # A concurrent leave_room / drop_connection may have
+            # also raced ahead.
             with app.state_lock():
                 conn = app._connections.get(cid)  # noqa: SLF001
                 if conn is None:
                     continue
                 current_state = conn.state
+                current_idle = now - conn.last_heartbeat_at
+                if current_idle < HEARTBEAT_DEAD_S:
+                    # Heartbeat arrived between snapshot and
+                    # re-check — client is alive; skip eviction.
+                    log.debug(
+                        "heartbeat_dead race: cid=%s snapshot_idle=%.1fs "
+                        "fresh_idle=%.1fs — client recovered, skipping evict",
+                        cid, idle, current_idle,
+                    )
+                    continue
             log.info(
                 "heartbeat_dead: cid=%s state=%s idle=%.1fs — evicting",
-                cid, current_state.value, idle,
+                cid, current_state.value, current_idle,
             )
             if current_state == ConnectionState.IN_GAME:
                 _auto_concede(app, cid)
@@ -445,10 +459,26 @@ def _force_end_turn(
 
 
 async def run_sweep_loop(app: App) -> None:
-    """Long-lived asyncio task — sweep once per SWEEP_INTERVAL_S."""
-    try:
-        while True:
+    """Long-lived asyncio task — sweep once per SWEEP_INTERVAL_S.
+
+    ── Robustness ──
+    A single sweep tick must never bring down the sweeper. Any
+    unexpected exception from ``run_sweep_once`` (a bug in our
+    code, a bad room, a plugin-raised error) is logged and the
+    loop continues on the next tick. Only ``asyncio.CancelledError``
+    stops the loop (server shutdown). If the sweep died silently,
+    heartbeat-dead evictions and turn timeouts would stop firing
+    until the server was restarted — that's a catastrophic
+    observability + correctness regression.
+    """
+    while True:
+        try:
             run_sweep_once(app)
+        except asyncio.CancelledError:
+            return
+        except Exception:  # noqa: BLE001 — must never crash the loop
+            log.exception("run_sweep_once raised; continuing next tick")
+        try:
             await asyncio.sleep(SWEEP_INTERVAL_S)
-    except asyncio.CancelledError:
-        return
+        except asyncio.CancelledError:
+            return

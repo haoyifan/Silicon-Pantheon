@@ -160,33 +160,50 @@ class Session:
                 pass
 
     def add_thought(self, team: Team, text: str, *, turn: int | None = None) -> None:
+        """Append an agent-thought event to the session log.
+
+        ── Locking ──
+        Acquires ``self.lock`` for the full body because this touches
+        ``self.state.turn``, ``self.thoughts``, ``self.replay`` (via
+        ``self.log``), ``self.thoughts_log``, and fires hooks via
+        ``notify_action``. All server callers that previously drove
+        add_thought without holding session.lock — the networked
+        record_thought MCP tool is the only one — are tested to
+        *not* be holding it (Session.lock is non-reentrant).
+
+        In-process harness callers (e.g. anthropic.py) also don't
+        hold session.lock when calling this.
+        """
         text = text.strip()
         if not text:
             return
-        # Allow the caller to pin the turn number. The Claude SDK sometimes
-        # streams trailing AssistantMessage text AFTER the agent's end_turn
-        # tool call has flipped state.active_player and bumped state.turn,
-        # which would otherwise cause that trailing reasoning to be tagged
-        # with the next turn number.
-        effective_turn = turn if turn is not None else self.state.turn
-        thought = AgentThought(turn=effective_turn, team=team, text=text)
-        self.thoughts.append(thought)
-        self.log("agent_thought", {"team": team.value, "text": text, "turn": effective_turn})
-        if self.thoughts_log is not None:
-            try:
-                self.thoughts_log.write(thought)
-            except Exception:
-                # Never let a log failure break the match loop.
-                pass
-        # Fire action hooks so the TUI refreshes as reasoning arrives,
-        # not only on tool calls. rich.Live's auto-refresh thread only
-        # repaints whatever renderable was last passed to Live.update();
-        # without this, thoughts arriving between tool calls would
-        # only appear in the panel after the NEXT tool call. Flicker
-        # is not a concern here because the TUI uses screen=True
-        # (alternate screen buffer) and rich.Live throttles repaints
-        # to its configured frame rate regardless of update() frequency.
-        self.notify_action({"kind": "agent_thought", "team": team.value, "text": text})
+        with self.lock:
+            # Allow the caller to pin the turn number. The Claude SDK
+            # sometimes streams trailing AssistantMessage text AFTER
+            # the agent's end_turn tool call has flipped
+            # state.active_player and bumped state.turn, which would
+            # otherwise cause that trailing reasoning to be tagged
+            # with the next turn number.
+            effective_turn = turn if turn is not None else self.state.turn
+            thought = AgentThought(turn=effective_turn, team=team, text=text)
+            self.thoughts.append(thought)
+            self.log(
+                "agent_thought",
+                {"team": team.value, "text": text, "turn": effective_turn},
+            )
+            if self.thoughts_log is not None:
+                try:
+                    self.thoughts_log.write(thought)
+                except Exception:
+                    # Never let a log failure break the match loop.
+                    pass
+            # Fire action hooks so the TUI refreshes as reasoning
+            # arrives, not only on tool calls. Per THREADING.md, hooks
+            # fire under session.lock — consistent with _record_action
+            # + _force_end_turn.
+            self.notify_action(
+                {"kind": "agent_thought", "team": team.value, "text": text}
+            )
 
 
 def new_session(

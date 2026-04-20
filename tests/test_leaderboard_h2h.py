@@ -60,6 +60,7 @@ def _fake_session(*, winner, scenario="03_thermopylae"):
         "u_r_3": _FakeUnit(Team.RED, alive=False),
     }
     state = _FakeState(winner=winner, turn=12, units=units, fallen=fallen)
+    import threading
     return SimpleNamespace(
         state=state,
         scenario=scenario,
@@ -72,6 +73,9 @@ def _fake_session(*, winner, scenario="03_thermopylae"):
         kills_by_team={Team.BLUE: 2, Team.RED: 1},
         turn_times_by_team={Team.BLUE: [3.0, 5.0, 7.0], Team.RED: [2.0, 4.0, 6.0]},
         thoughts=[],
+        # Match the real Session.lock so record_match can snapshot
+        # fields atomically. See server/session.py.
+        lock=threading.Lock(),
     )
 
 

@@ -1218,7 +1218,21 @@ async def _run_countdown(app: App, room_id: str) -> None:
     # release the lock before it does its replay I/O.
     if should_fire:
         log.info("run_countdown: room=%s firing on_countdown_complete", room_id)
-        app.on_countdown_complete(room_id)  # type: ignore[misc]
+        try:
+            app.on_countdown_complete(room_id)  # type: ignore[misc]
+        except Exception:
+            # A scenario load failure, plugin crash, or similar
+            # must not silently leave the room wedged in
+            # COUNTING_DOWN. Log and revert status so set_ready
+            # can retry once the host fixes the scenario.
+            log.exception(
+                "run_countdown: on_countdown_complete failed room=%s",
+                room_id,
+            )
+            with app.state_lock():
+                room = app.rooms.get(room_id)
+                if room is not None and room.status == RoomStatus.COUNTING_DOWN:
+                    room.status = RoomStatus.WAITING_READY
     else:
         log.warning("run_countdown: room=%s on_countdown_complete is None", room_id)
 
@@ -1261,4 +1275,15 @@ def _maybe_promote_on_deadline(app: App, room_id: str) -> None:
     if task is not None and not task.done():
         task.cancel()
     if app.on_countdown_complete is not None:
-        app.on_countdown_complete(room_id)
+        try:
+            app.on_countdown_complete(room_id)
+        except Exception:
+            # See _run_countdown — callback failure must not wedge
+            # the room in COUNTING_DOWN. Revert to WAITING_READY so
+            # a retry is possible.
+            log.exception(
+                "maybe_promote: on_countdown_complete failed room=%s",
+                room_id,
+            )
+            if room.status == RoomStatus.COUNTING_DOWN:
+                room.status = RoomStatus.WAITING_READY
