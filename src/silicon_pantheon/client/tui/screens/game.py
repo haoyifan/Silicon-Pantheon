@@ -1136,7 +1136,15 @@ class GameScreen(Screen):
             scenario=scenario,
             strategy=app.state.strategy_text,
             lessons_dir=lessons_dir,
-            selected_lessons=app.state.selected_lessons or None,
+            # Pass list as-is (including empty). Using
+            # ``selected_lessons or None`` here used to coerce
+            # an empty list into None, which triggered
+            # NetworkedAgent._load_lessons' legacy auto-load
+            # fallback and silently injected saved lessons from
+            # prior matches of this scenario. Users who skip the
+            # lesson picker expect NO lessons, not "surprise
+            # lessons from a haiku game last night".
+            selected_lessons=app.state.selected_lessons,
             thoughts_callback=on_thought,
             # Hand over the scenario bundle the room screen already
             # fetched, localized for the user's language. The locale

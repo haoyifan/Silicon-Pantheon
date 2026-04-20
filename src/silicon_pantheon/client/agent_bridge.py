@@ -512,28 +512,35 @@ class NetworkedAgent:
         return r.get("result", {})
 
     def _load_lessons(self) -> list:
-        if self._selected_lessons is not None:
-            # User explicitly selected specific lessons from the picker.
-            if not self._selected_lessons:
-                return []
-            _fallback = Path(__file__).resolve().parents[3] / "lessons"
-            store = LessonStore(self.lessons_dir or _fallback)
-            lessons = []
-            for p in self._selected_lessons:
-                try:
-                    lessons.append(store.load(p))
-                except Exception:
-                    continue
-            return lessons
-        # Fallback: auto-load last 5 for the scenario (legacy behavior).
-        if self.lessons_dir is None:
+        """Load the lessons the caller explicitly asked for.
+
+        ── No auto-load ──
+        ``selected_lessons=None`` and ``selected_lessons=[]`` both
+        mean "no lessons in the prompt". There used to be a legacy
+        branch that auto-loaded the last 5 saved lessons for the
+        scenario when ``selected_lessons is None`` — that silently
+        injected context from prior runs (potentially from other
+        models, other teams, other matchups) into the agent's
+        system prompt. Users who hadn't opted into lessons were
+        surprised to see the agent reasoning about "defensive
+        priority" etc. that came from yesterday's haiku game.
+
+        Removed. If you want lessons, pass them explicitly via
+        ``selected_lessons=[Path(...), ...]``. The auto-host reads
+        from ``[worker] lessons = [glob]`` in TOML; the TUI lets
+        users pick via the lesson picker on the room screen.
+        """
+        if not self._selected_lessons:
             return []
-        try:
-            return LessonStore(self.lessons_dir).list_for_scenario(
-                self.scenario, limit=5
-            )
-        except Exception:
-            return []
+        _fallback = Path(__file__).resolve().parents[3] / "lessons"
+        store = LessonStore(self.lessons_dir or _fallback)
+        lessons = []
+        for p in self._selected_lessons:
+            try:
+                lessons.append(store.load(p))
+            except Exception:
+                continue
+        return lessons
 
     # ---- turn orchestration ----
 
