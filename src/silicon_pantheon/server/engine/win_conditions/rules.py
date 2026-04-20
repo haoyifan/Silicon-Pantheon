@@ -239,23 +239,47 @@ class ProtectUnitSurvives:
 @register("reach_tile")
 @dataclass
 class ReachTile:
-    """A specific unit (or any unit of a team) ending its turn on a tile → win."""
+    """A specific unit (or any unit of a team) ending its turn on a
+    tile → win.
+
+    Two shapes are accepted:
+      - Single tile: ``pos: {x, y}``
+      - Zone: ``positions: [{x, y}, {x, y}, ...]`` — any of the
+        listed tiles triggers the win. Use this when the objective
+        is a multi-tile area (e.g. a 3x4 bunker) instead of one
+        point. Renders as a compact bounding-box summary in
+        ``describe_progress`` so the scoreboard stays readable.
+
+    Exactly one of ``pos`` or ``positions`` must be set. If both
+    are set, ``positions`` wins and ``pos`` is ignored.
+    """
 
     team: str = "blue"
     pos: dict | None = None
+    positions: list[dict] | None = None
     unit_id: str | None = None
     trigger: str = "end_turn"
+
+    def _targets(self) -> list[Pos]:
+        if self.positions:
+            return [
+                Pos(int(p["x"]), int(p["y"])) for p in self.positions
+            ]
+        if self.pos is not None:
+            return [Pos(int(self.pos["x"]), int(self.pos["y"]))]
+        return []
 
     def check(self, state, hook, **_) -> WinResult | None:
         if hook != "end_turn":
             return None
-        if self.pos is None:
+        targets = self._targets()
+        if not targets:
             return None
-        target = Pos(int(self.pos["x"]), int(self.pos["y"]))
+        target_set = set(targets)
         for u in state.units_of(Team(self.team)):
             if self.unit_id is not None and u.id != self.unit_id:
                 continue
-            if u.pos == target:
+            if u.pos in target_set:
                 return WinResult(
                     winner=self.team,
                     reason="reach_tile",
@@ -266,10 +290,42 @@ class ReachTile:
                 )
         return None
 
+    def _describe_targets(self) -> str:
+        """Render targets compactly for describe_progress.
+
+        Single tile: "(x,y)". Small zone (≤4 tiles): list them.
+        Rectangular zone: bounding-box "(x0-x1,y0-y1)". Otherwise:
+        bbox with a "(N tiles)" suffix.
+        """
+        targets = self._targets()
+        if not targets:
+            return "(no target)"
+        if len(targets) == 1:
+            t = targets[0]
+            return f"({t.x},{t.y})"
+        xs = [t.x for t in targets]
+        ys = [t.y for t in targets]
+        x0, x1 = min(xs), max(xs)
+        y0, y1 = min(ys), max(ys)
+        # If targets exactly fill the bounding box, render as a clean range.
+        span = (x1 - x0 + 1) * (y1 - y0 + 1)
+        if span == len(targets):
+            xrange = f"{x0}" if x0 == x1 else f"{x0}-{x1}"
+            yrange = f"{y0}" if y0 == y1 else f"{y0}-{y1}"
+            return f"any tile in (x={xrange}, y={yrange})"
+        if len(targets) <= 4:
+            return "any of " + ", ".join(f"({t.x},{t.y})" for t in targets)
+        return (
+            f"any of {len(targets)} tiles in "
+            f"(x={x0}-{x1}, y={y0}-{y1})"
+        )
+
     def describe_progress(self, state, viewer) -> str | None:
-        if self.pos is None:
+        targets = self._targets()
+        if not targets:
             return None
-        target = Pos(int(self.pos["x"]), int(self.pos["y"]))
+        target_set = set(targets)
+        label = self._describe_targets()
         is_mine = viewer.value == self.team
         eligible = [u for u in state.units_of(Team(self.team)) if u.alive]
         if self.unit_id is not None:
@@ -277,21 +333,32 @@ class ReachTile:
         if not eligible:
             if is_mine:
                 return (
-                    f"Reach ({target.x},{target.y}) with your "
+                    f"Reach {label} with your "
                     f"{'team' if self.unit_id is None else self.unit_id} "
                     "to win: no eligible unit alive"
                 )
             return (
                 f"Opponent wins if their "
                 f"{'team' if self.unit_id is None else self.unit_id} "
-                f"reaches ({target.x},{target.y}): no eligible unit alive"
+                f"reaches {label}: no eligible unit alive"
             )
-        closest = min(eligible, key=lambda u: u.pos.manhattan(target))
-        d = closest.pos.manhattan(target)
+        # Closest unit over any target tile.
+        closest = min(
+            eligible,
+            key=lambda u: min(u.pos.manhattan(t) for t in targets),
+        )
+        d = min(closest.pos.manhattan(t) for t in targets)
         who = "your" if is_mine else f"{self.team}'s"
         win_verb = "to win" if is_mine else "and that team wins"
+        already_there = closest.pos in target_set
+        if already_there:
+            return (
+                f"Reach {label} with {who} "
+                f"{'units' if self.unit_id is None else self.unit_id} "
+                f"{win_verb}: {closest.id} is ALREADY on the objective"
+            )
         return (
-            f"Reach ({target.x},{target.y}) with {who} "
+            f"Reach {label} with {who} "
             f"{'units' if self.unit_id is None else self.unit_id} "
             f"{win_verb}: closest is {closest.id} at "
             f"({closest.pos.x},{closest.pos.y}), {d} tile(s) away"

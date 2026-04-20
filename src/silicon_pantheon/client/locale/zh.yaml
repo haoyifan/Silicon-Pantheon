@@ -61,6 +61,7 @@ win:
   protect_unit: "{name}一旦阵亡，{winner}直接获胜——{loser}务必死守！"
   protect_unit_survives: "{name}只要撑到最后一回合，{protector}就赢了——活着就是胜利！"
   reach_tile: "{who}只要踏上({x}, {y})并结束回合，{team}就胜利了。"
+  reach_tile_zone: "{who}只要踏上{target}区域内任一格并结束回合，{team}就胜利了。"
   hold_tile: "{team}连续霸占({x}, {y}){n}回合即可获胜——站稳了！"
   reach_goal_line: "{team}任意单位冲过{axis}={value}线即可获胜——全速前进！"
 

@@ -62,6 +62,7 @@ win:
   protect_unit: "If {name} falls, {winner} wins — {loser}, protect them at all costs!"
   protect_unit_survives: "Keep {name} alive until the final turn and {protector} wins — survival is victory!"
   reach_tile: "{team} wins if {who} reaches ({x}, {y}) — charge!"
+  reach_tile_zone: "{team} wins if {who} ends a turn on any tile in {target} — charge!"
   hold_tile: "{team} must hold ({x}, {y}) for {n} turns straight — dig in!"
   reach_goal_line: "Any {team} unit crossing {axis}={value} wins — full speed ahead!"
 

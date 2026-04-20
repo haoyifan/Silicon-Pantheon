@@ -425,6 +425,14 @@ def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
                 ),
             )
         filtered = _apply_filter(tool_name, result, session, viewer)
+        # Diagnostic: under fog, scan the FILTERED response for hidden
+        # enemy IDs. If any leak through, log WARNING pointing at the
+        # exact field path — this is how we chase down "the agent knew
+        # an ID it shouldn't have seen" reports. No-op under fog=none.
+        from silicon_pantheon.server.tools._common import (
+            audit_response_for_fog_leaks,
+        )
+        audit_response_for_fog_leaks(filtered, session, viewer, tool_name)
 
     # ── Phase 3: post-process (no app-level lock held) ──────────
     # _note_game_over_if_needed has its own 3-phase locking protocol;

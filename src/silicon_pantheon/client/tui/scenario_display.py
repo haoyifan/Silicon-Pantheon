@@ -198,10 +198,37 @@ def describe_win_condition(
                 .replace("{protector}", localized_team(protector, locale))
                 .replace("{name}", name))
     if wc_type == "reach_tile":
-        pos = wc.get("pos") or {}
         team = wc.get("team", "?")
         u = wc.get("unit_id")
         who = humanize_unit_id(u, scenario_description) if u else t("button_val.any_unit", locale).replace("{team}", localized_team(team, locale))
+        positions = wc.get("positions")
+        if positions:
+            # Zone form: render one line with a compact target
+            # description (bounding box or list) so a 12-tile bunker
+            # shows as ONE line, not twelve.
+            xs = [int(p.get("x", 0)) for p in positions]
+            ys = [int(p.get("y", 0)) for p in positions]
+            x0, x1 = min(xs), max(xs)
+            y0, y1 = min(ys), max(ys)
+            span = (x1 - x0 + 1) * (y1 - y0 + 1)
+            if span == len(positions):
+                xrange = f"{x0}" if x0 == x1 else f"{x0}-{x1}"
+                yrange = f"{y0}" if y0 == y1 else f"{y0}-{y1}"
+                target_desc = f"(x={xrange}, y={yrange})"
+            elif len(positions) <= 4:
+                target_desc = ", ".join(
+                    f"({p.get('x')},{p.get('y')})" for p in positions
+                )
+            else:
+                target_desc = (
+                    f"{len(positions)} tiles in "
+                    f"(x={x0}-{x1}, y={y0}-{y1})"
+                )
+            return (t("win.reach_tile_zone", locale)
+                    .replace("{team}", localized_team(team, locale))
+                    .replace("{who}", who)
+                    .replace("{target}", target_desc))
+        pos = wc.get("pos") or {}
         return (t("win.reach_tile", locale)
                 .replace("{team}", localized_team(team, locale))
                 .replace("{who}", who)

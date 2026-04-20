@@ -56,6 +56,7 @@ def _configure_server_logging(level: str, log_file: Path | None) -> Path:
         "silicon.game",
         "silicon.engine",
         "silicon.heartbeat",
+        "silicon.fog",
         "silicon-serve",
         "uvicorn",
         "uvicorn.error",
@@ -215,6 +216,7 @@ def main() -> int:
         fh.setFormatter(fmt)
         target_loggers = (
             "silicon", "silicon.lobby", "silicon.game", "silicon.engine",
+            "silicon.fog",
             "silicon-serve", "silicon.leaderboard", "silicon.host",
             "silicon.transport",
             "mcp", "mcp.server", "mcp.server.lowlevel.server",

@@ -708,19 +708,25 @@ rules:
   first_player: blue
 
 win_conditions:
-  # Demolition charge: any blue unit standing on a bunker tile wins.
-  - {type: reach_tile, team: blue, pos: {x: 12, y: 6}}
-  - {type: reach_tile, team: blue, pos: {x: 12, y: 7}}
-  - {type: reach_tile, team: blue, pos: {x: 12, y: 8}}
-  - {type: reach_tile, team: blue, pos: {x: 12, y: 9}}
-  - {type: reach_tile, team: blue, pos: {x: 13, y: 6}}
-  - {type: reach_tile, team: blue, pos: {x: 13, y: 7}}
-  - {type: reach_tile, team: blue, pos: {x: 13, y: 8}}
-  - {type: reach_tile, team: blue, pos: {x: 13, y: 9}}
-  - {type: reach_tile, team: blue, pos: {x: 14, y: 6}}
-  - {type: reach_tile, team: blue, pos: {x: 14, y: 7}}
-  - {type: reach_tile, team: blue, pos: {x: 14, y: 8}}
-  - {type: reach_tile, team: blue, pos: {x: 14, y: 9}}
+  # Demolition charge: any blue unit ending its turn on a bunker
+  # tile wins. The bunker is a 3x4 zone (x=12-14, y=6-9). A single
+  # reach_tile rule with a `positions` list collapses what used to
+  # be 12 rules into one line on the scoreboard.
+  - type: reach_tile
+    team: blue
+    positions:
+      - {x: 12, y: 6}
+      - {x: 12, y: 7}
+      - {x: 12, y: 8}
+      - {x: 12, y: 9}
+      - {x: 13, y: 6}
+      - {x: 13, y: 7}
+      - {x: 13, y: 8}
+      - {x: 13, y: 9}
+      - {x: 14, y: 6}
+      - {x: 14, y: 7}
+      - {x: 14, y: 8}
+      - {x: 14, y: 9}
   # Trump dies -> political collapse, blue loses
   - {type: protect_unit, unit_id: u_b_trump_1, owning_team: blue}
   # Total elimination either way

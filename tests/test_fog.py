@@ -238,6 +238,81 @@ def test_attack_blocked_against_fog_hidden_enemy() -> None:
         )
 
 
+def test_fog_audit_detects_hidden_id_in_response(caplog) -> None:
+    """The audit helper must flag any hidden-enemy unit_id that leaks
+    through a filtered response, so we can chase down which tool
+    forgot to redact it. We synthesize a response that leaks a
+    hidden enemy ID and assert the audit logs a WARNING."""
+    import logging as _logging
+    from silicon_pantheon.server.session import new_session
+    from silicon_pantheon.server.tools._common import audit_response_for_fog_leaks
+
+    state = load_scenario("01_tiny_skirmish")
+    _spread_out(state)
+    session = new_session(state, fog_of_war="classic")
+    any_red = next(iter(state.units_of(Team.RED)))
+    # Build a fake response that (incorrectly) includes the hidden
+    # enemy's ID — mimicking a bug where a tool forgot to redact.
+    leaky_response = {
+        "some_field": {
+            "nested": {
+                "enemy_ref": any_red.id,  # hidden under fog for blue
+            },
+            "list": [
+                {"unit_id": any_red.id},
+            ],
+        },
+    }
+    caplog.set_level(_logging.WARNING, logger="silicon.fog")
+    audit_response_for_fog_leaks(leaky_response, session, Team.BLUE, "my_bogus_tool")
+    messages = [r.message for r in caplog.records if r.name == "silicon.fog"]
+    assert any("fog_leak_suspect" in m for m in messages), (
+        f"expected fog_leak_suspect WARNING; saw: {messages}"
+    )
+    assert any("my_bogus_tool" in m for m in messages), (
+        f"WARNING should name the tool; saw: {messages}"
+    )
+
+
+def test_fog_audit_silent_on_clean_response() -> None:
+    """The audit must NOT log WARNING when the response is clean (only
+    references own-team units and dead enemies)."""
+    import logging as _logging
+    from silicon_pantheon.server.session import new_session
+    from silicon_pantheon.server.tools._common import audit_response_for_fog_leaks
+
+    state = load_scenario("01_tiny_skirmish")
+    _spread_out(state)
+    session = new_session(state, fog_of_war="classic")
+    any_blue = next(iter(state.units_of(Team.BLUE)))
+    clean_response = {
+        "your_units": [{"id": any_blue.id}],
+    }
+    # Reset the silicon.fog handler so we can observe emissions.
+    logger = _logging.getLogger("silicon.fog")
+    # Count WARNING records emitted while calling the audit.
+    class _Counter(_logging.Handler):
+        def __init__(self):
+            super().__init__(level=_logging.WARNING)
+            self.count = 0
+
+        def emit(self, record):
+            if record.name == "silicon.fog" and record.levelno >= _logging.WARNING:
+                self.count += 1
+
+    counter = _Counter()
+    logger.addHandler(counter)
+    try:
+        audit_response_for_fog_leaks(
+            clean_response, session, Team.BLUE, "some_tool"
+        )
+    finally:
+        logger.removeHandler(counter)
+    assert counter.count == 0, (
+        "audit should not warn when response only references own-team"
+    )
+
+
 def test_attack_allowed_under_no_fog_baseline() -> None:
     """Baseline: under fog=none, the visibility gate is a no-op and
     a valid attack proceeds (or fails only for normal rules like
