@@ -1233,9 +1233,22 @@ async def _run_countdown(app: App, room_id: str) -> None:
                 room,
                 room and room.all_ready(),
             )
+            # Clear the deadline either way — if we're not promoting,
+            # the countdown is moot, and leaving the deadline would
+            # make _maybe_promote_on_deadline fire redundantly on the
+            # next get_room_state poll.
+            app.autostart_deadlines.pop(room_id, None)
+            app.autostart_tasks.pop(room_id, None)
             return
         if app.on_countdown_complete is not None:
             should_fire = True
+        # Clear BEFORE firing the callback so a concurrent
+        # _maybe_promote_on_deadline (from a simultaneous
+        # get_room_state poll) sees no deadline and doesn't
+        # double-fire. The clear + should_fire assignment happen
+        # atomically under state_lock.
+        app.autostart_deadlines.pop(room_id, None)
+        app.autostart_tasks.pop(room_id, None)
     # Fire the callback OUTSIDE state_lock. The callback is
     # start_game_for_room, which takes state_lock itself. Keeping
     # them nested would still work (RLock is reentrant), but
