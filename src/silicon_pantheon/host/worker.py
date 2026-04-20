@@ -44,6 +44,11 @@ class BotWorker:
         self._client = None
         self._transport_ctx = None
         self._scenario: str = ""
+        # Currently-running NetworkedAgent, if a match is in progress.
+        # The runner reads ``agent.adapter_elapsed_s()`` off this to
+        # surface the "llm Xs" elapsed-timer in the terminal status
+        # line. Cleared between matches.
+        self.agent = None
 
     # ---- public interface ----
 
@@ -274,6 +279,10 @@ class BotWorker:
             time_budget_s=float(cfg.turn_time_limit_s),
             locale=cfg.locale,
         )
+        # Expose so the runner's status line can read the current
+        # LLM-wait elapsed time. Cleared in the finally below when
+        # the match ends.
+        self.agent = agent
 
         # Fetch max_turns from room state.
         r = await client.call("get_room_state")
@@ -333,6 +342,9 @@ class BotWorker:
                 await agent.close()
             except Exception:
                 pass
+            # Drop the agent reference so the runner's status line
+            # stops probing a finished match for LLM-wait elapsed.
+            self.agent = None
 
     # ---- helpers ----
 

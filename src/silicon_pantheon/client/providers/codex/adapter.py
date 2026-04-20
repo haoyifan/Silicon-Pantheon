@@ -114,6 +114,12 @@ class CodexAdapter:
         # loop. Used by the text-only-response nudge to decide whether
         # to exit or re-prompt.
         self._end_turn_called: bool = False
+        # Monotonic timestamp when the currently-pending Responses API
+        # call started, or None when we're not waiting on Codex.
+        # Read by NetworkedAgent.adapter_elapsed_s() so the TUI can
+        # render "thinking (Xs)" — distinguishes a slow-but-alive
+        # provider from a wedged client.
+        self.api_call_started_at: float | None = None
 
     # ---- transport ------------------------------------------------------
 
@@ -162,12 +168,18 @@ class CodexAdapter:
                 headers["Chatgpt-Account-Id"] = self._credentials.account_id
 
             try:
+                self.api_call_started_at = time.monotonic()
                 resp = await client.post(
                     RESPONSES_ENDPOINT, headers=headers, json=body,
                 )
             except Exception as e:
                 log.exception("Codex POST raised")
                 raise classify(e) from e
+            finally:
+                # Response arrived (success or error). Clear the
+                # pending flag so the TUI stops showing "thinking
+                # (Xs)" until the next _post_responses() call.
+                self.api_call_started_at = None
 
             if resp.status_code == 401 and attempt == 0:
                 log.info("Codex 401; forcing token refresh and retrying")

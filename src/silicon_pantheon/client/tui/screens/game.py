@@ -227,12 +227,19 @@ class PlayerPanel(Panel):
                 self.screen.app.state.agent_task is not None
                 and not self.screen.app.state.agent_task.done()
             )
-            rows.append(
-                Text(
-                    t("status.agent_thinking", lc) if busy else t("status.agent_idle", lc),
-                    style="yellow" if busy else "dim",
-                )
-            )
+            if busy:
+                label = t("status.agent_thinking", lc)
+                # Only render the elapsed counter while we're genuinely
+                # waiting on the provider (adapter.api_call_started_at
+                # set). Between iterations / during tool dispatch the
+                # adapter clears it, so the timer disappears rather
+                # than showing a stale value.
+                elapsed = self.screen.app.state.agent.adapter_elapsed_s()
+                if elapsed is not None:
+                    label = f"{label} ({elapsed:.0f}s)"
+                rows.append(Text(label, style="yellow"))
+            else:
+                rows.append(Text(t("status.agent_idle", lc), style="dim"))
 
         # Build flat roster used for cursor indexing + cross-highlight.
         units = gs.get("units") or []

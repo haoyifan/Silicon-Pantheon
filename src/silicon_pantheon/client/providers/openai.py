@@ -82,6 +82,14 @@ class OpenAIAdapter:
         self.total_tokens: int = 0
         self.total_tool_calls: int = 0
         self.total_errors: int = 0
+        # Monotonic timestamp when the currently-pending LLM API call
+        # started, or None when we're not waiting on the provider.
+        # Set just before chat.completions.create() and cleared as
+        # soon as the response returns. NetworkedAgent reads this
+        # via adapter_elapsed_s() so the TUI can render "thinking
+        # (Xs)" — tells operators that a minutes-long wait (grok-4
+        # reasoning) is the model thinking, not a wedged client.
+        self.api_call_started_at: float | None = None
 
     # ---- transcript bookkeeping ----
 
@@ -351,6 +359,7 @@ class OpenAIAdapter:
                 _iter, len(self._messages), est_now,
             )
             try:
+                self.api_call_started_at = time.monotonic()
                 resp = await self._client.chat.completions.create(
                     model=self.model,
                     messages=self._messages,
@@ -396,6 +405,11 @@ class OpenAIAdapter:
                     self._transcript_breakdown(self._messages),
                 )
                 raise classify(e) from e
+            finally:
+                # Response arrived (success or error). Clear the pending
+                # flag so the TUI stops rendering "thinking (Xs)" until
+                # the next chat.completions.create() call.
+                self.api_call_started_at = None
 
             # Accumulate token usage from the API response.
             if hasattr(resp, "usage") and resp.usage is not None:
@@ -746,6 +760,7 @@ class OpenAIAdapter:
             f"Match context (JSON):\n```json\n{json.dumps(context, indent=2, default=str)}\n```\n"
         )
         try:
+            self.api_call_started_at = time.monotonic()
             resp = await self._client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -759,6 +774,8 @@ class OpenAIAdapter:
         except Exception:
             log.exception("summarize_match raised")
             return None
+        finally:
+            self.api_call_started_at = None
         text = (resp.choices[0].message.content or "").strip()
         parsed = _parse_lesson_json(text)
         if parsed is None:

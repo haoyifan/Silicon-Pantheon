@@ -933,6 +933,28 @@ class NetworkedAgent:
 
         return await self._finalize_turn(viewer)
 
+    def adapter_elapsed_s(self) -> float | None:
+        """Seconds since the adapter's currently-pending LLM API call
+        started, or None if no call is in flight.
+
+        Each adapter (openai, codex, anthropic) is responsible for
+        setting ``self.api_call_started_at`` to ``time.monotonic()``
+        just before its HTTP request and clearing it to None once
+        the response returns. The TUI / host-runner reads this via
+        ``adapter_elapsed_s()`` and renders "thinking (Xs)" so
+        operators can tell a minutes-long wait (grok-4 reasoning,
+        claude extended thinking) from a wedged client.
+
+        Returns None if the adapter doesn't implement this attribute
+        (older adapter, test stub), so callers can treat None as
+        "don't show a timer" without having to distinguish cases.
+        """
+        import time as _time
+        started = getattr(self.adapter, "api_call_started_at", None)
+        if started is None:
+            return None
+        return _time.monotonic() - started
+
     async def _watch_match_terminated(self) -> None:
         """Poll self._match_terminated and return once it flips.
 

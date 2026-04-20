@@ -86,6 +86,14 @@ class AnthropicAdapter:
         self.total_tokens: int = 0
         self.total_tool_calls: int = 0
         self.total_errors: int = 0
+        # "API call in flight" marker — monotonic timestamp or None.
+        # Anthropic's ClaudeSDKClient hides the actual HTTP calls, so
+        # unlike openai.py/codex we can't time each individual
+        # request. Best approximation: set when the SDK is actively
+        # waiting (between our tool-dispatch callbacks), clear when a
+        # tool dispatch is ongoing (we know a tool response arrived).
+        # See _wrap_tool for the reset logic.
+        self.api_call_started_at: float | None = None
 
     async def _ensure_session(
         self,
@@ -125,6 +133,14 @@ class AnthropicAdapter:
 
         @tool(spec.name, spec.description, spec.input_schema)
         async def _handler(args: dict) -> dict:
+            import time as _time
+            # A tool call arrived => the LLM just finished a response.
+            # Clear the "API call in flight" marker. We re-set it in
+            # `finally` so the NEXT round of reasoning (the SDK will
+            # send another request after this tool returns) is tracked
+            # again. Approximates per-query timing with the granularity
+            # the SDK affords us.
+            adapter.api_call_started_at = None
             adapter.total_tool_calls += 1
             try:
                 result = await dispatcher(spec.name, args or {})
@@ -136,6 +152,10 @@ class AnthropicAdapter:
                     ],
                     "isError": True,
                 }
+            finally:
+                # Tool dispatch done; the SDK is about to issue the
+                # next API call. Timer starts fresh.
+                adapter.api_call_started_at = _time.monotonic()
             return {
                 "content": [
                     {"type": "text", "text": json.dumps(result, default=str)}
@@ -162,12 +182,22 @@ class AnthropicAdapter:
         self._turn_count += 1
 
         start = time.time()
+        # Mark "API call in flight" for the first query. _wrap_tool
+        # resets it per tool-dispatch cycle so the TUI timer reflects
+        # wait time on the currently-pending reasoning step.
+        self.api_call_started_at = time.monotonic()
         try:
             await client.query(user_prompt)
             async for msg in client.receive_response():
                 if time.time() - start > time_budget_s:
                     break
                 if isinstance(msg, AssistantMessage) and on_thought is not None:
+                    # An assistant message arrived — reasoning step
+                    # done (at least partially). Clear the timer so
+                    # the user isn't shown a stale "waiting" state
+                    # while we process the text / stream tool blocks.
+                    # _wrap_tool will re-set it after each tool call.
+                    self.api_call_started_at = None
                     for block in msg.content:
                         if isinstance(block, TextBlock) and block.text.strip():
                             try:
@@ -185,6 +215,10 @@ class AnthropicAdapter:
         except Exception as e:
             log.exception("Anthropic play_turn raised: %s", e)
             raise classify(e) from e
+        finally:
+            # Definitively clear so the TUI stops rendering the timer
+            # once the turn returns.
+            self.api_call_started_at = None
 
     async def summarize_match(
         self,

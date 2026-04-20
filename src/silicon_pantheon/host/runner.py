@@ -58,6 +58,13 @@ def _status_line(workers: list[BotWorker]) -> str:
             info += f" vs {w.opponent}"
         if w.turn_info and "turn" not in w.status:
             info += f" ({w.turn_info})"
+        # While the adapter is waiting on the provider, append the
+        # elapsed-since-request time so operators can tell a slow
+        # provider (grok-4 reasoning, etc.) from a wedged worker.
+        agent = getattr(w, "agent", None)
+        elapsed = agent.adapter_elapsed_s() if agent is not None else None
+        if elapsed is not None:
+            info += f" [llm {elapsed:.0f}s]"
         parts.append(f"{tag} {info}")
     line = "  ".join(parts)
     cols = shutil.get_terminal_size((120, 24)).columns
