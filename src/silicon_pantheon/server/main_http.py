@@ -239,7 +239,7 @@ def main() -> int:
         fh.setFormatter(fmt)
         target_loggers = (
             "silicon", "silicon.lobby", "silicon.game", "silicon.engine",
-            "silicon.fog",
+            "silicon.fog", "silicon.heartbeat",
             "silicon-serve", "silicon.leaderboard", "silicon.host",
             "silicon.transport",
             "mcp", "mcp.server", "mcp.server.lowlevel.server",
