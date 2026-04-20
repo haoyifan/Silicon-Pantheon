@@ -497,6 +497,8 @@ class CodexAdapter:
                     [c["name"] for c in executed_calls],
                     [c["name"] for c in dropped_calls],
                 )
+            from silicon_pantheon.shared.match_errors import is_terminal_tool_error
+            terminal_reached = False
             for tc in executed_calls:
                 try:
                     args = json.loads(tc.get("arguments") or "{}")
@@ -508,7 +510,19 @@ class CodexAdapter:
                     result = await tool_dispatcher(tc["name"], args)
                     result_text = json.dumps(result, default=str)
                 except Exception as e:
-                    result_text = json.dumps({"error": str(e)})
+                    result = {"error": str(e)}
+                    result_text = json.dumps(result)
+                # Match-terminal error detection — see openai.py for
+                # the full rationale. Same risk here: a codex model
+                # that apologises and retries end_turn on a game-over
+                # response would loop until max_iterations.
+                if is_terminal_tool_error(result):
+                    terminal_reached = True
+                    log.info(
+                        "loop exit (terminal): tool %s returned a "
+                        "terminal-match error — breaking iteration",
+                        tc["name"],
+                    )
                 MAX_RESULT_BYTES = 4000
                 if len(result_text) > MAX_RESULT_BYTES:
                     result_text = (
@@ -552,6 +566,12 @@ class CodexAdapter:
                         call_id=tc["call_id"], output=err_text,
                     )
                 )
+            # Exit the outer iteration loop AFTER writing all tool-call
+            # outputs for this iteration (dropped mutation synthetics
+            # included) so the Responses API's call_id / output
+            # pairing stays consistent for any subsequent adapter use.
+            if terminal_reached:
+                break
 
         # Turn completed (or exited via budget/token-limit). Snapshot
         # the input length so a retry won't re-append the user prompt.

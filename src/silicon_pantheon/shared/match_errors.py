@@ -1,21 +1,26 @@
-"""Detect tool-response shapes that mean "the match has ended; stop acting."
+"""Detect tool-response shapes that mean "stop acting this turn."
 
-When a player keeps trying to mutate state after the game has finished,
-the server's tool dispatch translates the engine-level
-``IllegalAction("game is already over")`` into an error response:
+When the server rejects a tool call with an error that indicates
+"the situation has changed out from under you and no further action
+makes sense right now", a weak LLM will often apologise and retry
+the same tool repeatedly, burning provider tokens and holding the
+worker hung until the 45-min turn deadline. grok-3-mini has been
+observed in production doing this for both:
 
-    {"ok": false, "error": {"code": "bad_input",
-                            "message": "game is already over"}}
+  - ``game is already over`` (match finished between the adapter's
+    get_state and its next end_turn)
+  - ``not your turn`` (turn was force-ended server-side while the
+    adapter was still iterating)
 
-The client unwraps that to ``{"error": {...}}`` in _dispatch_tool. A
-robust agent bridge should notice this and break out of its LLM loop
-immediately; otherwise a weak model (grok-3-mini has been observed
-doing this) will apologize and retry ``end_turn`` forever, burning
-provider tokens and holding the worker in a hung state until the
-45-min turn deadline finally fires.
+Plus state-loss error codes that indicate the session itself is gone
+(GAME_NOT_STARTED / TOOL_NOT_AVAILABLE_IN_STATE / NOT_REGISTERED /
+NOT_IN_ROOM) — nothing the agent does this turn will do anything
+useful, so we should exit the loop.
 
 This module is the single source of truth for that detection so every
-adapter and the bridge's dispatcher use the same rule.
+adapter and the bridge's dispatcher apply the same rule. If the server
+grows a new signal that means "stop for this turn", add it here and
+every adapter picks it up for free.
 """
 
 from __future__ import annotations
@@ -23,23 +28,42 @@ from __future__ import annotations
 from typing import Any
 
 
-_TERMINAL_MARKERS = (
+# Substring markers — matched against error.message, case-insensitive.
+# Covers engine-level IllegalAction messages that route through
+# ErrorCode.BAD_INPUT on the wire (so they can't be distinguished by
+# code alone).
+_TERMINAL_MESSAGE_MARKERS = (
     "game is already over",
     "game is over",
+    "not your turn",
 )
+
+# Error codes that unambiguously mean the session / room / game is
+# gone. Matched against error.code. (BAD_INPUT is deliberately NOT in
+# this list — it's overloaded for every validation failure, only the
+# specific messages above count.)
+_TERMINAL_CODES = frozenset({
+    "game_already_over",
+    "game_not_started",
+    "tool_not_available_in_state",
+    "not_registered",
+    "not_in_room",
+    "not_your_turn",
+})
 
 
 def is_terminal_tool_error(result: Any) -> bool:
-    """True iff a tool result indicates the match has already ended.
+    """True iff a tool result means "stop the current play_turn loop."
 
     Accepts either the raw server envelope ``{"ok": false, "error":
     {...}}`` or the bridge-unwrapped ``{"error": {...}}`` — both shapes
     appear in practice because _dispatch_tool rewraps the envelope
     before returning to the adapter.
 
-    Keep the marker list tight. If the server grows new game-over
-    messages, add them here so the whole fleet picks them up without
-    having to chase per-adapter fixes.
+    A match-ended terminal is detected; so is a ``not your turn`` /
+    state-loss terminal. From the caller's perspective both mean
+    "exit the adapter's iteration loop; the host worker's outer loop
+    will re-fetch state and decide what's next."
     """
     if not isinstance(result, dict):
         return False
@@ -49,5 +73,8 @@ def is_terminal_tool_error(result: Any) -> bool:
         err = result.get("error")
     if not isinstance(err, dict):
         return False
+    code = str(err.get("code") or "").lower()
+    if code in _TERMINAL_CODES:
+        return True
     msg = str(err.get("message") or "").lower()
-    return any(m in msg for m in _TERMINAL_MARKERS)
+    return any(m in msg for m in _TERMINAL_MESSAGE_MARKERS)

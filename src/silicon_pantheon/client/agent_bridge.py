@@ -744,6 +744,15 @@ class NetworkedAgent:
             viewer.value, self._turns_played,
             self._no_progress_retries, self._history_cursor,
         )
+        # Reset the terminal-match flag at each turn entry. The flag
+        # is set by _dispatch_tool when the server reports a signal
+        # that means "stop acting for this turn" — ``game is already
+        # over``, ``not your turn``, or a state-loss error code. If
+        # last turn saw a ``not your turn`` blip (turn-flip race)
+        # and the worker re-enters play_turn legitimately on a
+        # subsequent turn, we don't want the stale flag to
+        # immediately cancel the fresh adapter run.
+        self._match_terminated = False
         state = await self._fetch_state()
 
         # Defensive re-check of turn ownership. _maybe_trigger_agent

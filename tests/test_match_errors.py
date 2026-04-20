@@ -38,10 +38,7 @@ def test_substring_match() -> None:
 
 
 def test_normal_error_not_terminal() -> None:
-    """Other error shapes must NOT trip the detector."""
-    assert not is_terminal_tool_error({
-        "error": {"code": "bad_input", "message": "not your turn"},
-    })
+    """Recoverable per-action error shapes must NOT trip the detector."""
     assert not is_terminal_tool_error({
         "error": {"code": "invalid_argument", "message": "move out of range"},
     })
@@ -66,6 +63,53 @@ def test_non_dict_inputs() -> None:
 
 
 def test_missing_message_field() -> None:
-    """Error dict without message → not terminal (can't confirm)."""
+    """Error dict without message → not terminal unless code is terminal."""
     assert not is_terminal_tool_error({"error": {"code": "bad_input"}})
     assert not is_terminal_tool_error({"error": {}})
+
+
+def test_not_your_turn_message() -> None:
+    """The other grok-3-mini observed loop: turn flipped mid-adapter."""
+    assert is_terminal_tool_error({
+        "error": {"code": "bad_input",
+                  "message": "not your turn (active: red, you: blue)"},
+    })
+
+
+def test_terminal_error_codes() -> None:
+    """State-loss codes are terminal even with empty/vague message."""
+    assert is_terminal_tool_error({
+        "error": {"code": "game_not_started", "message": "no active game"},
+    })
+    assert is_terminal_tool_error({
+        "error": {"code": "tool_not_available_in_state", "message": ""},
+    })
+    assert is_terminal_tool_error({
+        "error": {"code": "not_registered", "message": "anything"},
+    })
+    assert is_terminal_tool_error({
+        "error": {"code": "not_in_room", "message": ""},
+    })
+    assert is_terminal_tool_error({
+        "error": {"code": "game_already_over", "message": ""},
+    })
+    assert is_terminal_tool_error({
+        "error": {"code": "not_your_turn", "message": ""},
+    })
+
+
+def test_bad_input_without_marker_is_not_terminal() -> None:
+    """BAD_INPUT is overloaded — only its specific messages count."""
+    assert not is_terminal_tool_error({
+        "error": {"code": "bad_input", "message": "invalid args: missing x"},
+    })
+    assert not is_terminal_tool_error({
+        "error": {"code": "bad_input", "message": "unit u_b_foo not found"},
+    })
+    # Per-action tactical errors that the LLM CAN recover from:
+    assert not is_terminal_tool_error({
+        "error": {"code": "bad_input", "message": "target out of attack range"},
+    })
+    assert not is_terminal_tool_error({
+        "error": {"code": "bad_input", "message": "heal requires adjacent ally"},
+    })
