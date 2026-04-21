@@ -125,7 +125,21 @@ def main() -> int:
             "instead of being logged and swallowed. Equivalent to "
             "setting env var SILICON_DEBUG=1. Do NOT use in "
             "production — a single bad scenario plugin will kill "
-            "live matches."
+            "live matches. Note: this does NOT raise logging "
+            "verbosity — use --log-level DEBUG or "
+            "--log-debug-mcp-http for that."
+        ),
+    )
+    p.add_argument(
+        "--log-debug-mcp-http",
+        action="store_true",
+        help=(
+            "Bump MCP streamable-HTTP SDK loggers to DEBUG while "
+            "keeping the rest of the process at --log-level. Surfaces "
+            "per-request SSE stream lifecycle (connection open / "
+            "close, response write failures) without the firehose of "
+            "full --log-level DEBUG. Use to diagnose 'response was "
+            "dispatched but never reached the client' hangs."
         ),
     )
     args = p.parse_args()
@@ -133,7 +147,9 @@ def main() -> int:
     if args.debug:
         # The shared.debug module reads SILICON_DEBUG on every call,
         # so setting it here is enough to flip every invariant check
-        # in this process to crash-mode.
+        # in this process to crash-mode. Deliberately separate from
+        # --log-level: an operator debugging a fog leak often wants
+        # crash-on-violation WITHOUT also drowning in DEBUG logs.
         os.environ["SILICON_DEBUG"] = "1"
 
     log_file = _configure_server_logging(args.log_level, args.log_file)
@@ -142,6 +158,23 @@ def main() -> int:
         log.warning(
             "DEBUG MODE ENABLED — invariant violations will crash "
             "the server. Do not use in production."
+        )
+    if args.log_debug_mcp_http:
+        # Child loggers inherit handlers via the `mcp` / `mcp.server`
+        # root we wired up in _configure_server_logging (propagate=False
+        # only blocks upward propagation to the logging root, not
+        # downward inheritance). Explicitly bumping their level is
+        # enough — the handler on `mcp.server` receives their records
+        # because that's where propagation stops.
+        for name in (
+            "mcp.server.streamable_http",
+            "mcp.server.streamable_http_manager",
+            "mcp.server.session",
+        ):
+            logging.getLogger(name).setLevel(logging.DEBUG)
+        log.warning(
+            "MCP streamable-HTTP debug logging ENABLED — SSE stream "
+            "lifecycle will be verbose."
         )
     log.info("server log file: %s", log_file)
     # Keep a single stderr line identical to the old UX for quick discovery.
