@@ -21,6 +21,7 @@ import random
 from pathlib import Path
 from typing import Any
 
+from silicon_pantheon.client.providers.errors import ProviderError
 from silicon_pantheon.host.config import WorkerConfig
 
 log = logging.getLogger("silicon.host.worker")
@@ -29,6 +30,12 @@ log = logging.getLogger("silicon.host.worker")
 PROVIDER_RETRY_S = 30.0
 TRANSPORT_RETRY_S = 10.0
 POLL_INTERVAL_S = 1.0
+# Number of transient ProviderError retries (TIMEOUT / RATE_LIMIT /
+# OVERLOADED) before we give up on the current turn and concede.
+# Backoff is 30s, 60s, 120s → total ~3.5 min of waiting, well under
+# the 30-min server-side turn_time_limit default. Terminal errors
+# (AUTH / BILLING / MODEL_NOT_FOUND) bypass this loop entirely.
+MAX_TRANSIENT_RETRIES = 3
 
 
 class BotWorker:
@@ -130,17 +137,23 @@ class BotWorker:
             except asyncio.CancelledError:
                 raise
             except Exception as e:
-                from silicon_pantheon.client.providers.errors import ProviderError
                 if isinstance(e, ProviderError):
-                    # The provider error may have left the server with
-                    # the connection still IN_GAME/IN_ROOM from the
-                    # aborted match; resuming _one_game() would then
-                    # trip create_room's `requires state=in_lobby`
-                    # guard. Bubble up so run_forever() does a clean
-                    # reconnect — PROVIDER_RETRY_S pause gives the
-                    # upstream API time to settle first.
+                    # At this point the error is terminal (AUTH /
+                    # BILLING / MODEL_NOT_FOUND) — transient errors
+                    # (TIMEOUT / RATE_LIMIT / OVERLOADED) are retried
+                    # in-place inside _play_game. Terminal errors mean
+                    # the provider credentials are bad / out of credit /
+                    # the model is gone — no retry will help. We still
+                    # sleep PROVIDER_RETRY_S so an operator has a
+                    # breather to notice / re-auth before we spin the
+                    # whole connection again.
+                    #
+                    # leave_room (now auto-conceding on in_game) has
+                    # already cleanly resolved any mid-match state by
+                    # the time we reach here — no zombie room.
                     log.warning(
-                        "worker %s provider error: %s — reconnecting in %.0fs",
+                        "worker %s terminal provider error: %s — "
+                        "reconnecting in %.0fs (human may need to re-auth)",
                         self.config.name, e, PROVIDER_RETRY_S,
                     )
                     self.status = f"provider error, reconnect in {PROVIDER_RETRY_S:.0f}s"
@@ -306,29 +319,81 @@ class BotWorker:
                     # limit gives the in-agent budget room to shut
                     # down gracefully before we abort.
                     turn_deadline = float(cfg.turn_time_limit_s) * 1.5
-                    try:
-                        await asyncio.wait_for(
-                            agent.play_turn(viewer, max_turns=max_turns),
-                            timeout=turn_deadline,
-                        )
-                    except asyncio.TimeoutError:
-                        log.error(
-                            "worker %s turn timed out after %.0fs at "
-                            "turn %s — conceding to unblock the room",
-                            cfg.name, turn_deadline, turn,
-                        )
+                    # Transient ProviderError retry loop. TIMEOUT /
+                    # RATE_LIMIT / OVERLOADED are "try again" errors —
+                    # the SDK has usually already retried 2-3x by the
+                    # time it surfaces, but a bigger backoff sometimes
+                    # works. Retrying here preserves the in-progress
+                    # match (MCP session, agent conversation buffer,
+                    # scenario cache) instead of letting the error
+                    # bubble up and tear down the whole worker.
+                    # Terminal errors (AUTH / BILLING / MODEL_NOT_FOUND)
+                    # skip retry and bubble up immediately — leave_room
+                    # will auto-concede on the way out.
+                    transient_attempts = 0
+                    while True:
                         try:
                             await asyncio.wait_for(
-                                client.call("concede"), timeout=5.0,
+                                agent.play_turn(viewer, max_turns=max_turns),
+                                timeout=turn_deadline,
                             )
-                        except Exception:
-                            log.exception(
-                                "worker %s concede failed after turn timeout",
-                                cfg.name,
+                            break
+                        except asyncio.TimeoutError:
+                            log.error(
+                                "worker %s turn timed out after %.0fs at "
+                                "turn %s — conceding to unblock the room",
+                                cfg.name, turn_deadline, turn,
                             )
-                        # Break the inner play loop — the next
-                        # get_state will report game_over.
-                        break
+                            try:
+                                await asyncio.wait_for(
+                                    client.call("concede"), timeout=5.0,
+                                )
+                            except Exception:
+                                log.exception(
+                                    "worker %s concede failed after turn timeout",
+                                    cfg.name,
+                                )
+                            return
+                        except ProviderError as e:
+                            if e.is_terminal:
+                                # AUTH / BILLING / MODEL_NOT_FOUND: no
+                                # amount of waiting helps. Bubble up;
+                                # leave_room auto-concede finishes the
+                                # match, run_forever reconnects.
+                                raise
+                            transient_attempts += 1
+                            if transient_attempts > MAX_TRANSIENT_RETRIES:
+                                log.error(
+                                    "worker %s exhausted %d transient "
+                                    "retries on %s — conceding",
+                                    cfg.name, MAX_TRANSIENT_RETRIES,
+                                    e.reason.value,
+                                )
+                                try:
+                                    await asyncio.wait_for(
+                                        client.call("concede"), timeout=5.0,
+                                    )
+                                except Exception:
+                                    log.exception(
+                                        "worker %s concede after retries failed",
+                                        cfg.name,
+                                    )
+                                return
+                            # Exponential backoff: 30s, 60s, 120s.
+                            backoff = 30.0 * (2 ** (transient_attempts - 1))
+                            log.warning(
+                                "worker %s transient provider error %s — "
+                                "retry %d/%d in %.0fs (match preserved)",
+                                cfg.name, e.reason.value,
+                                transient_attempts, MAX_TRANSIENT_RETRIES,
+                                backoff,
+                            )
+                            self.status = (
+                                f"retry {transient_attempts}/"
+                                f"{MAX_TRANSIENT_RETRIES} after "
+                                f"{e.reason.value} ({self.turn_info})"
+                            )
+                            await asyncio.sleep(backoff)
                 else:
                     self.status = f"opponent's turn ({self.turn_info})"
                     await asyncio.sleep(POLL_INTERVAL_S)
