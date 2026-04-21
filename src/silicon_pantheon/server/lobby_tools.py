@@ -927,20 +927,39 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         """Vacate this connection's seat and return the caller to the lobby.
 
         Accepts from IN_ROOM (pre-game) OR IN_GAME (mid-match or
-        post-match). Mid-match departures are treated as a hard exit —
-        the opponent will auto-concede via the heartbeat sweeper if
-        they don't press anything. Post-match departures are the
+        post-match). Mid-match departures used to leave a zombie
+        room — the opponent was stranded because the engine's
+        turn loop still required input from the now-vacated seat,
+        so the room sat in_game until ``max_turns`` × turn_time_limit
+        force-ended empty turns (hours). Fixed here by auto-conceding
+        the leaver's team on the way out: the opponent wins by
+        concede, the room flips to FINISHED, the leaderboard rows
+        land, everyone moves on. Post-match departures are the
         normal 'back to lobby' flow.
 
         ── Locking ──
-        Whole body under ``app.state_lock()`` so the multi-step
-        transition (pop conn_to_room → vacate seat → maybe evict
-        other player → cleanup sessions / slot_to_team) is atomic.
-        The `async def` signature is kept for consistency with the
-        other lobby tools; it contains no ``await`` so it runs as
-        a normal coroutine that never yields.
+        Three phases, no nested locks:
+
+        1. ``state_lock``: peek at (conn, room_id, slot, is_in_game,
+           leaver_team) — everything we'll need. Does NOT mutate.
+        2. ``session.lock`` (only if we decided to auto-concede):
+           flip ``session.state.status = GAME_OVER`` via the same
+           ``concede`` tool end_game dispatches use. Guarded by a
+           re-check of session.state.status so we never double-
+           concede a match that finished between phases.
+        3. ``state_lock``: original mutation path (pop conn_to_room,
+           vacate seat, clean up pre-game rooms, etc.).
+
+        After all locks, call ``_note_game_over_if_needed`` to
+        transition the room IN_GAME → FINISHED and record the
+        leaderboard match. That function has its own 3-phase
+        locking protocol.
         """
-        cancelled_task: Any = None
+        from silicon_pantheon.server.engine.state import GameStatus as _GS
+        from silicon_pantheon.server.engine.state import Team as _Team  # noqa: F401
+
+        # ── Phase 1: pre-check under state_lock ──
+        concede_plan: tuple[str, Any] | None = None  # (room_id, team) or None
         with app.state_lock():
             conn = app._connections.get(connection_id)  # noqa: SLF001
             if conn is None or conn.state not in (
@@ -951,9 +970,59 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
                     ErrorCode.TOOL_NOT_AVAILABLE_IN_STATE,
                     "leave_room requires state=in_room or in_game",
                 )
-            info = app.conn_to_room.pop(connection_id, None)
+            info = app.conn_to_room.get(connection_id)
             if info is None:
                 return _error(ErrorCode.NOT_IN_ROOM, "connection not seated")
+            room_id_peek, slot_peek = info
+            # Auto-concede trigger: connection is IN_GAME AND a live
+            # session exists for the room. conn.state is the authoritative
+            # signal — room.status is sometimes still WAITING_READY for
+            # dev-game-started matches (only the full lobby flow through
+            # start_game_for_room flips room.status to IN_GAME).
+            if (
+                conn.state == ConnectionState.IN_GAME
+                and app.sessions.get(room_id_peek) is not None
+            ):
+                team_map = app.slot_to_team.get(room_id_peek) or {}
+                team = team_map.get(slot_peek)
+                if team is not None:
+                    concede_plan = (room_id_peek, team)
+
+        # ── Phase 2: auto-concede under session.lock (if mid-game) ──
+        if concede_plan is not None:
+            c_room_id, c_team = concede_plan
+            session = app.sessions.get(c_room_id)
+            if session is not None:
+                from silicon_pantheon.server.tools.mutations import (
+                    concede as _concede_tool,
+                )
+                with session.lock:
+                    # Re-check under the lock: if the game finished
+                    # naturally between phase 1 and phase 2, don't
+                    # double-concede (would overwrite the real winner).
+                    if session.state.status != _GS.GAME_OVER:
+                        _concede_tool(session, c_team)
+                        log.info(
+                            "leave_room: auto-concede room=%s cid=%s "
+                            "leaver_team=%s — mid-game hard exit",
+                            c_room_id, connection_id[:8], c_team.value,
+                        )
+
+        # ── Phase 3: original mutation path under state_lock ──
+        cancelled_task: Any = None
+        with app.state_lock():
+            conn = app._connections.get(connection_id)  # noqa: SLF001
+            if conn is None or conn.state not in (
+                ConnectionState.IN_ROOM,
+                ConnectionState.IN_GAME,
+            ):
+                # Rare: the connection was evicted between phases.
+                # The concede (if we did one) still stands, so just
+                # fall through to _note_game_over_if_needed.
+                return _ok({})
+            info = app.conn_to_room.pop(connection_id, None)
+            if info is None:
+                return _ok({})
             room_id, slot = info
             # Inline countdown cancellation; defer task.cancel()
             # outside the lock.
@@ -1007,6 +1076,14 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         # Cancel the (possibly running) countdown task outside the lock.
         if cancelled_task is not None and not cancelled_task.done():
             cancelled_task.cancel()
+        # Phase 4: if we auto-conceded, transition the room to
+        # FINISHED and write the leaderboard rows. Idempotent — does
+        # nothing if the room was already FINISHED.
+        if concede_plan is not None:
+            from silicon_pantheon.server.game_tools import (
+                _note_game_over_if_needed,
+            )
+            _note_game_over_if_needed(app, concede_plan[0])
         _invalidate_room_cache()
         return _ok({})
 

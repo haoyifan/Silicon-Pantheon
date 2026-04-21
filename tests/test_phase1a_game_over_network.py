@@ -136,3 +136,96 @@ def test_game_tool_rejects_unknown_connection(server) -> None:
             assert r["error"]["code"] == "not_registered"
 
     asyncio.run(go())
+
+
+def test_leave_room_mid_game_auto_concedes(server) -> None:
+    """Regression: leave_room on an IN_GAME room used to leave a zombie
+    room where the opponent was stranded. Fix: auto-concede the leaver's
+    team so the opponent wins and the room transitions FINISHED.
+
+    Observed in production 2026-04-20: Minion's worker hit an xAI
+    provider timeout mid-match, its `_disconnect()` called leave_room,
+    and the room ``ca828db0`` sat in_game for hours with the opponent
+    polling get_state waiting for blue to move.
+    """
+    url, app = server
+    from silicon_pantheon.server.engine.state import GameStatus
+    from silicon_pantheon.server.rooms import RoomStatus
+
+    async def go() -> None:
+        async with (
+            ServerClient.connect(url) as blue,
+            ServerClient.connect(url) as red,
+        ):
+            await blue.call("set_player_metadata", display_name="alice", kind="ai")
+            await red.call("set_player_metadata", display_name="bob", kind="ai")
+            r = await blue.call("create_dev_game", scenario="01_tiny_skirmish")
+            assert r["ok"] is True
+            r = await red.call("join_dev_game")
+            assert r["ok"] is True
+
+            # Both connections are IN_GAME with a live session.
+            # (join_dev_game is a dev shortcut that does NOT flip
+            # room.status to IN_GAME — it only installs a session
+            # and sets conn.state. The leave_room auto-concede trigger
+            # checks conn.state + live session, not room.status, so
+            # this still qualifies as a mid-game leave.)
+            room_id = app.conn_to_room[blue.connection_id][0]
+            blue_conn = app.get_connection(blue.connection_id)
+            assert blue_conn is not None
+            assert blue_conn.state == ConnectionState.IN_GAME
+            session = app.sessions.get(room_id)
+            assert session is not None
+            assert session.state.status != GameStatus.GAME_OVER
+
+            # Blue hard-exits mid-game via leave_room.
+            r = await blue.call("leave_room")
+            assert r["ok"] is True
+
+            # The game must be marked GAME_OVER with red (the opponent)
+            # as winner — auto-concede triggered.
+            assert session.state.status == GameStatus.GAME_OVER
+            assert session.state.winner.value == "red", (
+                f"blue left mid-match → red should win by concede; "
+                f"got winner={session.state.winner}"
+            )
+            # Room must have transitioned to FINISHED so the lobby
+            # doesn't show it as in_game forever.
+            room = app.rooms.get(room_id)
+            # Room may or may not have been deleted depending on
+            # whether red left too; if still present, status must be
+            # FINISHED (not IN_GAME / not WAITING_*).
+            if room is not None:
+                assert room.status == RoomStatus.FINISHED, (
+                    f"room should be FINISHED after mid-game leave; "
+                    f"got {room.status}"
+                )
+            # Blue is back in lobby.
+            conn = app.get_connection(blue.connection_id)
+            assert conn is not None
+            assert conn.state == ConnectionState.IN_LOBBY
+
+    asyncio.run(go())
+
+
+def test_leave_room_pre_game_unchanged(server) -> None:
+    """Sanity: the pre-game leave_room path (solo host, no match) is
+    unchanged by the auto-concede fix — it still evicts the opponent
+    from a waiting room and deletes it cleanly."""
+    url, app = server
+
+    async def go() -> None:
+        async with ServerClient.connect(url) as blue:
+            await blue.call("set_player_metadata", display_name="alice", kind="ai")
+            r = await blue.call(
+                "create_room", scenario="01_tiny_skirmish", fog_of_war="none"
+            )
+            room_id = r["room_id"]
+            r = await blue.call("leave_room")
+            assert r["ok"] is True
+            # Empty room deleted.
+            assert app.rooms.get(room_id) is None
+            # No stray session/slot_to_team.
+            assert app.sessions.get(room_id) is None
+
+    asyncio.run(go())
