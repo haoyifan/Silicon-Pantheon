@@ -200,6 +200,25 @@ def audit_response_for_fog_leaks(
     # allowlist.
     leaked: list[tuple[str, str]] = []
 
+    # Field paths that intentionally surface enemy IDs the viewer
+    # already knew pre-action. These are FEATURES, not leaks:
+    #
+    #   hidden_enemies / revealed_enemies: `move` emits these to
+    #     tell the agent which enemies just entered or left sight
+    #     as a result of THIS move. The agent saw them on its
+    #     previous state snapshot, so the ID is already known —
+    #     we surface it so the agent can reason about the fog
+    #     delta without a second get_state call. Observed as a
+    #     false-positive in the 08_kadesh match 2026-04-20 where
+    #     every move triggered `fog leak in move` in debug mode.
+    #
+    # Keep the matching permissive (startswith): these fields are
+    # lists of dicts, so paths look like `hidden_enemies[0].id`.
+    FEATURE_FIELDS = ("hidden_enemies", "revealed_enemies")
+
+    def _is_feature_path(path: str) -> bool:
+        return any(path.startswith(f) for f in FEATURE_FIELDS)
+
     def _walk(obj: object, path: str) -> None:
         if isinstance(obj, dict):
             for k, v in obj.items():
@@ -211,7 +230,7 @@ def audit_response_for_fog_leaks(
             if obj.startswith(f"u_{enemy_team_initial}_"):
                 # It's an enemy-looking ID. Check if it's in the
                 # allowlist (visible, own-team, or dead).
-                if obj not in visible_ids:
+                if obj not in visible_ids and not _is_feature_path(path):
                     # Only real if the unit actually exists in state.
                     if obj in session.state.units:
                         leaked.append((path, obj))

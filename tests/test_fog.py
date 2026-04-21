@@ -313,6 +313,62 @@ def test_fog_audit_silent_on_clean_response() -> None:
     )
 
 
+def test_fog_audit_exempts_hidden_enemies_feature_field() -> None:
+    """Regression: ``move`` surfaces ``hidden_enemies`` and
+    ``revealed_enemies`` to tell the agent which enemies entered /
+    left its sight as a result of this move. These are legitimate
+    feature fields — the agent already knew the hidden ones from
+    its pre-move view. The audit used to flag them as fog leaks,
+    which turned every move in classic fog into an
+    ``InvariantViolation`` under SILICON_DEBUG=1 (observed on
+    08_kadesh 2026-04-20)."""
+    import logging as _logging
+    from silicon_pantheon.server.session import new_session
+    from silicon_pantheon.server.tools._common import audit_response_for_fog_leaks
+
+    state = load_scenario("01_tiny_skirmish")
+    _spread_out(state)
+    session = new_session(state, fog_of_war="classic")
+    any_red = next(iter(state.units_of(Team.RED)))
+    # Simulates a `move` result where a previously-visible red unit
+    # has just dropped out of sight.
+    feature_response = {
+        "ok": True,
+        "hidden_enemies": [
+            {
+                "id": any_red.id,  # NOT a leak — agent saw this pre-move
+                "class": any_red.class_,
+                "last_known_pos": {"x": any_red.pos.x, "y": any_red.pos.y},
+            }
+        ],
+    }
+    logger = _logging.getLogger("silicon.fog")
+
+    class _Counter(_logging.Handler):
+        def __init__(self):
+            super().__init__(level=_logging.WARNING)
+            self.count = 0
+            self.msgs: list[str] = []
+
+        def emit(self, record):
+            if record.name == "silicon.fog" and record.levelno >= _logging.WARNING:
+                self.count += 1
+                self.msgs.append(record.getMessage())
+
+    counter = _Counter()
+    logger.addHandler(counter)
+    try:
+        audit_response_for_fog_leaks(
+            feature_response, session, Team.BLUE, "move"
+        )
+    finally:
+        logger.removeHandler(counter)
+    assert counter.count == 0, (
+        f"audit should NOT warn on hidden_enemies feature field; "
+        f"got {counter.count} warnings: {counter.msgs}"
+    )
+
+
 def test_attack_log_only_mode_lets_hidden_attack_through(monkeypatch, caplog) -> None:
     """Repro mode: SILICON_FOG_ATTACK_ENFORCE=0 turns the fog gate
     into log-only. The attack must NOT raise, and a
