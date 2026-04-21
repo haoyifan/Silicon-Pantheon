@@ -1075,10 +1075,21 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         # Cancel the (possibly running) countdown task outside the lock.
         if cancelled_task is not None and not cancelled_task.done():
             cancelled_task.cancel()
-        # Phase 4: if we auto-conceded, transition the room to
-        # FINISHED and write the leaderboard rows. Idempotent — does
-        # nothing if the room was already FINISHED.
-        if concede_plan is not None:
+        # Phase 4: if we auto-conceded AND the session is still
+        # alive, transition the room to FINISHED and write the
+        # leaderboard rows. When Phase 3 deleted the room outright
+        # (both seats vacated post-match — e.g. the opponent was
+        # already heartbeat_dead + auto-conceded before we got here),
+        # Phase 3 pops the session from app.sessions too; at that
+        # point the game-over bookkeeping is already done by whoever
+        # first hit it, and calling _note_game_over_if_needed now
+        # would trip its debug-mode invariant (``session vanished
+        # before game_over check``). Guard on session existence so
+        # the fast-happy path is a no-op.
+        if (
+            concede_plan is not None
+            and app.get_session(concede_plan[0]) is not None
+        ):
             from silicon_pantheon.server.game_tools import (
                 _note_game_over_if_needed,
             )

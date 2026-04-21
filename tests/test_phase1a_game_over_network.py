@@ -208,6 +208,65 @@ def test_leave_room_mid_game_auto_concedes(server) -> None:
     asyncio.run(go())
 
 
+def test_leave_room_after_opponent_auto_conceded(server) -> None:
+    """Regression: when the opponent was already auto-conceded by the
+    heartbeat sweeper (their seat vacated, session marked GAME_OVER),
+    pupil-grok calling leave_room used to crash with 'session vanished
+    before game_over check for room=...'. Observed 2026-04-20 on the
+    27_battle_of_zion_dock match: Napoleon's get_legal_actions hung
+    server-side for 90s, blocking its heartbeat. Server auto-conceded
+    Napoleon → blue wins. When the surviving pupil-grok client
+    called leave_room, the debug-mode invariant tripped.
+
+    Fix: Phase 4 of leave_room guards the _note_game_over_if_needed
+    call on session existence — if Phase 3 already deleted the room
+    (both seats gone, session popped), the bookkeeping is already
+    done and the follow-up call is correctly a no-op."""
+    url, app = server
+    from silicon_pantheon.server.engine.state import GameStatus, Team
+    from silicon_pantheon.server.rooms import Slot
+    from silicon_pantheon.server.tools.mutations import concede as _concede_tool
+
+    async def go() -> None:
+        async with (
+            ServerClient.connect(url) as blue,
+            ServerClient.connect(url) as red,
+        ):
+            await blue.call("set_player_metadata", display_name="alice", kind="ai")
+            await red.call("set_player_metadata", display_name="bob", kind="ai")
+            await blue.call("create_dev_game", scenario="01_tiny_skirmish")
+            await red.call("join_dev_game")
+
+            room_id = app.conn_to_room[blue.connection_id][0]
+            session = app.sessions[room_id]
+            # Simulate the opponent-already-auto-conceded state: red
+            # is vacated from the room and the session is marked
+            # GAME_OVER (blue wins). Mirrors what heartbeat._auto_concede
+            # does when a client's heartbeat dies.
+            with session.lock:
+                _concede_tool(session, Team.RED)  # red (Napoleon) loses
+                assert session.state.status == GameStatus.GAME_OVER
+                assert session.state.winner == Team.BLUE
+            with app.state_lock():
+                app.conn_to_room.pop(red.connection_id, None)
+                app.rooms.leave(room_id, Slot.B)
+                red_conn = app.get_connection(red.connection_id)
+                if red_conn is not None:
+                    red_conn.state = ConnectionState.IN_LOBBY
+
+            # Now blue (the survivor) calls leave_room. Pre-fix this
+            # crashed in debug mode because Phase 3 deleted the last
+            # seat, popped app.sessions, and Phase 4 then hit the
+            # session-vanished invariant.
+            r = await blue.call("leave_room")
+            assert r["ok"] is True, f"leave_room after auto-concede failed: {r}"
+            # Room fully cleaned up.
+            assert app.rooms.get(room_id) is None
+            assert app.sessions.get(room_id) is None
+
+    asyncio.run(go())
+
+
 def test_leave_room_pre_game_unchanged(server) -> None:
     """Sanity: the pre-game leave_room path (solo host, no match) is
     unchanged by the auto-concede fix — it still evicts the opponent
