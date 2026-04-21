@@ -52,6 +52,19 @@ _FILTERED_HISTORY_TOOLS = frozenset({"get_history"})
 _FILTERED_LEGAL_ACTIONS_TOOLS = frozenset({"get_legal_actions"})
 
 
+# ── Stuck-dispatch auto-dump rate limiter ──
+# When the 10s watchdog fires for one stuck dispatch, we dump all
+# thread stack traces via faulthandler. If N dispatches are stuck
+# simultaneously (which is the common case — state-lock starvation,
+# deadlock, etc., blocks many calls at once), we'd otherwise dump
+# N times. Rate-limit to once per 30s so the log gets ONE complete
+# stack snapshot per hang event, not a flood.
+import threading as _threading_for_rl  # noqa: E402
+_last_stack_dump_at: float = 0.0
+_stack_dump_lock = _threading_for_rl.Lock()
+_STACK_DUMP_COOLDOWN_S = 30.0
+
+
 def _append_agent_report_jsonl(event: dict) -> None:
     """Append an ``agent_report`` event to today's jsonl file.
 
@@ -403,9 +416,31 @@ def _dispatch(app: App, connection_id: str, tool_name: str, args: dict) -> dict:
         log.warning(
             "tool handler STUCK: tool=%s cid=%s elapsed=%.1fs — "
             "dispatch has not completed (possible lock contention, "
-            "deadlock, or blocked I/O). Send SIGUSR1 to dump stacks.",
+            "deadlock, or blocked I/O).",
             tool_name, connection_id[:8], elapsed,
         )
+        # Auto-dump all Python thread stacks to stderr (→ server log)
+        # so the next hang is diagnosable without an operator being
+        # at a keyboard in time to run `kill -USR1`. Rate-limited via
+        # _stack_dump_lock + cooldown so a burst of concurrent stuck
+        # dispatches produces ONE stack dump per hang event, not N.
+        global _last_stack_dump_at
+        with _stack_dump_lock:
+            now = _time.monotonic()
+            if now - _last_stack_dump_at < _STACK_DUMP_COOLDOWN_S:
+                return
+            _last_stack_dump_at = now
+        import faulthandler
+        import sys as _sys
+        log.warning(
+            "stuck dispatch — dumping ALL thread stacks to stderr "
+            "(→ systemd journal: `journalctl -u silicon-serve -n 500`). "
+            "Next dump suppressed for %.0fs.", _STACK_DUMP_COOLDOWN_S,
+        )
+        try:
+            faulthandler.dump_traceback(file=_sys.stderr)
+        except Exception:
+            log.exception("faulthandler.dump_traceback raised")
 
     _watchdog = _threading.Timer(DISPATCH_STUCK_THRESHOLD_S, _warn_stuck)
     _watchdog.daemon = True
