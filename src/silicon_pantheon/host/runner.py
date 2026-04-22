@@ -84,13 +84,18 @@ async def _run(config: HostConfig) -> None:
         for w in workers
     ]
 
-    # Status line refresh loop.
+    # Status line refresh loop. Exits when all worker tasks have
+    # completed — normally a no-op for long-running auto-host (where
+    # workers run forever), but required for one_shot workers so the
+    # process actually exits after the bounded workload finishes.
     try:
         while True:
             line = _status_line(workers)
             # Clear line and print status.
             sys.stdout.write(f"\r\033[K{line}")
             sys.stdout.flush()
+            if all(t.done() for t in tasks):
+                break
             await asyncio.sleep(1.0)
     except asyncio.CancelledError:
         pass

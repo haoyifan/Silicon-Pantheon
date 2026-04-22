@@ -257,24 +257,39 @@ class BotWorker:
         assert client is not None
         cfg = self.config
 
-        # ---- pick scenario ----
-        scenario = self._pick_scenario()
-        self._scenario = scenario
-
-        # ---- create room ----
-        self.status = f"creating room ({scenario})"
-        log.info("worker %s creating room scenario=%s", cfg.name, scenario)
-        r = await client.call(
-            "create_room",
-            scenario=scenario,
-            team_assignment=cfg.team_assignment,
-            host_team=cfg.host_team,
-            fog_of_war=cfg.fog_of_war,
-            turn_time_limit_s=cfg.turn_time_limit_s,
-        )
-        if not r.get("ok"):
-            raise RuntimeError(f"create_room failed: {r}")
-        room_id = r["room_id"]
+        # ---- pick room: create (default) or join existing ----
+        # joined_team is the "blue"/"red" team the server assigned us
+        # on join. For hosts it's derived from cfg.host_team as today;
+        # for join_only workers it's the opposite of the host's
+        # host_team read from list_rooms. _play_game reads
+        # self._joined_team below.
+        self._joined_team: str | None = None
+        if cfg.join_only:
+            # System-test joiner path: list rooms, pick any that's
+            # waiting for a second player, join it. No scenario pick
+            # — the host chose. Retry briefly if no match is open
+            # yet (hosts are spawned concurrently by the orchestrator
+            # and there can be a small race before they're listed).
+            room_id, scenario, self._joined_team = await self._find_and_join_room()
+            self._scenario = scenario
+        else:
+            scenario = self._pick_scenario()
+            self._scenario = scenario
+            self.status = f"creating room ({scenario})"
+            log.info(
+                "worker %s creating room scenario=%s", cfg.name, scenario
+            )
+            r = await client.call(
+                "create_room",
+                scenario=scenario,
+                team_assignment=cfg.team_assignment,
+                host_team=cfg.host_team,
+                fog_of_war=cfg.fog_of_war,
+                turn_time_limit_s=cfg.turn_time_limit_s,
+            )
+            if not r.get("ok"):
+                raise RuntimeError(f"create_room failed: {r}")
+            room_id = r["room_id"]
 
         # ---- ready up ----
         await client.call("set_ready", ready=True)
@@ -341,7 +356,18 @@ class BotWorker:
         assert client is not None
         cfg = self.config
 
-        my_team_str = cfg.host_team if cfg.team_assignment == "fixed" else "blue"
+        # Team resolution:
+        #   - join_only workers learn their team from the server's
+        #     seat assignment (see _find_and_join_room); _joined_team
+        #     is set before this function is called.
+        #   - Fixed-assignment hosts use their configured host_team.
+        #   - Random-assignment hosts default to blue (existing behaviour).
+        if self._joined_team is not None:
+            my_team_str = self._joined_team
+        elif cfg.team_assignment == "fixed":
+            my_team_str = cfg.host_team
+        else:
+            my_team_str = "blue"
         viewer = Team.BLUE if my_team_str == "blue" else Team.RED
 
         # Load strategy.
@@ -516,6 +542,63 @@ class BotWorker:
     # ---- helpers ----
 
     _scenario_bag: list[str] = []  # shuffle bag for uniform coverage
+
+    async def _find_and_join_room(self) -> tuple[str, str, str]:
+        """Join an existing waiting_for_players room.
+
+        Returns (room_id, scenario, my_team_str). ``my_team_str`` is
+        "blue" or "red" — computed from the host's ``host_team`` field
+        as the opposite team (since the host took seat A and we're
+        taking seat B). ``_play_game`` needs this to set ``viewer``
+        correctly; without it the joiner would try to play as the
+        host's team, never see its own turn, and poll forever.
+
+        Used by ``join_only`` workers in the system-test framework.
+        Polls ``list_rooms`` up to ~60 s (hosts spawned in parallel by
+        the orchestrator may take a beat to register). Picks the first
+        room with status == waiting_for_players whose slot B is open.
+        Tries ``join_room`` on it; if the server rejects (another
+        joiner beat us to it — expected race), continues the scan.
+        Raises ``RuntimeError`` if no joinable room appears in time.
+        """
+        import time as _time
+        client = self._client
+        assert client is not None
+        self.status = "looking for room to join"
+        deadline = _time.monotonic() + 60.0
+        poll = 0
+        while _time.monotonic() < deadline:
+            poll += 1
+            r = await client.call("list_rooms")
+            if not r.get("ok"):
+                await asyncio.sleep(1.0)
+                continue
+            open_rooms = [
+                room for room in r.get("rooms", [])
+                if room.get("status") == "waiting_for_players"
+                and not room.get("seats", {}).get("b", {}).get("occupied", True)
+            ]
+            for room in open_rooms:
+                room_id = room.get("room_id")
+                if not room_id:
+                    continue
+                scenario = room.get("scenario", "unknown")
+                host_team = room.get("host_team", "blue")
+                my_team = "red" if host_team == "blue" else "blue"
+                jr = await client.call("join_room", room_id=room_id)
+                if jr.get("ok"):
+                    log.info(
+                        "worker %s joined room=%s scenario=%s team=%s "
+                        "(host_team=%s, poll #%d)",
+                        self.config.name, room_id[:8], scenario,
+                        my_team, host_team, poll,
+                    )
+                    return room_id, scenario, my_team
+                # Race lost (probably); try the next room.
+            await asyncio.sleep(1.0)
+        raise RuntimeError(
+            "join_only: no joinable room appeared within 60s"
+        )
 
     def _pick_scenario(self) -> str:
         scenarios = self.config.scenarios

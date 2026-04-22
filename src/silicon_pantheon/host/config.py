@@ -70,6 +70,13 @@ class WorkerConfig:
     # Optional seed for the random mode's RNG. Makes a run reproducible.
     # Ignored when mode="llm".
     seed: int | None = None
+    # Join-only workers DON'T create a room; they list existing rooms
+    # and join one in "waiting_for_players" status. Used by the
+    # system-test framework's joiner population so the workload is
+    # evenly split (N hosts + N joiners = N matches). Default False
+    # means behave as a host (create a room). Hosts and joiners never
+    # swap mid-run; set at config parse time.
+    join_only: bool = False
 
 
 @dataclass
@@ -112,6 +119,7 @@ def load_config(path: Path) -> HostConfig:
             one_shot=bool(merged.get("one_shot", False)),
             mode=merged.get("mode", "llm"),
             seed=merged.get("seed"),
+            join_only=bool(merged.get("join_only", False)),
         ))
 
     if not workers:

@@ -1,0 +1,48 @@
+# silicon-system-test — example config.
+#
+# Run with:
+#   uv run silicon-system-test --config system_test.example.toml
+#
+# Quick smoke (N=2 instead of 10):
+#   uv run silicon-system-test --config system_test.example.toml -N 2
+
+[server]
+# Local subprocess (current only supported mode). Remote SSH is on
+# the roadmap — see ~/dev/system-test-plan.md.
+ip = "127.0.0.1"
+port = 8090
+
+[client]
+ip = "127.0.0.1"
+
+[run]
+num_matches = 10        # N; the test spawns 2N agents (N hosts + N joiners)
+timeout_s = 3600        # 1 hour global wall clock (override the 4h default)
+seed = 42               # deterministic agent planning + random-bot RNGs
+
+[defaults]
+# Random-action agents don't touch any LLM, cost nothing per move,
+# exercise the transport + server + rules engine end-to-end.
+mode = "random"
+# provider + model are ignored when mode = "random" but required by
+# WorkerConfig; leave them as valid identifiers.
+provider = "xai"
+model = "grok-3-mini"
+locale = "en"
+
+[randomize]
+# scenarios = "all" uses every directory under games/ with a config.yaml.
+scenarios = "all"
+fog_modes = ["none", "classic", "line_of_sight"]
+team_assignments = ["fixed"]
+locales = ["en"]
+
+# Optional per-slot override. Slot numbering: hosts get 0..N-1,
+# joiners get N..2N-1. Omit this section entirely for a uniform
+# all-random workload.
+#
+# [[agent]]
+# slot = 0
+# mode = "llm"
+# model = "claude-haiku-4-5"
+# provider = "anthropic"
