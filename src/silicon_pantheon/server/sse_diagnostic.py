@@ -176,9 +176,14 @@ def _patch_cleanup_memory_streams() -> None:  # DIAG(sse)
 def _start_tcpdump(port: int) -> None:  # DIAG(sse)
     """Spawn tcpdump on ``lo`` with a rolling pcap buffer.
 
-    Keeps 10 × 60 s files (10 minute window) so the operator has
-    time to react to a failure. Output goes to
-    ``~/.silicon-pantheon/sse-diag/pid<P>/``.
+    Rolling 10 × 50 MB files (size-based rotation; ~500 MB ceiling).
+    Size-based is used because ``tcpdump -G <sec> -W <count>`` EXITS
+    after ``count`` rotations rather than rotating (2026-04-22 repro
+    hit this: tcpdump died 10 min after server start, capturing
+    nothing for every real-world incident after that). ``-C <MB>``
+    with ``-W <count>`` gives the rolling-buffer behaviour we want.
+
+    Output goes to ``~/.silicon-pantheon/sse-diag/pid<P>/``.
 
     Does NOT use sudo — systemd's ``NoNewPrivileges=true`` blocks
     that. Requires the operator to grant ``CAP_NET_RAW CAP_NET_ADMIN``
@@ -200,23 +205,23 @@ def _start_tcpdump(port: int) -> None:  # DIAG(sse)
         os.chmod(out_dir, 0o777)
     except PermissionError:
         pass
-    # Use strftime %H%M%S in the filename template so rotations are
-    # human-readable.
-    template = str(out_dir / "capture-%H%M%S.pcap")
-
     # -Z <user> tells tcpdump which user to drop privs to after opening
     # the raw socket. Without it, Ubuntu's build auto-drops to the
     # `tcpdump` system user (uid 105), which can't write inside silicon's
     # home. Passing the current user makes it a no-op setuid that stays
     # as us, so pcap writes succeed.
     current_user = os.environ.get("USER") or "silicon"
+    # With size-based rotation (-C) + count (-W), tcpdump uses filenames
+    # of the form <template>N (N = 0..W-1) cycling. Strip the %H%M%S so
+    # tcpdump doesn't interpret it; let it append its own counter.
+    size_template = str(out_dir / "capture.pcap")
     cmd = [
         "tcpdump",
         "-i", "lo",
         "-U",                       # packet-buffered; no 4KB cache
-        "-w", template,
-        "-G", "60",                 # rotate every 60 s
-        "-W", "10",                 # keep 10 rotations (10 min window)
+        "-w", size_template,
+        "-C", "50",                 # rotate every 50 MB
+        "-W", "10",                 # rolling buffer of 10 files (~500 MB)
         "-Z", current_user,         # stay as current user, not `tcpdump`
         "-n",
         f"port {port}",
