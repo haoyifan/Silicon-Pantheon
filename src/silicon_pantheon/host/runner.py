@@ -138,6 +138,21 @@ def main() -> None:
         print("DEBUG MODE: invariant violations will crash the bot.")
 
     config = load_config(args.config)
+
+    # Preflight: every worker's provider + model must be able to
+    # construct an adapter. Failing fast here beats discovering mid-
+    # match that an API key is missing, which would let the worker
+    # publish an unplayable room and forfeit real opponents. See
+    # host/preflight.py for the full rationale.
+    from silicon_pantheon.host.preflight import (
+        format_failure_report,
+        validate_credentials,
+    )
+    failures = validate_credentials(config)
+    if failures:
+        sys.stderr.write(format_failure_report(failures, len(config.workers)))
+        raise SystemExit(2)
+
     log_file = args.log or config.log_file
     _setup_logging(log_file)
 
