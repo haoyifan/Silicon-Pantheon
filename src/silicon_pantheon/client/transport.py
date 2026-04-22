@@ -61,6 +61,17 @@ class ServerClient:
         # more call_tool futures hang forever. Even 2 concurrent
         # calls (TUI poll + agent tool) can trigger this.
         self._call_lock = asyncio.Lock()
+        # Layer 1 of transport-resilience (see
+        # ~/dev/transport-resilience-plan.md): when the MCP SDK's
+        # internal anyio streams go closed (observed as ws_closed=True
+        # / rs_closed=True on tool calls after a silent network blip),
+        # any in-flight session.call_tool parks forever because
+        # nothing wakes the awaiter. This event fires as soon as we
+        # detect stream death; the worker's run_forever races its
+        # game loop against this event so it can force a reconnect
+        # instead of staying wedged for 90s+ behind wait_for.
+        self._transport_dead_event = asyncio.Event()
+        self._stream_monitor_task: asyncio.Task | None = None
 
     @classmethod
     @asynccontextmanager
@@ -98,7 +109,12 @@ class ServerClient:
         async with streamablehttp_client(url) as (read, write, _get_session_id):
             async with ClientSession(read, write) as session:
                 await session.initialize()
-                yield cls(session, connection_id=cid)
+                client = cls(session, connection_id=cid)
+                client._start_stream_monitor()
+                try:
+                    yield client
+                finally:
+                    await client._stop_stream_monitor()
 
     async def call(self, tool_name: str, **kwargs: Any) -> dict:
         """Call a server tool, returning the structured response dict.
@@ -290,6 +306,94 @@ class ServerClient:
             f"tool {tool_name} returned no text block: {result!r}"
         )
 
+    # ─── Layer 1 — transport-dead detection ───
+
+    def _start_stream_monitor(self) -> None:
+        """Poll the MCP session's anyio streams for silent closure.
+
+        When the SSE transport dies (network blip, proxy close,
+        server-side cascade close — any of several causes we've
+        chased), the MCP SDK's ``_write_stream`` / ``_read_stream``
+        transition to closed locally but nothing wakes existing
+        awaiters on them. In-flight ``session.call_tool`` parks
+        forever because the future is tied to a stream that will
+        never deliver another event.
+
+        This monitor runs as a background task, polls the two
+        streams' internal ``_closed`` flag once a second, and fires
+        ``_transport_dead_event`` as soon as either goes closed.
+        Workers / TUIs race this event against their game-loop task
+        so they can force reconnect within ~1 s instead of waiting
+        for the 90 s ``wait_for`` timeout that currently catches the
+        condition.
+
+        Polling is deliberately used instead of a logging-filter
+        hook on ``mcp.client.streamable_http`` because the relevant
+        log line ("SSE stream ended: …") is at DEBUG level and
+        depends on the caller having bumped that logger; introspection
+        of the stream attribute is more robust and self-contained.
+        """
+        if self._stream_monitor_task is not None and not self._stream_monitor_task.done():
+            return
+
+        async def _monitor() -> None:
+            try:
+                while not self._transport_dead_event.is_set():
+                    await asyncio.sleep(1.0)
+                    ws = getattr(self._session, "_write_stream", None)
+                    rs = getattr(self._session, "_read_stream", None)
+                    ws_closed = getattr(ws, "_closed", False) if ws is not None else True
+                    rs_closed = getattr(rs, "_closed", False) if rs is not None else True
+                    if ws_closed or rs_closed:
+                        log.error(
+                            "transport DEAD detected: cid=%s ws_closed=%s "
+                            "rs_closed=%s — signalling reconnect",
+                            self.connection_id, ws_closed, rs_closed,
+                        )
+                        self._transport_dead_event.set()
+                        # Best-effort close of the other side too, so
+                        # any awaiter on either stream sees a consistent
+                        # ClosedResourceError and unwedges immediately
+                        # instead of waiting 90s on wait_for.
+                        for stream in (ws, rs):
+                            if stream is None:
+                                continue
+                            try:
+                                await stream.aclose()
+                            except Exception:
+                                pass
+                        return
+            except asyncio.CancelledError:
+                return
+
+        self._stream_monitor_task = asyncio.create_task(_monitor())
+
+    async def _stop_stream_monitor(self) -> None:
+        if self._stream_monitor_task is None:
+            return
+        task = self._stream_monitor_task
+        self._stream_monitor_task = None
+        if not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+    @property
+    def transport_dead(self) -> asyncio.Event:
+        """Event that fires when the MCP SDK's streams have gone dead.
+
+        Public API for workers / TUIs to race against their main
+        loops. Set by ``_start_stream_monitor`` (Layer 1) OR by the
+        heartbeat loop after N consecutive ``ClosedResourceError``
+        (Layer 2). Cleared by building a fresh ``ServerClient``
+        (i.e., reconnecting).
+        """
+        return self._transport_dead_event
+
+    # ─── heartbeat ───
+
     async def start_heartbeat(
         self, interval_s: float = CLIENT_HEARTBEAT_INTERVAL_S
     ) -> None:
@@ -302,16 +406,56 @@ class ServerClient:
         if self._heartbeat_task is not None and not self._heartbeat_task.done():
             return
 
+        # Layer 2 of transport-resilience (see
+        # ~/dev/transport-resilience-plan.md). The previous
+        # implementation swallowed every exception; when the MCP SDK
+        # streams went dead silently, heartbeats emitted
+        # ``ClosedResourceError`` every 10s forever with no signal
+        # upstream. Now we count consecutive failures and escalate:
+        # after MAX_CONSECUTIVE_FAILURES in a row we fire
+        # ``_transport_dead_event`` so the outer worker can race
+        # against it and force a reconnect, and we stop heartbeating
+        # (pointless once the transport is dead).
+        #
+        # A single transient error still gets swallowed — keep the
+        # old tolerance for one-off slow calls / server restarts.
+        MAX_CONSECUTIVE_FAILURES = 3
+        from anyio import ClosedResourceError
+
         async def loop() -> None:
+            consecutive_failures = 0
             try:
                 while True:
                     await asyncio.sleep(interval_s)
                     try:
                         await self.call("heartbeat")
+                        consecutive_failures = 0
+                    except ClosedResourceError:
+                        consecutive_failures += 1
+                        if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+                            log.error(
+                                "heartbeat: %d consecutive ClosedResourceError "
+                                "— transport is dead, signalling reconnect "
+                                "(cid=%s)",
+                                consecutive_failures, self.connection_id,
+                            )
+                            self._transport_dead_event.set()
+                            return
                     except Exception:
-                        # Swallow transient errors — the server-side
-                        # sweeper will evict us if we stop heartbeating.
-                        pass
+                        # Non-transport errors (RemoteToolError, etc.)
+                        # don't indicate a dead transport — keep
+                        # heartbeating, but cap iterations so we don't
+                        # spin forever if something weird keeps failing.
+                        consecutive_failures += 1
+                        if consecutive_failures >= 10:
+                            log.error(
+                                "heartbeat: %d consecutive failures "
+                                "(non-Closed) — giving up, reconnecting "
+                                "(cid=%s)",
+                                consecutive_failures, self.connection_id,
+                            )
+                            self._transport_dead_event.set()
+                            return
             except asyncio.CancelledError:
                 return
 
