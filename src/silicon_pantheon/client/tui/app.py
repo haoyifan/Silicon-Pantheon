@@ -331,7 +331,15 @@ class TUIApp:
                 self._render_event.clear()
                 if self._live is None or self._screen is None:
                     continue
+                # DIAG(lag): measure the two halves separately.
+                # compose_ms runs on the event loop (blocks it);
+                # write_ms runs in a thread (blocks pty write only).
+                # The user-visible "stuck" is compose_ms + event-loop
+                # contention, not write_ms. Logging both lets us tell
+                # them apart.
+                _compose_t0 = _time.monotonic()
                 renderable = self._render_with_overlay()
+                compose_ms = (_time.monotonic() - _compose_t0) * 1000
                 t0 = _time.time()
                 try:
                     await asyncio.to_thread(
@@ -341,6 +349,18 @@ class TUIApp:
                     _log.exception("render raised")
                     self.state.error_message = f"render error: {e}"
                 dt = _time.time() - t0
+                write_ms = dt * 1000
+                # Log anything over 30ms — that's already a visible
+                # frame drop at 30fps. Separate the two halves so we
+                # can tell whether composition (event-loop blocker)
+                # or pty write (thread blocker) is the culprit.
+                if compose_ms > 30 or write_ms > 30:
+                    _log.warning(
+                        "DIAG render-lag: screen=%s compose=%.0fms "
+                        "write=%.0fms",
+                        type(self._screen).__name__,
+                        compose_ms, write_ms,
+                    )
                 # A render that takes several seconds almost certainly
                 # means the pty is backpressured (tmux / terminal
                 # frozen). Log it so a repro has a breadcrumb; do NOT
@@ -376,11 +396,19 @@ class TUIApp:
         immediately waiting. The background refresh_per_second cap
         guarantees the screen updates even if keys keep arriving.
         """
+        import time as _time_mod  # DIAG(lag)
+
         try:
             while not self._should_exit:
                 raw_key = await self._key_queue.get()
                 if self._screen is None:
                     continue
+                # DIAG(lag): measure how long key -> ready-to-render
+                # takes. If the user reports "arrow key feels stuck",
+                # hk_ms tells us whether handle_key was the culprit vs
+                # downstream render pipeline.
+                _key_t0 = _time_mod.monotonic()
+                _queue_depth = self._key_queue.qsize()
                 # Normalize for navigation (j/k/q/etc.) but preserve
                 # the raw key for text-input screens (coach panel,
                 # API-key paste). Single printable chars get lowercased
@@ -424,6 +452,17 @@ class TUIApp:
                         await self.transition(nxt)
                         nxt = None
                         break
+                # DIAG(lag): log anything over 50 ms — that's already
+                # visible as sluggish. Keys processed under 50 ms stay
+                # silent to avoid drowning the log.
+                hk_ms = (_time_mod.monotonic() - _key_t0) * 1000
+                if hk_ms > 50:
+                    _log.warning(
+                        "DIAG key-lag: key=%r screen=%s handle_key+drain=%.0fms "
+                        "queue_depth_at_start=%d",
+                        raw_key, type(self._screen).__name__,
+                        hk_ms, _queue_depth,
+                    )
                 self._refresh()
         except asyncio.CancelledError:
             return
@@ -482,9 +521,29 @@ class TUIApp:
 
         _tick_n = 0
         _last_pulse = _time.time()
+        _last_wake = _time.monotonic()  # DIAG(lag)
         try:
             while not self._should_exit:
                 await asyncio.sleep(TICK_INTERVAL_S)
+                # DIAG(lag): measure event-loop stall between ticks.
+                # We asked for a TICK_INTERVAL_S (0.25s) sleep. If we
+                # wake significantly later, the event loop was
+                # blocked on something synchronous during those
+                # extra ms. This is the best signal we have for
+                # "UI feels stuck" without context: input can't
+                # dispatch, renders can't compose, polls can't fire.
+                _wake_now = _time.monotonic()
+                _stall_ms = (_wake_now - _last_wake - TICK_INTERVAL_S) * 1000
+                _last_wake = _wake_now
+                if _stall_ms > 100:
+                    _log.warning(
+                        "DIAG loop-stall: event-loop blocked for "
+                        "%.0fms between ticks (expected %.0fms sleep). "
+                        "screen=%s — look for sync work hogging the loop.",
+                        _stall_ms + TICK_INTERVAL_S * 1000,
+                        TICK_INTERVAL_S * 1000,
+                        type(self._screen).__name__ if self._screen else "?",
+                    )
                 if self._screen is None:
                     continue
                 _tick_n += 1
