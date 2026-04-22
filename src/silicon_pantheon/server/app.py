@@ -277,7 +277,23 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
 
     Lobby / room / game tools are added in subsequent sub-phases.
     """
-    mcp = FastMCP(name)
+    # json_response=True: POST /mcp returns a plain JSON body with
+    # Content-Length instead of a chunked SSE stream. Pcap evidence
+    # on 2026-04-22 showed that the SSE path races the chunked-
+    # encoding terminator against the MCP client's eager close, so
+    # every POST ended with a FIN-before-terminator abort. Caddy
+    # couldn't keep-alive upstream; every tool call paid a fresh
+    # TCP+TLS handshake under load, producing the 5 s "call SLOW"
+    # cluster seen in client logs. Switching to json_response
+    # delivers the same content with clean HTTP framing and lets
+    # connection pooling actually work.
+    #
+    # The SSE path is still used for GET /mcp (server-initiated
+    # notifications), which we don't use in practice — but keeping
+    # it intact means nothing else changes. The MCP SDK clients we
+    # use handle both modes transparently. See
+    # ~/dev/transport-resilience-plan.md for the full analysis.
+    mcp = FastMCP(name, json_response=True)
 
     @mcp.tool()
     def set_player_metadata(
