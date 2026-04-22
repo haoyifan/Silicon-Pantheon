@@ -55,6 +55,21 @@ class WorkerConfig:
     strategy: str | None = None  # path to a .md file
     lessons: list[str] = field(default_factory=list)  # glob patterns
     locale: str = "en"
+    # One-shot mode: return from run_forever after one completed match
+    # instead of looping. Used by the system-test framework to run a
+    # bounded workload. Default False preserves the long-running
+    # daemon semantics for auto-host.
+    one_shot: bool = False
+    # Agent mode. "llm" uses the NetworkedAgent + provider adapter
+    # (default, unchanged behaviour). "random" uses RandomNetworkAgent
+    # — picks uniformly random legal actions via the MCP transport,
+    # no LLM provider, zero per-move cost. Used by the system-test
+    # framework to exercise server+transport end-to-end without
+    # burning LLM credits.
+    mode: str = "llm"
+    # Optional seed for the random mode's RNG. Makes a run reproducible.
+    # Ignored when mode="llm".
+    seed: int | None = None
 
 
 @dataclass
@@ -94,6 +109,9 @@ def load_config(path: Path) -> HostConfig:
             strategy=merged.get("strategy"),
             lessons=merged.get("lessons", []),
             locale=merged.get("locale", "en"),
+            one_shot=bool(merged.get("one_shot", False)),
+            mode=merged.get("mode", "llm"),
+            seed=merged.get("seed"),
         ))
 
     if not workers:

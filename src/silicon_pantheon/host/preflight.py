@@ -54,6 +54,11 @@ def validate_credentials(config: HostConfig) -> list[PreflightFailure]:
 
     failures: list[PreflightFailure] = []
     for w in config.workers:
+        # Random-mode workers have no provider/LLM adapter — nothing to
+        # validate. Skip them. This is the system-test path where the
+        # whole point is to run without LLM credentials.
+        if getattr(w, "mode", "llm") == "random":
+            continue
         try:
             _build_default_adapter(w.model)
         except RuntimeError as e:

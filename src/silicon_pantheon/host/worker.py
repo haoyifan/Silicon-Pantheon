@@ -76,6 +76,15 @@ class BotWorker:
                 try:
                     await self._ensure_connected()
                     await self._run_game_loop_with_transport_watch()
+                    # One-shot workers: _game_loop returned cleanly
+                    # after one completed match. Exit run_forever so
+                    # the task completes and the system-test
+                    # orchestrator can observe this process as "done"
+                    # rather than still-running. For long-running
+                    # auto-host workers (default), _game_loop is an
+                    # infinite loop and never reaches this point.
+                    if self.config.one_shot:
+                        return
                 except asyncio.CancelledError:
                     raise
                 except Exception as e:
@@ -196,6 +205,20 @@ class BotWorker:
         while True:
             try:
                 await self._one_game()
+                # One-shot mode: the system-test framework uses this to
+                # run a bounded workload. Return cleanly after a single
+                # successful match so run_forever's loop exits, the
+                # worker disconnects, and the orchestrator can count
+                # this process as "done" instead of treating it as a
+                # still-running service. Crashes go through the normal
+                # exception path below and don't terminate — the
+                # retry-on-crash semantics stay useful even in one-shot.
+                if self.config.one_shot:
+                    log.info(
+                        "worker %s one_shot completed — exiting",
+                        self.config.name,
+                    )
+                    return
             except asyncio.CancelledError:
                 raise
             except Exception as e:
@@ -355,17 +378,27 @@ class BotWorker:
         max_turns = int(room.get("max_turns", 20))
         effective_fog = room.get("fog_of_war") or cfg.fog_of_war
 
-        agent = NetworkedAgent(
-            client=client,
-            model=cfg.model,
-            scenario=scenario,
-            strategy=strategy_text,
-            lessons_dir=lessons_dir,
-            selected_lessons=selected_lessons,
-            time_budget_s=float(cfg.turn_time_limit_s),
-            locale=cfg.locale,
-            fog_of_war=effective_fog,
-        )
+        if cfg.mode == "random":
+            # System-test mode: no LLM, random legal action each move.
+            # Skip prompt/lessons/strategy machinery entirely — none of
+            # it applies. Cheap both in wall-clock and in API-credit cost.
+            from silicon_pantheon.client.random_agent import RandomNetworkAgent
+            agent = RandomNetworkAgent(client=client, seed=cfg.seed)
+            log.info(
+                "worker %s agent=random seed=%s", cfg.name, cfg.seed,
+            )
+        else:
+            agent = NetworkedAgent(
+                client=client,
+                model=cfg.model,
+                scenario=scenario,
+                strategy=strategy_text,
+                lessons_dir=lessons_dir,
+                selected_lessons=selected_lessons,
+                time_budget_s=float(cfg.turn_time_limit_s),
+                locale=cfg.locale,
+                fog_of_war=effective_fog,
+            )
         # Expose so the runner's status line can read the current
         # LLM-wait elapsed time. Cleared in the finally below when
         # the match ends.
