@@ -41,9 +41,12 @@ from typing import Any
 
 _log = logging.getLogger("silicon.diag.sse")
 
-# Where the rolling tcpdump writes. The caller should SCP this
-# directory off the server after reproducing the bug.
-_PCAP_DIR = Path("/tmp/silicon-sse-diag")
+# Where the rolling tcpdump writes. Under ~/.silicon-pantheon so
+# the existing systemd ReadWritePaths directive covers it — /tmp is
+# namespaced by PrivateTmp=true and unreachable from outside the
+# unit. Operator SCPs this directory off the server after
+# reproducing the bug.
+_PCAP_DIR = Path.home() / ".silicon-pantheon" / "sse-diag"
 
 # Module-level singleton so we only install patches once and own
 # the tcpdump subprocess for the lifetime of the process.
@@ -173,44 +176,40 @@ def _patch_cleanup_memory_streams() -> None:  # DIAG(sse)
 def _start_tcpdump(port: int) -> None:  # DIAG(sse)
     """Spawn tcpdump on ``lo`` with a rolling pcap buffer.
 
-    We keep 10 × 60 s files (10 minute window) so the operator has
-    time to react to a failure. Output goes to /tmp/silicon-sse-diag/;
-    ownership drops to the current user via ``-Z``.
+    Keeps 10 × 60 s files (10 minute window) so the operator has
+    time to react to a failure. Output goes to
+    ``~/.silicon-pantheon/sse-diag/pid<P>/``.
 
-    Requires ``sudo -n`` passwordless access to tcpdump — confirmed on
-    the prod host before shipping this code.
+    Does NOT use sudo — systemd's ``NoNewPrivileges=true`` blocks
+    that. Requires the operator to grant ``CAP_NET_RAW CAP_NET_ADMIN``
+    to silicon-serve via systemd ``AmbientCapabilities``; see the
+    --diagnose-sse help text for the drop-in snippet.
     """
     global _tcpdump_proc
 
     _PCAP_DIR.mkdir(parents=True, exist_ok=True)
-    try:
-        os.chmod(_PCAP_DIR, 0o755)
-    except PermissionError:
-        pass
     # Unique per-pid subdir so multiple silicon-serve processes don't
     # stomp on each other.
     out_dir = _PCAP_DIR / f"pid{os.getpid()}"
     out_dir.mkdir(parents=True, exist_ok=True)
-    current_user = os.environ.get("USER") or "silicon"
     # Use strftime %H%M%S in the filename template so rotations are
     # human-readable.
     template = str(out_dir / "capture-%H%M%S.pcap")
 
     cmd = [
-        "sudo", "-n",
         "tcpdump",
         "-i", "lo",
         "-U",                       # packet-buffered; no 4KB cache
         "-w", template,
         "-G", "60",                 # rotate every 60 s
         "-W", "10",                 # keep 10 rotations (10 min window)
-        "-Z", current_user,         # drop privs after socket open
         "-n",
         f"port {port}",
     ]
     _log.info("spawning tcpdump: %s", " ".join(cmd))
     try:
-        # stdout + stderr to /tmp so we can see tcpdump complaints.
+        # stdout + stderr to the pcap dir so tcpdump complaints are
+        # visible alongside the capture files.
         tcpdump_log = out_dir / "tcpdump.log"
         fh = open(tcpdump_log, "ab", buffering=0)
         _tcpdump_proc = subprocess.Popen(
@@ -224,7 +223,10 @@ def _start_tcpdump(port: int) -> None:  # DIAG(sse)
         _log.error("tcpdump not installed — cannot capture loopback traffic")
         return
     except PermissionError as e:
-        _log.error("tcpdump sudo failed: %s — check `sudo -n tcpdump` works", e)
+        _log.error(
+            "tcpdump spawn failed: %s — systemd drop-in needs "
+            "AmbientCapabilities=CAP_NET_RAW CAP_NET_ADMIN", e,
+        )
         return
 
     atexit.register(_stop_tcpdump)
@@ -251,23 +253,17 @@ def _stop_tcpdump() -> None:  # DIAG(sse)
         _log.info("tcpdump already exited rc=%s", proc.returncode)
         return
     _log.info("stopping tcpdump pid=%d", proc.pid)
-    # Use sudo to kill because tcpdump is root-owned. -Z dropped Python-
-    # -process-side privs but tcpdump itself runs as root for raw-sock.
+    # Direct kill — we spawned the process; no privilege elevation
+    # needed to signal our own child.
     try:
-        subprocess.run(
-            ["sudo", "-n", "kill", "-INT", str(proc.pid)],
-            check=False, timeout=2.0,
-        )
+        proc.terminate()  # SIGTERM
     except Exception:
         pass
     try:
         proc.wait(timeout=3.0)
     except subprocess.TimeoutExpired:
         try:
-            subprocess.run(
-                ["sudo", "-n", "kill", "-KILL", str(proc.pid)],
-                check=False, timeout=2.0,
-            )
+            proc.kill()
         except Exception:
             pass
 

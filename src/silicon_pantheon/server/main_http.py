@@ -57,6 +57,7 @@ def _configure_server_logging(level: str, log_file: Path | None) -> Path:
         "silicon.engine",
         "silicon.heartbeat",
         "silicon.fog",
+        "silicon.diag.sse",  # DIAG(sse) — even when off, harmless
         "silicon-serve",
         "uvicorn",
         "uvicorn.error",
@@ -150,9 +151,12 @@ def main() -> int:
             "(1) log EventSourceResponse lifecycle, (2) log every "
             "MCP per-request stream cleanup with caller stack, "
             "(3) spawn tcpdump on loopback with a rolling pcap "
-            "buffer in /tmp/silicon-sse-diag/. Requires passwordless "
-            "sudo for tcpdump. Remove once the 'SSE closes after "
-            "3-25 ms' bug is root-caused."
+            "buffer in ~/.silicon-pantheon/sse-diag/. Under systemd, "
+            "the unit needs 'AmbientCapabilities=CAP_NET_RAW "
+            "CAP_NET_ADMIN' so tcpdump can open the raw socket "
+            "without sudo (NoNewPrivileges=true blocks setuid). "
+            "Remove once the 'SSE closes after 3-25 ms' bug is "
+            "root-caused."
         ),
     )
     args = p.parse_args()
@@ -196,15 +200,12 @@ def main() -> int:
     # DIAG(sse) — temporary bundled diagnostic for the "SSE TCP closes
     # after 3-25 ms" bug. Must run AFTER logging is wired so the patch
     # logs land in our log file, and BEFORE mcp is built so the
-    # EventSourceResponse patch is picked up.
+    # EventSourceResponse patch is picked up. The silicon.diag.sse
+    # logger is wired by _configure_server_logging and re-attached
+    # at T+3s alongside every other silicon.* logger, so no per-diag
+    # handler setup is needed here.
     if args.diagnose_sse:
         from silicon_pantheon.server import sse_diagnostic
-        # Register an extra logger for the diag namespace using the
-        # same file handler everyone else got.
-        for h in logging.getLogger("silicon-serve").handlers:
-            logging.getLogger("silicon.diag.sse").addHandler(h)
-        logging.getLogger("silicon.diag.sse").setLevel(logging.INFO)
-        logging.getLogger("silicon.diag.sse").propagate = False
         sse_diagnostic.enable(args.port)
 
     # ── SIGUSR1 → thread-stack dump ──
@@ -323,6 +324,7 @@ def main() -> int:
         target_loggers = (
             "silicon", "silicon.lobby", "silicon.game", "silicon.engine",
             "silicon.fog", "silicon.heartbeat",
+            "silicon.diag.sse",  # DIAG(sse)
             "silicon-serve", "silicon.leaderboard", "silicon.host",
             "silicon.transport",
             "mcp", "mcp.server", "mcp.server.lowlevel.server",
