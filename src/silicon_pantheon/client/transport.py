@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import secrets
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
@@ -23,6 +24,12 @@ from mcp.client.streamable_http import streamablehttp_client
 log = logging.getLogger("silicon.transport")
 
 CLIENT_HEARTBEAT_INTERVAL_S = 10.0
+
+# Debug gate for the optional per-call / per-heartbeat stall
+# diagnostics. Set by ``silicon-host --debug`` / ``silicon-join --debug``
+# via SILICON_DEBUG=1. Read once at module import time; callers
+# flip the env var before asyncio.run(), so a static read is fine.
+_DEBUG = os.environ.get("SILICON_DEBUG") == "1"
 
 # Watchdog + timeout for call_tool inside the lock.
 #
@@ -99,6 +106,11 @@ class ServerClient:
         server-side instrumentation.
         """
         _configure_transport_diagnostics()
+        # Start the event-loop stall watchdog under --debug. No-op
+        # otherwise. Safe to call multiple times per process; only
+        # one watchdog task ever runs.
+        from silicon_pantheon.client import diag_loop as _diag_loop
+        _diag_loop.start()
         cid = connection_id or secrets.token_hex(8)
         # Strip trailing slash to avoid 307 redirects on every call.
         url = url.rstrip("/")
@@ -273,6 +285,12 @@ class ServerClient:
                 raise RemoteToolError(
                     f"tool {tool_name} raised on the server: {text[:300]}"
                 )
+            # Measure json.loads cost under --debug. A big server
+            # response (get_state on a 50-unit scenario, full
+            # history, 60k tokens of text) can take tens of ms to
+            # decode on a contended laptop — enough to contribute
+            # to loop stalls when stacked with other sync work.
+            _parse_t0 = _time.monotonic() if _DEBUG else None
             try:
                 parsed = json.loads(text)
             except json.JSONDecodeError as e:
@@ -289,6 +307,21 @@ class ServerClient:
                     f"tool {tool_name} returned invalid JSON "
                     f"(len={len(text)}): {text[:200]!r}"
                 ) from e
+            if _DEBUG:
+                _parse_ms = (_time.monotonic() - _parse_t0) * 1000
+                # Flag anything that parses slower than a few ms;
+                # that's already a meaningful contribution to a
+                # stall budget. WARN at > 200 ms since that plus a
+                # couple of sibling syncs can blow through 1-2 s
+                # of real loop time. DEBUG for everything else so
+                # the breakdown is there on demand.
+                _lvl = logging.WARNING if _parse_ms > 200 else logging.DEBUG
+                log.log(
+                    _lvl,
+                    "call parse %s cid=%s bytes=%d parse_ms=%.1f",
+                    tool_name, self.connection_id,
+                    len(text), _parse_ms,
+                )
             log.log(
                 level,
                 "call <- %s ok=%s dt=%.2fs keys=%s",
@@ -423,10 +456,45 @@ class ServerClient:
         from anyio import ClosedResourceError
 
         async def loop() -> None:
+            import time as _time
             consecutive_failures = 0
+            # Absolute-time scheduling so we can measure how late
+            # each wake-up is vs. when it was *supposed* to fire.
+            # A drift of more than a couple of seconds is direct
+            # evidence the event loop was starved — the mechanism
+            # that blows through the server's 45 s heartbeat
+            # eviction threshold. Always enabled (very cheap);
+            # the warning line only fires under --debug to keep
+            # prod logs quiet.
+            _next_tick = _time.monotonic() + interval_s
             try:
                 while True:
-                    await asyncio.sleep(interval_s)
+                    _sleep_for = _next_tick - _time.monotonic()
+                    await asyncio.sleep(max(0.0, _sleep_for))
+                    _lag_s = _time.monotonic() - _next_tick
+                    if _DEBUG and _lag_s > 2.0:
+                        log.warning(
+                            "heartbeat self-lag: wake-up was %.1fs late "
+                            "(cid=%s). Event loop was blocked — any other "
+                            "async task on this loop was starved too. "
+                            "Look for DIAG loop-stall around this time.",
+                            _lag_s, self.connection_id,
+                        )
+                    # Advance the schedule. If we're more than one
+                    # interval behind, skip catch-up ticks so a long
+                    # stall doesn't produce a burst of back-to-back
+                    # heartbeats when the loop recovers.
+                    _next_tick += interval_s
+                    _now = _time.monotonic()
+                    if _next_tick < _now:
+                        _skipped = int((_now - _next_tick) / interval_s) + 1
+                        if _DEBUG:
+                            log.warning(
+                                "heartbeat self-lag: skipping %d catch-up "
+                                "tick(s) after stall (cid=%s).",
+                                _skipped, self.connection_id,
+                            )
+                        _next_tick = _now + interval_s
                     try:
                         await self.call("heartbeat")
                         consecutive_failures = 0
