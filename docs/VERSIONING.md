@@ -121,8 +121,8 @@ has been redeployed.
 ### Phase 2 — deploy the server
 
 ```bash
-ssh silicon@5.78.204.141
-cd ~/Silicon-Patheon && git pull
+ssh <your-ssh-target>                    # see personal deploy notes
+cd <your-production-repo> && git pull
 sudo systemctl restart silicon-serve.service
 sudo -n journalctl -u silicon-serve.service --since '-1m' \
   | grep -vE 'POST /mcp|Processing request' | tail -20
