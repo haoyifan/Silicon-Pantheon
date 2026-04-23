@@ -81,6 +81,21 @@ def _visible_enemies(session: Session, viewer: Team) -> list:
     return [u for u in enemies if u.pos in visible]
 
 
+def visible_enemy_ids_snapshot(
+    session: Session, viewer: Team
+) -> frozenset[str]:
+    """Public helper: ids of enemies currently visible to ``viewer``.
+
+    Callers take this snapshot *before* a mutation so the
+    post-mutation fog audit can allowlist whatever the agent was
+    allowed to know when it invoked the tool. See
+    ``audit_response_for_fog_leaks`` for the rationale.
+    """
+    if session.fog_of_war == "none":
+        return frozenset()
+    return frozenset(u.id for u in _visible_enemies(session, viewer))
+
+
 def _require_target_visible(
     session: Session, viewer: Team, target_id: str
 ) -> None:
@@ -170,7 +185,11 @@ def _require_target_visible(
 
 
 def audit_response_for_fog_leaks(
-    result: object, session: Session, viewer: Team, tool_name: str
+    result: object,
+    session: Session,
+    viewer: Team,
+    tool_name: str,
+    pre_visible_enemy_ids: frozenset[str] | None = None,
 ) -> None:
     """Scan a tool response for enemy unit IDs that are currently hidden.
 
@@ -183,6 +202,16 @@ def audit_response_for_fog_leaks(
     every tool response when fog is enabled. If this ever fires,
     there's a real leak — track it down in the tool that produced
     the response.
+
+    ``pre_visible_enemy_ids`` is the set of enemy ids the viewer
+    could legitimately see at the moment the tool was invoked,
+    snapshotted *before* the engine mutated state. The caller is
+    responsible for taking this snapshot under session.lock — see
+    ``game_tools._dispatch_inner``. The audit unions it into the
+    allowlist so mutations that shrink line-of-sight (e.g. the
+    attacker dies on counter-attack, removing LoS to a target that
+    was plainly visible when the agent chose it) don't produce
+    false-positive "leaks" on input args the agent itself supplied.
     """
     if session.fog_of_war == "none":
         return
@@ -190,10 +219,21 @@ def audit_response_for_fog_leaks(
     # Add own-team ids — those are always OK to appear.
     for u in session.state.units_of(viewer):
         visible_ids.add(u.id)
-    # Dead enemies are OK too (known history).
-    for u in session.state.units.values():
-        if not u.alive:
-            visible_ids.add(u.id)
+    # Dead enemies are OK too (known history). Dead units have been
+    # removed from state.units by _apply_attack / _apply_end_turn
+    # (see engine/rules.py) and now live in state.fallen_units with
+    # hp=0. Iterating state.units here was dead code — it never
+    # found a dead unit, because by the time the audit runs dead
+    # units are already gone from the live dict.
+    for uid in session.state.fallen_units:
+        visible_ids.add(uid)
+    # Pre-mutation visible enemies: whatever the viewer was allowed
+    # to see when the agent picked its action. If the tool's
+    # mutation shrank LoS (attacker died, scout moved off a high
+    # tile), the post-mutation recompute above will miss them — but
+    # the agent's reference to those ids is legitimate.
+    if pre_visible_enemy_ids:
+        visible_ids |= pre_visible_enemy_ids
     enemy_team_initial = viewer.other().value[0]
     # Walk the result. Collect any string that looks like an enemy
     # unit ID (prefix "u_{enemy_initial}_") and isn't in the

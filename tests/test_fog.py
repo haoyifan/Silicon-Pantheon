@@ -369,6 +369,120 @@ def test_fog_audit_exempts_hidden_enemies_feature_field() -> None:
     )
 
 
+def test_fog_audit_allowlists_pre_mutation_visibility() -> None:
+    """Regression: when a mutation shrinks the viewer's line-of-sight
+    (e.g. the attacker dies on counter-attack, leaving no blue unit
+    with sight of the target), the post-mutation audit must not flag
+    enemy ids the viewer was legitimately allowed to see *before* the
+    mutation. The attack response echoes ``target_id`` back from the
+    call args; the agent obviously knew that id, and the pre-action
+    fog gate (``_require_target_visible``) already certified the
+    target was visible. Observed on 08_kadesh 2026-04-22: blue mage
+    attacks red knight, mage dies on counter, audit retroactively
+    flagged ``target_id`` because the recomputed post-mutation
+    visibility no longer included the knight."""
+    import logging as _logging
+    from silicon_pantheon.server.session import new_session
+    from silicon_pantheon.server.tools._common import audit_response_for_fog_leaks
+
+    state = load_scenario("01_tiny_skirmish")
+    _spread_out(state)  # Red corner-isolated => NOT visible to blue now.
+    session = new_session(state, fog_of_war="classic")
+    any_red = next(iter(state.units_of(Team.RED)))
+    # Action result that echoes the target_id (the agent's own input).
+    attack_response = {
+        "type": "attack",
+        "unit_id": "u_b_knight_1",
+        "target_id": any_red.id,
+        "damage_dealt": 5,
+    }
+    logger = _logging.getLogger("silicon.fog")
+
+    class _Counter(_logging.Handler):
+        def __init__(self):
+            super().__init__(level=_logging.WARNING)
+            self.count = 0
+            self.msgs: list[str] = []
+
+        def emit(self, record):
+            if record.name == "silicon.fog" and record.levelno >= _logging.WARNING:
+                self.count += 1
+                self.msgs.append(record.getMessage())
+
+    counter = _Counter()
+    logger.addHandler(counter)
+    try:
+        # Without pre-mutation snapshot: the audit flags (current
+        # behaviour pre-fix); assert the new signature accepts the
+        # snapshot and allowlists via it.
+        audit_response_for_fog_leaks(
+            attack_response,
+            session,
+            Team.BLUE,
+            "attack",
+            pre_visible_enemy_ids=frozenset({any_red.id}),
+        )
+    finally:
+        logger.removeHandler(counter)
+    assert counter.count == 0, (
+        f"audit should allowlist pre-mutation visible enemy ids; "
+        f"got {counter.count} warnings: {counter.msgs}"
+    )
+
+
+def test_fog_audit_allowlists_fallen_units() -> None:
+    """Regression: dead units live in ``state.fallen_units`` after
+    ``_apply_attack`` removes them from ``state.units``. The audit's
+    dead-enemy allowlist used to iterate ``state.units`` and check
+    ``not u.alive`` — dead code, since dead units are already gone.
+    The allowlist must cover ``fallen_units`` so a response that
+    references a recently-killed enemy id (legitimate history) is
+    not flagged."""
+    import logging as _logging
+    from silicon_pantheon.server.session import new_session
+    from silicon_pantheon.server.tools._common import audit_response_for_fog_leaks
+
+    state = load_scenario("01_tiny_skirmish")
+    _spread_out(state)
+    session = new_session(state, fog_of_war="classic")
+    # Simulate a red unit having died: move it from units to
+    # fallen_units, matching the engine's bookkeeping.
+    any_red = next(iter(state.units_of(Team.RED)))
+    any_red.hp = 0  # marks alive=False via the property
+    state.fallen_units[any_red.id] = any_red
+    del state.units[any_red.id]
+    state.dead_unit_ids.add(any_red.id)
+
+    response = {
+        "type": "attack",
+        "target_id": any_red.id,
+        "target_killed": True,
+    }
+    logger = _logging.getLogger("silicon.fog")
+
+    class _Counter(_logging.Handler):
+        def __init__(self):
+            super().__init__(level=_logging.WARNING)
+            self.count = 0
+            self.msgs: list[str] = []
+
+        def emit(self, record):
+            if record.name == "silicon.fog" and record.levelno >= _logging.WARNING:
+                self.count += 1
+                self.msgs.append(record.getMessage())
+
+    counter = _Counter()
+    logger.addHandler(counter)
+    try:
+        audit_response_for_fog_leaks(response, session, Team.BLUE, "attack")
+    finally:
+        logger.removeHandler(counter)
+    assert counter.count == 0, (
+        f"audit should allowlist fallen (dead) enemy ids; "
+        f"got {counter.count} warnings: {counter.msgs}"
+    )
+
+
 def test_attack_log_only_mode_lets_hidden_attack_through(monkeypatch, caplog) -> None:
     """Repro mode: SILICON_FOG_ATTACK_ENFORCE=0 turns the fog gate
     into log-only. The attack must NOT raise, and a

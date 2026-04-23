@@ -508,6 +508,16 @@ def _dispatch_inner(app: App, connection_id: str, tool_name: str, args: dict) ->
     # ── Phase 2: execute under session.lock ──────────────────────
     _t0_dispatch = _time.time()
     with session.lock:
+        # Snapshot pre-mutation visibility so the fog audit (post-
+        # mutation) can allowlist whatever the agent was legitimately
+        # allowed to see when it chose this action. Must happen BEFORE
+        # call_tool; e.g. if an attacker dies on counter-attack, LoS
+        # to the target shrinks and a naive post-mutation recompute
+        # falsely flags the target_id the agent itself passed in.
+        from silicon_pantheon.server.tools._common import (
+            visible_enemy_ids_snapshot,
+        )
+        pre_visible_enemy_ids = visible_enemy_ids_snapshot(session, viewer)
         try:
             result = call_tool(session, viewer, tool_name, args)
         except ToolError as e:
@@ -545,7 +555,13 @@ def _dispatch_inner(app: App, connection_id: str, tool_name: str, args: dict) ->
         from silicon_pantheon.server.tools._common import (
             audit_response_for_fog_leaks,
         )
-        audit_response_for_fog_leaks(filtered, session, viewer, tool_name)
+        audit_response_for_fog_leaks(
+            filtered,
+            session,
+            viewer,
+            tool_name,
+            pre_visible_enemy_ids=pre_visible_enemy_ids,
+        )
 
     # ── Phase 3: post-process (no app-level lock held) ──────────
     # _note_game_over_if_needed has its own 3-phase locking protocol;
