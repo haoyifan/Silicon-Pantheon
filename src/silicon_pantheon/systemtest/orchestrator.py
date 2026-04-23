@@ -677,9 +677,17 @@ def _render_agent_toml(
     team_assignment = rng.choice(cfg.randomize.team_assignments)
     locale = rng.choice(cfg.randomize.locales)
 
+    # Local mode: agents talk to loopback directly.
+    # Remote mode: agents go through the public URL (Caddy + TLS +
+    # reverse proxy), which is the whole point of remote mode.
+    server_url = (
+        cfg.server.url
+        if not cfg.server.is_local
+        else f"http://127.0.0.1:{cfg.server.port}/mcp/"
+    )
     parts = [
         f'[server]',
-        f'url = "http://127.0.0.1:{cfg.server.port}/mcp/"',
+        f'url = "{server_url}"',
         '',
         '[log]',
         f'file = "{a.log_path}"',
