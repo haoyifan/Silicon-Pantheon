@@ -68,11 +68,21 @@ def test_missing_message_field() -> None:
     assert not is_terminal_tool_error({"error": {}})
 
 
-def test_not_your_turn_message() -> None:
-    """The other grok-3-mini observed loop: turn flipped mid-adapter."""
-    assert is_terminal_tool_error({
+def test_not_your_turn_message_is_not_terminal() -> None:
+    """``not your turn`` is a routine off-turn rejection, NOT a
+    terminal-match signal. Server returns it whenever a tool call
+    lands while the opponent is active (very common during the
+    polling phase). Treating it as terminal made the openai loop
+    bail mid-iteration on every reflexive get_legal_actions —
+    65 false-positive bailouts across 12 agents in the 2026-04-23
+    system test. The worker's outer poll already guards on
+    active_player == viewer, so this is recoverable in-place."""
+    assert not is_terminal_tool_error({
         "error": {"code": "bad_input",
                   "message": "not your turn (active: red, you: blue)"},
+    })
+    assert not is_terminal_tool_error({
+        "error": {"code": "not_your_turn", "message": "anything"},
     })
 
 
@@ -92,9 +102,6 @@ def test_terminal_error_codes() -> None:
     })
     assert is_terminal_tool_error({
         "error": {"code": "game_already_over", "message": ""},
-    })
-    assert is_terminal_tool_error({
-        "error": {"code": "not_your_turn", "message": ""},
     })
 
 

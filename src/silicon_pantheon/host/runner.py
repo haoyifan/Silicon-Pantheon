@@ -26,6 +26,77 @@ from silicon_pantheon.host.config import HostConfig, load_config
 from silicon_pantheon.host.worker import BotWorker
 
 
+# Set by _shutdown_exception_handler when MCP/anyio raises a
+# cross-task cancel-scope error during loop teardown. main() reads it
+# after asyncio.run returns and promotes the process exit code so
+# the systemtest orchestrator (and any other supervisor) doesn't
+# count the run as "clean exit" when teardown actually crashed.
+_unclean_shutdown_detected = False
+
+
+def _install_shutdown_handler() -> None:
+    """Trap anyio cancel-scope mismatches that fire on loop shutdown.
+
+    Background: BotWorker._disconnect uses ``asyncio.wait_for(
+    transport_ctx.__aexit__(...), timeout=5.0)`` to bound how long a
+    dead transport can hold up reconnect (the underlying SSE stream
+    may already be wedged when teardown starts; without the bound we
+    hang forever in __aexit__). When the timeout fires the
+    streamablehttp_client async generator is left half-closed.
+    Asyncio's loop shutdown then runs ``athrow`` on it from its own
+    cleanup task, but the generator's anyio cancel scope was entered
+    in our worker task, so anyio raises:
+
+        RuntimeError: Attempted to exit cancel scope in a different
+        task than it was entered in
+
+    The damage at that point is cosmetic — the leave_room / DELETE
+    /mcp calls already succeeded server-side before teardown began.
+    But asyncio's default handler logs a multi-frame ERROR traceback
+    that looks like a real bug, AND Python still exits 0 because the
+    main coroutine returned normally. Combined those mislead
+    operators (and the systemtest orchestrator) into reporting
+    "clean exit" when the bot's shutdown actually went sideways.
+
+    We can't fix the root anyio/MCP cross-task teardown without
+    forking either lib, but we CAN:
+
+      1. Demote the cancel-scope traceback to a single WARNING line.
+      2. Flip a module-global so main() can promote the exit code.
+
+    Anything else (real bugs unrelated to MCP teardown) flows through
+    asyncio's default handler unchanged.
+    """
+    log = logging.getLogger("silicon.host.runner")
+    loop = asyncio.get_running_loop()
+    default = loop.get_exception_handler()
+
+    def handler(loop_, context):
+        exc = context.get("exception")
+        msg = str(exc) if exc is not None else context.get("message", "")
+        if (
+            isinstance(exc, RuntimeError)
+            and "cancel scope" in msg.lower()
+        ):
+            global _unclean_shutdown_detected
+            _unclean_shutdown_detected = True
+            log.warning(
+                "shutdown: anyio cancel-scope mismatch in MCP "
+                "client teardown (known cross-task GC race; bot "
+                "work already completed but exit code will be "
+                "promoted to 1 so supervisors see the unclean "
+                "shutdown). exc=%s",
+                exc,
+            )
+            return
+        if default is not None:
+            default(loop_, context)
+        else:
+            loop_.default_exception_handler(context)
+
+    loop.set_exception_handler(handler)
+
+
 def _setup_logging(log_file: str) -> None:
     """Configure logging to file only — stdout is for the status line."""
     handler = logging.FileHandler(log_file, encoding="utf-8")
@@ -75,6 +146,7 @@ def _status_line(workers: list[BotWorker]) -> str:
 
 async def _run(config: HostConfig) -> None:
     """Spawn workers and maintain them until cancelled."""
+    _install_shutdown_handler()
     workers = [
         BotWorker(i, wc, config.server_url)
         for i, wc in enumerate(config.workers)
@@ -186,6 +258,14 @@ def main() -> None:
         asyncio.run(_run(config))
     except KeyboardInterrupt:
         print("\nShutting down.")
+
+    # If the loop's exception handler caught an anyio cancel-scope
+    # crash during teardown, surface it as a non-zero exit so the
+    # systemtest orchestrator (and the operator) can tell the bot's
+    # shutdown went sideways even though the main coroutine returned
+    # normally. See _install_shutdown_handler for the rationale.
+    if _unclean_shutdown_detected:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

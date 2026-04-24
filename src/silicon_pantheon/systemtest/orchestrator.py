@@ -305,7 +305,6 @@ def _bringup_local(cfg: SystemTestConfig, bundle_dir: Path) -> LocalServer:
     (server_home / ".silicon-pantheon" / "logs").mkdir(
         parents=True, exist_ok=True
     )
-    (server_home / ".silicon-pantheon" / "replays").mkdir(exist_ok=True)
 
     if _port_in_use(cfg.server.port):
         raise RuntimeError(
@@ -585,7 +584,19 @@ def _port_in_use(port: int) -> bool:
 def _spawn_server(
     cfg: SystemTestConfig, server_home: Path, stdout_log: Path
 ) -> subprocess.Popen:
-    """Spawn silicon-serve with HOME overridden to the bundle dir."""
+    """Spawn silicon-serve with HOME + cwd pinned to the bundle dir.
+
+    HOME pin: routes ``~/.silicon-pantheon/logs/`` and the leaderboard
+    DB into the bundle so they get collected.
+
+    cwd pin: silicon-serve writes per-match replays to a relative
+    path (``runs-server/<ts>_<scenario>_<room>/replay.jsonl`` —
+    see server/game_tools.py:start_game_for_room). Without a pinned
+    cwd, those land in the orchestrator's own cwd (typically the
+    repo root) and miss the bundle entirely. Pinning to server_home
+    keeps every server-side artifact under bundle_dir/server/home/
+    so _collect_server_logs can find them with a single tree walk.
+    """
     env = os.environ.copy()
     env["HOME"] = str(server_home)
     # Don't inherit our own SILICON_DEBUG — server in production mode.
@@ -600,6 +611,7 @@ def _spawn_server(
     return subprocess.Popen(
         cmd,
         env=env,
+        cwd=str(server_home),
         stdout=fh, stderr=fh,
         start_new_session=True,
     )
@@ -771,17 +783,37 @@ def _safe_terminate(proc: subprocess.Popen) -> None:
 
 
 def _collect_server_logs(server_home: Path, server_bundle: Path) -> None:
-    """Copy silicon-serve log + replays + leaderboard.db into bundle."""
+    """Copy silicon-serve log + replays + leaderboard.db into bundle.
+
+    Replay collection: silicon-serve writes one replay per match to
+    ``<cwd>/runs-server/<ts>_<scenario>_<room>/replay.jsonl``. We
+    pinned the server's cwd to ``server_home`` in _spawn_server so
+    every per-match dir lands under server_home/runs-server/. Flatten
+    them into ``server_bundle/replays/<run_dir_name>.jsonl`` so the
+    review skill (which expects ``server/replays/*.jsonl``) finds them
+    without descending into per-match subdirs.
+
+    The legacy ``~/.silicon-pantheon/replays/`` location is also
+    swept for forward-compat if a future server build moves there.
+    """
     src_logs = server_home / ".silicon-pantheon" / "logs"
     if src_logs.is_dir():
         for f in src_logs.iterdir():
             if f.is_file():
                 shutil.copy2(f, server_bundle / f.name)
-    src_replays = server_home / ".silicon-pantheon" / "replays"
-    if src_replays.is_dir():
-        dest_replays = server_bundle / "replays"
-        dest_replays.mkdir(exist_ok=True)
-        for f in src_replays.iterdir():
+    dest_replays = server_bundle / "replays"
+    dest_replays.mkdir(exist_ok=True)
+    runs_dir = server_home / "runs-server"
+    if runs_dir.is_dir():
+        for run in runs_dir.iterdir():
+            if not run.is_dir():
+                continue
+            replay = run / "replay.jsonl"
+            if replay.is_file():
+                shutil.copy2(replay, dest_replays / f"{run.name}.jsonl")
+    legacy_replays = server_home / ".silicon-pantheon" / "replays"
+    if legacy_replays.is_dir():
+        for f in legacy_replays.iterdir():
             if f.is_file():
                 shutil.copy2(f, dest_replays / f.name)
     db = server_home / ".silicon-pantheon" / "leaderboard.db"

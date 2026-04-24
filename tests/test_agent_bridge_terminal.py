@@ -134,8 +134,9 @@ def test_dispatch_tool_recoverable_error_does_not_set_flag() -> None:
 
 
 def test_play_turn_reset_clears_stale_flag() -> None:
-    """A stale flag from a prior ``not your turn`` must NOT short-circuit
-    the next turn. Verify the reset path in play_turn's entry."""
+    """A stale flag from a prior terminal-match detection must NOT
+    short-circuit the next turn. Verify the reset path in play_turn's
+    entry."""
     agent = _make_agent({
         "get_state": {
             "ok": True,
