@@ -56,6 +56,17 @@ PROVIDERS: list[ProviderSpec] = [
         keyring_service="silicon-pantheon-anthropic",
         models=[
             ModelSpec(
+                "claude-opus-4-7",
+                "Claude Opus 4.7",
+                context_window=1_000_000,
+                # Pricing mirrored from Opus 4.6 as a placeholder —
+                # Anthropic hasn't always kept prices constant across
+                # minor tier bumps. Verify against the published rate
+                # card and update if this drifts.
+                cost_per_mtok_in=15.0,
+                cost_per_mtok_out=75.0,
+            ),
+            ModelSpec(
                 "claude-opus-4-6",
                 "Claude Opus 4.6",
                 context_window=1_000_000,
