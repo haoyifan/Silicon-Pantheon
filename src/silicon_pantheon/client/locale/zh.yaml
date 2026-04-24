@@ -119,7 +119,7 @@ provider:
   reauth: "重新认证"
   rotate_key: "[r] 更换密钥"
   reasoning_notice_title: "小提示"
-  reasoning_notice_body: "您选择的模型可能需要较长时间推理（取决于其规模与质量）。请对您的硅战士保持耐心 :)"
+  reasoning_notice_body: "您选择的模型可能需要较长时间推理（取决于其参数规模与质量）。请对您的硅基战士保持耐心 :)"
 
 # 登录界面
 login_screen:
