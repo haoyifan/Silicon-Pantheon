@@ -23,6 +23,7 @@ from __future__ import annotations
 import logging
 import os
 import shutil
+import textwrap as _tw
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -108,6 +109,7 @@ class _Step:
     key_buffer: str = ""
     key_source_hint: str = ""
     focused: int = 0
+    provider_idx: int = 0
 
 
 _API_KEY_OPTIONS = ("use_env", "paste", "save_to_keyring_after_paste")
@@ -178,15 +180,22 @@ class ProviderAuthScreen(Screen):
             marker = "➤ " if i == self._step.focused else "  "
             style = "bold cyan" if i == self._step.focused else "white"
             lines.append(Text(f"{marker}{p.display_name}", style=style))
-            lines.append(
-                Text(f"      {p.token_cost_warning}", style="dim italic")
-            )
+        _DESC_LINES = 3
+        _DESC_WIDTH = 62
+        focused_provider = PROVIDERS[self._step.focused]
+        lines.append(Text(""))
+        if focused_provider.token_cost_warning:
+            wrapped = _tw.wrap(focused_provider.token_cost_warning, _DESC_WIDTH)
+        else:
+            wrapped = []
+        for j in range(_DESC_LINES):
+            lines.append(Text(f"  {wrapped[j]}" if j < len(wrapped) else " ", style="dim italic"))
         lines.append(Text(""))
         lines.append(Text(t("provider_extra.nav_pick_quit", lc), style="dim"))
-        if self.app.state.error_message:
-            lines.append(Text(self.app.state.error_message, style="red"))
+        lines.append(Text(self.app.state.error_message or " ", style="red" if self.app.state.error_message else ""))
+        _PANEL_WIDTH = 72
         return Align.center(
-            Panel(Group(*lines), title=t("provider.title", lc), border_style="yellow", padding=(1, 3)),
+            Panel(Group(*lines), title=t("provider.title", lc), border_style="yellow", padding=(1, 3), width=_PANEL_WIDTH),
             vertical="middle",
         )
 
@@ -405,7 +414,12 @@ class ProviderAuthScreen(Screen):
                 self._step.provider_id or "", self._step.model_id or ""
             )
         if key == "c":
-            self._step = _Step(kind="pick_provider", focused=0)
+            idx = 0
+            for i, p in enumerate(PROVIDERS):
+                if p.id == self._step.provider_id:
+                    idx = i
+                    break
+            self._step = _Step(kind="pick_provider", focused=idx)
             return None
         return None
 
@@ -441,6 +455,7 @@ class ProviderAuthScreen(Screen):
                 kind=next_kind,
                 provider_id=p.id,
                 focused=focused,
+                provider_idx=self._step.focused,
             )
             self.app.state.error_message = ""
         return None
@@ -491,7 +506,7 @@ class ProviderAuthScreen(Screen):
         if p is None:
             return None
         if key == "esc":
-            self._step = _Step(kind="pick_provider", focused=0)
+            self._step = _Step(kind="pick_provider", focused=self._step.provider_idx)
             return None
         if key in ("down", "j"):
             self._step.focused = (self._step.focused + 1) % 2
@@ -573,7 +588,7 @@ class ProviderAuthScreen(Screen):
 
     async def _handle_api_key_key(self, key: str) -> Screen | None:
         if key == "esc":
-            self._step = _Step(kind="pick_provider", focused=0)
+            self._step = _Step(kind="pick_provider", focused=self._step.provider_idx)
             return None
         # When in paste mode, the buffer absorbs printable chars.
         in_paste = self._step.focused == 1
@@ -687,7 +702,7 @@ class ProviderAuthScreen(Screen):
         if p is None:
             return None
         if key == "esc":
-            self._step = _Step(kind="pick_provider", focused=0)
+            self._step = _Step(kind="pick_provider", focused=self._step.provider_idx)
             return None
         if key in ("down", "j"):
             self._step.focused = (self._step.focused + 1) % len(p.models)
@@ -721,7 +736,7 @@ class ProviderAuthScreen(Screen):
                     "claude CLI not found in PATH. Install Claude Code "
                     "(https://docs.claude.com/claude-code) and try again."
                 )
-                self._step = _Step(kind="pick_provider", focused=0)
+                self._step = _Step(kind="pick_provider", focused=self._step.provider_idx)
                 return None
             # Record that we're using the subscription.
             self._creds.providers.setdefault(
