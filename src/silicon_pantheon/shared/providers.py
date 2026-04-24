@@ -100,6 +100,22 @@ PROVIDERS: list[ProviderSpec] = [
         env_var=None,
         keyring_service="silicon-pantheon-openai-codex",
         models=[
+            # Codex users get a 400K window on 5.5 (smaller than the
+            # 1M the API-key path sees, per OpenAI's published limits).
+            ModelSpec(
+                "gpt-5.5",
+                "GPT-5.5",
+                context_window=400_000,
+                cost_per_mtok_in=None,
+                cost_per_mtok_out=None,
+            ),
+            ModelSpec(
+                "gpt-5.5-reasoning-high",
+                "GPT-5.5 (reasoning high)",
+                context_window=400_000,
+                cost_per_mtok_in=None,
+                cost_per_mtok_out=None,
+            ),
             ModelSpec(
                 "gpt-5.4",
                 "GPT-5.4",
@@ -128,6 +144,24 @@ PROVIDERS: list[ProviderSpec] = [
         env_var="OPENAI_API_KEY",
         keyring_service="silicon-pantheon-openai",
         models=[
+            # API-key path gets the full 1M context window on 5.5.
+            # Pricing per OpenAI's announcement: $5/$30 Mtok in/out.
+            ModelSpec(
+                "gpt-5.5",
+                "GPT-5.5",
+                context_window=1_000_000,
+                cost_per_mtok_in=5.0,
+                cost_per_mtok_out=30.0,
+            ),
+            # "pro" tier uses more compute per request — pricier but
+            # produces more consistent answers on hard problems.
+            ModelSpec(
+                "gpt-5.5-pro",
+                "GPT-5.5 Pro",
+                context_window=1_000_000,
+                cost_per_mtok_in=30.0,
+                cost_per_mtok_out=180.0,
+            ),
             ModelSpec(
                 "gpt-5",
                 "GPT-5",
