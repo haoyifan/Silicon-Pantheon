@@ -1509,16 +1509,39 @@ class GameScreen(Screen):
     async def _refresh_state(self) -> Screen | None:
         import time
 
+        from silicon_pantheon.shared.eviction import (
+            classify_server_error,
+            classify_transport_exception,
+        )
+
         self._last_poll = time.time()
         if self.app.client is None:
             return None
         try:
             r = await self.app.client.call("get_state")
         except Exception as e:
+            # Transport-level failure: maybe the server went away.
+            # Classify before falling back to the inline footer.
+            info = classify_transport_exception(e)
+            if info is not None:
+                self.app.show_eviction_alert(info)
+                return None
             self.app.state.error_message = f"get_state failed: {e}"
             return None
         if not r.get("ok"):
-            self.app.state.error_message = (r.get("error") or {}).get(
+            err = r.get("error") or {}
+            info = classify_server_error(err, on_screen="game")
+            if info is not None:
+                # Eviction (state mismatch / forgot us / room gone) —
+                # surface a modal that escorts the user out instead
+                # of leaving them on a dead game screen with a red
+                # one-liner. The polling loop will stop touching the
+                # server once pending_alert is set: the alert
+                # transition out of GameScreen drops self.state
+                # and the next tick's poll runs in the lobby.
+                self.app.show_eviction_alert(info)
+                return None
+            self.app.state.error_message = err.get(
                 "message", "get_state rejected"
             )
             return None
@@ -1701,9 +1724,24 @@ class GameScreen(Screen):
                     my_team, _time.time() - t0, e,
                 )
                 if e.is_terminal:
-                    self.app.state.error_message = (
-                        f"{e.reason.value}: {e} — conceding match"
+                    # Terminal model-provider failure (auth revoked,
+                    # billing dead, model removed) — the match is
+                    # finished from this client's perspective. Show
+                    # an alert that escorts to the lobby so the user
+                    # can re-auth / pick another model before any
+                    # further game actions burn server time.
+                    from silicon_pantheon.shared.eviction import (
+                        classify_provider_error,
                     )
+                    info = classify_provider_error(
+                        e.reason.value, str(e),
+                    )
+                    if info is not None:
+                        self.app.show_eviction_alert(info)
+                    else:
+                        self.app.state.error_message = (
+                            f"{e.reason.value}: {e} — conceding match"
+                        )
                     try:
                         await self._call("concede")
                     except Exception:
@@ -1724,15 +1762,29 @@ class GameScreen(Screen):
         self.app.state.agent_task = asyncio.create_task(_run())
 
     async def _call(self, tool: str) -> Screen | None:
+        from silicon_pantheon.shared.eviction import (
+            classify_server_error,
+            classify_transport_exception,
+        )
+
         if self.app.client is None:
             return None
         try:
             r = await self.app.client.call(tool)
         except Exception as e:
+            info = classify_transport_exception(e)
+            if info is not None:
+                self.app.show_eviction_alert(info)
+                return None
             self.app.state.error_message = f"{tool} failed: {e}"
             return None
         if not r.get("ok"):
-            self.app.state.error_message = (r.get("error") or {}).get(
+            err = r.get("error") or {}
+            info = classify_server_error(err, on_screen="game")
+            if info is not None:
+                self.app.show_eviction_alert(info)
+                return None
+            self.app.state.error_message = err.get(
                 "message", f"{tool} rejected"
             )
         else:

@@ -1384,6 +1384,11 @@ class RoomScreen(Screen):
     async def _refresh_state(self) -> Screen | None:
         import time as _time
 
+        from silicon_pantheon.shared.eviction import (
+            classify_server_error,
+            classify_transport_exception,
+        )
+
         self._last_poll = _time.time()
         if self.app.client is None:
             return None
@@ -1396,25 +1401,44 @@ class RoomScreen(Screen):
                 "refresh_state: get_room_state EXCEPTION cid=%s type=%s",
                 cid, type(e).__name__,
             )
+            info = classify_transport_exception(e)
+            if info is not None:
+                self.app.show_eviction_alert(info)
+                return None
             self.app.state.error_message = f"get_room_state failed: {e}"
             return None
         if not r.get("ok"):
-            err_msg = (r.get("error") or {}).get(
-                "message", "get_room_state rejected"
-            )
+            err = r.get("error") or {}
+            err_msg = err.get("message", "get_room_state rejected")
             log.warning(
                 "refresh_state: get_room_state rejected cid=%s err=%s — "
-                "returning to lobby",
+                "escorting to lobby via eviction alert",
                 cid, err_msg,
             )
             # Any rejection means we're no longer in a room (kicked,
-            # room deleted, connection state reset, etc.). Go to lobby.
-            self.app.state.room_id = None
-            self.app.state.slot = None
-            from silicon_pantheon.client.tui.screens.lobby import LobbyScreen
-            lobby = LobbyScreen(self.app)
-            await self.app.transition(lobby)
-            return lobby
+            # room deleted, connection state reset, etc.). Surface
+            # an eviction alert that explains what happened and
+            # routes back to the lobby on dismiss — silently
+            # transitioning was the previous behaviour and led to
+            # users wondering why they got bounced.
+            info = classify_server_error(err, on_screen="room")
+            if info is not None:
+                self.app.show_eviction_alert(info)
+                return None
+            # Fallback: classifier didn't recognise it, but a hard
+            # rejection on get_room_state is still terminal for the
+            # room screen. Use a generic eviction so the user gets
+            # the same OK-button experience instead of a stuck UI.
+            from silicon_pantheon.shared.eviction import EvictionInfo
+            self.app.show_eviction_alert(EvictionInfo(
+                title="Room closed",
+                message=(
+                    f"Returned to the lobby because the room is no "
+                    f"longer available: {err_msg}"
+                ),
+                destination="lobby",
+            ))
+            return None
         self.app.state.error_message = ""
         room = r.get("room", {})
         status = room.get("status")

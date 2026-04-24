@@ -147,6 +147,21 @@ class SharedState:
     lobby_ranking_scroll: int = 0
     # Tutorial completion state — loaded from disk on startup.
     tutorial_state: Any = None  # TutorialState, lazy-loaded
+    # Eviction-class alert overlay. Set by any screen / background
+    # task (heartbeat-eviction handler, agent_task on terminal
+    # provider error, etc.) when it detects that the user has been
+    # kicked from the state their current screen assumes. The app
+    # dispatcher renders this on top of whatever screen is current
+    # and routes keys to it before the screen's own handler — so
+    # users never get stuck typing into a dead room.
+    #
+    # ``pending_screen_factory`` is the callable invoked once the
+    # user dismisses the alert — typically a closure that returns
+    # ``LobbyScreen(app)`` or ``LoginScreen(app)``. None means "stay
+    # on the current screen after dismissal" (rare; alerts almost
+    # always escort somewhere).
+    pending_alert: Any = None  # widgets.AlertModal | None
+    pending_screen_factory: Callable[["TUIApp"], "Screen"] | None = None
 
 
 class TUIApp:
@@ -265,6 +280,71 @@ class TUIApp:
     def exit(self) -> None:
         self._should_exit = True
 
+    def show_eviction_alert(
+        self,
+        info: Any,  # silicon_pantheon.shared.eviction.EvictionInfo
+    ) -> bool:
+        """Install a pending alert + post-dismiss screen factory from
+        an EvictionInfo.
+
+        Returns True if a new alert was installed (False if one was
+        already pending — first-write-wins so a flurry of failed
+        background calls doesn't keep replacing the dialog while the
+        user is reading it).
+
+        Centralizing the AlertModal construction here keeps the
+        screens free of widget plumbing and lets us evolve the
+        translation / styling in one place. Screens just call
+        ``app.show_eviction_alert(info)`` after the classifier
+        returns a non-None value and drop their own retry loop.
+        """
+        if self.state.pending_alert is not None:
+            return False
+        from silicon_pantheon.client.tui.widgets import AlertModal
+
+        severity = "error" if info.destination == "login" else "warning"
+        self.state.pending_alert = AlertModal(
+            title=info.title,
+            body=info.message,
+            severity=severity,
+            locale=self.state.locale,
+        )
+        # Stage the post-dismiss transition. The factory runs in the
+        # dispatcher AFTER the alert closes, so the user sees the
+        # familiar lobby / login screen instead of an empty frame.
+        if info.destination == "login":
+            def _factory(app: "TUIApp") -> "Screen":
+                # Drop the in-flight game / agent state so the
+                # login screen starts clean. The alert means the
+                # connection is gone; whatever room_id / agent we
+                # held is stale.
+                app.state.room_id = None
+                app.state.last_room_state = None
+                app.state.last_game_state = None
+                app.state.game_started_at = None
+                app.state.error_message = ""
+                from silicon_pantheon.client.tui.screens.login import (
+                    LoginScreen,
+                )
+                return LoginScreen(app)
+            self.state.pending_screen_factory = _factory
+        else:  # "lobby"
+            def _factory(app: "TUIApp") -> "Screen":
+                # Same cleanup as login but keep the connection —
+                # lobby will just re-poll list_rooms.
+                app.state.room_id = None
+                app.state.last_room_state = None
+                app.state.last_game_state = None
+                app.state.game_started_at = None
+                app.state.error_message = ""
+                from silicon_pantheon.client.tui.screens.lobby import (
+                    LobbyScreen,
+                )
+                return LobbyScreen(app)
+            self.state.pending_screen_factory = _factory
+        self._refresh()
+        return True
+
     # ---- screen management ----
 
     async def transition(self, next_screen: Screen) -> None:
@@ -287,7 +367,14 @@ class TUIApp:
 
         We re-render the screen even when help is up so any
         background animation / poll keeps ticking visibly the moment
-        help closes — there's no stale frame to clear."""
+        help closes — there's no stale frame to clear.
+
+        Eviction-class alerts (pending_alert) take priority over
+        both the help overlay and the current screen — the user
+        needs to acknowledge the alert before doing anything else.
+        """
+        if self.state.pending_alert is not None:
+            return self.state.pending_alert.render()
         if self._screen is None:
             return Text("")
         base = self._screen.render()
@@ -417,6 +504,14 @@ class TUIApp:
                 # on the app so text-input handlers can read it.
                 self._raw_key = raw_key
                 key = raw_key.lower() if len(raw_key) == 1 else raw_key
+                # Eviction alert wins over everything: the user has
+                # to acknowledge it before any screen-level keys
+                # take effect. Help overlay still works on TOP of
+                # an alert so users can read the docs while figuring
+                # out what to do, but the alert remains visible.
+                if await self._handle_alert_key(key):
+                    self._refresh()
+                    continue
                 # Help overlay intercepts before any screen handler.
                 if self._handle_help_key(key):
                     self._refresh()
@@ -440,6 +535,8 @@ class TUIApp:
                         break
                     self._raw_key = raw_next
                     next_key = raw_next.lower() if len(raw_next) == 1 else raw_next
+                    if await self._handle_alert_key(next_key):
+                        continue
                     if self._handle_help_key(next_key):
                         continue
                     try:
@@ -466,6 +563,41 @@ class TUIApp:
                 self._refresh()
         except asyncio.CancelledError:
             return
+
+    async def _handle_alert_key(self, key: str) -> bool:
+        """Route a key into the pending eviction alert, if any.
+
+        Returns True if the alert consumed the key (we should refresh
+        and skip both the help overlay and the screen handler).
+
+        On dismissal the alert's on_dismiss callback (set by whoever
+        created the alert) fires, then we apply
+        ``pending_screen_factory`` to escort the user to the right
+        screen. Both pending_alert and pending_screen_factory are
+        cleared whether or not a transition is staged, so the next
+        eviction can install fresh state without colliding with the
+        old one.
+        """
+        alert = self.state.pending_alert
+        if alert is None:
+            return False
+        try:
+            close = await alert.handle_key(key)
+        except Exception as e:
+            _log.exception("alert handle_key raised")
+            self.state.error_message = f"alert error: {e}"
+            close = True  # don't strand the user inside a broken alert
+        if close:
+            factory = self.state.pending_screen_factory
+            self.state.pending_alert = None
+            self.state.pending_screen_factory = None
+            if factory is not None and self._screen is not None:
+                try:
+                    await self.transition(factory(self))
+                except Exception as e:
+                    _log.exception("alert post-dismiss transition raised")
+                    self.state.error_message = f"alert transition error: {e}"
+        return True
 
     def _handle_help_key(self, key: str) -> bool:
         """Toggle / scroll the help overlay. Returns True if the key

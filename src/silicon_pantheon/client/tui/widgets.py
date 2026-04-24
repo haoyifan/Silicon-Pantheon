@@ -230,6 +230,77 @@ class ConfirmModal:
         return False
 
 
+@dataclass
+class AlertModal:
+    """Single-button informational overlay used for eviction notices.
+
+    Looks like ConfirmModal but has only an OK button — the user
+    can't refuse, the alert just acknowledges what happened (lost
+    network, kicked from game, model provider down) before the app
+    auto-routes them somewhere safe.
+
+    on_dismiss fires exactly once when the user dismisses (Enter /
+    space / Esc / q). The TUI dispatcher is responsible for staging
+    the post-dismiss screen transition; this widget itself is pure
+    UI.
+    """
+
+    title: str
+    body: str
+    on_dismiss: Callable[[], Awaitable[None]] | None = None
+    locale: str = "en"
+    # Severity tints the border / title. "warning" (yellow) is the
+    # default — eviction is annoying but recoverable. "error" (red)
+    # is reserved for non-recoverable cases (login required); the
+    # color signals "you actually need to act on this", not "the bot
+    # made a tactical mistake".
+    severity: str = "warning"
+
+    def render(self) -> RenderableType:
+        border = {
+            "info": "cyan",
+            "warning": "yellow",
+            "error": "red",
+        }.get(self.severity, "yellow")
+        ok_button = Text("[ OK ]", style="bold green")
+        body = Group(
+            Text(self.body, style="white", no_wrap=False, overflow="fold"),
+            Text(""),
+            Align.center(ok_button),
+            Text(""),
+            Text(
+                "Press Enter / Space / Esc to continue",
+                style="dim",
+            ),
+        )
+        return Align.center(
+            RichPanel(
+                body,
+                title=self.title,
+                border_style=border,
+                padding=(1, 3),
+                width=64,
+            ),
+            vertical="middle",
+        )
+
+    async def handle_key(self, key: str) -> bool:
+        """True = close modal. on_dismiss fires once on close.
+
+        Every reasonable acknowledgement key dismisses — the user
+        should never feel stuck inside the alert. Tab / q / Esc /
+        Enter / Space all work; selection arrows are intentionally
+        ignored because there's nothing to select.
+        """
+        if key in ("enter", "esc", "q", " ", "space", "\t", "y", "Y", "n", "N"):
+            cb = self.on_dismiss
+            self.on_dismiss = None  # one-shot
+            if cb is not None:
+                await cb()
+            return True
+        return False
+
+
 ART_FRAME_SECONDS = 2.0
 
 

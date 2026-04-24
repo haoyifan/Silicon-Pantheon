@@ -328,16 +328,26 @@ class LobbyScreen(Screen):
     async def _refresh_rooms(self) -> None:
         import time
 
+        from silicon_pantheon.shared.eviction import (
+            classify_server_error,
+            classify_transport_exception,
+        )
+
         self._last_poll = time.time()
         if self.app.client is None:
             return
         try:
             r = await self.app.client.call("list_rooms")
         except Exception as e:
+            info = classify_transport_exception(e)
+            if info is not None:
+                self.app.show_eviction_alert(info)
+                return
             self.app.state.error_message = f"list_rooms failed: {e}"
             return
         if not r.get("ok"):
-            err_msg = (r.get("error") or {}).get("message", "list_rooms rejected")
+            err = r.get("error") or {}
+            err_msg = err.get("message", "list_rooms rejected")
             self.app.state.error_message = err_msg
             # If the server says "set_player_metadata first", the
             # connection's metadata was lost (heartbeat sweeper evicted
@@ -373,6 +383,19 @@ class LobbyScreen(Screen):
                             return
                 except Exception as e2:
                     _log.exception("metadata re-send failed: %s", e2)
+                # Auto-recovery exhausted: server still doesn't know
+                # us. Escort the user back to the login screen so
+                # they can rebuild the session cleanly instead of
+                # staring at a stuck lobby.
+                info = classify_server_error(err, on_screen="lobby")
+                if info is not None:
+                    self.app.show_eviction_alert(info)
+                return
+            # Non-recoverable lobby errors that look like eviction
+            # (server forgot us, kicked us, etc.) get escorted too.
+            info = classify_server_error(err, on_screen="lobby")
+            if info is not None:
+                self.app.show_eviction_alert(info)
             return
         self.app.state.error_message = ""
         self.app.state.last_rooms = r.get("rooms", [])
