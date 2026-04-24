@@ -828,6 +828,8 @@ class NetworkedAgent:
         # full snapshot and doesn't need a fresh one each turn.
         new_history, tactical_summary = await self._build_turn_context()
 
+        alerts = list(self._battlefield_alerts)
+        self._battlefield_alerts = []
         user_prompt = build_turn_prompt_from_state_dict(
             state,
             viewer,
@@ -836,19 +838,8 @@ class NetworkedAgent:
             retry_n=self._no_progress_retries,
             tactical_summary=tactical_summary,
             locale=self.locale,
+            battlefield_alerts=alerts,
         )
-        # Inject battlefield alerts (reinforcements, deaths) into the
-        # prompt so the agent notices significant state changes that
-        # aren't captured by the opponent-action history (e.g. units
-        # spawning via on_turn_start hooks).
-        if self._battlefield_alerts:
-            alerts_block = (
-                "\n\n⚠ BATTLEFIELD ALERT ⚠\n"
-                + "\n".join(self._battlefield_alerts)
-                + "\n\nCall get_state for full updated positions.\n"
-            )
-            user_prompt += alerts_block
-            self._battlefield_alerts = []
         # Lazy-fetch scenario invariants on the first turn. The
         # Anthropic adapter reuses its ClaudeSDKClient across turns
         # so the system prompt is only consumed on turn 1; no point

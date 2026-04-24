@@ -976,6 +976,7 @@ def build_turn_prompt_from_state_dict(
     retry_n: int = 0,
     tactical_summary: dict | None = None,
     locale: str = "en",
+    battlefield_alerts: list[str] | None = None,
 ) -> str:
     """Per-turn user message for the networked client.
 
@@ -1056,16 +1057,29 @@ def build_turn_prompt_from_state_dict(
         )
     else:
         events = new_history or []
+        alerts = battlefield_alerts or []
+        fog_mode = state_dict.get("fog_of_war") or "none"
+        fog_on = fog_mode != "none"
+
+        opp_parts: list[str] = []
         if events:
-            opponent_actions_section = (
-                "Opponent actions since your last turn:\n"
-                + "\n".join(_format_action_event(e) for e in events)
-                + "\n\n"
+            opp_parts.append("Opponent actions since your last turn:")
+            for e in events:
+                opp_parts.append(_format_action_event(e))
+        elif fog_on:
+            opp_parts.append(
+                "No visible opponent actions since your last turn "
+                "(the enemy may have acted outside your sight)."
             )
         else:
-            opponent_actions_section = (
-                "Opponent did not act since your last turn.\n\n"
+            opp_parts.append(
+                "Opponent did not act since your last turn."
             )
+        if alerts:
+            opp_parts.append("")
+            opp_parts.append("Battlefield changes detected:")
+            opp_parts.extend(alerts)
+        opponent_actions_section = "\n".join(opp_parts) + "\n\n"
 
         your_units_section = _build_own_units_section(state_dict, team)
         tactical_section = _build_tactical_section(tactical_summary)
