@@ -243,6 +243,7 @@ class TUIApp:
                     asyncio.create_task(self._ticker()),
                     asyncio.create_task(self._dispatcher()),
                     asyncio.create_task(self._render_loop()),
+                    asyncio.create_task(self._transport_watcher()),
                 ]
                 try:
                     while not self._should_exit:
@@ -498,6 +499,147 @@ class TUIApp:
                     _log.warning(
                         "slow render: dt=%.1fs (pty backpressured?)", dt
                     )
+        except asyncio.CancelledError:
+            return
+
+    # ---- transport reconnect ----
+
+    async def _transport_watcher(self) -> None:
+        """Watch for transport death and auto-reconnect.
+
+        Mirrors BotWorker's reconnect pattern: preserve connection_id,
+        tear down old transport, create a fresh ServerClient with the
+        same cid, re-register metadata, restart heartbeat, and rebind
+        the live agent's client reference. No screen transition — the
+        server retains game state keyed by cid.
+        """
+        RECONNECT_RETRY_S = 5.0
+        MAX_ATTEMPTS = 5
+        try:
+            while not self._should_exit:
+                if self.client is None:
+                    await asyncio.sleep(1.0)
+                    continue
+
+                try:
+                    await self.client.transport_dead.wait()
+                except asyncio.CancelledError:
+                    return
+
+                if self._should_exit:
+                    return
+
+                old_cid = self.client.connection_id
+                old_register_kwargs = self.client._last_register_kwargs
+                _log.warning(
+                    "transport dead detected — reconnecting (cid=%s)",
+                    old_cid,
+                )
+
+                if (
+                    self.state.agent_task is not None
+                    and not self.state.agent_task.done()
+                ):
+                    self.state.agent_task.cancel()
+                    self.state.agent_task = None
+
+                try:
+                    await self.client.stop_heartbeat()
+                except Exception:
+                    pass
+
+                cleanup = getattr(self, "_transport_cleanup", None)
+                if cleanup is not None:
+                    try:
+                        await asyncio.wait_for(cleanup(), timeout=5.0)
+                    except Exception:
+                        pass
+                    self._transport_cleanup = None  # type: ignore[attr-defined]
+
+                self.client = None
+
+                connected = False
+                for attempt in range(1, MAX_ATTEMPTS + 1):
+                    if self._should_exit:
+                        return
+                    ctx = None
+                    try:
+                        ctx = ServerClient.connect(
+                            self.state.server_url,
+                            connection_id=old_cid,
+                        )
+                        client = await asyncio.wait_for(
+                            ctx.__aenter__(), timeout=10.0,
+                        )
+
+                        if old_register_kwargs:
+                            from silicon_pantheon.shared.protocol import (
+                                PROTOCOL_VERSION,
+                            )
+                            kwargs = dict(old_register_kwargs)
+                            kwargs["client_protocol_version"] = PROTOCOL_VERSION
+                            r = await client.call(
+                                "set_player_metadata", **kwargs,
+                            )
+                            if not r.get("ok"):
+                                raise RuntimeError(
+                                    f"re-register failed: {r}"
+                                )
+
+                        await client.start_heartbeat()
+                        self.client = client
+
+                        if self.state.agent is not None:
+                            self.state.agent.client = client
+
+                        _kept_ctx = ctx
+                        ctx = None  # prevent finally from closing it
+
+                        async def _new_cleanup(
+                            _c=_kept_ctx,
+                        ) -> None:
+                            await _c.__aexit__(None, None, None)
+
+                        self._transport_cleanup = _new_cleanup  # type: ignore[attr-defined]
+
+                        connected = True
+                        _log.info(
+                            "transport reconnected: cid=%s attempt=%d",
+                            client.connection_id, attempt,
+                        )
+                        self.state.error_message = ""
+                        break
+                    except asyncio.CancelledError:
+                        return
+                    except Exception as e:
+                        _log.warning(
+                            "reconnect attempt %d/%d failed: %s",
+                            attempt, MAX_ATTEMPTS, e,
+                        )
+                        if attempt < MAX_ATTEMPTS:
+                            await asyncio.sleep(RECONNECT_RETRY_S)
+                    finally:
+                        if ctx is not None:
+                            try:
+                                await asyncio.wait_for(
+                                    ctx.__aexit__(None, None, None),
+                                    timeout=5.0,
+                                )
+                            except Exception:
+                                pass
+
+                if not connected:
+                    from silicon_pantheon.shared.eviction import EvictionInfo
+
+                    self.show_eviction_alert(EvictionInfo(
+                        title="Connection Lost",
+                        message=(
+                            "Lost the connection to the server and "
+                            "could not reconnect. Sign in again to "
+                            "continue."
+                        ),
+                        destination="login",
+                    ))
         except asyncio.CancelledError:
             return
 
