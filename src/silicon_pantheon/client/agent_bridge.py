@@ -344,11 +344,10 @@ def _build_default_adapter(model: str) -> ProviderAdapter:
             )
         return CodexAdapter(model=model)
 
-    # OpenAI + xAI both use the OpenAI Chat Completions protocol.
-    # The only difference is the base URL (xAI = https://api.x.ai/v1)
-    # and which env var / credentials entry holds the key. Reuse the
-    # one adapter for both.
-    if provider_id in ("openai", "xai"):
+    # Providers that speak the OpenAI Chat Completions wire protocol.
+    # The only difference per-provider is the base URL and which env
+    # var / credentials entry holds the key.
+    if provider_id in ("openai", "xai", "google", "qwen", "deepseek", "mistral", "groq"):
         from silicon_pantheon.client.providers.openai import OpenAIAdapter
 
         spec = get_provider(provider_id)

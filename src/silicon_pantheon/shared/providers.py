@@ -227,6 +227,176 @@ PROVIDERS: list[ProviderSpec] = [
             "or set XAI_API_KEY. Running out mid-match auto-concedes."
         ),
     ),
+    ProviderSpec(
+        id="google",
+        display_name="Google (Gemini)",
+        auth_mode="api_key",
+        env_var="GEMINI_API_KEY",
+        keyring_service="silicon-pantheon-google",
+        models=[
+            ModelSpec(
+                "gemini-2.5-pro",
+                "Gemini 2.5 Pro",
+                context_window=1_000_000,
+                cost_per_mtok_in=1.25,
+                cost_per_mtok_out=10.0,
+            ),
+            ModelSpec(
+                "gemini-2.5-flash",
+                "Gemini 2.5 Flash",
+                context_window=1_000_000,
+                cost_per_mtok_in=0.15,
+                cost_per_mtok_out=0.60,
+            ),
+        ],
+        openai_compatible_base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+        token_cost_warning=(
+            "Google AI Studio API tokens. Get a key at "
+            "aistudio.google.com — paste it here or set GEMINI_API_KEY."
+        ),
+    ),
+    ProviderSpec(
+        id="qwen",
+        display_name="Alibaba (Qwen)",
+        auth_mode="api_key",
+        env_var="DASHSCOPE_API_KEY",
+        keyring_service="silicon-pantheon-qwen",
+        models=[
+            ModelSpec(
+                "qwen-plus",
+                "Qwen Plus",
+                context_window=1_000_000,
+                cost_per_mtok_in=0.20,
+                cost_per_mtok_out=1.56,
+            ),
+            ModelSpec(
+                "qwen-max",
+                "Qwen Max",
+                context_window=262_144,
+                cost_per_mtok_in=0.78,
+                cost_per_mtok_out=3.90,
+            ),
+            ModelSpec(
+                "qwen-turbo",
+                "Qwen Turbo",
+                context_window=1_000_000,
+                cost_per_mtok_in=0.05,
+                cost_per_mtok_out=0.20,
+            ),
+        ],
+        openai_compatible_base_url="https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+        token_cost_warning=(
+            "Alibaba Cloud DashScope API tokens. Get a key at "
+            "bailian.console.alibabacloud.com — paste it here or "
+            "set DASHSCOPE_API_KEY."
+        ),
+    ),
+    ProviderSpec(
+        id="deepseek",
+        display_name="DeepSeek",
+        auth_mode="api_key",
+        env_var="DEEPSEEK_API_KEY",
+        keyring_service="silicon-pantheon-deepseek",
+        models=[
+            ModelSpec(
+                "deepseek-v4-flash",
+                "DeepSeek V4 Flash",
+                context_window=1_000_000,
+                cost_per_mtok_in=0.14,
+                cost_per_mtok_out=0.28,
+            ),
+            ModelSpec(
+                "deepseek-v4-pro",
+                "DeepSeek V4 Pro",
+                context_window=1_000_000,
+                cost_per_mtok_in=1.74,
+                cost_per_mtok_out=3.48,
+            ),
+            ModelSpec(
+                "deepseek-chat",
+                "DeepSeek V3 (Chat)",
+                context_window=64_000,
+                cost_per_mtok_in=0.27,
+                cost_per_mtok_out=1.10,
+            ),
+        ],
+        openai_compatible_base_url="https://api.deepseek.com",
+        token_cost_warning=(
+            "DeepSeek API tokens. Get a key at platform.deepseek.com "
+            "— paste it here or set DEEPSEEK_API_KEY."
+        ),
+    ),
+    ProviderSpec(
+        id="mistral",
+        display_name="Mistral AI",
+        auth_mode="api_key",
+        env_var="MISTRAL_API_KEY",
+        keyring_service="silicon-pantheon-mistral",
+        models=[
+            ModelSpec(
+                "mistral-large-latest",
+                "Mistral Large",
+                context_window=128_000,
+                cost_per_mtok_in=2.0,
+                cost_per_mtok_out=6.0,
+            ),
+            ModelSpec(
+                "codestral-latest",
+                "Codestral",
+                context_window=256_000,
+                cost_per_mtok_in=0.30,
+                cost_per_mtok_out=0.90,
+            ),
+            ModelSpec(
+                "mistral-small-latest",
+                "Mistral Small",
+                context_window=32_000,
+                cost_per_mtok_in=0.20,
+                cost_per_mtok_out=0.60,
+            ),
+        ],
+        openai_compatible_base_url="https://api.mistral.ai/v1",
+        token_cost_warning=(
+            "Mistral API tokens. Get a key at console.mistral.ai "
+            "— paste it here or set MISTRAL_API_KEY."
+        ),
+    ),
+    ProviderSpec(
+        id="groq",
+        display_name="Groq",
+        auth_mode="api_key",
+        env_var="GROQ_API_KEY",
+        keyring_service="silicon-pantheon-groq",
+        models=[
+            ModelSpec(
+                "llama-4-scout-17b-16e-instruct",
+                "Llama 4 Scout",
+                context_window=131_000,
+                cost_per_mtok_in=0.11,
+                cost_per_mtok_out=0.34,
+            ),
+            ModelSpec(
+                "llama-3.3-70b-versatile",
+                "Llama 3.3 70B",
+                context_window=128_000,
+                cost_per_mtok_in=0.59,
+                cost_per_mtok_out=0.79,
+            ),
+            ModelSpec(
+                "qwen-qwq-32b",
+                "Qwen QwQ 32B",
+                context_window=128_000,
+                cost_per_mtok_in=0.29,
+                cost_per_mtok_out=0.39,
+            ),
+        ],
+        openai_compatible_base_url="https://api.groq.com/openai/v1",
+        token_cost_warning=(
+            "Groq API — extremely fast inference on open-source models. "
+            "Get a key at console.groq.com — paste it here or set "
+            "GROQ_API_KEY. Rate limits may be tight on free tier."
+        ),
+    ),
 ]
 
 
