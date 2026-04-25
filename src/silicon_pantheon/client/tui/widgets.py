@@ -48,13 +48,36 @@ class Dropdown:
     # Focus mode: "list" = j/k selects options, "desc" = j/k scrolls
     # description. Tab cycles between them when descriptions exist.
     _focus: str = "list"
+    _list_scroll: int = 0
+    _LIST_MAX_VISIBLE: int = 10
+    _LABEL_MAX_WIDTH: int = 52
 
     def render(self) -> RenderableType:
+        max_label = self._LABEL_MAX_WIDTH
+        max_vis = self._LIST_MAX_VISIBLE
+        total = len(self.options)
+        if self.selected_idx < self._list_scroll:
+            self._list_scroll = self.selected_idx
+        elif self.selected_idx >= self._list_scroll + max_vis:
+            self._list_scroll = self.selected_idx - max_vis + 1
+        if total <= max_vis:
+            self._list_scroll = 0
+        visible_opts = self.options[self._list_scroll:self._list_scroll + max_vis]
         lines: list[Text] = []
-        for i, opt in enumerate(self.options):
+        for offset, opt in enumerate(visible_opts):
+            i = offset + self._list_scroll
             marker = "➤ " if i == self.selected_idx else "  "
             style = "bold yellow" if i == self.selected_idx else "white"
-            lines.append(Text(f"{marker}{opt}", style=style))
+            label = opt
+            if len(label) > max_label:
+                label = label[:max_label - 1] + "…"
+            lines.append(Text(f"{marker}{label}", style=style, no_wrap=True, overflow="ellipsis"))
+        if total > max_vis:
+            shown_end = min(self._list_scroll + max_vis, total)
+            lines.append(Text(
+                f"  [{self._list_scroll + 1}–{shown_end} of {total}]",
+                style="dim",
+            ))
         list_border = "bright_cyan" if self._focus == "list" else "dim"
         list_panel = RichPanel(
             Group(*lines), border_style=list_border, padding=(0, 1),
