@@ -301,7 +301,6 @@ def main() -> int:
     async def _api_leaderboard(request):
         from silicon_pantheon.server.leaderboard import query_leaderboard
 
-        # Maps provider IDs to landing page fighter names.
         _FIGHTER_NAMES = {
             "anthropic": "Claude",
             "openai": "GPT-5",
@@ -316,38 +315,22 @@ def main() -> int:
 
         rows = query_leaderboard()
 
-        buckets: dict[str, dict] = {}
-        for r in rows:
-            family = _FIGHTER_NAMES.get(r["provider"], r["provider"])
-            if family not in buckets:
-                buckets[family] = {
-                    "wins": 0, "losses": 0, "draws": 0, "games": 0,
-                    "think_sum": 0.0, "think_count": 0,
-                }
-            b = buckets[family]
-            b["wins"] += r["wins"]
-            b["losses"] += r["losses"]
-            b["draws"] += r["draws"]
-            b["games"] += r["games"]
-            if r["avg_think_time_s"]:
-                b["think_sum"] += r["avg_think_time_s"] * r["games"]
-                b["think_count"] += r["games"]
-
-        total_matches = sum(b["games"] for b in buckets.values()) // 2
+        total_matches = sum(r["games"] for r in rows) // 2
         models = []
-        for name, b in buckets.items():
-            games = b["games"]
-            win_rate = b["wins"] / games if games else 0.0
+        for r in rows:
+            games = r["games"]
+            win_rate = r["wins"] / games if games else 0.0
             avg_think_ms = round(
-                b["think_sum"] / b["think_count"] * 1000
-            ) if b["think_count"] else 0
+                r["avg_think_time_s"] * 1000
+            ) if r["avg_think_time_s"] else 0
+            fighter = _FIGHTER_NAMES.get(r["provider"], r["provider"])
             models.append({
-                "id": name.lower().replace(" ", "-"),
-                "name": name,
-                "class": "",
-                "wins": b["wins"],
-                "losses": b["losses"],
-                "draws": b["draws"],
+                "id": r["model"],
+                "name": r["model"],
+                "provider": fighter,
+                "wins": r["wins"],
+                "losses": r["losses"],
+                "draws": r["draws"],
                 "games": games,
                 "win_rate": round(win_rate, 4),
                 "avg_think_ms": avg_think_ms,
