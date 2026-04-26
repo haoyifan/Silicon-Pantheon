@@ -254,6 +254,12 @@ class OpenAIAdapter:
                     # paired tool result above is now a stub but the
                     # API still validates the pairing.
                     new_m["tool_calls"] = m["tool_calls"]
+                # Preserve reasoning_content if upstream attached it
+                # (DeepSeek V4 thinking-mode requires it round-tripped
+                # on every assistant message; without this carry the
+                # next turn's first API call 400s).
+                if m.get("reasoning_content"):
+                    new_m["reasoning_content"] = m["reasoning_content"]
                 compacted.append(new_m)
                 continue
         self._messages = compacted
@@ -499,6 +505,20 @@ class OpenAIAdapter:
                     }
                     for tc in msg.tool_calls
                 ]
+            # DeepSeek V4 thinking-mode reasoners require their
+            # `reasoning_content` to be echoed back on the assistant
+            # message in subsequent requests; without it the API 400s
+            # with "must be passed back to the API". Dispatch on the
+            # base_url (each OpenAI-compatible provider has a unique
+            # one) rather than the model id, which could collide if
+            # another provider ever ships a like-named model.
+            if "deepseek.com" in str(self._client.base_url):
+                rc = getattr(msg, "reasoning_content", None)
+                if not (isinstance(rc, str) and rc):
+                    extra = getattr(msg, "model_extra", None) or {}
+                    rc = extra.get("reasoning_content")
+                if isinstance(rc, str) and rc:
+                    assistant_entry["reasoning_content"] = rc
             self._messages.append(assistant_entry)
 
             # Surface text reasoning before we dispatch tools.
@@ -779,11 +799,22 @@ class OpenAIAdapter:
         text = (resp.choices[0].message.content or "").strip()
         parsed = _parse_lesson_json(text)
         if parsed is None:
+            rc = getattr(resp.choices[0].message, "reasoning_content", "") or ""
+            log.warning(
+                "summarize_match: parse failed (model=%s content_len=%d "
+                "reasoning_content_len=%d) text=%r",
+                self.model, len(text), len(rc), text[:1000],
+            )
             return None
         title = parsed.get("title", "Untitled").strip() or "Untitled lesson"
         slug = slugify(parsed.get("slug", "").strip() or title)
         body = parsed.get("body", "").strip()
         if not body:
+            log.warning(
+                "summarize_match: empty body in parsed JSON "
+                "(model=%s parsed_keys=%s text=%r)",
+                self.model, list(parsed.keys()), text[:500],
+            )
             return None
         return Lesson(
             slug=slug,
