@@ -93,9 +93,10 @@ def _configure_client_logging(display_name_hint: str | None) -> Path:
 
     # Also tee library-level diagnostics into our file so tracebacks from
     # the MCP client / httpx / asyncio end up alongside our lines.
-    for name in ("mcp", "httpx", "asyncio"):
+    for name in ("mcp", "httpx", "asyncio", "client"):
         lg = logging.getLogger(name)
         lg.setLevel(logging.INFO)
+        lg.propagate = False
         if not any(
             getattr(h, "baseFilename", None) == str(log_path) for h in lg.handlers
         ):
