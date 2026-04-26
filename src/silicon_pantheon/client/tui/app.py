@@ -973,6 +973,21 @@ def _restore_terminal() -> None:
         pass
 
 
+def _read_clipboard() -> str:
+    """Read system clipboard. Returns content or empty string on failure."""
+    import subprocess, shutil
+    for cmd in (["pbpaste"], ["xclip", "-selection", "clipboard", "-o"],
+                ["xsel", "--clipboard", "--output"]):
+        if shutil.which(cmd[0]):
+            try:
+                r = subprocess.run(cmd, capture_output=True, text=True, timeout=2)
+                if r.returncode == 0:
+                    return r.stdout
+            except Exception:
+                pass
+    return ""
+
+
 def _read_key_blocking() -> str:
     """Blocking one-key read. Returns a normalized key token.
 
@@ -1203,6 +1218,11 @@ def _read_key_blocking() -> str:
     }
     if ch in _CTRL:
         return _CTRL[ch]
+    if ch == "\x16":  # Ctrl+V — read system clipboard as paste event
+        clip = _read_clipboard()
+        if clip:
+            return "paste:" + clip
+        return ""
     # Preserve 'G' (shift-g) as a distinct token so "G = bottom /
     # gg = top" works.
     if ch == "G":
