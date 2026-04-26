@@ -196,3 +196,125 @@ def test_update_room_config_scenario_change_resnaps_max_turns() -> None:
         f"scenario switch from {initial}-cap → Hormuz didn't update "
         f"max_turns; still {room.config.max_turns}"
     )
+
+
+# ---- orphaned connection state recovery ----
+
+
+def test_leave_room_resets_orphaned_in_game_to_in_lobby() -> None:
+    """A connection stuck in IN_GAME with no conn_to_room entry (room
+    cleaned up by heartbeat sweeper) should be reset to IN_LOBBY by
+    leave_room instead of returning an error."""
+    app = App()
+    mcp = build_mcp_server(app)
+    _call(
+        mcp, "set_player_metadata",
+        connection_id="c1", display_name="orphan", kind="ai",
+    )
+    conn = app.get_connection("c1")
+    assert conn is not None
+    # Simulate orphaned state: force IN_GAME with no room mapping.
+    conn.state = ConnectionState.IN_GAME
+    assert "c1" not in app.conn_to_room
+
+    out = _call(mcp, "leave_room", connection_id="c1")
+    assert out["ok"] is True
+    assert conn.state == ConnectionState.IN_LOBBY
+
+
+def test_leave_room_resets_orphaned_in_room_to_in_lobby() -> None:
+    """Same as above but for IN_ROOM state."""
+    app = App()
+    mcp = build_mcp_server(app)
+    _call(
+        mcp, "set_player_metadata",
+        connection_id="c1", display_name="orphan", kind="ai",
+    )
+    conn = app.get_connection("c1")
+    assert conn is not None
+    conn.state = ConnectionState.IN_ROOM
+    assert "c1" not in app.conn_to_room
+
+    out = _call(mcp, "leave_room", connection_id="c1")
+    assert out["ok"] is True
+    assert conn.state == ConnectionState.IN_LOBBY
+
+
+def test_set_player_metadata_resets_orphaned_in_game_to_in_lobby() -> None:
+    """Re-auth via set_player_metadata should detect an orphaned IN_GAME
+    connection (no conn_to_room entry) and reset to IN_LOBBY."""
+    app = App()
+    mcp = build_mcp_server(app)
+    _call(
+        mcp, "set_player_metadata",
+        connection_id="c1", display_name="worker", kind="ai",
+    )
+    conn = app.get_connection("c1")
+    assert conn is not None
+    conn.state = ConnectionState.IN_GAME
+    assert "c1" not in app.conn_to_room
+
+    out = _call(
+        mcp, "set_player_metadata",
+        connection_id="c1", display_name="worker", kind="ai",
+    )
+    assert out["ok"] is True
+    assert out["state"] == ConnectionState.IN_LOBBY.value
+    assert conn.state == ConnectionState.IN_LOBBY
+
+
+def test_set_player_metadata_keeps_in_game_when_room_exists() -> None:
+    """If the connection IS in a room (conn_to_room has an entry),
+    set_player_metadata must NOT reset to IN_LOBBY."""
+    app = App()
+    mcp = build_mcp_server(app)
+    _call(
+        mcp, "set_player_metadata",
+        connection_id="c1", display_name="active", kind="ai",
+    )
+    conn = app.get_connection("c1")
+    assert conn is not None
+    conn.state = ConnectionState.IN_GAME
+    from silicon_pantheon.server.rooms import Slot
+    app.conn_to_room["c1"] = ("room-xyz", Slot.A)
+
+    out = _call(
+        mcp, "set_player_metadata",
+        connection_id="c1", display_name="active", kind="ai",
+    )
+    assert out["ok"] is True
+    assert out["state"] == ConnectionState.IN_GAME.value
+    assert conn.state == ConnectionState.IN_GAME
+
+    # Clean up
+    del app.conn_to_room["c1"]
+
+
+def test_orphaned_connection_can_create_room_after_recovery() -> None:
+    """End-to-end: orphaned IN_GAME → set_player_metadata resets →
+    create_room succeeds."""
+    app = App()
+    mcp = build_mcp_server(app)
+    _call(
+        mcp, "set_player_metadata",
+        connection_id="c1", display_name="bot", kind="ai",
+    )
+    conn = app.get_connection("c1")
+    assert conn is not None
+    conn.state = ConnectionState.IN_GAME
+
+    # Re-auth recovers to IN_LOBBY.
+    out = _call(
+        mcp, "set_player_metadata",
+        connection_id="c1", display_name="bot", kind="ai",
+    )
+    assert out["state"] == ConnectionState.IN_LOBBY.value
+
+    # Now create_room should work.
+    out = _call(
+        mcp, "create_room",
+        connection_id="c1",
+        scenario="01_tiny_skirmish",
+    )
+    assert out["ok"] is True
+    assert "room_id" in out
