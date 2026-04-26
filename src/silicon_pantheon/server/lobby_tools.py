@@ -131,17 +131,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def list_rooms(connection_id: str) -> dict:
-        """List rooms currently open. Available in any post-anonymous state.
-
-        FINISHED rooms are excluded — they're rubble waiting to be
-        vacated and have no relevance to someone picking a match.
-
-        ── Locking ──
-        Connection state check + rooms.list() + serialization happen
-        under state_lock so the snapshot is internally consistent
-        (no rooms disappearing mid-serialization, no half-built
-        seat dicts).
-        """
+        """Read-only. Return all currently open rooms on this server, each with its room_id, scenario name, seat occupancy, ready status, and room configuration. Finished matches are excluded. Requires set_player_metadata to have been called. Use this to browse available rooms before joining one with join_room, or to find a room to preview with preview_room."""
         import time as _time
 
         _t0 = _time.monotonic()
@@ -175,13 +165,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def list_scenarios(connection_id: str) -> dict:
-        """Enumerate scenarios available on this server.
-
-        Walks the packaged `games/` directory and returns the
-        sub-directory names that have a readable `config.yaml`. The
-        client uses this to populate the 'change scenario' dropdown in
-        the room screen.
-        """
+        """Read-only. Return the list of scenario names available on this server (e.g. 'thermopylae', 'helms_deep', 'long_night'). Requires set_player_metadata. Use the returned names as input to describe_scenario for full details, or pass one to create_room when hosting a new match."""
         conn = app.get_connection(connection_id)
         if conn is None or conn.state == ConnectionState.ANONYMOUS:
             return _error(
@@ -335,18 +319,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         connection_id: str,
         cached_hash: str | None = None,
     ) -> dict:
-        """Return ALL scenario descriptions in a single response.
-
-        The bundle includes every scenario's full describe_scenario
-        output plus a content hash. The client caches the bundle
-        locally; on the next login it sends `cached_hash` — if it
-        matches, the server returns {ok, match: true} (no data
-        transfer). If it doesn't match (scenarios changed), the
-        full bundle is returned.
-
-        This replaces 30+ sequential describe_scenario calls with
-        one round-trip (~200ms vs ~7s).
-        """
+        """Read-only. Return all scenario descriptions in a single response, replacing many sequential describe_scenario calls with one round-trip. Returns each scenario's full bundle (narrative, armies, terrain, win conditions) plus a content hash. Pass cached_hash from a previous call to skip data transfer if nothing changed (returns {match: true}). Requires set_player_metadata. Prefer this over calling describe_scenario in a loop."""
         conn = app.get_connection(connection_id)
         if conn is None or conn.state == ConnectionState.ANONYMOUS:
             return _error(
@@ -471,15 +444,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def get_leaderboard(connection_id: str) -> dict:
-        """Return aggregated leaderboard stats per model.
-
-        Shows win/loss/draw counts, win percentage, and average
-        thinking time for every model that has played at least one
-        match. Sorted by win rate descending.
-
-        Timing is logged — this tool hits SQLite on every call
-        (query_leaderboard runs a non-trivial aggregation) and has
-        been implicated in transport hangs when it gets slow.
+        """Read-only. Return aggregated leaderboard statistics for every AI model that has played at least one match: win/loss/draw counts, win percentage, and average thinking time per turn. Sorted by win rate descending. Requires set_player_metadata. For detailed per-opponent and per-scenario breakdowns of a specific model, use get_model_details instead.
         """
         import time as _time
 
@@ -510,12 +475,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
     def get_model_details(
         connection_id: str, model: str, provider: str
     ) -> dict:
-        """Return drill-down stats for a single model.
-
-        Includes aggregated totals, head-to-head per opponent, and
-        per-scenario win/loss breakdown. Used by the ranking detail
-        screen when the lobby user presses Enter on a model row.
-        """
+        """Read-only. Return detailed statistics for a specific AI model: aggregated totals, head-to-head win/loss record against each opponent model, and per-scenario breakdown. model is the model ID string (e.g. 'claude-sonnet-4-6'); provider is the provider name (e.g. 'anthropic'). Both values come from the get_leaderboard response. Requires set_player_metadata."""
         conn = app.get_connection(connection_id)
         if conn is None or conn.state == ConnectionState.ANONYMOUS:
             return _error(
@@ -544,18 +504,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         max_turns: int | None = None,
         turn_time_limit_s: int | None = None,
     ) -> dict:
-        """Host-only: tweak room config while still in the lobby.
-
-        Only fields passed (non-None) are updated. Any change resets
-        both seats' ready flags — if readiness was previously agreed
-        upon, the config shift might change the deal. Fails outside
-        the pre-game states (COUNTING_DOWN, IN_GAME, FINISHED).
-
-        ── Locking ──
-        Input validation + scenario load happen OUTSIDE state_lock
-        (pure I/O). The actual config mutation + readiness reset
-        happen atomically under state_lock.
-        """
+        """Mutating. Host-only: update room configuration before the match starts. Only fields you pass are changed; omitted fields keep their current values. Any change resets both players' ready flags so both must re-confirm. scenario is a scenario name from list_scenarios. team_assignment must be 'fixed' or 'random'. host_team must be 'blue' or 'red'. fog_of_war must be 'none', 'classic', or 'line_of_sight'. max_turns must be 1-200. turn_time_limit_s must be 10-3600. Only the host (slot A) can call this; fails if the match has already started."""
         # ── Input validation (no locks) ──
         scenario_state = None
         if scenario is not None:
@@ -719,23 +668,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         fog_of_war: str = "none",
         turn_time_limit_s: int = 1800,
     ) -> dict:
-        """Create a new room, seating the caller in slot A as the host.
-
-        Transitions the caller from IN_LOBBY to IN_ROOM. Fails if the
-        caller isn't IN_LOBBY or already has a room, if the scenario
-        doesn't load, or if the config fields don't validate.
-
-        If `max_turns` is not provided, defaults to whatever the
-        scenario declares in its YAML rules block.
-
-        ── Locking ──
-        Field validation + scenario load happen OUTSIDE state_lock
-        (pure I/O on YAML). The actual registration (rooms.create +
-        conn_to_room write + conn.state flip + heartbeat_state write)
-        is done atomically under state_lock with a re-check of the
-        caller's state so a concurrent transition can't slip us into
-        a torn state.
-        """
+        """Mutating. Create a new room and seat yourself as the host (slot A). Requires state=in_lobby (call set_player_metadata first). scenario is a scenario name from list_scenarios (required). max_turns defaults to the scenario's declared cap if omitted (1-200). team_assignment: 'fixed' (default) or 'random'. host_team: 'blue' (default) or 'red'. fog_of_war: 'none' (default), 'classic', or 'line_of_sight'. turn_time_limit_s: seconds per turn (default 1800, range 10-3600). Returns the room_id and your assigned slot. Another player can then join with join_room."""
         # ── Input validation (no locks needed) ──
         if team_assignment not in ("fixed", "random"):
             return _error(
@@ -837,16 +770,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def kick_player(connection_id: str) -> dict:
-        """Host-only: kick the joiner (slot B) from the room.
-
-        Only works pre-game (WAITING_FOR_PLAYERS, WAITING_READY).
-        The kicked player's connection returns to IN_LOBBY.
-        Cannot be used during gameplay.
-
-        ── Locking ──
-        Whole sequence runs under state_lock so status + joiner
-        lookup + eviction are atomic.
-        """
+        """Mutating. Host-only: kick the other player (slot B) from your room, returning them to the lobby. Only works before the match starts (during room setup or ready-up). Cannot be used once gameplay has begun. Requires state=in_room and you must be the host (slot A)."""
         from silicon_pantheon.server.rooms import RoomStatus
 
         cancelled_task: Any = None
@@ -904,37 +828,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     async def leave_room(connection_id: str) -> dict:
-        """Vacate this connection's seat and return the caller to the lobby.
-
-        Accepts from IN_ROOM (pre-game) OR IN_GAME (mid-match or
-        post-match). Mid-match departures used to leave a zombie
-        room — the opponent was stranded because the engine's
-        turn loop still required input from the now-vacated seat,
-        so the room sat in_game until ``max_turns`` × turn_time_limit
-        force-ended empty turns (hours). Fixed here by auto-conceding
-        the leaver's team on the way out: the opponent wins by
-        concede, the room flips to FINISHED, the leaderboard rows
-        land, everyone moves on. Post-match departures are the
-        normal 'back to lobby' flow.
-
-        ── Locking ──
-        Three phases, no nested locks:
-
-        1. ``state_lock``: peek at (conn, room_id, slot, is_in_game,
-           leaver_team) — everything we'll need. Does NOT mutate.
-        2. ``session.lock`` (only if we decided to auto-concede):
-           flip ``session.state.status = GAME_OVER`` via the same
-           ``concede`` tool end_game dispatches use. Guarded by a
-           re-check of session.state.status so we never double-
-           concede a match that finished between phases.
-        3. ``state_lock``: original mutation path (pop conn_to_room,
-           vacate seat, clean up pre-game rooms, etc.).
-
-        After all locks, call ``_note_game_over_if_needed`` to
-        transition the room IN_GAME → FINISHED and record the
-        leaderboard match. That function has its own 3-phase
-        locking protocol.
-        """
+        """Mutating. Leave your current room and return to the lobby. Works both pre-game (during room setup) and mid-game. If called during an active match, your team automatically concedes — the opponent wins immediately and the match is recorded in the leaderboard. After a finished match, this is the normal way to return to the lobby. Use concede instead if you want to resign without leaving the room."""
         from silicon_pantheon.server.engine.state import GameStatus as _GS
 
         # ── Phase 1: pre-check under state_lock ──
@@ -1090,16 +984,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     async def get_room_state(connection_id: str) -> dict:
-        """Show the caller's current room, seats, readiness, and countdown.
-
-        ── Locking ──
-        Reads (conn, info, room, serialize, autostart_deadlines) are
-        all done under a single ``state_lock`` acquisition so the
-        serialized snapshot is internally consistent.
-        ``_maybe_promote_on_deadline`` is called INSIDE the lock too;
-        it reads+mutates state under the same critical section to
-        avoid a TOCTOU with the deadline.
-        """
+        """Read-only. Return your current room's full status: scenario, seat occupancy, both players' ready states, room configuration, and autostart countdown timer (if both players are ready). Requires state=in_room or in_game. Use this to poll for ready-up progress or to check room state after configuration changes. For browsing other rooms before joining, use list_rooms or preview_room instead."""
         import time as _time
         _t0 = _time.monotonic()
         log.debug(

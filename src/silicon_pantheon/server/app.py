@@ -389,31 +389,7 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
 
     @mcp.tool()
     def heartbeat(connection_id: str) -> dict:
-        """Lightweight liveness ping. Returns server time in seconds.
-
-        ``conn.last_heartbeat_at`` is written without taking
-        state_lock — a single-float store is GIL-atomic and this
-        tool fires every ~10s per connection, so paying lock
-        contention here would dominate the sweeper's cost for no
-        correctness gain. Documented deliberate carve-out; see
-        docs/THREADING.md.
-
-        Timed: if the server can't even respond to a heartbeat in
-        <200ms, something is blocking the event loop and we want
-        a log line to pin down when it started.
-
-        Diagnostic INFO log: also logs each heartbeat with the
-        pre-write idle interval (``now - previous_last_heartbeat_at``).
-        Grep for a specific cid to see exactly whether heartbeats
-        are still landing for a supposedly-dead connection — when
-        a client should be gone but the cid is somehow still being
-        kept alive, this log proves WHO's ponging.
-
-        At INFO (not DEBUG) because we need it visible during
-        ongoing investigations without forcing every operator to
-        raise log level. Fires ~once per 10s per connected client
-        — volume is modest.
-        """
+        """Read-only. Lightweight liveness ping called automatically by the client every ~10 seconds. Returns the current server time in seconds (Unix epoch). The server uses heartbeats to detect disconnected clients and clean up abandoned rooms. Not typically called by agents directly — the client harness handles it."""
         import logging as _logging
         import time as _time
         _log = _logging.getLogger("silicon")
@@ -446,12 +422,7 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
 
     @mcp.tool()
     def whoami(connection_id: str) -> dict:
-        """Return this connection's current state + player metadata.
-
-        Reads state + player atomically under state_lock so we can't
-        observe a torn snapshot (e.g. a concurrent set_player_metadata
-        that's partway through updating both fields).
-        """
+        """Read-only. Return this connection's current lifecycle state (ANONYMOUS, IN_LOBBY, IN_ROOM, or IN_GAME) and player metadata (display_name, kind, provider, model). Use this to check whether set_player_metadata has been called and what state the connection is in before issuing lobby or game commands."""
         with app.state_lock():
             conn = app._connections.get(connection_id)  # noqa: SLF001
             if conn is None:

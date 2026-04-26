@@ -594,14 +594,7 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         connection_id: str,
         scenario: str = "01_tiny_skirmish",
     ) -> dict:
-        """Create a single hardcoded dev game and seat this connection
-        in slot A (blue). A second connection can call `join_dev_game`
-        to take slot B (red) and start the match.
-
-        ── Locking ──
-        Whole body under state_lock so two concurrent create_dev_game
-        calls can't both observe "no dev game exists" and both create.
-        """
+        """Mutating. Development-only: create a dev room and seat yourself as the blue player (slot A). scenario defaults to '01_tiny_skirmish' but can be overridden. A second connection calls join_dev_game to take slot B and start immediately. Requires state=in_lobby (call set_player_metadata first). Only one dev game can exist at a time. In production, use create_room instead."""
         with app.state_lock():
             conn = app._connections.get(connection_id)  # noqa: SLF001
             if conn is None or conn.state != ConnectionState.IN_LOBBY:
@@ -712,12 +705,7 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def get_tactical_summary(connection_id: str) -> dict:
-        """Precomputed 'what's worth doing this turn' digest:
-        attack opportunities your units can execute right now
-        (with predicted damage/counter/kill outcomes), threats
-        against your units from visible enemies, and units still
-        in MOVED status pending action. Call once per turn-start
-        instead of many simulate_attack / get_threat_map calls."""
+        """Read-only. Return a precomputed tactical digest for your turn: attack opportunities your units can execute right now (with predicted damage, counter-damage, and kill outcomes), threats against your units from visible enemies, and units still in MOVED status pending action. Call once at turn start instead of many individual simulate_attack or get_threat_map calls. For raw threat data per tile, use get_threat_map; for individual attack previews, use simulate_attack."""
         return _dispatch(app, connection_id, "get_tactical_summary", {})
 
     @mcp.tool()
@@ -761,28 +749,7 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def record_thought(connection_id: str, text: str) -> dict:
-        """Record an agent reasoning entry to this match's replay.
-
-        Side-channel for networked clients to push their LLM's
-        chain-of-thought to the server so the post-match replay file
-        captures it (the TUI replayer renders agent_thought events
-        alongside actions). Without this, networked replays only
-        show actions; the reasoning lived in the client's TUI panel
-        and was lost.
-
-        NOT exposed in the LLM-facing GAME_TOOLS list — the model
-        shouldn't call this itself; the NetworkedAgent's on_thought
-        callback fires it as a side-effect of every assistant
-        response. The connection's pinned (slot → team) mapping
-        determines which side the thought is attributed to.
-
-        ── Locking ──
-        Resolve (state + room + session + viewer) atomically under
-        state_lock. ``session.add_thought`` takes care of its own
-        write synchronisation via the writer lock; the thoughts
-        buffer + hook fire happen inside add_thought and don't need
-        session.lock (action_hooks is a leaf append).
-        """
+        """Mutating. Record an agent's chain-of-thought reasoning into the match replay file so it can be reviewed in post-match replay playback. text is the reasoning text (max 10,000 characters). Called automatically by the client harness after each agent response — not typically called by the agent itself. Requires state=in_game. The thought is attributed to your team based on your slot assignment."""
         with app.state_lock():
             conn = app._connections.get(connection_id)  # noqa: SLF001
             if conn is None:
@@ -830,38 +797,7 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         summary: str,
         details: str | None = None,
     ) -> dict:
-        """Record an agent-observed problem (bug / confusion / suggestion).
-
-        Called by the agent when something during play doesn't match
-        what it expected — rules that seem broken, a scenario that
-        feels inconsistent, tool results that contradict each other,
-        or just "I'm confused about X". The server persists the
-        report to three sinks so it's easy to review later:
-
-          1. Match replay (as an ``agent_report`` event, turn-tagged).
-          2. Server log, logger ``silicon.agent_report`` at INFO.
-          3. Per-day jsonl file at
-             ``~/.silicon-pantheon/debug-reports/YYYYMMDD.jsonl``.
-
-        `category` must be one of: bug, confusion, rules_unclear,
-        scenario_issue, imbalance, suggestion. Any other value is
-        rejected so `grep -c` on the file gives meaningful counts.
-        Use ``imbalance`` specifically for "this scenario feels
-        lopsided" observations (one team has structural advantage
-        that makes the match trivial / unwinnable) — separate from
-        ``scenario_issue`` (broken placement / wrong unit / unreachable
-        tile) so balance-tuning reviews can be filtered cleanly.
-
-        Always available (no SILICON_DEBUG gate) — whether a player
-        reports depends on whether the prompt tells them to, which IS
-        debug-gated in the client. This keeps the tool usable for
-        anyone who wants to flag something regardless of mode.
-
-        ── Locking ──
-        Resolve (state + room + session + viewer) atomically under
-        state_lock; the three sink writes happen OUTSIDE the lock
-        (they do I/O — file append, logger write).
-        """
+        """Mutating. Report a problem or observation encountered during gameplay. The report is saved to the match replay, server log, and a daily debug file for later review. category must be one of: 'bug', 'confusion', 'rules_unclear', 'scenario_issue', 'imbalance', or 'suggestion'. Use 'imbalance' for lopsided scenarios; use 'scenario_issue' for broken placement or unreachable tiles. summary is a short description (max 500 chars, required). details is an optional longer explanation (max 10,000 chars). Requires state=in_game."""
         allowed = (
             "bug", "confusion", "rules_unclear",
             "scenario_issue", "imbalance", "suggestion",
@@ -966,18 +902,7 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def download_replay(connection_id: str) -> dict:
-        """Fetch this connection's match replay as JSONL text.
-
-        Available while the connection is IN_GAME (including after
-        the game has ended; token stays valid briefly so clients can
-        download before state is purged).
-
-        ── Locking ──
-        Resolve phase under state_lock. File read happens OUTSIDE
-        state_lock (may be large). The ReplayWriter has its own
-        lock — reading the file path is a stable-after-init
-        attribute, safe to read without holding the writer lock.
-        """
+        """Read-only. Download the full match replay as JSONL text. Each line is a JSON event (moves, attacks, thoughts, turn boundaries) that can be fed into the TUI replay viewer. Available during and immediately after a match while the connection is still in_game state. Returns the replay content and the server-side file path."""
         # Phase 1: resolve under state_lock.
         with app.state_lock():
             conn = app._connections.get(connection_id)  # noqa: SLF001
@@ -1036,21 +961,7 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def concede(connection_id: str) -> dict:
-        """Resign the match — opponent wins immediately.
-
-        ── Locking ──
-        Three phases, honouring strict lock order
-        (state_lock > session.lock > writer locks):
-
-        1. state_lock: validate connection state, resolve
-           session + team mapping, capture room_id.
-        2. session.lock: flip GameStatus + winner, log forfeit
-           to replay (writer lock is a leaf). Idempotent re-check
-           of GAME_OVER inside the lock.
-        3. No lock: call _note_game_over_if_needed which runs its
-           own 3-phase protocol to flip room.status = FINISHED
-           and write leaderboard.
-        """
+        """Mutating. Resign the match — the opponent wins immediately. The result is recorded in the leaderboard as a concession. Requires state=in_game. After conceding, the match ends and both players can download the replay or leave the room. Use leave_room if you want to both concede and return to the lobby in one step."""
         from silicon_pantheon.server.engine.state import GameStatus
 
         # Phase 1: resolve under state_lock.
