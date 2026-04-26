@@ -611,31 +611,48 @@ class NetworkedAgent:
         self._battlefield_alerts = []
 
         if self._last_seen_unit_ids is not None:
-            # New units that weren't there last turn (reinforcements)
+            # Units now visible that weren't last turn.
             appeared = current_ids - self._last_seen_unit_ids
             if appeared:
+                team_prefix = "u_b_" if viewer is Team.BLUE else "u_r_"
                 for uid in sorted(appeared):
                     u = current_units[uid]
-                    owner = u.get("owner", "?")
                     cls = u.get("class", "?")
                     pos = u.get("pos") or {}
-                    side = "friendly" if owner == viewer.value else "ENEMY"
-                    self._battlefield_alerts.append(
-                        f"⚠ NEW {side} unit appeared: {uid} ({cls}) "
-                        f"at ({pos.get('x')},{pos.get('y')})"
-                    )
+                    if uid.startswith(team_prefix):
+                        # We always see our own; new = true reinforcement.
+                        self._battlefield_alerts.append(
+                            f"⚠ NEW friendly reinforcement: {uid} ({cls}) "
+                            f"at ({pos.get('x')},{pos.get('y')})"
+                        )
+                    else:
+                        # Could be a new spawn or an existing unit
+                        # emerging from fog.
+                        self._battlefield_alerts.append(
+                            f"⚠ ENEMY unit spotted: {uid} ({cls}) "
+                            f"at ({pos.get('x')},{pos.get('y')})"
+                        )
                 log.info(
-                    "battlefield change: %d new units appeared: %s",
+                    "battlefield change: %d units appeared: %s",
                     len(appeared), sorted(appeared),
                 )
-            # Units that disappeared (killed between turns, not by us)
+            # Units that disappeared since last turn.
             vanished = self._last_seen_unit_ids - current_ids
             if vanished:
+                team_prefix = "u_b_" if viewer is Team.BLUE else "u_r_"
                 for uid in sorted(vanished):
-                    side = "friendly" if viewer.value in uid else "enemy"
-                    self._battlefield_alerts.append(
-                        f"⚠ {side} unit eliminated: {uid}"
-                    )
+                    if uid.startswith(team_prefix):
+                        # We always see our own units; gone = truly dead.
+                        self._battlefield_alerts.append(
+                            f"⚠ friendly unit eliminated: {uid}"
+                        )
+                    else:
+                        # Enemy vanishing could be death OR fog hiding
+                        # them. Don't claim elimination — that leaks info.
+                        self._battlefield_alerts.append(
+                            f"⚠ lost contact with enemy unit: {uid} "
+                            f"(may have been eliminated or moved out of sight)"
+                        )
 
         self._last_seen_unit_ids = current_ids
 
