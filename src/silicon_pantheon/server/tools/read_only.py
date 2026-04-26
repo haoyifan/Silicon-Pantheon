@@ -34,12 +34,12 @@ def get_unit_range(session: Session, viewer: Team, unit_id: str) -> dict:
     state = session.state
     u = state.units.get(unit_id)
     if u is None or not u.alive:
-        raise ToolError(f"unit {unit_id} does not exist or is dead")
+        raise ToolError(f"unit {unit_id} not found (dead, nonexistent, or hidden by fog)")
     # Fog check: enemy units hidden by fog must not be queryable.
     if u.owner != viewer:
         visible_enemies = _visible_enemies(session, viewer)
         if u not in visible_enemies:
-            raise ToolError(f"unit {unit_id} does not exist or is dead")
+            raise ToolError(f"unit {unit_id} not found (dead, nonexistent, or hidden by fog)")
 
     # Always show full hypothetical range from the unit's current
     # tile, regardless of status (ready/moved/done). This is a
@@ -71,7 +71,7 @@ def get_unit_range(session: Session, viewer: Team, unit_id: str) -> dict:
 def get_unit(session: Session, viewer: Team, unit_id: str) -> dict:
     u = session.state.units.get(unit_id)
     if u is None or not u.alive:
-        raise ToolError(f"unit {unit_id} does not exist or is dead")
+        raise ToolError(f"unit {unit_id} not found (dead, nonexistent, or hidden by fog)")
     return {
         "id": u.id,
         "owner": u.owner.value,
@@ -111,9 +111,9 @@ def simulate_attack(
     attacker = state.units.get(attacker_id)
     target = state.units.get(target_id)
     if attacker is None or not attacker.alive:
-        raise ToolError(f"attacker {attacker_id} does not exist or is dead")
+        raise ToolError(f"attacker {attacker_id} not found (dead, nonexistent, or hidden by fog)")
     if target is None or not target.alive:
-        raise ToolError(f"target {target_id} does not exist or is dead")
+        raise ToolError(f"target {target_id} not found (dead, nonexistent, or hidden by fog)")
     if attacker.owner is target.owner:
         raise ToolError("attacker and target are on the same team")
     # Fog check: cannot simulate attacks involving units hidden by fog.
@@ -121,7 +121,7 @@ def simulate_attack(
     if target.owner != viewer:
         visible_enemies = _visible_enemies(session, viewer)
         if target not in visible_enemies:
-            raise ToolError(f"target {target_id} does not exist or is dead")
+            raise ToolError(f"target {target_id} not found (dead, nonexistent, or hidden by fog)")
 
     origin = Pos.from_dict(from_tile) if from_tile else attacker.pos
     if not in_attack_range(origin, target.pos, attacker.stats):

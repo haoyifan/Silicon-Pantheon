@@ -234,7 +234,7 @@ def _enrich_attack_error(
     # this filter the enriched error leaks "alive enemies" + "in-range
     # enemies" lists under classic / line_of_sight modes.
     visible_enemies = _visible_enemies(session, attacker.owner)
-    if "does not exist or is dead" in msg:
+    if "not found (dead, nonexistent, or hidden by fog)" in msg:
         alive_ids = [u.id for u in visible_enemies]
         return f"{msg}. Alive enemy units you can see: [{', '.join(alive_ids) or '(none)'}]"
     if "out of attack range" in msg:

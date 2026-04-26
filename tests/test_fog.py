@@ -748,3 +748,55 @@ def test_filter_state_redacts_end_turn_with_hidden_win_unit() -> None:
     state.last_action = {"type": "end_turn", "by": "red"}
     filtered = filter_state(state, ctx)
     assert filtered["last_action"] == {"type": "end_turn", "by": "red"}
+
+
+def test_fog_hidden_unit_error_messages_consistent() -> None:
+    """The 'unit not found' error message must be identical across
+    all code paths that can reject a unit lookup under fog:
+
+      1. ToolError from _require_own_unit / rules.py (agent picks a
+         dead, nonexistent, or fog-hidden ID)
+      2. Fog-filter fallback in game_tools._apply_filter (get_unit
+         returns data for a unit filtered out by fog)
+      3. Engine rules.py IllegalAction (direct apply() on a missing
+         unit)
+
+    If these diverge, the agent gets a different string per path
+    and can infer whether a unit is dead vs fog-hidden — an info leak.
+    Pin the exact string here so any drift is caught."""
+    CANONICAL = "not found (dead, nonexistent, or hidden by fog)"
+
+    from silicon_pantheon.server.tools._common import _require_own_unit, ToolError
+    from silicon_pantheon.server.engine.rules import IllegalAction, legal_actions_for_unit
+
+    # Path 1: _require_own_unit with nonexistent unit.
+    state = load_scenario("01_tiny_skirmish")
+    try:
+        _require_own_unit(state, "u_fake_999", Team.BLUE)
+        assert False, "should have raised ToolError"
+    except ToolError as e:
+        assert CANONICAL in str(e), f"_require_own_unit message mismatch: {e}"
+
+    # Path 2: game_tools._apply_filter fog fallback.
+    import silicon_pantheon.server.game_tools as gt
+    import inspect
+    source = inspect.getsource(gt._apply_filter)
+    assert CANONICAL in source, (
+        "game_tools._apply_filter fog-fallback error must use the "
+        f"canonical string '{CANONICAL}'"
+    )
+
+    # Path 3: rules.py IllegalAction for dead/missing unit.
+    try:
+        legal_actions_for_unit(state, "u_fake_999")
+        assert False, "should have raised IllegalAction"
+    except IllegalAction as e:
+        assert CANONICAL in str(e), f"rules.py message mismatch: {e}"
+
+    # Path 4: _apply_attack target not found.
+    from silicon_pantheon.server.engine.rules import apply, AttackAction
+    try:
+        apply(state, AttackAction(unit_id="u_b_knight_1", target_id="u_dead_999"))
+        assert False, "should have raised IllegalAction"
+    except IllegalAction as e:
+        assert CANONICAL in str(e), f"_apply_attack message mismatch: {e}"

@@ -76,7 +76,7 @@ def legal_actions_for_unit(state: GameState, unit_id: str) -> dict:
     """
     unit = state.units.get(unit_id)
     if unit is None or not unit.alive:
-        raise IllegalAction(f"unit {unit_id} does not exist or is dead")
+        raise IllegalAction(f"unit {unit_id} not found (dead, nonexistent, or hidden by fog)")
     if unit.owner is not state.active_player:
         raise IllegalAction(f"unit {unit_id} belongs to {unit.owner}, not active player")
 
@@ -182,7 +182,7 @@ def apply(state: GameState, action: Action) -> dict:
         raise IllegalAction(f"action has no unit_id or healer_id: {action!r}")
     actor = state.units.get(actor_id)
     if actor is None or not actor.alive:
-        raise IllegalAction(f"unit {actor_id} does not exist or is dead")
+        raise IllegalAction(f"unit {actor_id} not found (dead, nonexistent, or hidden by fog)")
     if actor.owner is not state.active_player:
         raise IllegalAction(f"unit {actor_id} is not owned by active player")
 
@@ -211,7 +211,7 @@ def _apply_move(state: GameState, unit: Unit, dest: Pos) -> dict:
 def _apply_attack(state: GameState, attacker: Unit, target_id: str) -> dict:
     target = state.units.get(target_id)
     if target is None or not target.alive:
-        raise IllegalAction(f"target {target_id} does not exist or is dead")
+        raise IllegalAction(f"target {target_id} not found (dead, nonexistent, or hidden by fog)")
     if target.owner is attacker.owner:
         raise IllegalAction("cannot attack allied unit")
     if attacker.status is UnitStatus.DONE:
@@ -274,7 +274,7 @@ def _apply_heal(state: GameState, healer: Unit, target_id: str) -> dict:
         raise IllegalAction(f"{healer.id} has already acted this turn")
     target = state.units.get(target_id)
     if target is None or not target.alive:
-        raise IllegalAction(f"target {target_id} does not exist or is dead")
+        raise IllegalAction(f"target {target_id} not found (dead, nonexistent, or hidden by fog)")
     if target.owner is not healer.owner:
         raise IllegalAction("cannot heal enemy unit")
     if target.id == healer.id:

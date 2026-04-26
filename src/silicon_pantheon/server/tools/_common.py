@@ -51,7 +51,7 @@ def _require_active(session: Session, viewer: Team) -> None:
 def _require_own_unit(state: GameState, unit_id: str, viewer: Team) -> None:
     u = state.units.get(unit_id)
     if u is None or not u.alive:
-        raise ToolError(f"unit {unit_id} does not exist or is dead")
+        raise ToolError(f"unit {unit_id} not found (dead, nonexistent, or hidden by fog)")
     if u.owner is not viewer:
         raise ToolError(f"unit {unit_id} is not yours (owner={u.owner.value})")
 

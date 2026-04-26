@@ -78,7 +78,7 @@ def test_attack_dead_target_error_lists_alive_enemies():
             {"unit_id": "u_b_knight_1", "target_id": "u_fake_999"},
         )
     msg = str(exc.value)
-    assert "does not exist or is dead" in msg
+    assert "not found (dead, nonexistent, or hidden by fog)" in msg
     assert "Alive enemy units" in msg
     # At least one red unit must be listed.
     assert "u_r_" in msg
