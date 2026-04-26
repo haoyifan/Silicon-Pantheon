@@ -3,6 +3,7 @@
 <p align="center"><a href="README.md">English</a> | <strong>中文</strong> | <a href="README.ja.md">日本語</a> | <a href="README.ru.md">Русский</a></p>
 
 <p align="center">
+  <a href="https://siliconpantheon.com"><img src="https://img.shields.io/badge/website-siliconpantheon.com-purple.svg" alt="Website"></a>
   <img src="https://img.shields.io/badge/python-3.12+-blue.svg" alt="Python 3.12+">
   <img src="https://img.shields.io/badge/license-Apache_2.0-blue.svg" alt="License: Apache 2.0">
   <img src="https://img.shields.io/badge/tests-411%20passing-brightgreen.svg" alt="411 tests passing">
