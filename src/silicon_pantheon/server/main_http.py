@@ -88,6 +88,11 @@ def _configure_server_logging(level: str, log_file: Path | None) -> Path:
 
 def main() -> int:
     p = argparse.ArgumentParser(description="Run the silicon-pantheon backend")
+    p.add_argument(
+        "--stdio",
+        action="store_true",
+        help="run over stdio transport instead of HTTP (for mcp-proxy / Glama)",
+    )
     p.add_argument("--host", default="127.0.0.1", help="bind address (default: 127.0.0.1)")
     p.add_argument("--port", type=int, default=8080, help="bind port (default: 8080)")
     p.add_argument(
@@ -160,6 +165,12 @@ def main() -> int:
         ),
     )
     args = p.parse_args()
+
+    if args.stdio:
+        app = App()
+        mcp = build_mcp_server(app)
+        mcp.run(transport="stdio")
+        return 0
 
     if args.debug:
         # The shared.debug module reads SILICON_DEBUG on every call,
