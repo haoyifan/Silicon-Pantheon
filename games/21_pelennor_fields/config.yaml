@@ -18,7 +18,7 @@ description: |
 #  y=1   # # . . . . . . . . . . . . . . . . % % % % % %   City wall + Osgiliath
 #  y=2   # # . . . . . . . . . . . . . . . . % % % % % %   City wall + Osgiliath
 #  y=3   # # . . . . . . . # # # . . . . . . . . . . . .   City wall + Rammas
-#  y=4   . . . . . . . . . # . # . . . . . . . . . . . .   Gate + Rammas (breach)
+#  y=4   F . . . . . . . . # . # . . . . . . . . . . . .   Gate + Rammas (breach)
 #  y=5   # # . . . . . . . # # # . . . . . . . . . . . .   City wall + Rammas
 #  y=6   # # . . . . . . . . . . . . . . . . . . . . . .   City wall
 #  y=7   # # . . . . . . . . . . . . . . . . . . . . . .   City wall
@@ -45,8 +45,7 @@ board:
     - {x: 1, y: 2, type: city_wall}
     - {x: 0, y: 3, type: city_wall}
     - {x: 1, y: 3, type: city_wall}
-    # Gate at y=4 — x=0 is open (the gate tile), x=1 is wall
-    - {x: 1, y: 4, type: city_wall}
+    # Gate at y=4 — x=0 is the fort/gate, x=1 is the open approach
     - {x: 0, y: 5, type: city_wall}
     - {x: 1, y: 5, type: city_wall}
     - {x: 0, y: 6, type: city_wall}
