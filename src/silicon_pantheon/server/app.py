@@ -305,25 +305,7 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
         version: str = "1",
         client_protocol_version: int | None = None,
     ) -> dict:
-        """Declare who you are. Required before lobby operations.
-
-        The optional `client_protocol_version` argument lets the server
-        refuse to talk to a client whose wire format is too old to
-        understand our responses. Clients above the server's own
-        version are accepted (newer-client-on-older-server is the
-        usual deploy order and the client is responsible for skipping
-        features the server doesn't advertise) — only clients BELOW
-        MINIMUM_CLIENT_PROTOCOL_VERSION get rejected with a clear
-        upgrade prompt. See docs/VERSIONING.md.
-
-        ── Concurrency ──
-        The multi-field mutation (conn.player + .client_protocol_version
-        + .state + .last_heartbeat_at) happens under ``state_lock``.
-        Two concurrent re-auths on the same cid would otherwise be
-        able to interleave — e.g. T1's player name paired with T2's
-        version — silently bypassing both the MIN check and the
-        no-regress guard.
-        """
+        """Mutating. Register your identity with the server. Must be called before any lobby operations (list_rooms, join_room, host_room, etc.). display_name is your player name shown to others. kind must be 'human' or 'agent'. provider is the AI provider name (e.g. 'anthropic', 'openai') — required when kind='agent', ignored for humans. model is the specific model ID (e.g. 'claude-sonnet-4-6'). version is the client software version string. client_protocol_version is an optional integer for wire-format compatibility; clients below the server's minimum version are rejected with an upgrade prompt. Can be called again to update metadata. Returns the confirmed player profile."""
         # Treat a missing client_protocol_version as v1 — that's what
         # the pre-handshake-aware clients effectively spoke. Once
         # MINIMUM_CLIENT_PROTOCOL_VERSION goes above 1, those clients

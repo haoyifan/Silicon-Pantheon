@@ -203,14 +203,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def describe_scenario(connection_id: str, name: str) -> dict:
-        """Return the full scenario bundle for UI preview.
-
-        Includes name/description, unit class table, terrain type
-        table, win conditions (as declared, not serialized rules),
-        armies, board dimensions, and narrative block. The client
-        caches this on room enter so the room preview and the game
-        screen can show unit/terrain legends without refetching.
-        """
+        """Read-only. Return the full scenario bundle for a given scenario name: narrative description, board dimensions, unit class table (stats and abilities), terrain type table (movement costs and defense bonuses), win conditions, and both armies' compositions. name is the scenario folder name (e.g. 'thermopylae') as listed by list_scenarios. Requires set_player_metadata to have been called. Use this to preview a scenario before hosting or joining a room, or to display unit/terrain legends in the UI."""
         conn = app.get_connection(connection_id)
         if conn is None or conn.state == ConnectionState.ANONYMOUS:
             return _error(
@@ -660,14 +653,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def preview_room(connection_id: str, room_id: str) -> dict:
-        """Show scenario map + seat occupancy for a room.
-
-        ── Locking ──
-        Connection check + room lookup + summary serialisation happen
-        under state_lock. The scenario YAML load + board enumeration
-        are done OUTSIDE state_lock (pure disk I/O that can be slow)
-        using the scenario name we captured under the lock.
-        """
+        """Read-only. Return a room's current state: scenario name, board layout, seat occupancy (which players are seated and their ready status), and room configuration (fog-of-war setting, team assignment mode). room_id is the string identifier from list_rooms. Requires set_player_metadata. Use this to inspect a room before joining with join_room, or to check ready status while waiting for the match to start."""
         with app.state_lock():
             conn = app._connections.get(connection_id)  # noqa: SLF001
             if conn is None or conn.state == ConnectionState.ANONYMOUS:
@@ -816,13 +802,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def join_room(connection_id: str, room_id: str) -> dict:
-        """Take the open seat in an existing room.
-
-        ── Locking ──
-        Everything after the input validation runs under state_lock
-        so a race with another ``join_room`` for the same room can't
-        both succeed on the same empty seat.
-        """
+        """Mutating. Join an existing room by taking its open seat. Requires state=in_lobby (call set_player_metadata first). room_id is the room's string identifier from list_rooms. Returns the assigned room_id and slot (A or B). Fails if the room is full, does not exist, or you are already in a room. After joining, call set_ready to signal readiness; the match starts when both players are ready. To leave before the match starts, use leave_room."""
         if not room_id or len(room_id) > 128:
             return _error(ErrorCode.BAD_INPUT, "invalid room_id")
 
@@ -1177,22 +1157,7 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     async def set_ready(connection_id: str, ready: bool) -> dict:
-        """Toggle this connection's readiness.
-
-        When both seats are filled and both ready, the server starts a
-        10s countdown after which the match begins. The countdown is
-        cancelled if either player unreadies, leaves, or disconnects.
-
-        ── Locking ──
-        Ready-flag flip + countdown start/cancel + status update all
-        happen under state_lock so a concurrent ``leave_room`` or
-        ``unready`` can't race with the countdown start.
-
-        ``_start_countdown`` spawns an asyncio.Task via
-        ``asyncio.create_task``. That call is safe under state_lock
-        — it doesn't block or await — it just schedules a new task
-        on the running event loop.
-        """
+        """Mutating. Toggle your readiness in a room. ready=true signals you are ready to start; ready=false unreadies you. Requires state=in_room (join a room via join_room first). When both seats are filled and both players are ready, the server starts a 10-second countdown and then begins the match automatically. The countdown is cancelled if either player unreadies, leaves, or disconnects. Returns the updated room status including both players' ready states."""
         import time
 
         response: dict[str, Any] = {}
