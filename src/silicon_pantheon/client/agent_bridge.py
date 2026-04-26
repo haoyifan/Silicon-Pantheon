@@ -288,12 +288,9 @@ def _build_default_adapter(model: str) -> ProviderAdapter:
     """Factory for the provider adapter selected by the model id.
 
     Consults the credentials store + provider catalog to pick the
-    right SDK. Routing rules (applied in order):
-      - claude-* / sonnet-* / opus-*  → Anthropic (subscription CLI)
-      - gpt-* / o1-* / o3-* / o4-*    → OpenAI (api key)
-      - grok-*                        → xAI (api key, OpenAI-compat)
-      - unknown                       → credentials.default_provider
-                                        or Anthropic
+    right SDK. The model ID is looked up in the provider catalog for
+    an exact match. Falls back to credentials.default_provider or
+    Anthropic for unrecognized model names.
 
     API-key resolution walks credentials-file → env var → error.
     """
@@ -302,23 +299,20 @@ def _build_default_adapter(model: str) -> ProviderAdapter:
         load,
         resolve_key,
     )
-    from silicon_pantheon.shared.providers import get_provider
+    from silicon_pantheon.shared.providers import PROVIDERS, get_provider
 
     model_lower = model.lower()
     creds = load()
-    provider_id: str
-    # Model name determines the provider. The model name is
-    # authoritative — it's what the user picked in this session's
-    # provider auth screen. The saved default_provider is only used
-    # as a fallback for unrecognized model names.
-    if model_lower.startswith(("claude", "sonnet", "opus")):
-        provider_id = "anthropic"
-    elif "codex" in model_lower or model_lower.startswith("gpt-5."):
-        provider_id = "openai-codex"
-    elif model_lower.startswith(("gpt", "o1", "o3", "o4")):
-        provider_id = "openai"
-    elif model_lower.startswith("grok"):
-        provider_id = "xai"
+
+    # Build an exact model-id → provider-id lookup from the catalog.
+    # This is authoritative and order-independent.
+    _model_to_provider: dict[str, str] = {}
+    for _prov in PROVIDERS:
+        for _m in _prov.models:
+            _model_to_provider[_m.id.lower()] = _prov.id
+
+    if model_lower in _model_to_provider:
+        provider_id = _model_to_provider[model_lower]
     elif creds.default_provider:
         provider_id = creds.default_provider
     else:
@@ -345,12 +339,12 @@ def _build_default_adapter(model: str) -> ProviderAdapter:
         return CodexAdapter(model=model)
 
     # Providers that speak the OpenAI Chat Completions wire protocol.
-    # The only difference per-provider is the base URL and which env
-    # var / credentials entry holds the key.
-    if provider_id in ("openai", "xai", "google", "qwen", "deepseek", "mistral", "groq"):
+    # Any provider with auth_mode="api_key" in the catalog uses the
+    # OpenAI adapter (with an optional custom base_url).
+    spec = get_provider(provider_id)
+    if spec and spec.auth_mode == "api_key":
         from silicon_pantheon.client.providers.openai import OpenAIAdapter
 
-        spec = get_provider(provider_id)
         api_key = _resolve_api_key(provider_id)
         if not api_key:
             env_name = spec.env_var if spec else f"{provider_id.upper()}_API_KEY"
