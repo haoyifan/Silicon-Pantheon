@@ -346,6 +346,10 @@ def _apply_end_turn(state: GameState) -> dict:
             state.fallen_units[uid] = state.units[uid]
             del state.units[uid]
 
+    # 1b. Rotate turn action log so clients see the full previous turn.
+    state.prev_turn_actions = list(state.turn_actions)
+    state.turn_actions.clear()
+
     # 2. Hand over to opponent.
     state.active_player = enemy
 

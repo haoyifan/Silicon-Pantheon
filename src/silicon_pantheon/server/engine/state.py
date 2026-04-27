@@ -249,6 +249,8 @@ class GameState:
     status: GameStatus = GameStatus.IN_PROGRESS
     winner: Team | None = None
     last_action: dict | None = None
+    turn_actions: list[dict] = field(default_factory=list)
+    prev_turn_actions: list[dict] = field(default_factory=list)
     history: list[dict] = field(default_factory=list)
     # Set of unit ids that have died this match. Populated whenever a
     # unit is removed from `units`. Win conditions like ProtectUnit

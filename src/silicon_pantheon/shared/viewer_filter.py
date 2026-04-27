@@ -224,12 +224,17 @@ def filter_state(state: GameState, ctx: ViewerContext) -> dict[str, Any]:
         if not _action_is_visible(la, state, ctx):
             raw["last_action"] = None
         else:
-            # Scrub any hidden-enemy ids that may survive the
-            # visibility gate (e.g. an attack whose target has since
-            # slipped into fog). See _scrub_event_ids for rationale.
             raw["last_action"] = _scrub_event_ids(
                 la, _hidden_alive_enemy_ids(state, ctx)
             )
+
+    # Filter prev_turn_actions the same way.
+    hidden_ids = _hidden_alive_enemy_ids(state, ctx)
+    filtered_prev: list[dict[str, Any]] = []
+    for act in raw.get("prev_turn_actions") or []:
+        if isinstance(act, dict) and _action_is_visible(act, state, ctx):
+            filtered_prev.append(_scrub_event_ids(act, hidden_ids))
+    raw["prev_turn_actions"] = filtered_prev
 
     return raw
 

@@ -1570,26 +1570,20 @@ class GameScreen(Screen):
         if self.app.state.agent is None:
             await self._maybe_build_agent(self.app)
 
-        # Update per-unit last-action annotation incrementally from
-        # the polled state's last_action field. No get_history call
-        # needed — we just track each new action as it appears on
-        # every 1s poll. Only meaningful actions (move / attack /
-        # heal) are cached; "wait" and "end_turn" are not informational.
+        # Update per-unit last-action annotations. Two sources:
         #
-        # On end_turn, only clear annotations for the team whose turn
-        # is STARTING (their units are back to READY). Keep the other
-        # team's annotations — the player wants to see what the
-        # opponent did while deciding their own moves.
+        # 1. On end_turn: rebuild ALL annotations for the previous turn
+        #    from prev_turn_actions (complete server-side list). This
+        #    fixes the desync where each client only caught a random
+        #    subset of actions via last_action polling.
+        #
+        # 2. During the current turn: still track last_action for live
+        #    feedback as the AI (or human) acts.
         la = self.state.get("last_action")
         if la is not None and la.get("type") == "end_turn":
             if la is not self._last_action_seen:
-                # The NEW active team's units are back to READY, so
-                # clear their stale annotations. Keep the other team's
-                # annotations so the player can review what happened.
                 new_active = self.state.get("active_player")
                 if new_active:
-                    # Build a set of unit IDs owned by the new active
-                    # team from the current state (authoritative).
                     active_uids = {
                         u.get("id") for u in (self.state.get("units") or [])
                         if u.get("owner") == new_active
@@ -1597,51 +1591,16 @@ class GameScreen(Screen):
                     for uid in list(self.unit_last_actions):
                         if uid in active_uids:
                             del self.unit_last_actions[uid]
+                # Rebuild previous turn's annotations from the complete
+                # action list — every client sees the same data.
+                prev_actions = self.state.get("prev_turn_actions") or []
+                self._rebuild_annotations(prev_actions)
         if la is not None and la is not self._last_action_seen:
             self._last_action_seen = la
-            # Clear combat highlights on every new action; set them
-            # below only for attack actions.
             self._combat_attacker_id = None
             self._combat_target_id = None
-            uid = la.get("unit_id") or la.get("healer_id")
-            if uid:
-                lc = self.app.state.locale
-                scen = self.app.state.scenario_description
-                la_type = la.get("type")
-
-                def _name(unit_id: str) -> str:
-                    from silicon_pantheon.client.tui.scenario_display import humanize_unit_id
-                    return humanize_unit_id(unit_id, scen)
-
-                if la_type == "move":
-                    dest = la.get("dest") or {}
-                    self.unit_last_actions[uid] = (
-                        t("action.moved", lc)
-                        .replace("{x}", str(dest.get("x", "?")))
-                        .replace("{y}", str(dest.get("y", "?")))
-                    )
-                elif la_type == "attack":
-                    tid = la.get("target_id", "?")
-                    dmg = la.get("damage_dealt", "?")
-                    killed = f" {t('action.killed', lc)}" if la.get("target_killed") else ""
-                    self.unit_last_actions[uid] = (
-                        t("action.atk", lc)
-                        .replace("{tid}", _name(tid))
-                        .replace("{dmg}", str(dmg))
-                        + killed
-                    )
-                    # Highlight attacker and target on the map.
-                    self._combat_attacker_id = uid
-                    self._combat_target_id = tid
-                elif la_type == "heal":
-                    tid = la.get("target_id", "?")
-                    amt = la.get("heal_amount", la.get("healed", "?"))
-                    self.unit_last_actions[uid] = (
-                        t("action.healed", lc)
-                        .replace("{tid}", _name(tid))
-                        .replace("{amt}", str(amt))
-                    )
-                # "wait" and "end_turn" are intentionally skipped.
+            if la.get("type") != "end_turn":
+                self._apply_action_annotation(la)
 
         await self._maybe_trigger_agent()
 
@@ -1652,6 +1611,50 @@ class GameScreen(Screen):
             await self.app.transition(next_screen)
             return next_screen
         return None
+
+    def _apply_action_annotation(self, action: dict) -> None:
+        uid = action.get("unit_id") or action.get("healer_id")
+        if not uid:
+            return
+        lc = self.app.state.locale
+        scen = self.app.state.scenario_description
+        la_type = action.get("type")
+
+        def _name(unit_id: str) -> str:
+            from silicon_pantheon.client.tui.scenario_display import humanize_unit_id
+            return humanize_unit_id(unit_id, scen)
+
+        if la_type == "move":
+            dest = action.get("dest") or {}
+            self.unit_last_actions[uid] = (
+                t("action.moved", lc)
+                .replace("{x}", str(dest.get("x", "?")))
+                .replace("{y}", str(dest.get("y", "?")))
+            )
+        elif la_type == "attack":
+            tid = action.get("target_id", "?")
+            dmg = action.get("damage_dealt", "?")
+            killed = f" {t('action.killed', lc)}" if action.get("target_killed") else ""
+            self.unit_last_actions[uid] = (
+                t("action.atk", lc)
+                .replace("{tid}", _name(tid))
+                .replace("{dmg}", str(dmg))
+                + killed
+            )
+            self._combat_attacker_id = uid
+            self._combat_target_id = tid
+        elif la_type == "heal":
+            tid = action.get("target_id", "?")
+            amt = action.get("heal_amount", action.get("healed", "?"))
+            self.unit_last_actions[uid] = (
+                t("action.healed", lc)
+                .replace("{tid}", _name(tid))
+                .replace("{amt}", str(amt))
+            )
+
+    def _rebuild_annotations(self, actions: list[dict]) -> None:
+        for action in actions:
+            self._apply_action_annotation(action)
 
     async def _maybe_trigger_agent(self) -> None:
         # Each early return gets a WHY log so the Q3 "blue just stops

@@ -25,6 +25,7 @@ from ._common import (
 
 def _record_action(session: Session, result: dict) -> None:
     session.state.last_action = result
+    session.state.turn_actions.append(result)
     session.state.history.append(result)
     session.log("action", result)
     # Drain any narrative events emitted by this action so they appear

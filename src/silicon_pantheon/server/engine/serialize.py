@@ -123,4 +123,5 @@ def state_to_dict(
             "max_turns": state.max_turns,
         },
         "last_action": state.last_action,
+        "prev_turn_actions": list(state.prev_turn_actions),
     }
