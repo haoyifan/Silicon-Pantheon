@@ -99,21 +99,18 @@ class BotWorker:
                         raise
                     # Spurious CancelledError from anyio cancel scope
                     # leaked through the MCP SDK (e.g. httpcore
-                    # receive_response_body.failed). Absorb all pending
-                    # cancellations so subsequent awaits don't re-raise,
-                    # then reconnect.
-                    task = asyncio.current_task()
-                    if task is not None:
-                        while task.cancelling() > 0:
-                            task.uncancel()
+                    # receive_response_body.failed). The cancel scope
+                    # may deliver MULTIPLE CancelledErrors across
+                    # successive awaits, so we must drain + shield
+                    # through the entire recovery path, not just once.
+                    self._drain_cancellations()
                     log.warning(
                         "worker %s caught spurious CancelledError "
                         "(anyio cancel scope) — reconnecting",
                         self.config.name,
                     )
                     self.status = "cancel-scope crash, reconnecting"
-                    await self._disconnect()
-                    await asyncio.sleep(TRANSPORT_RETRY_S)
+                    await self._shielded_recovery()
                 except Exception as e:
                     log.exception("worker %s crashed: %s", self.config.name, e)
                     self.status = f"error: {e}"
@@ -123,6 +120,36 @@ class BotWorker:
             log.info("worker %s shutting down (cancelled)", self.config.name)
         finally:
             await self._disconnect()
+
+    def _drain_cancellations(self) -> None:
+        """Call task.uncancel() until the cancellation counter reaches zero."""
+        task = asyncio.current_task()
+        if task is not None:
+            while task.cancelling() > 0:
+                task.uncancel()
+
+    async def _shielded_recovery(self) -> None:
+        """Disconnect and sleep, absorbing any further spurious cancellations.
+
+        The anyio cancel scope may deliver additional CancelledErrors
+        on subsequent awaits even after the first one was drained.
+        Each step re-checks _shutting_down (a genuine shutdown may
+        arrive mid-recovery) and re-drains before continuing.
+        """
+        for step in ("disconnect", "sleep"):
+            try:
+                if step == "disconnect":
+                    await self._disconnect()
+                else:
+                    await asyncio.sleep(TRANSPORT_RETRY_S)
+            except asyncio.CancelledError:
+                if self._shutting_down:
+                    raise
+                self._drain_cancellations()
+                log.debug(
+                    "worker %s: extra CancelledError during %s, drained",
+                    self.config.name, step,
+                )
 
     async def _run_game_loop_with_transport_watch(self) -> None:
         """Run _game_loop but bail early if the transport dies.
