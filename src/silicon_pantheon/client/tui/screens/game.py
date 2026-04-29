@@ -1761,6 +1761,14 @@ class GameScreen(Screen):
                     my_team, _time.time() - t0, e,
                 )
                 self.app.state.error_message = f"agent error: {e}"
+                # Auth failures (CodexAuthError, etc.) and other
+                # unrecognised exceptions are unrecoverable — retrying
+                # on the next tick just spins forever. Concede so the
+                # room is freed and the opponent isn't stuck.
+                try:
+                    await self.app.client.call("concede") if self.app.client else None
+                except Exception:
+                    log.exception("concede-after-unhandled-error raised")
 
         self.app.state.agent_task = asyncio.create_task(_run())
 

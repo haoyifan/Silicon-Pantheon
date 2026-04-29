@@ -481,6 +481,9 @@ def _force_end_turn(
         # reset. We do NOT call _record_action directly because
         # tools/mutations.py imports us transitively (circular).
         session.state.last_action = result
+        turn_actions = getattr(session.state, "turn_actions", None)
+        if turn_actions is not None:
+            turn_actions.append(result)
         session.state.history.append(result)
         # Drain narrative events emitted by apply() (terrain deaths,
         # on_turn_start hooks) so they land in the replay instead of
