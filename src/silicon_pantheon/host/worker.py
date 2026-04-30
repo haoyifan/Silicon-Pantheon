@@ -226,7 +226,15 @@ class BotWorker:
     # ---- connection ----
 
     async def _disconnect(self) -> None:
-        """Clean up transport context and client."""
+        """Clean up transport context and client.
+
+        IMPORTANT: every await in this method can raise CancelledError
+        (BaseException, not Exception) when the transport is already
+        dead.  We must guarantee that ``self._client`` and
+        ``self._transport_ctx`` are cleared regardless, otherwise
+        ``_ensure_connected`` will skip reconnection and the worker
+        spins in an infinite loop on the dead socket.
+        """
         # Remember our cid so the NEXT _ensure_connected can rebind
         # to the same server-side state (room seat, in-flight
         # session, etc.) instead of starting fresh. The server keys
@@ -234,39 +242,36 @@ class BotWorker:
         # with the SAME cid re-attaches to existing state.
         if self._client is not None and self._last_cid is None:
             self._last_cid = self._client.connection_id
-        if self._client is not None:
-            # Leave room so the server cleans up immediately.
-            try:
-                await asyncio.wait_for(
-                    self._client.call("leave_room"), timeout=3.0,
-                )
-            except Exception:
-                pass
-            try:
-                await self._client.stop_heartbeat()
-            except Exception:
-                pass
-        if self._transport_ctx is not None:
-            try:
-                # Time-bound: if the transport is already dead (the
-                # very scenario that drove us here), __aexit__ can
-                # hang waiting for child tasks to finish. 5s is more
-                # than enough for a live transport to shut down
-                # cleanly; a dead one gets abandoned.
-                await asyncio.wait_for(
-                    self._transport_ctx.__aexit__(None, None, None),
-                    timeout=5.0,
-                )
-            except asyncio.TimeoutError:
-                log.warning(
-                    "worker %s: transport __aexit__ timed out; "
-                    "abandoning context (orphaned stream will be GCd)",
-                    self.config.name,
-                )
-            except Exception:
-                pass
+        try:
+            if self._client is not None:
+                # Leave room so the server cleans up immediately.
+                try:
+                    await asyncio.wait_for(
+                        self._client.call("leave_room"), timeout=3.0,
+                    )
+                except BaseException:
+                    pass
+                try:
+                    await self._client.stop_heartbeat()
+                except BaseException:
+                    pass
+            if self._transport_ctx is not None:
+                try:
+                    await asyncio.wait_for(
+                        self._transport_ctx.__aexit__(None, None, None),
+                        timeout=5.0,
+                    )
+                except asyncio.TimeoutError:
+                    log.warning(
+                        "worker %s: transport __aexit__ timed out; "
+                        "abandoning context (orphaned stream will be GCd)",
+                        self.config.name,
+                    )
+                except BaseException:
+                    pass
+        finally:
             self._transport_ctx = None
-        self._client = None
+            self._client = None
 
     async def _ensure_connected(self) -> None:
         if self._client is not None:
