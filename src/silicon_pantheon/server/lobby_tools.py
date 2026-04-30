@@ -16,7 +16,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+from typing import Annotated, Any
+
+from pydantic import Field
 
 from mcp.server.fastmcp import FastMCP
 
@@ -130,7 +132,9 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
     app._invalidate_room_cache = _invalidate_room_cache  # type: ignore[attr-defined]
 
     @mcp.tool()
-    def list_rooms(connection_id: str) -> dict:
+    def list_rooms(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+    ) -> dict:
         """Read-only. Return all currently open rooms on this server, each with its room_id, scenario name, seat occupancy, ready status, and room configuration. Finished matches are excluded. Requires set_player_metadata to have been called. Use this to browse available rooms before joining one with join_room, or to find a room to preview with preview_room."""
         import time as _time
 
@@ -164,7 +168,9 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return result
 
     @mcp.tool()
-    def list_scenarios(connection_id: str) -> dict:
+    def list_scenarios(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+    ) -> dict:
         """Read-only. Return the list of scenario names available on this server (e.g. 'thermopylae', 'helms_deep', 'long_night'). Requires set_player_metadata. Use the returned names as input to describe_scenario for full details, or pass one to create_room when hosting a new match."""
         conn = app.get_connection(connection_id)
         if conn is None or conn.state == ConnectionState.ANONYMOUS:
@@ -186,7 +192,10 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"scenarios": candidates})
 
     @mcp.tool()
-    def describe_scenario(connection_id: str, name: str) -> dict:
+    def describe_scenario(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        name: Annotated[str, Field(description="Scenario folder name as returned by list_scenarios (e.g. 'thermopylae').")],
+    ) -> dict:
         """Read-only. Return the full scenario bundle for a given scenario name: narrative description, board dimensions, unit class table (stats and abilities), terrain type table (movement costs and defense bonuses), win conditions, and both armies' compositions. name is the scenario folder name (e.g. 'thermopylae') as listed by list_scenarios. Requires set_player_metadata to have been called. Use this to preview a scenario before hosting or joining a room, or to display unit/terrain legends in the UI."""
         conn = app.get_connection(connection_id)
         if conn is None or conn.state == ConnectionState.ANONYMOUS:
@@ -316,8 +325,8 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def get_scenario_bundle(
-        connection_id: str,
-        cached_hash: str | None = None,
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        cached_hash: Annotated[str | None, Field(description="Content hash from a previous call. If it still matches, the server returns {match: true} and skips the payload.", default=None)] = None,
     ) -> dict:
         """Read-only. Return all scenario descriptions in a single response, replacing many sequential describe_scenario calls with one round-trip. Returns each scenario's full bundle (narrative, armies, terrain, win conditions) plus a content hash. Pass cached_hash from a previous call to skip data transfer if nothing changed (returns {match: true}). Requires set_player_metadata. Prefer this over calling describe_scenario in a loop."""
         conn = app.get_connection(connection_id)
@@ -443,7 +452,9 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"match": False, "hash": bundle_hash, "scenarios": scenarios})
 
     @mcp.tool()
-    def get_leaderboard(connection_id: str) -> dict:
+    def get_leaderboard(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+    ) -> dict:
         """Read-only. Return aggregated leaderboard statistics for every AI model that has played at least one match: win/loss/draw counts, win percentage, and average thinking time per turn. Sorted by win rate descending. Requires set_player_metadata. For detailed per-opponent and per-scenario breakdowns of a specific model, use get_model_details instead.
         """
         import time as _time
@@ -473,7 +484,9 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def get_model_details(
-        connection_id: str, model: str, provider: str
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        model: Annotated[str, Field(description="Model ID string from the leaderboard (e.g. 'claude-sonnet-4-6').")],
+        provider: Annotated[str, Field(description="Provider name from the leaderboard (e.g. 'anthropic').")],
     ) -> dict:
         """Read-only. Return detailed statistics for a specific AI model: aggregated totals, head-to-head win/loss record against each opponent model, and per-scenario breakdown. model is the model ID string (e.g. 'claude-sonnet-4-6'); provider is the provider name (e.g. 'anthropic'). Both values come from the get_leaderboard response. Requires set_player_metadata."""
         conn = app.get_connection(connection_id)
@@ -496,13 +509,13 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     async def update_room_config(
-        connection_id: str,
-        scenario: str | None = None,
-        team_assignment: str | None = None,
-        host_team: str | None = None,
-        fog_of_war: str | None = None,
-        max_turns: int | None = None,
-        turn_time_limit_s: int | None = None,
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        scenario: Annotated[str | None, Field(description="New scenario name from list_scenarios. Omit to keep current.", default=None)] = None,
+        team_assignment: Annotated[str | None, Field(description="'fixed' or 'random'. Omit to keep current.", default=None)] = None,
+        host_team: Annotated[str | None, Field(description="'blue' or 'red'. Omit to keep current.", default=None)] = None,
+        fog_of_war: Annotated[str | None, Field(description="'none', 'classic', or 'line_of_sight'. Omit to keep current.", default=None)] = None,
+        max_turns: Annotated[int | None, Field(description="Maximum turns for the match. Range 1-200. Omit to keep current.", default=None)] = None,
+        turn_time_limit_s: Annotated[int | None, Field(description="Seconds allowed per turn. Range 10-3600. Omit to keep current.", default=None)] = None,
     ) -> dict:
         """Mutating. Host-only: update room configuration before the match starts. Only fields you pass are changed; omitted fields keep their current values. Any change resets both players' ready flags so both must re-confirm. scenario is a scenario name from list_scenarios. team_assignment must be 'fixed' or 'random'. host_team must be 'blue' or 'red'. fog_of_war must be 'none', 'classic', or 'line_of_sight'. max_turns must be 1-200. turn_time_limit_s must be 10-3600. Only the host (slot A) can call this; fails if the match has already started."""
         # ── Input validation (no locks) ──
@@ -601,7 +614,10 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return _ok({})
 
     @mcp.tool()
-    def preview_room(connection_id: str, room_id: str) -> dict:
+    def preview_room(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        room_id: Annotated[str, Field(description="Room identifier from list_rooms.")],
+    ) -> dict:
         """Read-only. Return a room's current state: scenario name, board layout, seat occupancy (which players are seated and their ready status), and room configuration (fog-of-war setting, team assignment mode). room_id is the string identifier from list_rooms. Requires set_player_metadata. Use this to inspect a room before joining with join_room, or to check ready status while waiting for the match to start."""
         with app.state_lock():
             conn = app._connections.get(connection_id)  # noqa: SLF001
@@ -660,13 +676,13 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def create_room(
-        connection_id: str,
-        scenario: str,
-        max_turns: int | None = None,
-        team_assignment: str = "fixed",
-        host_team: str = "blue",
-        fog_of_war: str = "none",
-        turn_time_limit_s: int = 1800,
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        scenario: Annotated[str, Field(description="Scenario name from list_scenarios (required).")],
+        max_turns: Annotated[int | None, Field(description="Maximum turns. Defaults to the scenario's declared cap. Range 1-200.", default=None)] = None,
+        team_assignment: Annotated[str, Field(description="'fixed' (host picks sides) or 'random' (server randomizes). Default 'fixed'.", default="fixed")] = "fixed",
+        host_team: Annotated[str, Field(description="Host's team color: 'blue' or 'red'. Default 'blue'.", default="blue")] = "blue",
+        fog_of_war: Annotated[str, Field(description="Fog-of-war mode: 'none', 'classic', or 'line_of_sight'. Default 'none'.", default="none")] = "none",
+        turn_time_limit_s: Annotated[int, Field(description="Seconds allowed per turn. Range 10-3600. Default 1800.", default=1800)] = 1800,
     ) -> dict:
         """Mutating. Create a new room and seat yourself as the host (slot A). Requires state=in_lobby (call set_player_metadata first). scenario is a scenario name from list_scenarios (required). max_turns defaults to the scenario's declared cap if omitted (1-200). team_assignment: 'fixed' (default) or 'random'. host_team: 'blue' (default) or 'red'. fog_of_war: 'none' (default), 'classic', or 'line_of_sight'. turn_time_limit_s: seconds per turn (default 1800, range 10-3600). Returns the room_id and your assigned slot. Another player can then join with join_room."""
         # ── Input validation (no locks needed) ──
@@ -734,7 +750,10 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"room_id": room_id, "slot": slot_value})
 
     @mcp.tool()
-    def join_room(connection_id: str, room_id: str) -> dict:
+    def join_room(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        room_id: Annotated[str, Field(description="Room identifier from list_rooms.")],
+    ) -> dict:
         """Mutating. Join an existing room by taking its open seat. Requires state=in_lobby (call set_player_metadata first). room_id is the room's string identifier from list_rooms. Returns the assigned room_id and slot (A or B). Fails if the room is full, does not exist, or you are already in a room. After joining, call set_ready to signal readiness; the match starts when both players are ready. To leave before the match starts, use leave_room."""
         if not room_id or len(room_id) > 128:
             return _error(ErrorCode.BAD_INPUT, "invalid room_id")
@@ -769,7 +788,9 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"room_id": room_id, "slot": slot_value})
 
     @mcp.tool()
-    def kick_player(connection_id: str) -> dict:
+    def kick_player(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+    ) -> dict:
         """Mutating. Host-only: kick the other player (slot B) from your room, returning them to the lobby. Only works before the match starts (during room setup or ready-up). Cannot be used once gameplay has begun. Requires state=in_room and you must be the host (slot A)."""
         from silicon_pantheon.server.rooms import RoomStatus
 
@@ -827,7 +848,9 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"kicked": joiner_cid[:8] if joiner_cid else None})
 
     @mcp.tool()
-    async def leave_room(connection_id: str) -> dict:
+    async def leave_room(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+    ) -> dict:
         """Mutating. Leave your current room and return to the lobby. Works both pre-game (during room setup) and mid-game. If called during an active match, your team automatically concedes — the opponent wins immediately and the match is recorded in the leaderboard. After a finished match, this is the normal way to return to the lobby. Use concede instead if you want to resign without leaving the room."""
         from silicon_pantheon.server.engine.state import GameStatus as _GS
 
@@ -983,7 +1006,9 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return _ok({})
 
     @mcp.tool()
-    async def get_room_state(connection_id: str) -> dict:
+    async def get_room_state(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+    ) -> dict:
         """Read-only. Return your current room's full status: scenario, seat occupancy, both players' ready states, room configuration, and autostart countdown timer (if both players are ready). Requires state=in_room or in_game. Use this to poll for ready-up progress or to check room state after configuration changes. For browsing other rooms before joining, use list_rooms or preview_room instead."""
         import time as _time
         _t0 = _time.monotonic()
@@ -1041,7 +1066,10 @@ def register_lobby_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"room": summary})
 
     @mcp.tool()
-    async def set_ready(connection_id: str, ready: bool) -> dict:
+    async def set_ready(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        ready: Annotated[bool, Field(description="True to signal readiness, false to unready.")],
+    ) -> dict:
         """Mutating. Toggle your readiness in a room. ready=true signals you are ready to start; ready=false unreadies you. Requires state=in_room (join a room via join_room first). When both seats are filled and both players are ready, the server starts a 10-second countdown and then begins the match automatically. The countdown is cancelled if either player unreadies, leaves, or disconnects. Returns the updated room status including both players' ready states."""
         import time
 

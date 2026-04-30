@@ -48,6 +48,9 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from threading import RLock
+from typing import Annotated
+
+from pydantic import Field as PydanticField
 
 _CONNECTION_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,128}$")
 
@@ -359,13 +362,13 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
 
     @mcp.tool()
     def set_player_metadata(
-        connection_id: str,
-        display_name: str,
-        kind: str,
-        provider: str | None = None,
-        model: str | None = None,
-        version: str = "1",
-        client_protocol_version: int | None = None,
+        connection_id: Annotated[str, PydanticField(description="Your server session identifier.")],
+        display_name: Annotated[str, PydanticField(description="Player name shown to other players.")],
+        kind: Annotated[str, PydanticField(description="'human' or 'agent'.")],
+        provider: Annotated[str | None, PydanticField(description="AI provider name (e.g. 'anthropic', 'openai'). Required when kind='agent'.", default=None)] = None,
+        model: Annotated[str | None, PydanticField(description="Model ID (e.g. 'claude-sonnet-4-6'). Optional.", default=None)] = None,
+        version: Annotated[str, PydanticField(description="Client software version string.", default="1")] = "1",
+        client_protocol_version: Annotated[int | None, PydanticField(description="Wire-format protocol version integer. Clients below the server minimum are rejected.", default=None)] = None,
     ) -> dict:
         """Mutating. Register your identity with the server. Must be called before any lobby operations (list_rooms, join_room, host_room, etc.). display_name is your player name shown to others. kind must be 'human' or 'agent'. provider is the AI provider name (e.g. 'anthropic', 'openai') — required when kind='agent', ignored for humans. model is the specific model ID (e.g. 'claude-sonnet-4-6'). version is the client software version string. client_protocol_version is an optional integer for wire-format compatibility; clients below the server's minimum version are rejected with an upgrade prompt. Can be called again to update metadata. Returns the confirmed player profile."""
         # Treat a missing client_protocol_version as v1 — that's what
@@ -450,7 +453,9 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
         )
 
     @mcp.tool()
-    def heartbeat(connection_id: str) -> dict:
+    def heartbeat(
+        connection_id: Annotated[str, PydanticField(description="Your server session identifier.")],
+    ) -> dict:
         """Read-only. Lightweight liveness ping called automatically by the client every ~10 seconds. Returns the current server time in seconds (Unix epoch). The server uses heartbeats to detect disconnected clients and clean up abandoned rooms. Not typically called by agents directly — the client harness handles it."""
         import logging as _logging
         import time as _time
@@ -483,7 +488,9 @@ def build_mcp_server(app: App, *, name: str = "silicon-server") -> FastMCP:
         return _ok({"server_time": now})
 
     @mcp.tool()
-    def whoami(connection_id: str) -> dict:
+    def whoami(
+        connection_id: Annotated[str, PydanticField(description="Your server session identifier.")],
+    ) -> dict:
         """Read-only. Return this connection's current lifecycle state (ANONYMOUS, IN_LOBBY, IN_ROOM, or IN_GAME) and player metadata (display_name, kind, provider, model). Use this to check whether set_player_metadata has been called and what state the connection is in before issuing lobby or game commands."""
         with app.state_lock():
             conn = app._connections.get(connection_id)  # noqa: SLF001

@@ -18,9 +18,10 @@ from __future__ import annotations
 
 import logging
 import random
-from typing import Any
+from typing import Annotated, Any
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import Field
 
 log = logging.getLogger("silicon.game")
 
@@ -591,8 +592,8 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def create_dev_game(
-        connection_id: str,
-        scenario: str = "01_tiny_skirmish",
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        scenario: Annotated[str, Field(description="Scenario folder name to load. Defaults to '01_tiny_skirmish'.", default="01_tiny_skirmish")] = "01_tiny_skirmish",
     ) -> dict:
         """Mutating. Development-only: create a dev room and seat yourself as the blue player (slot A). scenario defaults to '01_tiny_skirmish' but can be overridden. A second connection calls join_dev_game to take slot B and start immediately. Requires state=in_lobby (call set_player_metadata first). Only one dev game can exist at a time. In production, use create_room instead."""
         with app.state_lock():
@@ -616,7 +617,9 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"room_id": room_id, "slot": slot_value})
 
     @mcp.tool()
-    def join_dev_game(connection_id: str) -> dict:
+    def join_dev_game(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+    ) -> dict:
         """Mutating. Development-only shortcut: join the first available room as the red player and start the match immediately, bypassing the normal ready-up flow. Requires state=in_lobby (call set_player_metadata first). Returns the room_id and assigned slot. In production, use join_room + set_ready instead."""
         # Phase 1: validate + claim seat under state_lock.
         with app.state_lock():
@@ -666,31 +669,42 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
     # ---- the 13 game tools, each a thin dispatch wrapper ----
 
     @mcp.tool()
-    def get_state(connection_id: str) -> dict:
+    def get_state(
+        connection_id: Annotated[str, Field(description="Your server session identifier, assigned at connect time.")],
+    ) -> dict:
         """Read-only. Return the full game state visible to your team: board dimensions, terrain grid, all visible units (with hp, status, position, class), current turn number, active player, and win-condition progress. Fog-of-war hides enemy units outside your vision range. Use at turn start to orient before calling get_legal_actions or get_tactical_summary for specific decisions. connection_id identifies your server session (assigned at connect time)."""
         return _dispatch(app, connection_id, "get_state", {})
 
     @mcp.tool()
-    def get_unit(connection_id: str, unit_id: str) -> dict:
+    def get_unit(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        unit_id: Annotated[str, Field(description="Unit string identifier from get_state output, e.g. 'u_b_archer_1'.")],
+    ) -> dict:
         """Read-only. Return one unit's full details: hp, max_hp, attack, defense, class, position, status (READY/MOVED/DONE), and abilities. Works for your own units and visible enemy units; returns an error if the unit is hidden by fog-of-war or does not exist. unit_id is the string identifier shown in get_state output (e.g. 'blue_archer_1'). Prefer get_state for bulk inspection; use this when you need one unit's details after a specific action."""
         return _dispatch(app, connection_id, "get_unit", {"unit_id": unit_id})
 
     @mcp.tool()
-    def get_unit_range(connection_id: str, unit_id: str) -> dict:
+    def get_unit_range(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        unit_id: Annotated[str, Field(description="Unit string identifier, e.g. 'u_r_cavalry_2'.")],
+    ) -> dict:
         """Read-only. Return a unit's full threat zone: the set of tiles it can move to and the set of tiles it can attack from any reachable position. Works for any alive unit, own or enemy. unit_id is the string identifier from get_state (e.g. 'red_cavalry_2'). Use this to plan positioning or evaluate enemy threat coverage; for a board-wide enemy threat overview prefer get_threat_map instead."""
         return _dispatch(app, connection_id, "get_unit_range", {"unit_id": unit_id})
 
     @mcp.tool()
-    def get_legal_actions(connection_id: str, unit_id: str) -> dict:
+    def get_legal_actions(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        unit_id: Annotated[str, Field(description="Your unit's string identifier. Must be in READY or MOVED status.")],
+    ) -> dict:
         """Read-only. Return all legal actions for one of your units this turn: movable tiles, attackable enemy unit_ids, healable ally unit_ids, and whether wait is available. Only works on your own units in READY or MOVED status; returns an error for enemy units or units that have already acted. unit_id is the string identifier from get_state. Call this before issuing move, attack, heal, or wait to avoid illegal-action errors."""
         return _dispatch(app, connection_id, "get_legal_actions", {"unit_id": unit_id})
 
     @mcp.tool()
     def simulate_attack(
-        connection_id: str,
-        attacker_id: str,
-        target_id: str,
-        from_tile: dict | None = None,
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        attacker_id: Annotated[str, Field(description="Your attacking unit's string identifier.")],
+        target_id: Annotated[str, Field(description="The enemy unit's string identifier to simulate attacking.")],
+        from_tile: Annotated[dict | None, Field(description="Optional {x, y} tile to simulate attacking from instead of the attacker's current position.", default=None)] = None,
     ) -> dict:
         """Read-only. Predict the outcome of an attack without changing game state: returns expected damage dealt, counter-damage received, and whether either unit would die. attacker_id and target_id are unit string identifiers from get_state. from_tile is an optional {x, y} dict to simulate attacking from a different position than the attacker's current tile (useful for evaluating move-then-attack sequences). Use this to compare attack options before committing with the attack tool."""
         args: dict = {"attacker_id": attacker_id, "target_id": target_id}
@@ -699,56 +713,87 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         return _dispatch(app, connection_id, "simulate_attack", args)
 
     @mcp.tool()
-    def get_threat_map(connection_id: str) -> dict:
+    def get_threat_map(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+    ) -> dict:
         """Read-only. Return a board-wide map of enemy threat coverage: for each tile, which visible enemy units can reach and attack it. Only includes enemies visible through fog-of-war. Use this to identify safe tiles for positioning and retreat; for a single unit's reach use get_unit_range instead. For a combined digest of threats and opportunities, prefer get_tactical_summary."""
         return _dispatch(app, connection_id, "get_threat_map", {})
 
     @mcp.tool()
-    def get_tactical_summary(connection_id: str) -> dict:
+    def get_tactical_summary(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+    ) -> dict:
         """Read-only. Return a precomputed tactical digest for your turn: attack opportunities your units can execute right now (with predicted damage, counter-damage, and kill outcomes), threats against your units from visible enemies, and units still in MOVED status pending action. Call once at turn start instead of many individual simulate_attack or get_threat_map calls. For raw threat data per tile, use get_threat_map; for individual attack previews, use simulate_attack."""
         return _dispatch(app, connection_id, "get_tactical_summary", {})
 
     @mcp.tool()
-    def get_history(connection_id: str, last_n: int = 10) -> dict:
+    def get_history(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        last_n: Annotated[int, Field(description="Number of recent actions to return. Range 1-100.", default=10)] = 10,
+    ) -> dict:
         """Read-only. Return the most recent game actions taken by both teams: moves, attacks, heals, waits, and end-turns, each with the acting unit, target, result, and turn number. last_n controls how many actions to return (default 10, max 100). Use this at turn start to understand what the opponent did last turn, especially under fog-of-war where you may not have seen their moves live. For aggregate match statistics use get_match_telemetry instead."""
         return _dispatch(app, connection_id, "get_history", {"last_n": last_n})
 
     @mcp.tool()
-    def move(connection_id: str, unit_id: str, dest: dict) -> dict:
+    def move(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        unit_id: Annotated[str, Field(description="Your unit's string identifier. Must be in READY status.")],
+        dest: Annotated[dict, Field(description="Target tile as {x, y} dict. Must be within the unit's movement range.")],
+    ) -> dict:
         """Mutating. Move one of your units to a destination tile. The unit must be in READY status and the destination must be within its movement range (check via get_legal_actions). unit_id is the unit's string identifier. dest is an {x, y} dict for the target tile. After moving, the unit's status changes to MOVED — it can still attack, heal, or wait, but cannot move again this turn. Returns the updated unit state. Returns an error if the unit is not yours, not READY, or the destination is unreachable."""
         return _dispatch(app, connection_id, "move", {"unit_id": unit_id, "dest": dest})
 
     @mcp.tool()
-    def attack(connection_id: str, unit_id: str, target_id: str) -> dict:
+    def attack(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        unit_id: Annotated[str, Field(description="Your attacking unit's string identifier. Must be in READY or MOVED status.")],
+        target_id: Annotated[str, Field(description="Enemy unit's string identifier to attack. Must be within attack range.")],
+    ) -> dict:
         """Mutating. Attack an enemy unit, resolving combat and counter-attack immediately. The attacker must be in READY or MOVED status and the target must be within attack range (check via get_legal_actions). unit_id is your attacking unit; target_id is the enemy unit. Both units may take damage; either may die. After attacking, the unit's status becomes DONE for this turn. Use simulate_attack first to preview the outcome without committing. Returns the combat result including damage dealt, counter-damage received, and kill status."""
         return _dispatch(
             app, connection_id, "attack", {"unit_id": unit_id, "target_id": target_id}
         )
 
     @mcp.tool()
-    def heal(connection_id: str, healer_id: str, target_id: str) -> dict:
+    def heal(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        healer_id: Annotated[str, Field(description="Your healing unit's string identifier. Must have can_heal ability and be in READY or MOVED status.")],
+        target_id: Annotated[str, Field(description="Adjacent allied unit's string identifier to heal. Must be damaged.")],
+    ) -> dict:
         """Mutating. Heal an adjacent allied unit. Only units with the heal ability (typically Mages) can use this. healer_id is your healing unit (must be READY or MOVED); target_id is an adjacent allied unit that is damaged. Restores HP based on the healer's magic stat. After healing, the healer's status becomes DONE for this turn. Use get_legal_actions on the healer to see which allies are valid heal targets. Returns the amount healed and the target's updated HP."""
         return _dispatch(
             app, connection_id, "heal", {"healer_id": healer_id, "target_id": target_id}
         )
 
     @mcp.tool()
-    def wait(connection_id: str, unit_id: str) -> dict:
+    def wait(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        unit_id: Annotated[str, Field(description="Your unit's string identifier. Must be in READY or MOVED status.")],
+    ) -> dict:
         """Mutating. End this unit's turn without attacking or healing, setting its status to DONE. The unit must be in READY or MOVED status. unit_id is the unit's string identifier. Use when a unit has no useful attack or heal targets this turn but you want to finalize its position after moving. Once all your units are DONE (or you have no more actions), call end_turn to pass control to the opponent."""
         return _dispatch(app, connection_id, "wait", {"unit_id": unit_id})
 
     @mcp.tool()
-    def end_turn(connection_id: str) -> dict:
+    def end_turn(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+    ) -> dict:
         """Mutating. End your turn and pass control to the opponent. Any of your units still in READY or MOVED status will automatically wait. You must call this exactly once per turn after you have finished issuing all move/attack/heal/wait commands. The opponent's turn begins immediately after. Returns an error if it is not currently your turn."""
         return _dispatch(app, connection_id, "end_turn", {})
 
     @mcp.tool()
-    def send_to_agent(connection_id: str, team: str, text: str) -> dict:
+    def send_to_agent(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        team: Annotated[str, Field(description="Target team: 'blue' or 'red'.")],
+        text: Annotated[str, Field(description="Coaching instruction text to deliver to the team's AI agent.")],
+    ) -> dict:
         """Mutating. Coach-only tool: queue a natural-language message that will be delivered to the specified team's AI agent at the start of its next turn. team must be 'blue' or 'red'. text is the coaching instruction (e.g. 'push cavalry on the right flank'). The agent sees the message as context but is free to ignore it. Only human coach connections can use this; AI agent connections receive an error. Messages are not visible to the opposing team."""
         return _dispatch(app, connection_id, "send_to_agent", {"team": team, "text": text})
 
     @mcp.tool()
-    def record_thought(connection_id: str, text: str) -> dict:
+    def record_thought(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        text: Annotated[str, Field(description="Agent reasoning text to record in the replay. Max 10,000 characters.")],
+    ) -> dict:
         """Mutating. Record an agent's chain-of-thought reasoning into the match replay file so it can be reviewed in post-match replay playback. text is the reasoning text (max 10,000 characters). Called automatically by the client harness after each agent response — not typically called by the agent itself. Requires state=in_game. The thought is attributed to your team based on your slot assignment."""
         with app.state_lock():
             conn = app._connections.get(connection_id)  # noqa: SLF001
@@ -792,10 +837,10 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
 
     @mcp.tool()
     def report_issue(
-        connection_id: str,
-        category: str,
-        summary: str,
-        details: str | None = None,
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        category: Annotated[str, Field(description="One of: 'bug', 'confusion', 'rules_unclear', 'scenario_issue', 'imbalance', 'suggestion'.")],
+        summary: Annotated[str, Field(description="Short description of the issue. Max 500 characters.")],
+        details: Annotated[str | None, Field(description="Optional longer explanation. Max 10,000 characters.", default=None)] = None,
     ) -> dict:
         """Mutating. Report a problem or observation encountered during gameplay. The report is saved to the match replay, server log, and a daily debug file for later review. category must be one of: 'bug', 'confusion', 'rules_unclear', 'scenario_issue', 'imbalance', or 'suggestion'. Use 'imbalance' for lopsided scenarios; use 'scenario_issue' for broken placement or unreachable tiles. summary is a short description (max 500 chars, required). details is an optional longer explanation (max 10,000 chars). Requires state=in_game."""
         allowed = (
@@ -884,12 +929,17 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"recorded": True})
 
     @mcp.tool()
-    def report_tokens(connection_id: str, tokens: int) -> dict:
+    def report_tokens(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+        tokens: Annotated[int, Field(description="Number of LLM tokens consumed in this turn.")],
+    ) -> dict:
         """Mutating. Report the number of LLM tokens consumed by your agent this turn so the server can track and display cost statistics for both sides. tokens is a positive integer representing the total token count for this turn's inference. Called by the client harness after each agent turn; not typically called by the agent itself. The value is stored server-side and visible to both teams via get_match_telemetry."""
         return _dispatch(app, connection_id, "report_tokens", {"tokens": tokens})
 
     @mcp.tool()
-    def get_match_telemetry(connection_id: str) -> dict:
+    def get_match_telemetry(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+    ) -> dict:
         """Read-only. Return server-tracked match statistics for both teams: total tokens consumed, per-turn thinking time, number of tool calls, and turn count. Available during and after a match. Use this for post-game analysis or mid-game cost monitoring. For game-state history (what moves were made) use get_history instead."""
         resolved = _viewer_for_any_state(app, connection_id)
         if resolved is None:
@@ -901,7 +951,9 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"result": result})
 
     @mcp.tool()
-    def download_replay(connection_id: str) -> dict:
+    def download_replay(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+    ) -> dict:
         """Read-only. Download the full match replay as JSONL text. Each line is a JSON event (moves, attacks, thoughts, turn boundaries) that can be fed into the TUI replay viewer. Available during and immediately after a match while the connection is still in_game state. Returns the replay content and the server-side file path."""
         # Phase 1: resolve under state_lock.
         with app.state_lock():
@@ -960,7 +1012,9 @@ def register_game_tools(mcp: FastMCP, app: App) -> None:
         return _ok({"replay_jsonl": body, "path": str(replay_path)})
 
     @mcp.tool()
-    def concede(connection_id: str) -> dict:
+    def concede(
+        connection_id: Annotated[str, Field(description="Your server session identifier.")],
+    ) -> dict:
         """Mutating. Resign the match — the opponent wins immediately. The result is recorded in the leaderboard as a concession. Requires state=in_game. After conceding, the match ends and both players can download the replay or leave the room. Use leave_room if you want to both concede and return to the lobby in one step."""
         from silicon_pantheon.server.engine.state import GameStatus
 
