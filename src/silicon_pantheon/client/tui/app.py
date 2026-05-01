@@ -208,6 +208,7 @@ class TUIApp:
         # so heartbeats, polls, and key-handling keep running.
         self._render_event: asyncio.Event | None = None
         self._key_reader_task: asyncio.Task | None = None
+        self._dispatcher_task: asyncio.Task | None = None
 
     # ---- lifecycle ----
 
@@ -247,10 +248,11 @@ class TUIApp:
                 self.console.show_cursor(False)
                 self._live = live
                 self._key_reader_task = asyncio.create_task(self._key_reader())
+                self._dispatcher_task = asyncio.create_task(self._dispatcher())
                 tasks = [
                     self._key_reader_task,
                     asyncio.create_task(self._ticker()),
-                    asyncio.create_task(self._dispatcher()),
+                    self._dispatcher_task,
                     asyncio.create_task(self._render_loop()),
                     asyncio.create_task(self._transport_watcher()),
                 ]
@@ -522,6 +524,8 @@ class TUIApp:
         the live agent's client reference. No screen transition — the
         server retains game state keyed by cid.
         """
+        import time as _time
+
         RECONNECT_RETRY_S = 5.0
         MAX_ATTEMPTS = 5
         try:
@@ -649,6 +653,34 @@ class TUIApp:
                         ),
                         destination="login",
                     ))
+                    # Auto-dismiss after 10s if the user (or a bot
+                    # process with no human) hasn't acknowledged.
+                    # Without this the TUI stays stuck showing the OK
+                    # button forever when stdin can't deliver keys.
+                    _AUTO_DISMISS_S = 10.0
+                    _deadline = _time.time() + _AUTO_DISMISS_S
+                    while (
+                        self.state.pending_alert is not None
+                        and _time.time() < _deadline
+                        and not self._should_exit
+                    ):
+                        await asyncio.sleep(0.25)
+                    if self.state.pending_alert is not None:
+                        _log.warning(
+                            "auto-dismissing eviction alert after %.0fs",
+                            _AUTO_DISMISS_S,
+                        )
+                        factory = self.state.pending_screen_factory
+                        self.state.pending_alert = None
+                        self.state.pending_screen_factory = None
+                        if factory is not None and self._screen is not None:
+                            try:
+                                await self.transition(factory(self))
+                            except Exception:
+                                _log.exception(
+                                    "auto-dismiss transition failed"
+                                )
+                        self._refresh()
         except asyncio.CancelledError:
             return
 
@@ -767,6 +799,8 @@ class TUIApp:
                 self._refresh()
         except asyncio.CancelledError:
             return
+        except Exception:
+            _log.exception("dispatcher DIED — keyboard input will stop")
 
     async def _handle_alert_key(self, key: str) -> bool:
         """Route a key into the pending eviction alert, if any.
@@ -893,11 +927,19 @@ class TUIApp:
                             kr_status = f"DEAD(exc={exc})" if exc else "DEAD"
                         else:
                             kr_status = "alive"
+                    dp = getattr(self, "_dispatcher_task", None)
+                    dp_status = "?"
+                    if dp is not None:
+                        if dp.done():
+                            exc = dp.exception() if not dp.cancelled() else None
+                            dp_status = f"DEAD(exc={exc})" if exc else "DEAD"
+                        else:
+                            dp_status = "alive"
                     _log.info(
                         "ticker pulse: tick_n=%d screen=%s should_exit=%s "
-                        "key_reader=%s",
+                        "key_reader=%s dispatcher=%s",
                         _tick_n, type(self._screen).__name__,
-                        self._should_exit, kr_status,
+                        self._should_exit, kr_status, dp_status,
                     )
                     _last_pulse = now
                 t0 = _time.time()
