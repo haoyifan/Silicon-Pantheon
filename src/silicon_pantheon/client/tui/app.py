@@ -323,9 +323,19 @@ class TUIApp:
         returns a non-None value and drop their own retry loop.
         """
         if self.state.pending_alert is not None:
+            _log.info(
+                "show_eviction_alert SKIPPED (already pending): %s",
+                info.title,
+            )
             return False
         from silicon_pantheon.client.tui.widgets import AlertModal
 
+        _log.warning(
+            "show_eviction_alert INSTALLED: title=%r dest=%s screen=%s",
+            info.title,
+            info.destination,
+            type(self._screen).__name__ if self._screen else "?",
+        )
         severity = "error" if info.destination == "login" else "warning"
         self.state.pending_alert = AlertModal(
             title=info.title,
@@ -524,8 +534,6 @@ class TUIApp:
         the live agent's client reference. No screen transition — the
         server retains game state keyed by cid.
         """
-        import time as _time
-
         RECONNECT_RETRY_S = 5.0
         MAX_ATTEMPTS = 5
         try:
@@ -653,34 +661,6 @@ class TUIApp:
                         ),
                         destination="login",
                     ))
-                    # Auto-dismiss after 10s if the user (or a bot
-                    # process with no human) hasn't acknowledged.
-                    # Without this the TUI stays stuck showing the OK
-                    # button forever when stdin can't deliver keys.
-                    _AUTO_DISMISS_S = 10.0
-                    _deadline = _time.time() + _AUTO_DISMISS_S
-                    while (
-                        self.state.pending_alert is not None
-                        and _time.time() < _deadline
-                        and not self._should_exit
-                    ):
-                        await asyncio.sleep(0.25)
-                    if self.state.pending_alert is not None:
-                        _log.warning(
-                            "auto-dismissing eviction alert after %.0fs",
-                            _AUTO_DISMISS_S,
-                        )
-                        factory = self.state.pending_screen_factory
-                        self.state.pending_alert = None
-                        self.state.pending_screen_factory = None
-                        if factory is not None and self._screen is not None:
-                            try:
-                                await self.transition(factory(self))
-                            except Exception:
-                                _log.exception(
-                                    "auto-dismiss transition failed"
-                                )
-                        self._refresh()
         except asyncio.CancelledError:
             return
 
@@ -819,6 +799,7 @@ class TUIApp:
         alert = self.state.pending_alert
         if alert is None:
             return False
+        _log.info("alert key received: %r", key)
         try:
             close = await alert.handle_key(key)
         except Exception as e:
@@ -826,6 +807,7 @@ class TUIApp:
             self.state.error_message = f"alert error: {e}"
             close = True  # don't strand the user inside a broken alert
         if close:
+            _log.info("alert DISMISSED by key=%r, transitioning", key)
             factory = self.state.pending_screen_factory
             self.state.pending_alert = None
             self.state.pending_screen_factory = None
@@ -935,11 +917,18 @@ class TUIApp:
                             dp_status = f"DEAD(exc={exc})" if exc else "DEAD"
                         else:
                             dp_status = "alive"
+                    _loop = asyncio.get_running_loop()
+                    _ready_len = len(getattr(_loop, "_ready", []))
+                    _sched_len = len(getattr(_loop, "_scheduled", []))
                     _log.info(
                         "ticker pulse: tick_n=%d screen=%s should_exit=%s "
-                        "key_reader=%s dispatcher=%s",
+                        "key_reader=%s dispatcher=%s "
+                        "alert=%s loop_ready=%d loop_sched=%d",
                         _tick_n, type(self._screen).__name__,
                         self._should_exit, kr_status, dp_status,
+                        type(self.state.pending_alert).__name__
+                        if self.state.pending_alert else "none",
+                        _ready_len, _sched_len,
                     )
                     _last_pulse = now
                 t0 = _time.time()
