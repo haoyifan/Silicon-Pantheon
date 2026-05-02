@@ -52,6 +52,38 @@ TICK_INTERVAL_S = 0.25
 POLL_INTERVAL_S = 5.0  # lobby / room state polling cadence
 THOUGHTS_BUFFER_SIZE = 100
 
+_TRANSPORT_CLEANUP_TIMEOUT_S = 5.0
+
+
+async def _guarded_transport_cleanup(coro: Any) -> None:
+    """Run a transport cleanup coroutine with timeout + orphan cancellation.
+
+    The MCP library's anyio task groups can leak asyncio tasks when
+    cleanup hangs (e.g. _receive_loop's finally block deadlocking on
+    unbuffered memory streams).  asyncio.wait_for cancels the cleanup
+    task on timeout, but the task-group children are separate asyncio
+    tasks that nobody cancels — they spin forever at 100 % CPU.
+
+    Fix: snapshot tasks before cleanup, cancel any that appeared after.
+    """
+    current = asyncio.current_task()
+    tasks_before = set(asyncio.all_tasks())
+    try:
+        await asyncio.wait_for(coro, timeout=_TRANSPORT_CLEANUP_TIMEOUT_S)
+    except Exception:
+        pass
+    finally:
+        orphans = set(asyncio.all_tasks()) - tasks_before
+        orphans.discard(current)
+        if orphans:
+            _log.warning(
+                "transport cleanup leaked %d tasks — cancelling: %s",
+                len(orphans),
+                [t.get_name() for t in orphans],
+            )
+            for t in orphans:
+                t.cancel()
+
 
 class Screen:
     """Base class. Subclasses fill in render / handle_key / tick."""
@@ -295,10 +327,7 @@ class TUIApp:
         # Tear down the transport context opened by the login screen.
         cleanup = getattr(self, "_transport_cleanup", None)
         if cleanup is not None:
-            try:
-                await cleanup()
-            except Exception:
-                pass
+            await _guarded_transport_cleanup(cleanup())
         return 0
 
     def exit(self) -> None:
@@ -571,10 +600,7 @@ class TUIApp:
 
                 cleanup = getattr(self, "_transport_cleanup", None)
                 if cleanup is not None:
-                    try:
-                        await asyncio.wait_for(cleanup(), timeout=5.0)
-                    except Exception:
-                        pass
+                    await _guarded_transport_cleanup(cleanup())
                     self._transport_cleanup = None  # type: ignore[attr-defined]
 
                 self.client = None
@@ -641,13 +667,9 @@ class TUIApp:
                             await asyncio.sleep(RECONNECT_RETRY_S)
                     finally:
                         if ctx is not None:
-                            try:
-                                await asyncio.wait_for(
-                                    ctx.__aexit__(None, None, None),
-                                    timeout=5.0,
-                                )
-                            except Exception:
-                                pass
+                            await _guarded_transport_cleanup(
+                                ctx.__aexit__(None, None, None),
+                            )
 
                 if not connected:
                     from silicon_pantheon.shared.eviction import EvictionInfo
