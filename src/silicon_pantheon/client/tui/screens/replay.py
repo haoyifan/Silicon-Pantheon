@@ -32,6 +32,7 @@ from silicon_pantheon.client.tui.screens.game import (
 )
 from silicon_pantheon.shared.replay_schema import (
     AgentThought,
+    MatchPlayers,
     MatchStart,
     ReplayEvent,
     UnreconstructibleAction,
@@ -201,6 +202,12 @@ class ReplayScreen(Screen):
             raise ValueError("replay missing match_start with scenario")
 
         self._scenario_name = meta.scenario
+        self._replay_players: dict[str, dict[str, str]] = {}
+        for ev in events:
+            if ev.kind == "match_players" and isinstance(ev.data, MatchPlayers):
+                self._replay_players = ev.data.players
+                break
+
         initial_state = load_scenario(meta.scenario)
         if meta.max_turns:
             initial_state.max_turns = meta.max_turns

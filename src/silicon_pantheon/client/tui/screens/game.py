@@ -146,6 +146,10 @@ class PlayerPanel(Panel):
 
     def _team_player_info(self, team: str) -> tuple[str, str]:
         """Look up (display_name, model) for a team from room state."""
+        rp = getattr(self.screen, "_replay_players", None)
+        if rp and team in rp:
+            p = rp[team]
+            return (p.get("display_name") or "", p.get("model") or "")
         rs = self.screen.app.state.last_room_state or {}
         seats = rs.get("seats") or {}
         host_team = rs.get("host_team") or rs.get("config", {}).get("host_team", "blue")
