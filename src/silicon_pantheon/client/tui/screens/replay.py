@@ -39,7 +39,7 @@ from silicon_pantheon.shared.replay_schema import (
     action_from_payload,
     parse_event,
 )
-from silicon_pantheon.server.engine.rules import IllegalAction, apply
+from silicon_pantheon.server.engine.rules import EndTurnAction, IllegalAction, apply
 from silicon_pantheon.server.engine.scenarios import load_scenario
 from silicon_pantheon.server.engine.serialize import state_to_dict
 from silicon_pantheon.server.engine.state import GameState
@@ -87,6 +87,11 @@ def build_snapshots(
                 apply(state, action)
             except (UnreconstructibleAction, IllegalAction) as e:
                 log.warning("replay diverged at action: %s", e)
+        elif ev.kind == "turn_timeout_forfeit":
+            try:
+                apply(state, EndTurnAction())
+            except IllegalAction as e:
+                log.warning("replay: timeout forfeit end_turn failed: %s", e)
         snapshots.append(copy.deepcopy(state))
     return snapshots
 
@@ -160,6 +165,9 @@ class StepInfoPanel:
             lines.append(_action_summary(ev.data), style=style)
         elif ev.kind == "forced_end_turn":
             lines.append(f"T{ev.turn} forced end_turn", style="yellow")
+        elif ev.kind == "turn_timeout_forfeit":
+            team = ev.data.get("team", "?") if isinstance(ev.data, dict) else "?"
+            lines.append(f"T{ev.turn} {team} turn forfeited (timeout)", style="yellow")
         else:
             lines.append(f"T{ev.turn} {ev.kind}", style="magenta")
 
