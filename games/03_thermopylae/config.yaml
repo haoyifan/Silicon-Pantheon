@@ -216,6 +216,25 @@ unit_classes:
     glyph: "A"
     color: cyan
 
+  phocian_guard:
+    display_name: Phocian Guard
+    description: |
+      A captain of the thousand Phocians posted to guard the Anopaea
+      path through the mountains. If the goat path falls, the Greeks
+      are flanked. Hold the trail at all costs.
+    hp_max: 20
+    atk: 7
+    defense: 5
+    res: 3
+    spd: 5
+    rng_min: 1
+    rng_max: 1
+    move: 4
+    tags: [hoplite, phocian, ally]
+    sight: 3
+    glyph: "F"
+    color: cyan
+
   xerxes:
     display_name: Xerxes I
     description: |
@@ -377,6 +396,8 @@ armies:
     - {class: spartan_captain, pos: {x: 4, y: 3}}
     # Greek archer screens from atop the wall.
     - {class: greek_archer,    pos: {x: 4, y: 5}}
+    # Phocian guard watches the mountain path to the south.
+    - {class: phocian_guard,   pos: {x: 2, y: 7}}
 
   red:
     # ── Persians massed east of the pass, ~8 tiles from the Greek line ──
